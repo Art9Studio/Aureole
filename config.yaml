@@ -1,9 +1,9 @@
-apiVersion: '0.1'
+apiVersion: "0.1"
 
 apps:
   one:
-    pathPrefix: /one
+    pathPrefix: "/one"
     data: "Hello world!"
   two:
-    pathPrefix: /two
+    pathPrefix: "/two"
     data: "Hello world!"
