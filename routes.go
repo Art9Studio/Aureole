@@ -12,7 +12,7 @@ func SetupRouter() *gin.Engine {
 	conf, err := GetConfig("config.yaml")
 
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 
 	apiV := conf.APIVersion
