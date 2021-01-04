@@ -27,9 +27,7 @@ func GetConfig(path string) (Config, error) {
 		return conf, err
 	}
 
-	err = yaml.Unmarshal(data, &conf)
-
-	if err != nil {
+	if err = yaml.Unmarshal(data, &conf); err != nil {
 		return conf, err
 	}
 
