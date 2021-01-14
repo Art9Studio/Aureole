@@ -1,9 +1,45 @@
-apiVersion: "0.1"
+api_version: "0.1"
 
 apps:
   one:
-    pathPrefix: "/one"
-    data: "Hello world!"
+    path_prefix: "/one"
+    db:
+      connection_url: "postgresql://admin:admin@localhost:5432/gouth?search_path=public"
+    auth:
+      use_custom_collection: true
+      auth_collection: "users"
+      user_identifier: "username"
+      user_confirmation: "password"
+      login:
+        fields:
+          "$.name": "username"
+          "$.passwd": "password"
+        payload:
+          "$.userID": "id"
+      register:
+        login_after: true
+        fields:
+          "$.name": "username"
+          "$.passwd": "password"
+          "$.email": "email"
   two:
-    pathPrefix: "/two"
-    data: "Hello world!"
+    path_prefix: "/two"
+    db:
+      connection_url: "mongodb://admin:admin@localhost:27017/gouth"
+    auth:
+      use_custom_collection: true
+      auth_collection: "users"
+      user_identifier: "username"
+      user_confirmation: "password"
+      login:
+        fields:
+          "$.name": "username"
+          "$.passwd": "password"
+        payload:
+          "$.userID": "id"
+      register:
+        login_after: true
+        fields:
+          "$.name": "username"
+          "$.passwd": "password"
+          "$.email": "email"
