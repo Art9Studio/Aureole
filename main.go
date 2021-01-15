@@ -1,6 +1,8 @@
 package main
 
+import "log"
+
 func main() {
-	r := SetupRouter()
-	r.Run()
+	conf.init("config.yaml")
+	log.Fatal(initRouter().Run())
 }

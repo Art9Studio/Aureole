@@ -1,33 +1,18 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
-//SetupRouter ...
-func SetupRouter() *gin.Engine {
-	conf, err := GetConfig("config.yaml")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	apiV := conf.APIVersion
-	apps := conf.Apps
-
+// initRouter initializes router and creates routes for each application
+func initRouter() *gin.Engine {
 	r := gin.Default()
-	v0 := r.Group("v" + apiV)
+	v := r.Group("v" + conf.APIVersion)
 
-	for _, app := range apps {
-		appR := v0.Group(app.PathPrefix)
+	for _, app := range conf.Apps {
+		appR := v.Group(app.PathPrefix)
 		{
 			appR.GET("/", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{
-					"data": app.Data,
-				})
 			})
 		}
 	}
