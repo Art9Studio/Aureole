@@ -3,8 +3,8 @@ api_version: "0.1"
 apps:
   one:
     path_prefix: "/one"
-    db:
-      connection_url: "postgresql://admin:admin@localhost:5432/gouth?search_path=public"
+    storage:
+      connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
     auth:
       use_custom_collection: true
       user_collection:
@@ -26,7 +26,7 @@ apps:
           "$.email": "email"
   two:
     path_prefix: "/two"
-    db:
+    storage:
       connection_url: "mongodb://admin:admin@localhost:27017/gouth"
     auth:
       use_custom_collection: true
@@ -40,6 +40,38 @@ apps:
           "$.passwd": "password"
         payload:
           "$.userID": "_id"
+      register:
+        login_after: true
+        fields:
+          "$.name": "username"
+          "$.passwd": "password"
+          "$.email": "email"
+  three:
+    path_prefix: "/three"
+    storage:
+      connection_config:
+        driver: "postgresql"
+        username: "root"
+        password: "password"
+        host: "localhost"
+        port: "5432"
+        db_name: "test"
+        options:
+          sslmode: "disable"
+          search_path: "public"
+    auth:
+      use_custom_collection: true
+      user_collection:
+        name: "users"
+        pk: "id"
+        user_id: "username"
+        user_confirm: "password"
+      login:
+        fields:
+          "$.name": "username"
+          "$.passwd": "password"
+        payload:
+          "$.userID": "id"
       register:
         login_after: true
         fields:

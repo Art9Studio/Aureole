@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+
+  server:
+    image: postgres:${POSTGRES_VERSION:-13}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-root}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-test}
+    ports:
+      - '${DB_HOST:-127.0.0.1}:${DB_PORT:-5432}:5432'
