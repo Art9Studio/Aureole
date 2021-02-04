@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"fmt"
+	"gouth/config"
 	"net/url"
 	"strings"
 )
@@ -28,6 +29,17 @@ func (connStr ConnectionString) String() string {
 // String reassembles PostgreSQL connection config into a valid connection url
 func (connStr ConnectionString) AdapterName() string {
 	return strings.Split(connStr.url, "://")[0]
+}
+
+func (appConf config.ConnectionConfig) ToPostgresql() ConnectionConfig {
+	return ConnectionConfig{
+		User:     "",
+		Password: "",
+		Host:     "",
+		Port:     "",
+		Database: "",
+		Options:  nil,
+	}
 }
 
 // String reassembles PostgreSQL connection config into a valid connection url

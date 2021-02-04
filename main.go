@@ -1,8 +1,18 @@
 package main
 
-import "log"
+import (
+	"gouth/config"
+	"io/ioutil"
+	"log"
+)
+
+var conf config.ProjectConfig
 
 func main() {
-	conf.init("config.yaml")
+	data, err := ioutil.ReadFile("config.yaml")
+	if err != nil {
+		panic(err)
+	}
+	conf.Init(data)
 	log.Fatal(initRouter().Run())
 }

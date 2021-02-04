@@ -1,15 +1,13 @@
-package main
+package config
 
 import (
 	adapters "gouth/storage"
-	"io/ioutil"
 	"log"
 
 	"gopkg.in/yaml.v3"
 )
 
 // conf is global object that holds all project level settings variables
-var conf ProjectConfig
 
 // ProjectConfig represents settings for whole project
 type ProjectConfig struct {
@@ -70,20 +68,22 @@ type RegisterConfig struct {
 	Fields     map[string]string `yaml:"fields"`
 }
 
-// init loads settings for whole project into global object conf
-func (c *ProjectConfig) init(path string) {
-	data, err := ioutil.ReadFile(path)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err = yaml.Unmarshal(data, c); err != nil {
+// Init loads settings for whole project into global object conf
+func (c *ProjectConfig) Init(data []byte) {
+	if err := yaml.Unmarshal(data, c); err != nil {
 		log.Fatalf("config init: %v", err)
 	}
 }
 
 // init initializes app by creating table users
 func (a *AppConfig) init() {
-	panic("app init not implemented yet")
+	if a.DB.ConnConf.Driver != "" {
+		//a.Session = adapters.Open()
+	} else if a.DB.ConnURL != "" {
+
+	} else {
+		panic("There is no storage creds")
+	}
+	//a.Session = adapters.Open(ConnectionString{connUrl})
+	//
 }
