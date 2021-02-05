@@ -1,11 +1,11 @@
 package postgresql
 
-import adapters "gouth/storage"
+import "gouth/storage"
 
-func (s *Session) RelInfo() map[adapters.CollectionPair]adapters.RelInfo {
+func (s *Session) RelInfo() map[storage.CollPair]storage.RelInfo {
 	return s.relInfo
 }
 
-func (s *Session) Read(string) (adapters.JSONCollectionResult, error) {
+func (s *Session) Read(string) (storage.JSONCollResult, error) {
 	panic("implement me")
 }

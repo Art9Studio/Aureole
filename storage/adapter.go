@@ -12,12 +12,14 @@ var (
 
 // Adapter define methods for storage adapters
 type Adapter interface {
-	// OpenConfig attempts to establish a connection with a db by ConnectionConfig
-	OpenConfig(connConf ConnectionConfig) (Session, error)
+	// OpenConfig attempts to establish a connection with a db by ConnConfig
+	OpenConfig(connConf ConnConfig) (Session, error)
 
-	ParseUrl(connUrl string) (ConnectionConfig, error)
+	// ParseUrl parses the connection url into ConnConfig struct
+	ParseUrl(connUrl string) (ConnConfig, error)
 
-	NewConfig(data map[string]interface{}) (ConnectionConfig, error)
+	// NewConfig creates new ConnConfig struct from the raw data, parsed from the config file
+	NewConfig(data map[string]interface{}) (ConnConfig, error)
 }
 
 // RegisterAdapter register storage adapter

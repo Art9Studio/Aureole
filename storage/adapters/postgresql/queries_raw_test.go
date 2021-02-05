@@ -3,14 +3,16 @@ package postgresql
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	adapters "gouth/storage"
+	"gouth/storage"
 	"testing"
 )
 
-func TestExec(t *testing.T) {
-	connUrl := "postgresql://root:password@localhost:5432/test"
+func Test_Session_RawExec(t *testing.T) {
+	rawConnData := storage.RawConnData{
+		"connection_url": "postgresql://root:password@localhost:5432/test",
+	}
 
-	sess, err := adapters.Open(ConnectionString{connUrl})
+	sess, err := storage.Open(rawConnData)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
@@ -23,10 +25,12 @@ func TestExec(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestRawQuery(t *testing.T) {
-	connUrl := "postgresql://root:password@localhost:5432/test"
+func Test_Session_RawQuery(t *testing.T) {
+	rawConnData := storage.RawConnData{
+		"connection_url": "postgresql://root:password@localhost:5432/test",
+	}
 
-	sess, err := adapters.Open(ConnectionString{connUrl})
+	sess, err := storage.Open(rawConnData)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}

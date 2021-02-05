@@ -7,8 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// conf is global object that holds all project level settings variables
-
 // ProjectConfig represents settings for whole project
 type ProjectConfig struct {
 	APIVersion string               `yaml:"api_version"`
@@ -17,28 +15,11 @@ type ProjectConfig struct {
 
 // AppConfig represents settings for one application
 type AppConfig struct {
-	PathPrefix string                    `yaml:"path_prefix"`
-	Session    *storage.Session          `yaml:"-"`
-	RawDB      storage.RawConnectionData `yaml:"storage"`
-	Auth       AuthConfig                `yaml:"auth"`
+	PathPrefix string              `yaml:"path_prefix"`
+	Session    storage.Session     `yaml:"-"`
+	RawDB      storage.RawConnData `yaml:"storage"`
+	Auth       AuthConfig          `yaml:"auth"`
 }
-
-//// DBConfig represents settings for database
-//type DBConfig struct {
-//	ConnURL  string           `yaml:"connection_url,omitempty"`
-//	ConnConf adapters.ConnectionConfig `yaml:"connection_config,omitempty"`
-//}
-
-//// ConnectionConfig represents settings for set up connection with database
-//type ConnectionConfig struct {
-//	Driver   string            `yaml:"adapter"`
-//	User     string            `yaml:"username"`
-//	Password string            `yaml:"password"`
-//	Host     string            `yaml:"host"`
-//	Port     string            `yaml:"port"`
-//	DBName   string            `yaml:"db_name"`
-//	Opts     map[string]string `yaml:"options,omitempty"`
-//}
 
 // AuthConfig represents settings for authentication
 type AuthConfig struct {
@@ -78,6 +59,8 @@ func (c *ProjectConfig) Init(data []byte) {
 		if app, ok := c.Apps[i]; ok {
 			app.init()
 			c.Apps[i] = app
+		} else {
+			log.Panicf("project config init: cannot init app %s", i)
 		}
 	}
 }
@@ -89,5 +72,33 @@ func (a *AppConfig) init() {
 		log.Panicf("app open session: %v", err)
 	}
 
-	a.Session = &sess
+	a.Session = sess
+
+	if err = a.initUserColl(); err != nil {
+		log.Panicf("app init: %v", err)
+	}
+}
+
+func (a *AppConfig) initUserColl() error {
+	if !a.Auth.UseCustomColl {
+		a.Auth.UserColl = UserCollConfig{
+			Name:        "users",
+			PK:          "id",
+			UserID:      "username",
+			UserConfirm: "password",
+		}
+	}
+
+	isExists, err := a.Session.IsCollExists(a.Auth.UserColl)
+	if err != nil {
+		return err
+	}
+
+	if !isExists {
+		if err = a.Session.CreateUserColl(a.Auth.UserColl); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

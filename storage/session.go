@@ -5,28 +5,28 @@ type Session interface {
 	Application
 
 	// ConnConfig returns the connection config that was used to set up the adapter
-	ConnConfig() ConnectionConfig
+	ConnConfig() ConnConfig
 
 	// RelInfo returns information about tables relationships
-	RelInfo() map[CollectionPair]RelInfo
+	RelInfo() map[CollPair]RelInfo
 
 	// Ping returns an error if the DBMS could not be reached
 	Ping() error
 
-	// Exec executes the given sql query with no returning results
+	// RawExec executes the given sql query with no returning results
 	RawExec(string) error
 
 	// RawQuery executes the given sql query and returns results
-	RawQuery(string) (JSONCollectionResult, error)
+	RawQuery(string) (JSONCollResult, error)
 
 	// Read
-	Read(string) (JSONCollectionResult, error)
+	Read(string) (JSONCollResult, error)
 
 	// Close terminates the currently active connection to the DBMS
 	Close() error
 }
 
-type CollectionPair struct {
+type CollPair struct {
 	from, to string
 }
 
@@ -37,4 +37,4 @@ type RelInfo struct {
 	toFields   []string
 }
 
-type JSONCollectionResult = interface{}
+type JSONCollResult = interface{}

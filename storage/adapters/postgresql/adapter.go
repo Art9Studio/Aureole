@@ -2,9 +2,8 @@ package postgresql
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	adapters "gouth/storage"
+	"gouth/storage"
 	"net/url"
 	"strings"
 )
@@ -14,7 +13,7 @@ const AdapterName = "postgresql"
 
 // init initializes package by register adapter
 func init() {
-	adapters.RegisterAdapter(AdapterName, &pgAdapter{})
+	storage.RegisterAdapter(AdapterName, &pgAdapter{})
 }
 
 // pgAdapter represents adapter for postgresql database
@@ -22,7 +21,7 @@ type pgAdapter struct {
 }
 
 // OpenConfig attempts to establish a connection with a db by connection config
-func (pg pgAdapter) OpenConfig(connConf adapters.ConnectionConfig) (adapters.Session, error) {
+func (pg pgAdapter) OpenConfig(connConf storage.ConnConfig) (storage.Session, error) {
 	sess := &Session{
 		ctx:      context.Background(),
 		connConf: connConf,
@@ -36,10 +35,10 @@ func (pg pgAdapter) OpenConfig(connConf adapters.ConnectionConfig) (adapters.Ses
 }
 
 // ParseUrl parses the connection url into ConnectionConfig struct
-func (pg pgAdapter) ParseUrl(connUrl string) (adapters.ConnectionConfig, error) {
+func (pg pgAdapter) ParseUrl(connUrl string) (storage.ConnConfig, error) {
 	connConf := ConnectionConfig{}
 	if !strings.HasPrefix(connUrl, connConf.AdapterName()+"://") {
-		return connConf, fmt.Errorf("expecting postgresql:// connection schema")
+		return nil, fmt.Errorf("expecting postgresql:// connection schema")
 	}
 
 	var (
@@ -47,12 +46,12 @@ func (pg pgAdapter) ParseUrl(connUrl string) (adapters.ConnectionConfig, error) 
 		err error
 	)
 	if u, err = url.Parse(connUrl); err != nil {
-		return connConf, err
+		return nil, err
 	}
 
 	var addr = strings.Split(u.Host, ":")
 	if len(addr) < 2 {
-		return ConnectionConfig{}, fmt.Errorf("invalid connection url")
+		return nil, fmt.Errorf("invalid connection url")
 	}
 
 	_, isSetPasswd := u.User.Password()
@@ -62,7 +61,7 @@ func (pg pgAdapter) ParseUrl(connUrl string) (adapters.ConnectionConfig, error) 
 		dbName == "" ||
 		u.User.Username() == "" ||
 		!isSetPasswd {
-		return connConf, fmt.Errorf("invalid connection url")
+		return nil, fmt.Errorf("invalid connection url")
 	}
 
 	connConf.Host = addr[0]
@@ -73,9 +72,8 @@ func (pg pgAdapter) ParseUrl(connUrl string) (adapters.ConnectionConfig, error) 
 	connConf.Options = map[string]string{}
 
 	var vv url.Values
-
 	if vv, err = url.ParseQuery(u.RawQuery); err != nil {
-		return connConf, err
+		return nil, err
 	}
 
 	for k := range vv {
@@ -85,18 +83,31 @@ func (pg pgAdapter) ParseUrl(connUrl string) (adapters.ConnectionConfig, error) 
 	return connConf, err
 }
 
-func (pg pgAdapter) NewConfig(data map[string]interface{}) (adapters.ConnectionConfig, error) {
-	User, ok := data["user"].(string)
-	if !ok {
-		return ConnectionConfig{}, errors.New("Smth")
+// NewConfig creates new ConnectionConfig struct from the raw data, parsed from the config file
+func (pg pgAdapter) NewConfig(data map[string]interface{}) (storage.ConnConfig, error) {
+	requiredKeys := []string{"username", "password", "host", "port", "db_name"}
+
+	for _, key := range requiredKeys {
+		if _, ok := data[key]; !ok {
+			return nil, fmt.Errorf("connection config: missing %s statement", key)
+		} else if data[key] == "" {
+			return nil, fmt.Errorf("connection config: %s statement cannot be empty", key)
+		}
+	}
+
+	opts := make(map[string]string)
+	if rawOpts, ok := data["options"].(map[string]interface{}); ok {
+		for key, value := range rawOpts {
+			opts[key] = fmt.Sprintf("%v", value)
+		}
 	}
 
 	return ConnectionConfig{
-		User:     User,
-		Password: "",
-		Host:     "",
-		Port:     "",
-		Database: "",
-		Options:  nil,
+		User:     data["username"].(string),
+		Password: data["password"].(string),
+		Host:     data["host"].(string),
+		Port:     data["port"].(string),
+		Database: data["db_name"].(string),
+		Options:  opts,
 	}, nil
 }

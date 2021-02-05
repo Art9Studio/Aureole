@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+// conf is global object that holds all project level settings variables
 var conf ProjectConfig
 
 func main() {

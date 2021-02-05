@@ -1,6 +1,6 @@
 package postgresql
 
-import adapters "gouth/storage"
+import "gouth/storage"
 
 // Exec executes the given sql query with no returning results
 func (s *Session) RawExec(sql string) error {
@@ -9,7 +9,7 @@ func (s *Session) RawExec(sql string) error {
 }
 
 // RawQuery executes the given sql query and returns results
-func (s *Session) RawQuery(sql string) (adapters.JSONCollectionResult, error) {
+func (s *Session) RawQuery(sql string) (storage.JSONCollResult, error) {
 	var res interface{}
 
 	err := s.conn.QueryRow(s.ctx, sql).Scan(&res)

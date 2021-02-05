@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestConfig(t *testing.T) {
+func Test_ProjectConfig_Init(t *testing.T) {
 	conf := ProjectConfig{}
 	yamlContent := []byte(`
         api_version: "0.1"
@@ -15,7 +15,7 @@ func TestConfig(t *testing.T) {
               connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"`)
 
 	conf.Init(yamlContent)
-	sess := *conf.Apps["one"].Session
+	sess := conf.Apps["one"].Session
 
 	err := sess.Ping()
 	if err != nil {
