@@ -1,7 +1,7 @@
-package config
+package main
 
 import (
-	adapters "gouth/storage"
+	"gouth/storage"
 	"log"
 
 	"gopkg.in/yaml.v3"
@@ -17,28 +17,28 @@ type ProjectConfig struct {
 
 // AppConfig represents settings for one application
 type AppConfig struct {
-	PathPrefix string            `yaml:"path_prefix"`
-	Session    *adapters.Session `yaml:"-"`
-	DB         DBConfig          `yaml:"storage"`
-	Auth       AuthConfig        `yaml:"auth"`
+	PathPrefix string                    `yaml:"path_prefix"`
+	Session    *storage.Session          `yaml:"-"`
+	RawDB      storage.RawConnectionData `yaml:"storage"`
+	Auth       AuthConfig                `yaml:"auth"`
 }
 
-// DBConfig represents settings for database
-type DBConfig struct {
-	ConnURL  string           `yaml:"connection_url,omitempty"`
-	ConnConf ConnectionConfig `yaml:"connection_config,omitempty"`
-}
+//// DBConfig represents settings for database
+//type DBConfig struct {
+//	ConnURL  string           `yaml:"connection_url,omitempty"`
+//	ConnConf adapters.ConnectionConfig `yaml:"connection_config,omitempty"`
+//}
 
-// ConnectionConfig represents settings for set up connection with database
-type ConnectionConfig struct {
-	Driver   string            `yaml:"driver"`
-	User     string            `yaml:"username"`
-	Password string            `yaml:"password"`
-	Host     string            `yaml:"host"`
-	Port     string            `yaml:"port"`
-	DBName   string            `yaml:"db_name"`
-	Opts     map[string]string `yaml:"options,omitempty"`
-}
+//// ConnectionConfig represents settings for set up connection with database
+//type ConnectionConfig struct {
+//	Driver   string            `yaml:"adapter"`
+//	User     string            `yaml:"username"`
+//	Password string            `yaml:"password"`
+//	Host     string            `yaml:"host"`
+//	Port     string            `yaml:"port"`
+//	DBName   string            `yaml:"db_name"`
+//	Opts     map[string]string `yaml:"options,omitempty"`
+//}
 
 // AuthConfig represents settings for authentication
 type AuthConfig struct {
@@ -71,19 +71,23 @@ type RegisterConfig struct {
 // Init loads settings for whole project into global object conf
 func (c *ProjectConfig) Init(data []byte) {
 	if err := yaml.Unmarshal(data, c); err != nil {
-		log.Fatalf("config init: %v", err)
+		log.Panicf("project config init: %v", err)
+	}
+
+	for i := range c.Apps {
+		if app, ok := c.Apps[i]; ok {
+			app.init()
+			c.Apps[i] = app
+		}
 	}
 }
 
 // init initializes app by creating table users
 func (a *AppConfig) init() {
-	if a.DB.ConnConf.Driver != "" {
-		//a.Session = adapters.Open()
-	} else if a.DB.ConnURL != "" {
-
-	} else {
-		panic("There is no storage creds")
+	sess, err := storage.Open(a.RawDB)
+	if err != nil {
+		log.Panicf("app open session: %v", err)
 	}
-	//a.Session = adapters.Open(ConnectionString{connUrl})
-	//
+
+	a.Session = &sess
 }

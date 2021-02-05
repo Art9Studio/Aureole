@@ -1,12 +1,11 @@
 package main
 
 import (
-	"gouth/config"
 	"testing"
 )
 
 func TestConfig(t *testing.T) {
-	conf := config.ProjectConfig{}
+	conf := ProjectConfig{}
 	yamlContent := []byte(`
         api_version: "0.1"
         apps:
@@ -15,8 +14,11 @@ func TestConfig(t *testing.T) {
             storage:
               connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"`)
 
-	conf.init(yamlContent)
-	version := conf.APIVersion
-	println(version)
+	conf.Init(yamlContent)
+	sess := *conf.Apps["one"].Session
 
+	err := sess.Ping()
+	if err != nil {
+		panic("error")
+	}
 }

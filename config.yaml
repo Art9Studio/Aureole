@@ -50,7 +50,7 @@ apps:
     path_prefix: "/three"
     storage:
       connection_config:
-        driver: "postgresql"
+        adapter: "postgresql"
         username: "root"
         password: "password"
         host: "localhost"

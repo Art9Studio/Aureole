@@ -1,16 +1,6 @@
 package storage
 
-import (
-	"gouth/config"
-)
-
-type ConnectionString interface {
-	// String returns the connection url that is going to be passed to the adapter
-	String() string
-
-	// AdapterName return the adapter name, that was used to set up connection
-	AdapterName() string
-}
+type RawConnectionData = map[string]interface{}
 
 // ConnectionConfig represents a parsed connection url
 type ConnectionConfig interface {
@@ -19,12 +9,4 @@ type ConnectionConfig interface {
 
 	// AdapterName return the adapter name, that was used to set up connection
 	AdapterName() string
-}
-
-func MakeConfig(conf config.ConnectionConfig) ConnectionConfig {
-	switch conf.Driver {
-	case "postgresql":
-		return conf.ToPostgresql(conf)
-	}
-	return nil
 }

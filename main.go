@@ -1,12 +1,11 @@
 package main
 
 import (
-	"gouth/config"
 	"io/ioutil"
 	"log"
 )
 
-var conf config.ProjectConfig
+var conf ProjectConfig
 
 func main() {
 	data, err := ioutil.ReadFile("config.yaml")
