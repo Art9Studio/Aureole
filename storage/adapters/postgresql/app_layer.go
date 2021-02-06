@@ -20,7 +20,7 @@ func (s *Session) IsCollExists(collConf storage.CollectionConfig) (bool, error) 
 }
 
 // CreateUserCollection creates user collection with traits passed by UserCollectionConfig
-func (s *Session) CreateUserColl(collConf storage.UserCollectionConfig) error {
+func (s *Session) CreateUserColl(collConf storage.UserCollConfig) error {
 	// TODO: check types of fields
 	sql := fmt.Sprintf(
 		`create table %s
@@ -41,7 +41,7 @@ func (s *Session) CreateUserColl(collConf storage.UserCollectionConfig) error {
 }
 
 // InsertUser inserts user entity in the user collection
-func (s *Session) InsertUser(collConf storage.UserCollectionConfig, insUserData storage.InsertionUserData) (storage.JSONCollResult, error) {
+func (s *Session) InsertUser(collConf storage.UserCollConfig, insUserData storage.InsertionUserData) (storage.JSONCollResult, error) {
 	// TODO: make possible to be UserID not only string
 	sql := fmt.Sprintf(
 		"insert into %s (%s, %s) values ('%s', '%s') returning %s;",

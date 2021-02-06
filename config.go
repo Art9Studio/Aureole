@@ -23,18 +23,10 @@ type AppConfig struct {
 
 // AuthConfig represents settings for authentication
 type AuthConfig struct {
-	UseCustomColl bool           `yaml:"use_custom_collection"`
-	UserColl      UserCollConfig `yaml:"user_collection"`
-	Login         LoginConfig    `yaml:"login"`
-	Register      RegisterConfig `yaml:"register"`
-}
-
-// UserCollConfig represents settings for collection used to store users
-type UserCollConfig struct {
-	Name        string `yaml:"name"`
-	PK          string `yaml:"pk,omitempty"`
-	UserID      string `yaml:"user_id"`
-	UserConfirm string `yaml:"user_confirm"`
+	UseCustomColl bool                   `yaml:"use_custom_collection"`
+	UserColl      storage.UserCollConfig `yaml:"user_collection"`
+	Login         LoginConfig            `yaml:"login"`
+	Register      RegisterConfig         `yaml:"register"`
 }
 
 // LoginConfig represents settings for logging into account
@@ -81,15 +73,10 @@ func (a *AppConfig) init() {
 
 func (a *AppConfig) initUserColl() error {
 	if !a.Auth.UseCustomColl {
-		a.Auth.UserColl = UserCollConfig{
-			Name:        "users",
-			PK:          "id",
-			UserID:      "username",
-			UserConfirm: "password",
-		}
+		a.Auth.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
 
-	isExists, err := a.Session.IsCollExists(a.Auth.UserColl)
+	isExists, err := a.Session.IsCollExists(a.Auth.UserColl.CollConfig)
 	if err != nil {
 		return err
 	}
