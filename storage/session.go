@@ -14,10 +14,10 @@ type Session interface {
 	Ping() error
 
 	// RawExec executes the given sql query with no returning results
-	RawExec(string) error
+	RawExec(string, ...interface{}) error
 
 	// RawQuery executes the given sql query and returns results
-	RawQuery(string) (JSONCollResult, error)
+	RawQuery(string, ...interface{}) (JSONCollResult, error)
 
 	// Read
 	Read(string) (JSONCollResult, error)

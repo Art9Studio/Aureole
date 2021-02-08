@@ -37,7 +37,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	defer sess.Close()
 
 	// FIELD WITH NO KEYS
-	res, err := sess.RawQuery("select username from users where id=1;")
+	res, err := sess.RawQuery("select username from users where id=$1;", 1)
 	if err != nil {
 		t.Fatalf("raw query (field, no keys): %v", err)
 	}
@@ -49,7 +49,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	// FIELDS WITH KEYS
-	res, err = sess.RawQuery("select row_to_json(t) from (select username from users where id=1) t;")
+	res, err = sess.RawQuery("select row_to_json(t) from (select username from users where id=$1) t;", 1)
 	if err != nil {
 		t.Fatalf("raw query (fields, keys): %v", err)
 	}
@@ -61,7 +61,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	// FIELD ARRAY WITH NO KEYS
-	res, err = sess.RawQuery("select json_agg(t.id) from (select p.id from users join posts p on users.id = p.user_id where users.id=1) t;")
+	res, err = sess.RawQuery("select json_agg(t.id) from (select p.id from users join posts p on users.id = p.user_id where users.id=$1) t;", 1)
 	if err != nil {
 		t.Fatalf("raw query (field arr, no keys): %v", err)
 	}
@@ -73,7 +73,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	// FIELD ARRAY WITH KEYS
-	res, err = sess.RawQuery("select json_agg(t) from (select p.id from users join posts p on users.id = p.user_id where users.id=1) t;")
+	res, err = sess.RawQuery("select json_agg(t) from (select p.id from users join posts p on users.id = p.user_id where users.id=$1) t;", 1)
 	if err != nil {
 		t.Fatalf("raw query (field arr, keys): %v", err)
 	}
@@ -85,7 +85,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	// ROW WITH NO KEYS
-	res, err = sess.RawQuery("select json_build_array(username, password) from users where id=1;")
+	res, err = sess.RawQuery("select json_build_array(username, password) from users where id=$1;", 1)
 	if err != nil {
 		t.Fatalf("raw query (row, no keys): %v", err)
 	}
@@ -97,7 +97,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	// ROW WITH KEYS
-	res, err = sess.RawQuery("select row_to_json(t) from (select username, password from users where id=1) t;")
+	res, err = sess.RawQuery("select row_to_json(t) from (select username, password from users where id=$1) t;", 1)
 	if err != nil {
 		t.Fatalf("raw query (row, keys): %v", err)
 	}
@@ -109,7 +109,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	// ROW ARRAY WITH NO KEYS
-	res, err = sess.RawQuery("select json_agg(json_build_array(p.id, p.content))  from users join posts p on users.id = p.user_id where users.id=1;")
+	res, err = sess.RawQuery("select json_agg(json_build_array(p.id, p.content))  from users join posts p on users.id = p.user_id where users.id=$1;", 1)
 	if err != nil {
 		t.Fatalf("raw query (row arr, no keys): %v", err)
 	}
@@ -121,7 +121,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	//ROW ARRAY WITH KEYS
-	res, err = sess.RawQuery("select json_agg(t) from (select p.id, p.content from users join posts p on users.id = p.user_id where users.id=1 limit 1) t;")
+	res, err = sess.RawQuery("select json_agg(t) from (select p.id, p.content from users join posts p on users.id = p.user_id where users.id=$1 limit 1) t;", 1)
 	if err != nil {
 		t.Fatalf("raw query (row arr, keys): %v", err)
 	}

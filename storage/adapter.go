@@ -28,7 +28,7 @@ func RegisterAdapter(name string, a Adapter) {
 	defer adaptersMU.Unlock()
 
 	if name == "" {
-		panic("adapter name can't be empty")
+		panic("adapter Name can't be empty")
 	}
 
 	if _, ok := adapters[name]; ok {

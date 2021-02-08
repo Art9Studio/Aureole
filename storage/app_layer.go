@@ -1,19 +1,20 @@
 package storage
 
 type CollConfig struct {
-	name string `yaml:"name"`
-	pk   string `yaml:"pk,omitempty"`
+	Name string `yaml:"name"`
+	Pk   string `yaml:"pk,omitempty"`
 }
 
 type UserCollConfig struct {
-	CollConfig
-	userID      string `yaml:"user_id"`
-	userConfirm string ` yaml:"user_confirm"`
+	Name        string `yaml:"name"`
+	Pk          string `yaml:"pk,omitempty"`
+	UserUnique  string `yaml:"user_unique"`
+	UserConfirm string `yaml:"user_confirm"`
 }
 
 type InsertUserData struct {
-	userID      string
-	userConfirm string
+	UserUnique  interface{}
+	UserConfirm interface{}
 }
 
 type Application interface {
@@ -29,34 +30,21 @@ type Application interface {
 	GetUserPassword() error
 }
 
-func NewUserCollConfig(name string, pk string, userID string, userConfirm string) *UserCollConfig {
-	return &UserCollConfig{CollConfig: CollConfig{name: name, pk: pk}, userID: userID, userConfirm: userConfirm}
+func NewCollConfig(name string, pk string) *CollConfig {
+	return &CollConfig{Name: name, Pk: pk}
 }
 
-func (u UserCollConfig) Name() string {
-	return u.name
+func NewUserCollConfig(name string, pk string, userUnique string, userConfirm string) *UserCollConfig {
+	return &UserCollConfig{Name: name, Pk: pk, UserUnique: userUnique, UserConfirm: userConfirm}
 }
 
-func (u UserCollConfig) PK() string {
-	return u.pk
+func NewInsertUserData(userUnique string, userConfirm string) *InsertUserData {
+	return &InsertUserData{UserUnique: userUnique, UserConfirm: userConfirm}
 }
 
-func (u UserCollConfig) UserID() string {
-	return u.userID
-}
-
-func (u UserCollConfig) UserConfirm() string {
-	return u.userConfirm
-}
-
-func NewInsertUserData(userID string, userConfirm string) *InsertUserData {
-	return &InsertUserData{userID: userID, userConfirm: userConfirm}
-}
-
-func (i InsertUserData) UserID() string {
-	return i.userID
-}
-
-func (i InsertUserData) UserConfirm() string {
-	return i.userConfirm
+func (conf UserCollConfig) ToCollConfig() CollConfig {
+	return CollConfig{
+		Name: conf.Name,
+		Pk:   conf.Pk,
+	}
 }

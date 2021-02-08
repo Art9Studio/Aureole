@@ -2,9 +2,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"gouth/storage"
-	"k8s.io/client-go/util/jsonpath"
+	"net/http"
 )
 
 // initRouter initializes router and creates routes for each application
@@ -19,10 +18,49 @@ func initRouter() *gin.Engine {
 			})
 
 			appR.POST("/register", func(c *gin.Context) {
-				var user User
-				err := c.ShouldBindWith(&user, binding.Form)
+				var registerData interface{}
+				err := c.BindJSON(&registerData)
+				if err != nil {
+					c.Error(err)
+					c.AbortWithStatusJSON(http.StatusInternalServerError, err)
+				}
 
-				_, _ = app.Session.InsertUser(app.Auth.UserColl, *storage.NewInsertUserData("1", "password"))
+				var registerConfig = app.Auth.Register
+				mapKeys := registerConfig.Fields
+
+				userUnique, err := GetJSONPath(mapKeys["user_unique"], registerData)
+				if err != nil {
+					c.Error(err)
+					c.AbortWithStatusJSON(
+						http.StatusInternalServerError,
+						map[string]string{"code": "user_unique didn't passed"},
+					)
+					return
+				}
+
+				userConfirm, err := GetJSONPath(mapKeys["user_confirm"], registerData)
+				if err != nil {
+					c.Error(err)
+					c.AbortWithStatusJSON(
+						http.StatusInternalServerError,
+						map[string]string{"code": "user_confirm didn't passed"},
+					)
+					return
+				}
+
+				res, err := app.Session.InsertUser(
+					*app.Auth.UserColl,
+					*storage.NewInsertUserData(userUnique.(string), userConfirm.(string)),
+				)
+				if err != nil {
+					c.AbortWithStatus(http.StatusInternalServerError)
+				}
+
+				if registerConfig.LoginAfter {
+					c.JSON(http.StatusOK, map[string]string{"token": "jwt"})
+					return
+				}
+				c.JSON(http.StatusOK, res)
 			})
 		}
 	}

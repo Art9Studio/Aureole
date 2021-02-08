@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"gouth/storage"
 	"log"
 
@@ -23,16 +24,16 @@ type AppConfig struct {
 
 // AuthConfig represents settings for authentication
 type AuthConfig struct {
-	UseCustomColl bool                   `yaml:"use_custom_collection"`
-	UserColl      storage.UserCollConfig `yaml:"user_collection"`
-	Login         LoginConfig            `yaml:"login"`
-	Register      RegisterConfig         `yaml:"register"`
+	UseExistentColl bool                    `yaml:"use_existent_collection"`
+	UserColl        *storage.UserCollConfig `yaml:"user_collection"`
+	Login           LoginConfig             `yaml:"login"`
+	Register        RegisterConfig          `yaml:"register"`
 }
 
 // LoginConfig represents settings for logging into account
 type LoginConfig struct {
-	Fields  map[string]string `yaml:"fields"`
 	Payload map[string]string `yaml:"payload"`
+	Fields  map[string]string `yaml:"fields"`
 }
 
 // RegisterConfig represents settings for registering account
@@ -72,19 +73,20 @@ func (a *AppConfig) init() {
 }
 
 func (a *AppConfig) initUserColl() error {
-	if !a.Auth.UseCustomColl {
+	if a.Auth.UserColl == nil {
 		a.Auth.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
-
-	isExists, err := a.Session.IsCollExists(a.Auth.UserColl.CollConfig)
+	isExists, err := a.Session.IsCollExists(a.Auth.UserColl.ToCollConfig())
 	if err != nil {
 		return err
 	}
 
-	if !isExists {
-		if err = a.Session.CreateUserColl(a.Auth.UserColl); err != nil {
+	if !a.Auth.UseExistentColl && !isExists {
+		if err = a.Session.CreateUserColl(*a.Auth.UserColl); err != nil {
 			return err
 		}
+	} else if a.Auth.UseExistentColl && !isExists {
+		return errors.New("user collection is not found")
 	}
 
 	return nil

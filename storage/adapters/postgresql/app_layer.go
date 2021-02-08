@@ -6,10 +6,10 @@ import (
 )
 
 // IsCollExists checks whether the given collection exists
-func (s *Session) IsCollExists(collConf storage.CollectionConfig) (bool, error) {
+func (s *Session) IsCollExists(collConf storage.CollConfig) (bool, error) {
 	sql := fmt.Sprintf(
-		"select exists(select res from (select to_regclass('%s')) as res where res is not null);",
-		collConf.Name())
+		"select exists (select from pg_tables where schemaname = 'public' AND tablename = '%s');",
+		collConf.Name)
 	res, err := s.RawQuery(sql)
 
 	if err != nil {
@@ -22,36 +22,25 @@ func (s *Session) IsCollExists(collConf storage.CollectionConfig) (bool, error) 
 // CreateUserCollection creates user collection with traits passed by UserCollectionConfig
 func (s *Session) CreateUserColl(collConf storage.UserCollConfig) error {
 	// TODO: check types of fields
-	sql := fmt.Sprintf(
-		`create table %s
-		(%s serial primary key,
-		%s varchar(50) not null unique,
-		%s varchar(50) not null);`,
-		collConf.Name(),
-		collConf.PK(),
-		collConf.UserID(),
-		collConf.UserConfirm(),
+	return s.RawExec(`create table $1
+		($2 serial primary key,
+		$3 text not null unique,
+		$4 text not null);`,
+		collConf.Name,
+		collConf.Pk,
+		collConf.UserUnique,
+		collConf.UserConfirm,
 	)
-
-	if err := s.RawExec(sql); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // InsertUser inserts user entity in the user collection
-func (s *Session) InsertUser(collConf storage.UserCollConfig, insUserData storage.InsertionUserData) (storage.JSONCollResult, error) {
-	// TODO: make possible to be UserID not only string
-	sql := fmt.Sprintf(
-		"insert into %s (%s, %s) values ('%s', '%s') returning %s;",
-		collConf.Name(),
-		collConf.UserID(), collConf.UserConfirm(),
-		insUserData.UserID(), insUserData.UserConfirm(),
-		collConf.PK(),
+func (s *Session) InsertUser(collConf storage.UserCollConfig, insUserData storage.InsertUserData) (storage.JSONCollResult, error) {
+	return s.RawQuery("insert into $1 ($2, $3) values ($4, $5) returning $6;",
+		collConf.Name,
+		collConf.UserUnique, collConf.UserConfirm,
+		insUserData.UserUnique, insUserData.UserConfirm,
+		collConf.Pk,
 	)
-
-	return s.RawQuery(sql)
 }
 
 func (s *Session) GetUserPassword() error {

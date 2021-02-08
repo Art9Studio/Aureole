@@ -10,7 +10,7 @@ func Open(data RawConnData) (Session, error) {
 	if connConf, ok := data["connection_config"].(map[string]interface{}); ok {
 		adapterName, ok := connConf["adapter"].(string)
 		if !ok {
-			return nil, errors.New("invalid adapter name")
+			return nil, errors.New("invalid adapter Name")
 		}
 
 		adapter, err := GetAdapter(adapterName)
