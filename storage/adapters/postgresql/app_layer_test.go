@@ -41,10 +41,19 @@ func Test_Session_CreateUserColl(t *testing.T) {
 	defer sess.Close()
 
 	err = sess.CreateUserColl(*storage.NewUserCollConfig("users", "id", "username", "password"))
-	assert.Error(t, err, "Name users already exists")
+	assert.Contains(t, err.Error(), "already exists")
 
 	err = sess.CreateUserColl(*storage.NewUserCollConfig("other", "id", "username", "password"))
 	assert.NoError(t, err)
+
+	err = sess.CreateUserColl(*storage.NewUserCollConfig("); drop table other; --", "id", "username", "password"))
+	assert.NoError(t, err)
+
+	isOtherExist, err := sess.IsCollExists(*storage.NewCollConfig("other", "id"))
+	assert.True(t, isOtherExist)
+
+	isDropExist, err := sess.IsCollExists(*storage.NewCollConfig("); drop table other; --", "id"))
+	assert.True(t, isDropExist)
 }
 
 func Test_Session_InsertUser(t *testing.T) {
@@ -63,6 +72,5 @@ func Test_Session_InsertUser(t *testing.T) {
 		*storage.NewInsertUserData("hello", "secret"),
 	)
 	assert.NoError(t, err)
-
 	fmt.Printf("new id: %v\n", res)
 }

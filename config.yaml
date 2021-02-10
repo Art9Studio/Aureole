@@ -14,16 +14,16 @@ apps:
         user_confirm: "password"
       login:
         fields:
-          user_unique: "$.name"
-          user_confirm: "$.passwd"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
         payload:
           "$.userID": "id"
       register:
-        login_after: true
+        login_after: false
         fields:
-          user_unique: "$.name"
-          user_confirm: "$.passwd"
-          email: "$.email"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
+          email: "{$.email}"
 #  two:
 #    path_prefix: "/two"
 #    storage:
@@ -68,13 +68,13 @@ apps:
         user_confirm: "password"
       login:
         fields:
-          user_unique: "$.name"
-          user_confirm: "$.passwd"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
         payload:
           "$.userID": "id"
       register:
         login_after: true
         fields:
-          user_unique: "$.name"
-          user_confirm: "$.passwd"
-          email: "$.email"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
+          email: "{$.email}"

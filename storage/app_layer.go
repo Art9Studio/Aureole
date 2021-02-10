@@ -38,7 +38,7 @@ func NewUserCollConfig(name string, pk string, userUnique string, userConfirm st
 	return &UserCollConfig{Name: name, Pk: pk, UserUnique: userUnique, UserConfirm: userConfirm}
 }
 
-func NewInsertUserData(userUnique string, userConfirm string) *InsertUserData {
+func NewInsertUserData(userUnique interface{}, userConfirm interface{}) *InsertUserData {
 	return &InsertUserData{UserUnique: userUnique, UserConfirm: userConfirm}
 }
 

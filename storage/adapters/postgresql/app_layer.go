@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"fmt"
+	"github.com/jackc/pgx/v4"
 	"gouth/storage"
 )
 
@@ -22,27 +23,30 @@ func (s *Session) IsCollExists(collConf storage.CollConfig) (bool, error) {
 // CreateUserCollection creates user collection with traits passed by UserCollectionConfig
 func (s *Session) CreateUserColl(collConf storage.UserCollConfig) error {
 	// TODO: check types of fields
-	return s.RawExec(`create table $1
-		($2 serial primary key,
-		$3 text not null unique,
-		$4 text not null);`,
-		collConf.Name,
-		collConf.Pk,
-		collConf.UserUnique,
-		collConf.UserConfirm,
-	)
+	sql := fmt.Sprintf(`create table %s
+                       (%s serial primary key,
+                       %s text not null unique,
+                       %s text not null);`,
+		Sanitize(collConf.Name),
+		Sanitize(collConf.Pk),
+		Sanitize(collConf.UserUnique),
+		Sanitize(collConf.UserConfirm))
+	return s.RawExec(sql)
 }
 
 // InsertUser inserts user entity in the user collection
 func (s *Session) InsertUser(collConf storage.UserCollConfig, insUserData storage.InsertUserData) (storage.JSONCollResult, error) {
-	return s.RawQuery("insert into $1 ($2, $3) values ($4, $5) returning $6;",
-		collConf.Name,
-		collConf.UserUnique, collConf.UserConfirm,
-		insUserData.UserUnique, insUserData.UserConfirm,
-		collConf.Pk,
-	)
+	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning $3;",
+		Sanitize(collConf.Name),
+		Sanitize(collConf.UserUnique),
+		Sanitize(collConf.UserConfirm))
+	return s.RawQuery(sql, insUserData.UserUnique, insUserData.UserConfirm, collConf.Pk)
 }
 
 func (s *Session) GetUserPassword() error {
 	panic("")
+}
+
+func Sanitize(ident string) string {
+	return pgx.Identifier.Sanitize([]string{ident})
 }

@@ -13,6 +13,7 @@ func GetJSONPath(p string, in interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't parse GetJSONPath %s", p)
 	}
+
 	results, err := jp.FindResults(in)
 	if err != nil {
 		return nil, errors.Wrap(err, "executing GetJSONPath failed")
@@ -46,10 +47,11 @@ func GetJSONPath(p string, in interface{}) (interface{}, error) {
 
 func parsePath(p string) (*jsonpath.JSONPath, error) {
 	jp := jsonpath.New("")
-	err := jp.Parse("{" + p + "}")
+	err := jp.Parse(p)
 	if err != nil {
 		return nil, err
 	}
+
 	jp.AllowMissingKeys(false)
 	return jp, nil
 }
@@ -58,6 +60,5 @@ func extractResult(v reflect.Value) (interface{}, error) {
 	if v.CanInterface() {
 		return v.Interface(), nil
 	}
-
 	return nil, errors.Errorf("GetJSONPath couldn't access field")
 }

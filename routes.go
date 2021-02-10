@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gouth/storage"
 	"net/http"
+	"strings"
 )
 
 // initRouter initializes router and creates routes for each application
@@ -14,53 +15,74 @@ func initRouter() *gin.Engine {
 	for _, app := range conf.Apps {
 		appR := v.Group(app.PathPrefix)
 		{
-			appR.GET("/", func(c *gin.Context) {
-			})
-
 			appR.POST("/register", func(c *gin.Context) {
-				var registerData interface{}
-				err := c.BindJSON(&registerData)
-				if err != nil {
-					c.Error(err)
-					c.AbortWithStatusJSON(http.StatusInternalServerError, err)
-				}
+				var regData interface{}
 
-				var registerConfig = app.Auth.Register
-				mapKeys := registerConfig.Fields
-
-				userUnique, err := GetJSONPath(mapKeys["user_unique"], registerData)
-				if err != nil {
-					c.Error(err)
+				if err := c.BindJSON(&regData); err != nil {
 					c.AbortWithStatusJSON(
-						http.StatusInternalServerError,
-						map[string]string{"code": "user_unique didn't passed"},
-					)
+						http.StatusBadRequest,
+						gin.H{"error": "invalid json"})
 					return
 				}
 
-				userConfirm, err := GetJSONPath(mapKeys["user_confirm"], registerData)
+				var regConfig = app.Auth.Register
+				mapKeys := regConfig.Fields
+
+				userUnique, err := GetJSONPath(mapKeys["user_unique"], regData)
 				if err != nil {
-					c.Error(err)
 					c.AbortWithStatusJSON(
-						http.StatusInternalServerError,
-						map[string]string{"code": "user_confirm didn't passed"},
+						http.StatusBadRequest,
+						gin.H{"error": "user_unique didn't passed"},
 					)
 					return
 				}
+				if userUnique, ok := userUnique.(string); ok {
+					if strings.TrimSpace(userUnique) == "" {
+						c.AbortWithStatusJSON(
+							http.StatusBadRequest,
+							gin.H{"error": "user_unique can't be blank"},
+						)
+						return
+					}
+				}
+
+				userConfirm, err := GetJSONPath(mapKeys["user_confirm"], regData)
+				if err != nil {
+					c.AbortWithStatusJSON(
+						http.StatusBadRequest,
+						gin.H{"error": "user_confirm didn't passed"},
+					)
+					return
+				}
+				if userConfirm, ok := userConfirm.(string); ok {
+					if strings.TrimSpace(userConfirm) == "" {
+						c.AbortWithStatusJSON(
+							http.StatusBadRequest,
+							gin.H{"error": "user_confirm can't be blank"},
+						)
+						return
+					}
+				}
+
+				// TODO: add a user existence check
 
 				res, err := app.Session.InsertUser(
 					*app.Auth.UserColl,
-					*storage.NewInsertUserData(userUnique.(string), userConfirm.(string)),
+					*storage.NewInsertUserData(userUnique, userConfirm),
 				)
 				if err != nil {
-					c.AbortWithStatus(http.StatusInternalServerError)
-				}
-
-				if registerConfig.LoginAfter {
-					c.JSON(http.StatusOK, map[string]string{"token": "jwt"})
+					c.AbortWithStatusJSON(
+						http.StatusInternalServerError,
+						gin.H{"error": err.Error()})
 					return
 				}
-				c.JSON(http.StatusOK, res)
+
+				if regConfig.LoginAfter {
+					c.JSON(http.StatusOK, gin.H{"token": "jwt"})
+					return
+				}
+
+				c.JSON(http.StatusOK, gin.H{"id": res})
 			})
 		}
 	}
