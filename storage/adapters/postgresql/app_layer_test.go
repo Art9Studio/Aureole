@@ -3,62 +3,74 @@ package postgresql
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	adapters "gouth/storage"
+	"gouth/storage"
 	"testing"
 )
 
-func TestIsUserCollectionExists(t *testing.T) {
-	connUrl := "postgresql://root:password@localhost:5432/test"
+func Test_Session_IsCollExists(t *testing.T) {
+	rawConnData := storage.RawConnData{
+		"connection_url": "postgresql://root:password@localhost:5432/test",
+	}
 
-	sess, err := adapters.Open(ConnectionString{connUrl})
+	sess, err := storage.Open(rawConnData)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
 	defer sess.Close()
 
-	res, err := sess.IsUserCollectionExists(
-		UserCollectionConfig{collection: "users", pk: "id", userId: "username", userConfirm: "password"})
+	res, err := sess.IsCollExists(
+		*storage.NewCollConfig("users", "id"))
 	assert.NoError(t, err)
 	assert.Equal(t, res, true)
 
-	res, err = sess.IsUserCollectionExists(
-		UserCollectionConfig{collection: "other", pk: "id", userId: "username", userConfirm: "password"})
+	res, err = sess.IsCollExists(
+		*storage.NewCollConfig("other", "id"))
 	assert.NoError(t, err)
 	assert.Equal(t, res, false)
 }
 
-func TestCreateUserCollection(t *testing.T) {
-	connUrl := "postgresql://root:password@localhost:5432/test"
+func Test_Session_CreateUserColl(t *testing.T) {
+	rawConnData := storage.RawConnData{
+		"connection_url": "postgresql://root:password@localhost:5432/test",
+	}
 
-	sess, err := adapters.Open(ConnectionString{connUrl})
+	sess, err := storage.Open(rawConnData)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
 	defer sess.Close()
 
-	// ALREADY EXISTS
-	err = sess.CreateUserCollection(UserCollectionConfig{collection: "users", pk: "id", userId: "username", userConfirm: "password"})
-	assert.Error(t, err, "Collection users already exists")
+	err = sess.CreateUserColl(*storage.NewUserCollConfig("users", "id", "username", "password"))
+	assert.Contains(t, err.Error(), "already exists")
 
-	// SUCCESS
-	err = sess.CreateUserCollection(UserCollectionConfig{collection: "other", pk: "id", userId: "username", userConfirm: "password"})
+	err = sess.CreateUserColl(*storage.NewUserCollConfig("other", "id", "username", "password"))
 	assert.NoError(t, err)
+
+	err = sess.CreateUserColl(*storage.NewUserCollConfig("); drop table other; --", "id", "username", "password"))
+	assert.NoError(t, err)
+
+	isOtherExist, err := sess.IsCollExists(*storage.NewCollConfig("other", "id"))
+	assert.True(t, isOtherExist)
+
+	isDropExist, err := sess.IsCollExists(*storage.NewCollConfig("); drop table other; --", "id"))
+	assert.True(t, isDropExist)
 }
 
-func TestInsertUser(t *testing.T) {
-	connUrl := "postgresql://root:password@localhost:5432/test"
+func Test_Session_InsertUser(t *testing.T) {
+	rawConnData := storage.RawConnData{
+		"connection_url": "postgresql://root:password@localhost:5432/test",
+	}
 
-	sess, err := adapters.Open(ConnectionString{connUrl})
+	sess, err := storage.Open(rawConnData)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
 	defer sess.Close()
 
 	res, err := sess.InsertUser(
-		UserCollectionConfig{collection: "users", pk: "id", userId: "username", userConfirm: "password"},
-		InsertUserData{userId: "hello", userConfirm: "secret_password"},
+		*storage.NewUserCollConfig("users", "id", "username", "password"),
+		*storage.NewInsertUserData("hello", "secret"),
 	)
 	assert.NoError(t, err)
-
 	fmt.Printf("new id: %v\n", res)
 }

@@ -1,21 +1,44 @@
 package storage
 
-// Open attempts to establish a connection with a database by ConnectionString
-func Open(connUrl ConnectionString) (Session, error) {
-	a, err := GetAdapter(connUrl.AdapterName())
-	if err != nil {
-		return nil, err
+import (
+	"errors"
+	"strings"
+)
+
+// Open attempts to establish a connection with a database
+func Open(data RawConnData) (Session, error) {
+	if connConf, ok := data["connection_config"].(map[string]interface{}); ok {
+		adapterName, ok := connConf["adapter"].(string)
+		if !ok {
+			return nil, errors.New("invalid adapter Name")
+		}
+
+		adapter, err := GetAdapter(adapterName)
+		if err != nil {
+			return nil, err
+		}
+
+		config, err := adapter.NewConfig(connConf)
+		if err != nil {
+			return nil, err
+		}
+
+		return adapter.OpenConfig(config)
+	} else if connStr, ok := data["connection_url"].(string); ok && connStr != "" {
+		adapterName := strings.Split(connStr, "://")[0]
+
+		adapter, err := GetAdapter(adapterName)
+		if err != nil {
+			return nil, err
+		}
+
+		config, err := adapter.ParseUrl(connStr)
+		if err != nil {
+			return nil, err
+		}
+
+		return adapter.OpenConfig(config)
+
 	}
-
-	return a.OpenUrl(connUrl)
-}
-
-// OpenConfig attempts to establish a connection with a database by ConnectionConfig
-func OpenConfig(connConf ConnectionConfig) (Session, error) {
-	a, err := GetAdapter(connConf.AdapterName())
-	if err != nil {
-		return nil, err
-	}
-
-	return a.OpenConfig(connConf)
+	return nil, errors.New("missing connection data")
 }

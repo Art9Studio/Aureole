@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v4"
-	adapters "gouth/storage"
+	"gouth/storage"
 )
 
 // Session represents a postgresql database
 type Session struct {
 	ctx      context.Context
 	conn     *pgx.Conn
-	connConf adapters.ConnectionConfig
+	connConf storage.ConnConfig
 	// for abstract queries
-	relInfo map[adapters.CollectionPair]adapters.RelInfo
+	relInfo map[storage.CollPair]storage.RelInfo
 }
 
 // Open creates connection with postgresql database
@@ -38,7 +38,7 @@ func (s *Session) Open() error {
 }
 
 // ConnectionConfig returns the connection url that was used to set up the adapter
-func (s *Session) ConnConfig() adapters.ConnectionConfig {
+func (s *Session) ConnConfig() storage.ConnConfig {
 	return s.connConf
 }
 

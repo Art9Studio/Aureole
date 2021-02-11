@@ -1,26 +1,50 @@
 package storage
 
-type UserCollectionConfig interface {
-	Collection() string
-	Pk() string
-	UserId() string
-	UserConfirm() string
+type CollConfig struct {
+	Name string `yaml:"name"`
+	Pk   string `yaml:"pk,omitempty"`
 }
 
-type InsertUserData interface {
-	UserId() string
-	UserConfirm() string
+type UserCollConfig struct {
+	Name        string `yaml:"name"`
+	Pk          string `yaml:"pk,omitempty"`
+	UserUnique  string `yaml:"user_unique"`
+	UserConfirm string `yaml:"user_confirm"`
+}
+
+type InsertUserData struct {
+	UserUnique  interface{}
+	UserConfirm interface{}
 }
 
 type Application interface {
-	// IsUserCollectionExists checks whether the given collection exists
-	IsUserCollectionExists(UserCollectionConfig) (bool, error)
+	// IsCollExists checks whether the given collection exists
+	IsCollExists(CollConfig) (bool, error)
 
-	// CreateUserCollection creates user collection with traits passed by UserCollectionConfig
-	CreateUserCollection(UserCollectionConfig) error
+	// CreateUserColl creates user collection with traits passed by UserCollectionConfig
+	CreateUserColl(UserCollConfig) error
 
 	// InsertUser inserts user entity in the user collection
-	InsertUser(UserCollectionConfig, InsertUserData) (JSONCollectionResult, error)
+	InsertUser(UserCollConfig, InsertUserData) (JSONCollResult, error)
 
 	GetUserPassword() error
+}
+
+func NewCollConfig(name string, pk string) *CollConfig {
+	return &CollConfig{Name: name, Pk: pk}
+}
+
+func NewUserCollConfig(name string, pk string, userUnique string, userConfirm string) *UserCollConfig {
+	return &UserCollConfig{Name: name, Pk: pk, UserUnique: userUnique, UserConfirm: userConfirm}
+}
+
+func NewInsertUserData(userUnique interface{}, userConfirm interface{}) *InsertUserData {
+	return &InsertUserData{UserUnique: userUnique, UserConfirm: userConfirm}
+}
+
+func (conf UserCollConfig) ToCollConfig() CollConfig {
+	return CollConfig{
+		Name: conf.Name,
+		Pk:   conf.Pk,
+	}
 }

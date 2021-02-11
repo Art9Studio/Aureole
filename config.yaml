@@ -6,51 +6,51 @@ apps:
     storage:
       connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
     auth:
-      use_custom_collection: true
+      use_existent_collection: false
       user_collection:
         name: "users"
         pk: "id"
-        user_id: "username"
+        user_unique: "username"
         user_confirm: "password"
       login:
         fields:
-          "$.name": "username"
-          "$.passwd": "password"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
         payload:
           "$.userID": "id"
       register:
-        login_after: true
+        login_after: false
         fields:
-          "$.name": "username"
-          "$.passwd": "password"
-          "$.email": "email"
-  two:
-    path_prefix: "/two"
-    storage:
-      connection_url: "mongodb://admin:admin@localhost:27017/gouth"
-    auth:
-      use_custom_collection: true
-      user_collection:
-        name: "users"
-        user_id: "username"
-        user_confirm: "password"
-      login:
-        fields:
-          "$.name": "username"
-          "$.passwd": "password"
-        payload:
-          "$.userID": "_id"
-      register:
-        login_after: true
-        fields:
-          "$.name": "username"
-          "$.passwd": "password"
-          "$.email": "email"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
+          email: "{$.email}"
+#  two:
+#    path_prefix: "/two"
+#    storage:
+#      connection_url: "mongodb://admin:admin@localhost:27017/gouth"
+#    auth:
+#      use_existent_collection: true
+#      user_collection:
+#        name: "users"
+#        user_id: "username"
+#        user_confirm: "password"
+#      login:
+#        fields:
+#          user_unique: "$.name"
+#          user_confirm: "$.passwd"
+#        payload:
+#          "$.userID": "id"
+#      register:
+#        login_after: true
+#        fields:
+#          user_unique: "$.name"
+#          user_confirm: "$.passwd"
+#          email: "$.email"
   three:
     path_prefix: "/three"
     storage:
       connection_config:
-        driver: "postgresql"
+        adapter: "postgresql"
         username: "root"
         password: "password"
         host: "localhost"
@@ -60,21 +60,21 @@ apps:
           sslmode: "disable"
           search_path: "public"
     auth:
-      use_custom_collection: true
+      use_existent_collection: true
       user_collection:
         name: "users"
         pk: "id"
-        user_id: "username"
+        user_unique: "username"
         user_confirm: "password"
       login:
         fields:
-          "$.name": "username"
-          "$.passwd": "password"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
         payload:
           "$.userID": "id"
       register:
         login_after: true
         fields:
-          "$.name": "username"
-          "$.passwd": "password"
-          "$.email": "email"
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
+          email: "{$.email}"
