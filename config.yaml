@@ -27,6 +27,7 @@ apps:
     hash:
       algorithm: "argon2"
       settings:
+        mode: "argon2i"
         iterations: 1
         parallelism: 1
         salt_length: 16

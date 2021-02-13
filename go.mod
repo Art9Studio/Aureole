@@ -8,6 +8,7 @@ require (
 	github.com/kr/pretty v0.1.0
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.5.1
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	k8s.io/client-go v11.0.0+incompatible
 )

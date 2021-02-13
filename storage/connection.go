@@ -3,7 +3,7 @@ package storage
 // RawConnData represents unparsed data from config file
 type RawConnData = map[string]interface{}
 
-// ConnConfig represents a parsed connection url
+// ConnConfig represents a parsed connection config
 type ConnConfig interface {
 	// String returns the connection url that is going to be passed to the adapter
 	String() (string, error)
