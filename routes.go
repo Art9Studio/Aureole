@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"gouth/jwt"
 	"gouth/storage"
 	"net/http"
 	"strings"
@@ -25,7 +26,7 @@ func initRouter() *gin.Engine {
 					return
 				}
 
-				var regConfig = app.Auth.Register
+				var regConfig = app.Main.Register
 				mapKeys := regConfig.Fields
 
 				userUnique, err := GetJSONPath(mapKeys["user_unique"], regData)
@@ -67,7 +68,7 @@ func initRouter() *gin.Engine {
 				// TODO: add a user existence check
 
 				res, err := app.Session.InsertUser(
-					*app.Auth.UserColl,
+					*app.Main.UserColl,
 					*storage.NewInsertUserData(userUnique, userConfirm),
 				)
 				if err != nil {
@@ -78,7 +79,9 @@ func initRouter() *gin.Engine {
 				}
 
 				if regConfig.LoginAfter {
-					c.JSON(http.StatusOK, gin.H{"token": "jwt"})
+					token := jwt.IssueToken()
+
+					c.JSON(http.StatusOK, gin.H{"token": token})
 					return
 				}
 

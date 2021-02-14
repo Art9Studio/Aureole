@@ -5,21 +5,28 @@ apps:
     path_prefix: "/one"
     storage:
       connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
-    auth:
+    main:
       use_existent_collection: false
       user_collection:
         name: "users"
         pk: "id"
         user_unique: "username"
         user_confirm: "password"
-      login:
-        fields:
+      authN:
+        password_based:
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
-        payload:
-          "$.userID": "id"
+      authZ:
+        jwt: # todo: add cookie option
+          alg: "RS256"
+          keys:
+            - ./key
+          kid: "docker_registry"
+          payload:
+            "$.userID": "id"
       register:
-        login_after: false
+        login_after: true
+        auth_type: "jwt"
         fields:
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
@@ -60,7 +67,7 @@ apps:
         payload:
           "$.userID": "id"
       register:
-        login_after: true
+        login_after: false
         fields:
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
