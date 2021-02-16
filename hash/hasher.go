@@ -2,10 +2,9 @@ package hash
 
 // Hasher is an interface that defined method for hash implementation
 type Hasher interface {
-	// TODO: think about parameter: interface{} or []byte?
-	// Hash hashes given data
-	Hash(interface{}) ([]byte, error)
+	// Hash returns hashed data encoded by base64
+	Hash(string) (string, error)
 
-	// Compare given plain data with the hash
-	Compare(interface{}, []byte) (bool, error)
+	// Compare compares plain data and hashed data encoded by base64
+	Compare(string, string) (bool, error)
 }

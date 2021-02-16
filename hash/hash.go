@@ -1,15 +1,11 @@
 package hash
 
-func New(algoName string, data RawHashData) (Hasher, error) {
+// New returns desired Hasher depends on the given config
+func New(algoName string, rawConf *RawHashConfig) (Hasher, error) {
 	adapter, err := GetAdapter(algoName)
 	if err != nil {
 		return nil, err
 	}
 
-	conf, err := adapter.NewConfig(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return adapter.GetHasher(conf), nil
+	return adapter.GetHasher(rawConf)
 }

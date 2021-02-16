@@ -10,12 +10,13 @@ var (
 	adaptersMU sync.Mutex
 )
 
-type Adapter interface {
-	//GetHasher returns desired hasher depends on the given config
-	GetHasher(HashConfig) Hasher
+// RawHashConfig represents unparsed config data from config file
+type RawHashConfig = map[string]interface{}
 
-	// NewConfig creates new HashConfig struct from the raw data, parsed from the config file
-	NewConfig(map[string]interface{}) (HashConfig, error)
+// Adapter defines methods for hash adapters
+type Adapter interface {
+	//GetHasher returns desired Hasher depends on the given config
+	GetHasher(*RawHashConfig) (Hasher, error)
 }
 
 // RegisterAdapter register hash adapter

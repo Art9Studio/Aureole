@@ -46,8 +46,8 @@ type RegisterConfig struct {
 
 // HashConfig represents settings for hashing
 type HashConfig struct {
-	Algorithm string           `yaml:"algorithm"`
-	RawHash   hash.RawHashData `yaml:"settings"`
+	Algorithm string             `yaml:"algorithm"`
+	RawHash   hash.RawHashConfig `yaml:"settings"`
 }
 
 // Init loads settings for whole project into global object conf
