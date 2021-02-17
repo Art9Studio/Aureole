@@ -1,6 +1,6 @@
 package argon2
 
-// HashConfig represents parsed hash config from the config file
+// HashConfig represents parsed pwhash config from the config file
 type HashConfig struct {
 	// Algorithm type (argon2i, argon2id)
 	Type string

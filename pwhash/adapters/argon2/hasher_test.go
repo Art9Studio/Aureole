@@ -2,7 +2,6 @@ package argon2
 
 import (
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 )
 
@@ -96,9 +95,9 @@ func TestArgon2_Hash(t *testing.T) {
 			a := Argon2{
 				conf: tt.fields.conf,
 			}
-			got, err := a.Hash(tt.args.data)
+			got, err := a.HashPw(tt.args.data)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Hash() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("HashPw() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			assert.NotEmpty(t, got)
@@ -143,7 +142,7 @@ func TestArgon2_Compare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "argon2i invalid hash",
+			name:   "argon2i invalid pwhash",
 			fields: fields{conf: DefaultConfig},
 			args: args{
 				data: "qwerty",
@@ -183,7 +182,7 @@ func TestArgon2_Compare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "argon2id invalid hash",
+			name:   "argon2id invalid pwhash",
 			fields: fields{conf: DefaultConfig},
 			args: args{
 				data: "qwerty",
@@ -208,47 +207,13 @@ func TestArgon2_Compare(t *testing.T) {
 			a := Argon2{
 				conf: tt.fields.conf,
 			}
-			got, err := a.Compare(tt.args.data, tt.args.hash)
+			got, err := a.ComparePw(tt.args.data, tt.args.hash)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Compare() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ComparePw() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("Compare() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_decodeHash(t *testing.T) {
-	type args struct {
-		hash string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *HashConfig
-		want1   []byte
-		want2   []byte
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := decodeHash(tt.args.hash)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("decodeHash() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("decodeHash() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("decodeHash() got1 = %v, want %v", got1, tt.want1)
-			}
-			if !reflect.DeepEqual(got2, tt.want2) {
-				t.Errorf("decodeHash() got2 = %v, want %v", got2, tt.want2)
+				t.Errorf("ComparePw() got = %v, wantConf %v", got, tt.want)
 			}
 		})
 	}

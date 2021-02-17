@@ -1,4 +1,4 @@
-package hash
+package pwhash
 
 import (
 	"fmt"
@@ -13,13 +13,13 @@ var (
 // RawHashConfig represents unparsed config data from config file
 type RawHashConfig = map[string]interface{}
 
-// Adapter defines methods for hash adapters
+// Adapter defines methods for pwhash adapters
 type Adapter interface {
-	//GetHasher returns desired Hasher depends on the given config
-	GetHasher(*RawHashConfig) (Hasher, error)
+	//GetHasher returns desired PwHasher depends on the given config
+	GetPwHasher(*RawHashConfig) (PwHasher, error)
 }
 
-// RegisterAdapter register hash adapter
+// RegisterAdapter register pwhash adapter
 func RegisterAdapter(name string, a Adapter) {
 	adaptersMU.Lock()
 	defer adaptersMU.Unlock()
@@ -35,7 +35,7 @@ func RegisterAdapter(name string, a Adapter) {
 	adapters[name] = a
 }
 
-// GetAdapter returns hash adapter if it exists
+// GetAdapter returns pwhash adapter if it exists
 func GetAdapter(name string) (Adapter, error) {
 	adaptersMU.Lock()
 	defer adaptersMU.Unlock()

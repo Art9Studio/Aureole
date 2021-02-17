@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"gouth/hash"
+	"gouth/pwhash"
 	"gouth/storage"
 	"log"
 
@@ -21,7 +21,7 @@ type AppConfig struct {
 	Session    storage.Session     `yaml:"-"`
 	RawDB      storage.RawConnData `yaml:"storage"`
 	Auth       AuthConfig          `yaml:"auth"`
-	Hash       HashConfig          `yaml:"hash"`
+	Hash       HashConfig          `yaml:"pwhash"`
 }
 
 // AuthConfig represents settings for authentication
@@ -46,8 +46,8 @@ type RegisterConfig struct {
 
 // HashConfig represents settings for hashing
 type HashConfig struct {
-	Algorithm string             `yaml:"algorithm"`
-	RawHash   hash.RawHashConfig `yaml:"settings"`
+	Algorithm string               `yaml:"algorithm"`
+	RawHash   pwhash.RawHashConfig `yaml:"settings"`
 }
 
 // Init loads settings for whole project into global object conf

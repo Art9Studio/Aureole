@@ -27,7 +27,7 @@ apps:
     hash:
       algorithm: "argon2"
       settings:
-        mode: "argon2i"
+        type: "argon2i"
         iterations: 1
         parallelism: 1
         salt_length: 16
@@ -66,6 +66,9 @@ apps:
           user_confirm: "{$.passwd}"
           email: "{$.email}"
     hash:
-      algorithm: "bcrypt"
+      algorithm: "pbkdf2"
       settings:
-        cost: 10
+        iterations: 1
+        salt_length: 16
+        key_length: 16
+        func: "sha-1"
