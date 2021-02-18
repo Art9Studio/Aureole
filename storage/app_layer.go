@@ -27,7 +27,7 @@ type Application interface {
 	// InsertUser inserts user entity in the user collection
 	InsertUser(UserCollConfig, InsertUserData) (JSONCollResult, error)
 
-	GetUserPassword() error
+	GetUserPassword(UserCollConfig, string) (JSONCollResult, error)
 }
 
 func NewCollConfig(name string, pk string) *CollConfig {

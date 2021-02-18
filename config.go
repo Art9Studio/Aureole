@@ -20,8 +20,8 @@ type AppConfig struct {
 	PathPrefix string              `yaml:"path_prefix"`
 	Session    storage.Session     `yaml:"-"`
 	RawDB      storage.RawConnData `yaml:"storage"`
-	Main       MainConfig          `yaml:"auth"`
-	Hash       HashConfig          `yaml:"pwhash"`
+	Main       MainConfig          `yaml:"main"`
+	Hash       HashConfig          `yaml:"hash"`
 }
 
 // MainConfig represents settings for authentication
@@ -46,6 +46,7 @@ type AuthZConfig struct {
 // RegisterConfig represents settings for registering account
 type RegisterConfig struct {
 	LoginAfter bool              `yaml:"login_after"`
+	AuthType   string            `yaml:"auth_type"`
 	Fields     map[string]string `yaml:"fields"`
 }
 
