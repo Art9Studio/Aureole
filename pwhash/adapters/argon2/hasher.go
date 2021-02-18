@@ -20,7 +20,7 @@ var (
 	ErrIncompatibleVersion = errors.New("argon2: incompatible version of argon2")
 )
 
-// Hash returns a Argon2 pwhash of a plain-text password using the provided algorithm
+// HashPw returns a Argon2 pwhash of a plain-text password using the provided algorithm
 // parameters. The returned pwhash follows the format used by the Argon2 reference
 // C implementation and contains the base64-encoded Argon2 derived key prefixed
 // by the salt and parameters. It looks like this:
@@ -55,7 +55,7 @@ func (a Argon2) HashPw(pw string) (string, error) {
 	return hash, nil
 }
 
-// Compare performs a constant-time comparison between a plain-text password and
+// ComparePw performs a constant-time comparison between a plain-text password and
 // Argon2 pwhash, using the parameters and salt contained in the pwhash.
 // It returns true if they match, otherwise it returns false.
 func (a Argon2) ComparePw(pw string, hash string) (bool, error) {

@@ -6,7 +6,6 @@ import (
 	"crypto/sha512"
 	"fmt"
 	"gouth/pwhash"
-	"hash"
 )
 
 // AdapterName is the internal name of the adapter
@@ -33,7 +32,7 @@ func (a pbkdf2Adapter) GetPwHasher(rawConf *pwhash.RawHashConfig) (pwhash.PwHash
 
 // newConfig creates new HashConfig struct from the raw data, parsed from the config file
 func newConfig(rawConf *pwhash.RawHashConfig) (*HashConfig, error) {
-	requiredKeys := []string{"mode", "iterations", "parallelism", "salt_length", "key_length", "memory"}
+	requiredKeys := []string{"iterations", "salt_length", "key_length", "func"}
 
 	for _, key := range requiredKeys {
 		if _, ok := (*rawConf)[key]; !ok {
@@ -43,25 +42,30 @@ func newConfig(rawConf *pwhash.RawHashConfig) (*HashConfig, error) {
 
 	// TODO: add rawConf validation
 
-	var f func() hash.Hash
-
-	switch (*rawConf)["func"].(string) {
-	case "sha-1":
-		f = sha1.New
-	case "sha-224":
-		f = sha256.New224
-	case "sha-256":
-		f = sha256.New
-	case "sha-384":
-		f = sha512.New384
-	case "sha-512":
-		f = sha512.New
-	}
-
-	return &HashConfig{
+	conf := &HashConfig{
 		Iterations: (*rawConf)["iterations"].(int),
 		SaltLen:    (*rawConf)["salt_length"].(int),
 		KeyLen:     (*rawConf)["key_length"].(int),
-		Func:       f,
-	}, nil
+	}
+
+	funcName := (*rawConf)["func"].(string)
+
+	switch funcName {
+	case "sha1":
+		conf.Func = sha1.New
+	case "sha224":
+		conf.Func = sha256.New224
+	case "sha256":
+		conf.Func = sha256.New
+	case "sha384":
+		conf.Func = sha512.New384
+	case "sha512":
+		conf.Func = sha512.New
+	default:
+		return nil, fmt.Errorf("pbkdf2: function '%s' don't supported", funcName)
+	}
+
+	conf.FuncName = funcName
+
+	return conf, nil
 }

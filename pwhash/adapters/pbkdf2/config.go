@@ -11,6 +11,7 @@ var DefaultConfig = &HashConfig{
 	Iterations: 4096,
 	SaltLen:    16,
 	KeyLen:     32,
+	FuncName:   "sha1",
 	Func:       sha1.New,
 }
 
@@ -31,24 +32,3 @@ type HashConfig struct {
 	// Pseudorandom function used to derive a secure encryption key based on the password
 	Func func() hash.Hash
 }
-
-/*
-func (h HashConfig) FuncName() string {
-	var name string
-
-	switch h.Func {
-	case sha1.New:
-		name = "sha-1"
-	case sha256.New224:
-		name = "sha-224"
-	case sha256.New:
-		name = "sha-256"
-	case sha512.New384:
-		name = "sha-384"
-	case sha512.New:
-		name = "sha-512"
-	}
-
-	return name
-}
-*/
