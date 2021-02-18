@@ -8,6 +8,7 @@ import (
 
 // IsCollExists checks whether the given collection exists
 func (s *Session) IsCollExists(collConf storage.CollConfig) (bool, error) {
+	// TODO: use current schema instead constant 'public'
 	sql := fmt.Sprintf(
 		"select exists (select from pg_tables where schemaname = 'public' AND tablename = '%s');",
 		collConf.Name)
