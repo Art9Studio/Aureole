@@ -114,7 +114,9 @@ func initRouter() *gin.Engine {
 					return
 				}
 
-				userUnique, err := GetJSONPath(app.Main.AuthN.PasswordBased.UserUnique, authData)
+				authConf := app.Main.AuthN
+
+				userUnique, err := GetJSONPath(authConf.PasswordBased.UserUnique, authData)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusBadRequest,
@@ -132,7 +134,7 @@ func initRouter() *gin.Engine {
 					}
 				}
 
-				rawUserConfirm, err := GetJSONPath(app.Main.AuthN.PasswordBased.UserConfirm, authData)
+				rawUserConfirm, err := GetJSONPath(authConf.PasswordBased.UserConfirm, authData)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusBadRequest,
@@ -159,8 +161,7 @@ func initRouter() *gin.Engine {
 					return
 				}
 
-				// TODO: add support for non string user_unique
-				pw, err := app.Session.GetUserPassword(*app.Main.UserColl, userUnique.(string))
+				pw, err := app.Session.GetUserPassword(*app.Main.UserColl, userUnique)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusInternalServerError,
