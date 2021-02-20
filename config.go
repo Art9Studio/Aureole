@@ -57,7 +57,7 @@ type PasswordBasedConfig struct {
 type JWTConfig struct {
 	Alg     string            `yaml:"alg"`
 	Keys    []string          `yaml:"keys"`
-	Kid     string            `yaml:"kid"`
+	KidAlg  string            `yaml:"kid_alg"`
 	Payload map[string]string `yaml:"payload"`
 }
 

@@ -20,10 +20,14 @@ apps:
         jwt: # todo: add cookie option
           alg: "RS256"
           keys:
-            - ./key
-          kid: "docker_registry"
+            - driver: "file"
+              params:
+                paths:
+                  - ./private.pem
+          kid_alg: "docker_registry" # implement docker_registry and default and none
           payload:
             "$.userID": "id"
+      #     "$.userPosts": "@getUserPosts" raw queries
       register:
         login_after: true
         auth_type: "jwt"
