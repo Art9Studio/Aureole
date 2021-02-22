@@ -20,28 +20,45 @@ type AppConfig struct {
 	PathPrefix string              `yaml:"path_prefix"`
 	Session    storage.Session     `yaml:"-"`
 	RawDB      storage.RawConnData `yaml:"storage"`
-	Auth       AuthConfig          `yaml:"auth"`
+	Main       MainConfig          `yaml:"auth"`
 	Hash       HashConfig          `yaml:"pwhash"`
 }
 
-// AuthConfig represents settings for authentication
-type AuthConfig struct {
+// MainConfig represents settings for authentication
+type MainConfig struct {
 	UseExistentColl bool                    `yaml:"use_existent_collection"`
 	UserColl        *storage.UserCollConfig `yaml:"user_collection"`
-	Login           LoginConfig             `yaml:"login"`
+	AuthZ           AuthZConfig             `yaml:"authZ"`
+	AuthN           AuthNConfig             `yaml:"authN"`
 	Register        RegisterConfig          `yaml:"register"`
 }
 
-// LoginConfig represents settings for logging into account
-type LoginConfig struct {
-	Payload map[string]string `yaml:"payload"`
-	Fields  map[string]string `yaml:"fields"`
+// AuthNConfig represents settings for authentication methods
+type AuthNConfig struct {
+	PasswordBased PasswordBasedConfig `yaml:"password_based"`
+}
+
+// AuthZConfig represents settings for authorization methods
+type AuthZConfig struct {
+	Jwt JWTConfig `yaml:"jwt"`
 }
 
 // RegisterConfig represents settings for registering account
 type RegisterConfig struct {
 	LoginAfter bool              `yaml:"login_after"`
 	Fields     map[string]string `yaml:"fields"`
+}
+
+type PasswordBasedConfig struct {
+	UserUnique  string `yaml:"user_unique"`
+	UserConfirm string `yaml:"user_confirm"`
+}
+
+type JWTConfig struct {
+	Alg     string            `yaml:"alg"`
+	Keys    []string          `yaml:"keys"`
+	KidAlg  string            `yaml:"kid_alg"`
+	Payload map[string]string `yaml:"payload"`
 }
 
 // HashConfig represents settings for hashing
@@ -81,19 +98,19 @@ func (a *AppConfig) init() {
 }
 
 func (a *AppConfig) initUserColl() error {
-	if a.Auth.UserColl == nil {
-		a.Auth.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
+	if a.Main.UserColl == nil {
+		a.Main.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
-	isExists, err := a.Session.IsCollExists(a.Auth.UserColl.ToCollConfig())
+	isExists, err := a.Session.IsCollExists(a.Main.UserColl.ToCollConfig())
 	if err != nil {
 		return err
 	}
 
-	if !a.Auth.UseExistentColl && !isExists {
-		if err = a.Session.CreateUserColl(*a.Auth.UserColl); err != nil {
+	if !a.Main.UseExistentColl && !isExists {
+		if err = a.Session.CreateUserColl(*a.Main.UserColl); err != nil {
 			return err
 		}
-	} else if a.Auth.UseExistentColl && !isExists {
+	} else if a.Main.UseExistentColl && !isExists {
 		return errors.New("user collection is not found")
 	}
 
