@@ -10,7 +10,7 @@ import (
 func Test_pgAdapter_OpenConfig(t *testing.T) {
 	adapter := pgAdapter{}
 
-	validConnConf := ConnectionConfig{
+	validConnConf := ConnConfig{
 		User:     "root",
 		Password: "password",
 		Host:     "localhost",
@@ -18,7 +18,7 @@ func Test_pgAdapter_OpenConfig(t *testing.T) {
 		Database: "test",
 		Options:  map[string]string{},
 	}
-	invalidConnConf := ConnectionConfig{
+	invalidConnConf := ConnConfig{
 		User:     "",
 		Password: "password",
 		Host:     "localhost",
@@ -27,11 +27,11 @@ func Test_pgAdapter_OpenConfig(t *testing.T) {
 		Options:  map[string]string{},
 	}
 
-	sess, err := adapter.OpenConfig(validConnConf)
+	sess, err := adapter.OpenWithConfig(validConnConf)
 	assert.NoError(t, err)
 	assert.NotNil(t, sess)
 
-	sess, err = adapter.OpenConfig(invalidConnConf)
+	sess, err = adapter.OpenWithConfig(invalidConnConf)
 	assert.Error(t, err)
 	assert.Nil(t, sess)
 }
@@ -51,7 +51,7 @@ func Test_pgAdapter_ParseUrl(t *testing.T) {
 			args: args{
 				connUrl: "postgresql://root:password@localhost:5432/test?search_path=public&sslmode=disable",
 			},
-			want: ConnectionConfig{
+			want: ConnConfig{
 				User:     "root",
 				Password: "password",
 				Host:     "localhost",
@@ -106,7 +106,7 @@ func Test_pgAdapter_ParseUrl(t *testing.T) {
 			args: args{
 				connUrl: "postgresql://root:password@localhost:5432/test",
 			},
-			want: ConnectionConfig{
+			want: ConnConfig{
 				User:     "root",
 				Password: "password",
 				Host:     "localhost",
@@ -157,7 +157,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 				},
 			},
 			},
-			want: ConnectionConfig{
+			want: ConnConfig{
 				User:     "root",
 				Password: "password",
 				Host:     "localhost",
@@ -262,7 +262,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 				"db_name":  "test",
 			},
 			},
-			want: ConnectionConfig{
+			want: ConnConfig{
 				User:     "root",
 				Password: "password",
 				Host:     "localhost",

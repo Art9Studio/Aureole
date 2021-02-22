@@ -1,11 +1,11 @@
 package storage
 
-// Session is an interface that defines methods for database session
-type Session interface {
+// ConnSession is an interface that defines methods for database session
+type ConnSession interface {
 	Application
 
 	// ConnConfig returns the connection config that was used to set up the adapter
-	ConnConfig() ConnConfig
+	GetConfig() ConnConfig
 
 	// RelInfo returns information about tables relationships
 	RelInfo() map[CollPair]RelInfo
@@ -25,16 +25,3 @@ type Session interface {
 	// Close terminates the currently active connection to the DBMS
 	Close() error
 }
-
-type CollPair struct {
-	from, to string
-}
-
-type RelInfo struct {
-	// isO2M says about relationship between tables. One-to-Many or Many-to-One
-	isO2M      bool
-	fromFields []string
-	toFields   []string
-}
-
-type JSONCollResult = interface{}

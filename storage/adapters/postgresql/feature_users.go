@@ -7,7 +7,7 @@ import (
 )
 
 // IsCollExists checks whether the given collection exists
-func (s *Session) IsCollExists(collConf storage.CollConfig) (bool, error) {
+func (s *ConnSession) IsCollExists(collConf storage.CollConfig) (bool, error) {
 	// TODO: use current schema instead constant 'public'
 	sql := fmt.Sprintf(
 		"select exists (select from pg_tables where schemaname = 'public' AND tablename = '%s');",
@@ -22,7 +22,7 @@ func (s *Session) IsCollExists(collConf storage.CollConfig) (bool, error) {
 }
 
 // CreateUserCollection creates user collection with traits passed by UserCollectionConfig
-func (s *Session) CreateUserColl(collConf storage.UserCollConfig) error {
+func (s *ConnSession) CreateUserColl(collConf storage.UserCollConfig) error {
 	// TODO: check types of fields
 	sql := fmt.Sprintf(`create table %s
                        (%s serial primary key,
@@ -36,7 +36,7 @@ func (s *Session) CreateUserColl(collConf storage.UserCollConfig) error {
 }
 
 // InsertUser inserts user entity in the user collection
-func (s *Session) InsertUser(collConf storage.UserCollConfig, insUserData storage.InsertUserData) (storage.JSONCollResult, error) {
+func (s *ConnSession) InsertUser(collConf storage.UserCollConfig, insUserData storage.InsertUserData) (storage.JSONCollResult, error) {
 	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning $3;",
 		Sanitize(collConf.Name),
 		Sanitize(collConf.UserUnique),
@@ -44,7 +44,7 @@ func (s *Session) InsertUser(collConf storage.UserCollConfig, insUserData storag
 	return s.RawQuery(sql, insUserData.UserUnique, insUserData.UserConfirm, collConf.Pk)
 }
 
-func (s *Session) GetUserPassword(collConf storage.UserCollConfig, userUnique interface{}) (storage.JSONCollResult, error) {
+func (s *ConnSession) GetUserPassword(collConf storage.UserCollConfig, userUnique interface{}) (storage.JSONCollResult, error) {
 	sql := fmt.Sprintf("select %s from %s where %s=$1",
 		Sanitize(collConf.UserConfirm),
 		Sanitize(collConf.Name),
