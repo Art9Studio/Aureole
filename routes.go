@@ -67,7 +67,7 @@ func initRouter() *gin.Engine {
 
 				// TODO: add a user existence check
 
-				h, err := pwhash.New(app.Hash.Algorithm, &app.Hash.RawHash)
+				h, err := pwhash.New(app.Hash.AlgName, &app.Hash.RawHashConf)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusInternalServerError,
@@ -83,7 +83,7 @@ func initRouter() *gin.Engine {
 					return
 				}
 
-				res, err := app.Session.InsertUser(
+				res, err := app.Conn["users"].InsertUser(
 					*app.Main.UserColl,
 					*storage.NewInsertUserData(userUnique, pwHash),
 				)
@@ -116,7 +116,7 @@ func initRouter() *gin.Engine {
 
 				authConf := app.Main.AuthN
 
-				userUnique, err := GetJSONPath(authConf.PasswordBased.UserUnique, authData)
+				userUnique, err := GetJSONPath(authConf.PasswdBased.UserUnique, authData)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusBadRequest,
@@ -134,7 +134,7 @@ func initRouter() *gin.Engine {
 					}
 				}
 
-				rawUserConfirm, err := GetJSONPath(authConf.PasswordBased.UserConfirm, authData)
+				rawUserConfirm, err := GetJSONPath(authConf.PasswdBased.UserConfirm, authData)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusBadRequest,
@@ -153,7 +153,7 @@ func initRouter() *gin.Engine {
 
 				// TODO: add a user existence check
 
-				h, err := pwhash.New(app.Hash.Algorithm, &app.Hash.RawHash)
+				h, err := pwhash.New(app.Hash.AlgName, &app.Hash.RawHashConf)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusInternalServerError,
@@ -161,7 +161,7 @@ func initRouter() *gin.Engine {
 					return
 				}
 
-				pw, err := app.Session.GetUserPassword(*app.Main.UserColl, userUnique)
+				pw, err := app.Conn["users"].GetUserPassword(*app.Main.UserColl, userUnique)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusInternalServerError,

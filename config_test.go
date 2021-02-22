@@ -16,8 +16,8 @@ func Test_ProjectConfig_Init(t *testing.T) {
             storage:
               connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"`)
 	conf.Init(yamlContent)
-	sess := conf.Apps["one"].Session
-	assert.NoError(t, sess.Ping())
+	sess := conf.Apps["one"].Conn
+	assert.NoError(t, sess["users"].Ping())
 
 	yamlContent = []byte(`
         api_version: "0.1"
@@ -36,8 +36,8 @@ func Test_ProjectConfig_Init(t *testing.T) {
                   sslmode: "disable"
                   search_path: "public"`)
 	conf.Init(yamlContent)
-	sess = conf.Apps["three"].Session
-	assert.NoError(t, sess.Ping())
+	sess = conf.Apps["three"].Conn
+	assert.NoError(t, sess["users"].Ping())
 
 	yamlContent = []byte(`
         api_version: "0.1"

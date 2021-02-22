@@ -3,21 +3,33 @@ api_version: "0.1"
 apps:
   one:
     path_prefix: "/one"
+
     storages:
-      - name: "Main DB"
+      "main db":
         connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
+
     main:
       use_existent_collection: false
       user_collection:
-        storage: "Main DB"
+        storage: "main db"
         name: "users"
         pk: "id"
         user_unique: "username"
         user_confirm: "password"
+
+      cookie_auth:
+        storage: "main db"
+        domain: "localhost"
+        path: "/"
+        max_age: 3600
+        secure: true
+        http_only: false
+
       authN:
         password_based:
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
+
       authZ:
         jwt: # todo: add cookie option
           alg: "RS256"
@@ -30,6 +42,7 @@ apps:
           payload:
             "$.userID": "id"
       #     "$.userPosts": "@getUserPosts" raw queries
+
       register:
         login_after: true
         auth_type: "jwt"
@@ -37,8 +50,9 @@ apps:
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
           email: "{$.email}"
-    hash:
-      algorithm: "argon2"
+
+    hasher:
+      alg: "argon2"
       settings:
         type: "argon2i"
         iterations: 1
