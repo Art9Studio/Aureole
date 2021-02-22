@@ -44,8 +44,13 @@ func (s *Session) InsertUser(collConf storage.UserCollConfig, insUserData storag
 	return s.RawQuery(sql, insUserData.UserUnique, insUserData.UserConfirm, collConf.Pk)
 }
 
-func (s *Session) GetUserPassword() error {
-	panic("")
+func (s *Session) GetUserPassword(collConf storage.UserCollConfig, userUnique interface{}) (storage.JSONCollResult, error) {
+	sql := fmt.Sprintf("select %s from %s where %s=$1",
+		Sanitize(collConf.UserConfirm),
+		Sanitize(collConf.Name),
+		Sanitize(collConf.UserUnique),
+	)
+	return s.RawQuery(sql, userUnique)
 }
 
 func Sanitize(ident string) string {
