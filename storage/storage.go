@@ -6,7 +6,7 @@ import (
 )
 
 // Open attempts to establish a connection with a database
-func Open(data RawConnData) (Session, error) {
+func Open(data RawConnConfig) (ConnSession, error) {
 	if connConf, ok := data["connection_config"].(map[string]interface{}); ok {
 		adapterName, ok := connConf["adapter"].(string)
 		if !ok {
@@ -23,7 +23,7 @@ func Open(data RawConnData) (Session, error) {
 			return nil, err
 		}
 
-		return adapter.OpenConfig(config)
+		return adapter.OpenWithConfig(config)
 	} else if connStr, ok := data["connection_url"].(string); ok && connStr != "" {
 		adapterName := strings.Split(connStr, "://")[0]
 
@@ -37,7 +37,7 @@ func Open(data RawConnData) (Session, error) {
 			return nil, err
 		}
 
-		return adapter.OpenConfig(config)
+		return adapter.OpenWithConfig(config)
 
 	}
 	return nil, errors.New("missing connection data")

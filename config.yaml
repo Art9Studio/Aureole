@@ -3,11 +3,13 @@ api_version: "0.1"
 apps:
   one:
     path_prefix: "/one"
-    storage:
-      connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
+    storages:
+      - name: "Main DB"
+        connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
     main:
       use_existent_collection: false
       user_collection:
+        storage: "Main DB"
         name: "users"
         pk: "id"
         user_unique: "username"

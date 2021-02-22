@@ -1,7 +1,7 @@
 package storage
 
-// RawConnData represents unparsed data from config file
-type RawConnData = map[string]interface{}
+// RawConnConfig represents unparsed data from config file
+type RawConnConfig = map[string]interface{}
 
 // ConnConfig represents a parsed connection config
 type ConnConfig interface {

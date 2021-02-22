@@ -11,6 +11,8 @@ import (
 // AdapterName is the internal name of the adapter
 const AdapterName = "postgresql"
 
+var AdapterFeatures = map[string]bool{"users": true, "sessions": true}
+
 // init initializes package by register adapter
 func init() {
 	storage.RegisterAdapter(AdapterName, &pgAdapter{})
@@ -20,9 +22,13 @@ func init() {
 type pgAdapter struct {
 }
 
+func (pg pgAdapter) GetFeatures() map[string]bool {
+	return AdapterFeatures
+}
+
 // OpenConfig attempts to establish a connection with a db by connection config
-func (pg pgAdapter) OpenConfig(connConf storage.ConnConfig) (storage.Session, error) {
-	sess := &Session{
+func (pg pgAdapter) OpenWithConfig(connConf storage.ConnConfig) (storage.ConnSession, error) {
+	sess := &ConnSession{
 		ctx:      context.Background(),
 		connConf: connConf,
 	}
@@ -34,9 +40,9 @@ func (pg pgAdapter) OpenConfig(connConf storage.ConnConfig) (storage.Session, er
 	return sess, nil
 }
 
-// ParseUrl parses the connection url into ConnectionConfig struct
+// ParseUrl parses the connection url into ConnConfig struct
 func (pg pgAdapter) ParseUrl(connUrl string) (storage.ConnConfig, error) {
-	connConf := ConnectionConfig{}
+	connConf := ConnConfig{}
 	if !strings.HasPrefix(connUrl, connConf.AdapterName()+"://") {
 		return nil, fmt.Errorf("expecting postgresql:// connection schema")
 	}
@@ -83,7 +89,7 @@ func (pg pgAdapter) ParseUrl(connUrl string) (storage.ConnConfig, error) {
 	return connConf, err
 }
 
-// NewConfig creates new ConnectionConfig struct from the raw data, parsed from the config file
+// NewConfig creates new ConnConfig struct from the raw data, parsed from the config file
 func (pg pgAdapter) NewConfig(data map[string]interface{}) (storage.ConnConfig, error) {
 	requiredKeys := []string{"username", "password", "host", "port", "db_name"}
 
@@ -102,7 +108,7 @@ func (pg pgAdapter) NewConfig(data map[string]interface{}) (storage.ConnConfig, 
 		}
 	}
 
-	return ConnectionConfig{
+	return ConnConfig{
 		User:     data["username"].(string),
 		Password: data["password"].(string),
 		Host:     data["host"].(string),

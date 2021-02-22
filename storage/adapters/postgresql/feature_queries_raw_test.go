@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Session_RawExec(t *testing.T) {
-	rawConnData := storage.RawConnData{
+	rawConnData := storage.RawConnConfig{
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
@@ -26,7 +26,7 @@ func Test_Session_RawExec(t *testing.T) {
 }
 
 func Test_Session_RawQuery(t *testing.T) {
-	rawConnData := storage.RawConnData{
+	rawConnData := storage.RawConnConfig{
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 

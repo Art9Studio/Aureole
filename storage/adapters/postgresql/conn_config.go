@@ -5,8 +5,8 @@ import (
 	"net/url"
 )
 
-// ConnectionConfig represents a parsed PostgreSQL connection URL
-type ConnectionConfig struct {
+// ConnConfig represents a parsed PostgreSQL connection URL
+type ConnConfig struct {
 	User     string
 	Password string
 	Host     string
@@ -16,7 +16,7 @@ type ConnectionConfig struct {
 }
 
 // String reassembles PostgreSQL connection config into a valid connection url
-func (connConf ConnectionConfig) String() (string, error) {
+func (connConf ConnConfig) String() (string, error) {
 	vv := url.Values{}
 	if connConf.Options != nil {
 		for k, v := range connConf.Options {
@@ -45,11 +45,11 @@ func (connConf ConnectionConfig) String() (string, error) {
 }
 
 // DBName returns the name of the database, that we've connected by this config
-func (connConf ConnectionConfig) DBName() string {
+func (connConf ConnConfig) DBName() string {
 	return connConf.Database
 }
 
 // AdapterName return the adapter name, that was used to set up connection
-func (connConf ConnectionConfig) AdapterName() string {
+func (connConf ConnConfig) AdapterName() string {
 	return AdapterName
 }

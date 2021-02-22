@@ -18,10 +18,11 @@ type ProjectConfig struct {
 // AppConfig represents settings for one application
 type AppConfig struct {
 	PathPrefix string              `yaml:"path_prefix"`
-	Session    storage.Session     `yaml:"-"`
-	RawDB      storage.RawConnData `yaml:"storage"`
-	Main       MainConfig          `yaml:"main"`
-	Hash       HashConfig          `yaml:"hash"`
+	Session    storage.ConnSession     `yaml:"-"`
+	Main       MainConfig         `yaml:"auth"`
+	Hash       HashConfig          `yaml:"pwhash"`
+	// Raw data
+	RawConnConfig storage.RawConnConfig `yaml:"storage"`
 }
 
 // MainConfig represents settings for authentication
@@ -86,7 +87,7 @@ func (c *ProjectConfig) Init(data []byte) {
 
 // init initializes app by creating table users
 func (a *AppConfig) init() {
-	sess, err := storage.Open(a.RawDB)
+	sess, err := storage.Open(a.RawConnConfig)
 	if err != nil {
 		log.Panicf("app open session: %v", err)
 	}
