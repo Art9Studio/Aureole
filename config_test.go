@@ -20,8 +20,8 @@ func Test_ProjectConfig_Init(t *testing.T) {
               user_collection:
                 storage: "main db"`)
 	conf.Init(yamlContent)
-	connSess := conf.Apps["one"].SessByFeature["users"]
-	assert.NoError(t, connSess.Ping())
+	usersSess := conf.Apps["one"].SessByFeature["users"]
+	assert.NoError(t, usersSess.Ping())
 
 	yamlContent = []byte(`
         api_version: "0.1"
@@ -44,6 +44,6 @@ func Test_ProjectConfig_Init(t *testing.T) {
               user_collection:
                 storage: "main db"`)
 	conf.Init(yamlContent)
-	connSess = conf.Apps["two"].SessByFeature["users"]
-	assert.NoError(t, connSess.Ping())
+	usersSess = conf.Apps["two"].SessByFeature["users"]
+	assert.NoError(t, usersSess.Ping())
 }

@@ -128,18 +128,18 @@ func (a *AppConfig) init() {
 }
 
 func (a *AppConfig) initUserColl() error {
-	connSess := a.SessByFeature["users"]
+	userSess := a.SessByFeature["users"]
 
 	if a.Main.UserColl == nil {
 		a.Main.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
-	isExists, err := connSess.IsCollExists(a.Main.UserColl.ToCollConfig())
+	isExists, err := userSess.IsCollExists(a.Main.UserColl.ToCollConfig())
 	if err != nil {
 		return err
 	}
 
 	if !a.Main.UseExistColl && !isExists {
-		if err = connSess.CreateUserColl(*a.Main.UserColl); err != nil {
+		if err = userSess.CreateUserColl(*a.Main.UserColl); err != nil {
 			return err
 		}
 	} else if a.Main.UseExistColl && !isExists {

@@ -83,8 +83,8 @@ func initRouter() *gin.Engine {
 					return
 				}
 
-				connSess := app.SessByFeature["users"]
-				res, err := connSess.InsertUser(
+				usersSess := app.SessByFeature["users"]
+				res, err := usersSess.InsertUser(
 					*app.Main.UserColl,
 					*storage.NewInsertUserData(userUnique, pwHash),
 				)
@@ -162,8 +162,8 @@ func initRouter() *gin.Engine {
 					return
 				}
 
-				connSess := app.SessByFeature["users"]
-				pw, err := connSess.GetUserPassword(*app.Main.UserColl, userUnique)
+				usersSess := app.SessByFeature["users"]
+				pw, err := usersSess.GetUserPassword(*app.Main.UserColl, userUnique)
 				if err != nil {
 					c.AbortWithStatusJSON(
 						http.StatusInternalServerError,

@@ -27,13 +27,13 @@ func Test_pgAdapter_OpenConfig(t *testing.T) {
 		Options:  map[string]string{},
 	}
 
-	sess, err := adapter.OpenWithConfig(validConnConf)
+	usersSess, err := adapter.OpenWithConfig(validConnConf)
 	assert.NoError(t, err)
-	assert.NotNil(t, sess)
+	assert.NotNil(t, usersSess)
 
-	sess, err = adapter.OpenWithConfig(invalidConnConf)
+	usersSess, err = adapter.OpenWithConfig(invalidConnConf)
 	assert.Error(t, err)
-	assert.Nil(t, sess)
+	assert.Nil(t, usersSess)
 }
 
 func Test_pgAdapter_ParseUrl(t *testing.T) {
