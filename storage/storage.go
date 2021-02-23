@@ -6,7 +6,7 @@ import (
 )
 
 // Open attempts to establish a connection with a database
-func Open(data RawConnConfig, features []string) (ConnSession, error) {
+func Open(data RawStorageConfig, features []string) (ConnSession, error) {
 	if connConf, ok := data["connection_config"].(map[string]interface{}); ok {
 		adapterName, ok := connConf["adapter"].(string)
 		if !ok {

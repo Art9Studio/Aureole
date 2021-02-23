@@ -17,19 +17,17 @@ type ProjectConfig struct {
 
 // AppConfig represents settings for one application
 type AppConfig struct {
-	PathPrefix      string                           `yaml:"path_prefix"`
-	ConnSess        map[string]storage.ConnSession   `yaml:"-"`
-	RawConnConfs    map[string]storage.RawConnConfig `yaml:"storages"`
-	StorageFeatures map[string][]string              `yaml:"-"`
-	Main            MainConfig                       `yaml:"main"`
-	Hash            HashConfig                       `yaml:"hasher"`
+	PathPrefix      string                              `yaml:"path_prefix"`
+	SessByFeature   map[string]storage.ConnSession      `yaml:"-"`
+	RawStorageConfs map[string]storage.RawStorageConfig `yaml:"storages"`
+	Main            MainConfig                          `yaml:"main"`
+	Hash            HashConfig                          `yaml:"hasher"`
 }
 
 // MainConfig represents settings for authentication
 type MainConfig struct {
 	UseExistColl bool                    `yaml:"use_existent_collection"`
 	UserColl     *storage.UserCollConfig `yaml:"user_collection"`
-	CookieConf   CookieAuthConfig        `yaml:"cookie_auth"`
 	AuthN        AuthNConfig             `yaml:"authN"`
 	AuthZ        AuthZConfig             `yaml:"authZ"`
 	Register     RegisterConfig          `yaml:"register"`
@@ -51,7 +49,8 @@ type AuthNConfig struct {
 
 // AuthZConfig represents settings for authorization methods
 type AuthZConfig struct {
-	Jwt JWTConfig `yaml:"jwt"`
+	CookieConf CookieAuthConfig `yaml:"cookie"`
+	Jwt        JWTConfig        `yaml:"jwt"`
 }
 
 // RegisterConfig represents settings for registering account
@@ -97,29 +96,29 @@ func (c *ProjectConfig) Init(data []byte) {
 
 // init initializes app by creating table users
 func (a *AppConfig) init() {
-	a.StorageFeatures = map[string][]string{}
-	a.ConnSess = map[string]storage.ConnSession{}
+	storageFeatures := map[string][]string{}
+	a.SessByFeature = map[string]storage.ConnSession{}
 
-	for storageName := range a.RawConnConfs {
-		if _, ok := a.StorageFeatures[storageName]; !ok {
-			a.StorageFeatures[storageName] = []string{}
+	for storageName := range a.RawStorageConfs {
+		if _, ok := storageFeatures[storageName]; !ok {
+			storageFeatures[storageName] = []string{}
 		}
 	}
 
 	usersStorage := a.Main.UserColl.StorageName
-	a.StorageFeatures[usersStorage] = append(a.StorageFeatures[usersStorage], "users")
+	storageFeatures[usersStorage] = append(storageFeatures[usersStorage], "users")
 
-	sessionStorage := a.Main.CookieConf.StorageName
-	a.StorageFeatures[sessionStorage] = append(a.StorageFeatures[sessionStorage], "sessions")
+	sessionStorage := a.Main.AuthZ.CookieConf.StorageName
+	storageFeatures[sessionStorage] = append(storageFeatures[sessionStorage], "sessions")
 
-	for storageName, features := range a.StorageFeatures {
-		connSess, err := storage.Open(a.RawConnConfs[storageName], features)
+	for storageName, features := range storageFeatures {
+		connSess, err := storage.Open(a.RawStorageConfs[storageName], features)
 		if err != nil {
 			log.Panicf("app open session: %v", err)
 		}
 
 		for _, f := range features {
-			a.ConnSess[f] = connSess
+			a.SessByFeature[f] = connSess
 		}
 	}
 
@@ -132,13 +131,13 @@ func (a *AppConfig) initUserColl() error {
 	if a.Main.UserColl == nil {
 		a.Main.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
-	isExists, err := a.ConnSess["users"].IsCollExists(a.Main.UserColl.ToCollConfig())
+	isExists, err := a.SessByFeature["users"].IsCollExists(a.Main.UserColl.ToCollConfig())
 	if err != nil {
 		return err
 	}
 
 	if !a.Main.UseExistColl && !isExists {
-		if err = a.ConnSess["users"].CreateUserColl(*a.Main.UserColl); err != nil {
+		if err = a.SessByFeature["users"].CreateUserColl(*a.Main.UserColl); err != nil {
 			return err
 		}
 	} else if a.Main.UseExistColl && !isExists {

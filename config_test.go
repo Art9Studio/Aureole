@@ -20,7 +20,7 @@ func Test_ProjectConfig_Init(t *testing.T) {
               user_collection:
                 storage: "main db"`)
 	conf.Init(yamlContent)
-	connSess := conf.Apps["one"].ConnSess["users"]
+	connSess := conf.Apps["one"].SessByFeature["users"]
 	assert.NoError(t, connSess.Ping())
 
 	yamlContent = []byte(`
@@ -44,6 +44,6 @@ func Test_ProjectConfig_Init(t *testing.T) {
               user_collection:
                 storage: "main db"`)
 	conf.Init(yamlContent)
-	connSess = conf.Apps["two"].ConnSess["users"]
+	connSess = conf.Apps["two"].SessByFeature["users"]
 	assert.NoError(t, connSess.Ping())
 }

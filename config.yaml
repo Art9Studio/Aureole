@@ -5,27 +5,19 @@ apps:
     path_prefix: "/one"
 
     storages:
-      "main db":
+      main_db:
         connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
-      "session db":
+      session_db:
         connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
 
     main:
       use_existent_collection: false
       user_collection:
-        storage: "main db"
+        storage: "main_db"
         name: "users"
         pk: "id"
         user_unique: "username"
         user_confirm: "password"
-
-      cookie_auth:
-        storage: "session db"
-        domain: "localhost"
-        path: "/"
-        max_age: 3600
-        secure: true
-        http_only: false
 
       authN:
         password_based:
@@ -33,17 +25,13 @@ apps:
           user_confirm: "{$.passwd}"
 
       authZ:
-        jwt: # todo: add cookie option
-          alg: "RS256"
-          keys:
-            - driver: "file"
-              params:
-                paths:
-                  - ./private.pem
-          kid_alg: "docker_registry" # implement docker_registry and default and none
-          payload:
-            "$.userID": "id"
-      #     "$.userPosts": "@getUserPosts" raw queries
+        cookie:
+          storage: "session_db"
+          domain: "localhost"
+          path: "/"
+          max_age: 3600
+          secure: true
+          http_only: false
 
       register:
         login_after: true
@@ -62,42 +50,59 @@ apps:
         salt_length: 16
         key_length: 16
         memory: 16384
-  #two:
-  #  path_prefix: "/two"
-  #  storage:
-  #    connection_config:
-  #      adapter: "postgresql"
-  #      username: "root"
-  #      password: "password"
-  #      host: "localhost"
-  #      port: "5432"
-  #      db_name: "test"
-  #      options:
-  #        sslmode: "disable"
-  #        search_path: "public"
-  #  auth:
-  #    use_existent_collection: true
-  #    user_collection:
-  #      name: "users"
-  #      pk: "id"
-  #      user_unique: "username"
-  #      user_confirm: "password"
-  #    login:
-  #      fields:
-  #        user_unique: "{$.name}"
-  #        user_confirm: "{$.passwd}"
-  #      payload:
-  #        "$.userID": "id"
-  #    register:
-  #      login_after: false
-  #      fields:
-  #        user_unique: "{$.name}"
-  #        user_confirm: "{$.passwd}"
-  #        email: "{$.email}"
-  #  hash:
-  #    algorithm: "pbkdf2"
-  #    settings:
-  #      iterations: 1
-  #      salt_length: 16
-  #      key_length: 16
-  #      func: "sha1"
+
+  two:
+    path_prefix: "/two"
+
+    storages:
+      main_db:
+        connection_config:
+          adapter: "postgresql"
+          username: "root"
+          password: "password"
+          host: "localhost"
+          port: "5432"
+          db_name: "test"
+          options:
+            sslmode: "disable"
+            search_path: "public"
+
+    main:
+      use_existent_collection: false
+      user_collection:
+        storage: "main_db"
+        name: "users"
+        pk: "id"
+        user_unique: "username"
+        user_confirm: "password"
+      authN:
+        password_based:
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
+      authZ:
+        jwt:
+          alg: "RS256"
+          keys:
+            - driver: "file"
+              params:
+                paths:
+                  - ./private.pem
+          kid_alg: "docker_registry" # implement docker_registry and default and none
+          payload:
+            "$.userID": "id"
+      #     "$.userPosts": "@getUserPosts" raw querie
+      register:
+        login_after: true
+        auth_type: "jwt"
+        fields:
+          user_unique: "{$.name}"
+          user_confirm: "{$.passwd}"
+          email: "{$.email}"
+
+    hasher:
+      alg: "pbkdf2"
+        settings:
+          iterations: 1
+          salt_length: 16
+          key_length: 16
+          func: "sha1"

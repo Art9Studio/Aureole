@@ -8,7 +8,7 @@ import (
 )
 
 func Test_Session_IsCollExists(t *testing.T) {
-	rawConnData := storage.RawConnConfig{
+	rawConnData := storage.RawStorageConfig{
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
@@ -30,7 +30,7 @@ func Test_Session_IsCollExists(t *testing.T) {
 }
 
 func Test_Session_CreateUserColl(t *testing.T) {
-	rawConnData := storage.RawConnConfig{
+	rawConnData := storage.RawStorageConfig{
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
@@ -57,7 +57,7 @@ func Test_Session_CreateUserColl(t *testing.T) {
 }
 
 func Test_Session_InsertUser(t *testing.T) {
-	rawConnData := storage.RawConnConfig{
+	rawConnData := storage.RawStorageConfig{
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
