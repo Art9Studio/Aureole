@@ -13,45 +13,37 @@ func Test_ProjectConfig_Init(t *testing.T) {
         apps:
           one:
             path_prefix: "/one"
-            storage:
-              connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"`)
-	conf.Init(yamlContent)
-	sess := conf.Apps["one"].Conn
-	assert.NoError(t, sess["users"].Ping())
-
-	yamlContent = []byte(`
-        api_version: "0.1"
-        apps:
-          three:
-            path_prefix: "/three"
-            storage:
-              connection_config:
-                adapter: "postgresql"
-                username: "root"
-                password: "password"
-                host: "localhost"
-                port: "5432"
-                db_name: "test"
-                options:
-                  sslmode: "disable"
-                  search_path: "public"`)
-	conf.Init(yamlContent)
-	sess = conf.Apps["three"].Conn
-	assert.NoError(t, sess["users"].Ping())
-
-	yamlContent = []byte(`
-        api_version: "0.1"
-        apps:
-          one:
-            path_prefix: "/one"
-            storage:
-              connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
-            auth:
-              use_existent_collection: false
+            storages:
+              "main db":
+                connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
+            main:
               user_collection:
-                name: "users"
-                pk: "id"
-                user_unique: "username"
-                user_confirm: "password"`)
+                storage: "main db"`)
 	conf.Init(yamlContent)
+	connSess := conf.Apps["one"].ConnSess["users"]
+	assert.NoError(t, connSess.Ping())
+
+	yamlContent = []byte(`
+        api_version: "0.1"
+        apps:
+          two:
+            path_prefix: "/two"
+            storages:
+              "main db":
+                connection_config:
+                  adapter: "postgresql"
+                  username: "root"
+                  password: "password"
+                  host: "localhost"
+                  port: "5432"
+                  db_name: "test"
+                  options:
+                    sslmode: "disable"
+                    search_path: "public"
+            main:
+              user_collection:
+                storage: "main db"`)
+	conf.Init(yamlContent)
+	connSess = conf.Apps["two"].ConnSess["users"]
+	assert.NoError(t, connSess.Ping())
 }

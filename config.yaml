@@ -7,6 +7,8 @@ apps:
     storages:
       "main db":
         connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
+      "session db":
+        connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
 
     main:
       use_existent_collection: false
@@ -18,7 +20,7 @@ apps:
         user_confirm: "password"
 
       cookie_auth:
-        storage: "main db"
+        storage: "session db"
         domain: "localhost"
         path: "/"
         max_age: 3600

@@ -17,11 +17,12 @@ type ProjectConfig struct {
 
 // AppConfig represents settings for one application
 type AppConfig struct {
-	PathPrefix   string                           `yaml:"path_prefix"`
-	Conn         map[string]storage.ConnSession   `yaml:"-"`
-	RawConnConfs map[string]storage.RawConnConfig `yaml:"storages"`
-	Main         MainConfig                       `yaml:"main"`
-	Hash         HashConfig                       `yaml:"hasher"`
+	PathPrefix      string                           `yaml:"path_prefix"`
+	ConnSess        map[string]storage.ConnSession   `yaml:"-"`
+	RawConnConfs    map[string]storage.RawConnConfig `yaml:"storages"`
+	StorageFeatures map[string][]string              `yaml:"-"`
+	Main            MainConfig                       `yaml:"main"`
+	Hash            HashConfig                       `yaml:"hasher"`
 }
 
 // MainConfig represents settings for authentication
@@ -96,15 +97,33 @@ func (c *ProjectConfig) Init(data []byte) {
 
 // init initializes app by creating table users
 func (a *AppConfig) init() {
-	sess, err := storage.Open(a.RawConnConfs["Main DB"], []string{"users"})
-	if err != nil {
-		log.Panicf("app open session: %v", err)
+	a.StorageFeatures = map[string][]string{}
+	a.ConnSess = map[string]storage.ConnSession{}
+
+	for storageName := range a.RawConnConfs {
+		if _, ok := a.StorageFeatures[storageName]; !ok {
+			a.StorageFeatures[storageName] = []string{}
+		}
 	}
 
-	a.Conn = make(map[string]storage.ConnSession)
-	a.Conn["users"] = sess
+	usersStorage := a.Main.UserColl.StorageName
+	a.StorageFeatures[usersStorage] = append(a.StorageFeatures[usersStorage], "users")
 
-	if err = a.initUserColl(); err != nil {
+	sessionStorage := a.Main.CookieConf.StorageName
+	a.StorageFeatures[sessionStorage] = append(a.StorageFeatures[sessionStorage], "sessions")
+
+	for storageName, features := range a.StorageFeatures {
+		connSess, err := storage.Open(a.RawConnConfs[storageName], features)
+		if err != nil {
+			log.Panicf("app open session: %v", err)
+		}
+
+		for _, f := range features {
+			a.ConnSess[f] = connSess
+		}
+	}
+
+	if err := a.initUserColl(); err != nil {
 		log.Panicf("app init: %v", err)
 	}
 }
@@ -113,13 +132,13 @@ func (a *AppConfig) initUserColl() error {
 	if a.Main.UserColl == nil {
 		a.Main.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
-	isExists, err := a.Conn["users"].IsCollExists(a.Main.UserColl.ToCollConfig())
+	isExists, err := a.ConnSess["users"].IsCollExists(a.Main.UserColl.ToCollConfig())
 	if err != nil {
 		return err
 	}
 
 	if !a.Main.UseExistColl && !isExists {
-		if err = a.Conn["users"].CreateUserColl(*a.Main.UserColl); err != nil {
+		if err = a.ConnSess["users"].CreateUserColl(*a.Main.UserColl); err != nil {
 			return err
 		}
 	} else if a.Main.UseExistColl && !isExists {
