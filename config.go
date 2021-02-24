@@ -17,11 +17,11 @@ type ProjectConfig struct {
 
 // AppConfig represents settings for one application
 type AppConfig struct {
-	PathPrefix      string                              `yaml:"path_prefix"`
-	SessByFeature   map[string]storage.ConnSession      `yaml:"-"`
-	RawStorageConfs map[string]storage.RawStorageConfig `yaml:"storages"`
-	Main            MainConfig                          `yaml:"main"`
-	Hash            HashConfig                          `yaml:"hasher"`
+	PathPrefix       string                              `yaml:"path_prefix"`
+	StorageByFeature map[string]storage.ConnSession      `yaml:"-"`
+	RawStorageConfs  map[string]storage.RawStorageConfig `yaml:"storages"`
+	Main             MainConfig                          `yaml:"main"`
+	Hash             HashConfig                          `yaml:"hasher"`
 }
 
 // MainConfig represents settings for authentication
@@ -97,7 +97,7 @@ func (c *ProjectConfig) Init(data []byte) {
 // init initializes app by creating table users
 func (a *AppConfig) init() {
 	storageFeatures := map[string][]string{}
-	a.SessByFeature = map[string]storage.ConnSession{}
+	a.StorageByFeature = map[string]storage.ConnSession{}
 
 	for storageName := range a.RawStorageConfs {
 		if _, ok := storageFeatures[storageName]; !ok {
@@ -118,7 +118,7 @@ func (a *AppConfig) init() {
 		}
 
 		for _, f := range features {
-			a.SessByFeature[f] = connSess
+			a.StorageByFeature[f] = connSess
 		}
 	}
 
@@ -128,18 +128,18 @@ func (a *AppConfig) init() {
 }
 
 func (a *AppConfig) initUserColl() error {
-	userSess := a.SessByFeature["users"]
+	usersStorage := a.StorageByFeature["users"]
 
 	if a.Main.UserColl == nil {
 		a.Main.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
-	isExists, err := userSess.IsCollExists(a.Main.UserColl.ToCollConfig())
+	isExists, err := usersStorage.IsCollExists(a.Main.UserColl.ToCollConfig())
 	if err != nil {
 		return err
 	}
 
 	if !a.Main.UseExistColl && !isExists {
-		if err = userSess.CreateUserColl(*a.Main.UserColl); err != nil {
+		if err = usersStorage.CreateUserColl(*a.Main.UserColl); err != nil {
 			return err
 		}
 	} else if a.Main.UseExistColl && !isExists {
