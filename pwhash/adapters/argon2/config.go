@@ -2,7 +2,7 @@ package argon2
 
 // HashConfig represents parsed pwhash config from the config file
 type HashConfig struct {
-	// Algorithm type (argon2i, argon2id)
+	// AlgName type (argon2i, argon2id)
 	Type string
 
 	// The number of iterations over the memory

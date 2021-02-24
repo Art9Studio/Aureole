@@ -7,67 +7,60 @@ import (
 	"testing"
 )
 
-func Test_Session_IsCollExists(t *testing.T) {
-	rawConnData := storage.RawConnConfig{
+func createUsersSess(t *testing.T) storage.ConnSession {
+	rawConnData := storage.RawStorageConfig{
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
-	sess, err := storage.Open(rawConnData)
+	features := []string{"users"}
+	usersSess, err := storage.Open(rawConnData, features)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
-	defer sess.Close()
 
-	res, err := sess.IsCollExists(
+	return usersSess
+}
+
+func Test_Session_IsCollExists(t *testing.T) {
+	usersSess := createUsersSess(t)
+	defer usersSess.Close()
+
+	res, err := usersSess.IsCollExists(
 		*storage.NewCollConfig("users", "id"))
 	assert.NoError(t, err)
 	assert.Equal(t, res, true)
 
-	res, err = sess.IsCollExists(
+	res, err = usersSess.IsCollExists(
 		*storage.NewCollConfig("other", "id"))
 	assert.NoError(t, err)
 	assert.Equal(t, res, false)
 }
 
 func Test_Session_CreateUserColl(t *testing.T) {
-	rawConnData := storage.RawConnConfig{
-		"connection_url": "postgresql://root:password@localhost:5432/test",
-	}
+	usersSess := createUsersSess(t)
+	defer usersSess.Close()
 
-	sess, err := storage.Open(rawConnData)
-	if err != nil {
-		t.Fatalf("open connection by url: %v", err)
-	}
-	defer sess.Close()
-
-	err = sess.CreateUserColl(*storage.NewUserCollConfig("users", "id", "username", "password"))
+	err := usersSess.CreateUserColl(*storage.NewUserCollConfig("users", "id", "username", "password"))
 	assert.Contains(t, err.Error(), "already exists")
 
-	err = sess.CreateUserColl(*storage.NewUserCollConfig("other", "id", "username", "password"))
+	err = usersSess.CreateUserColl(*storage.NewUserCollConfig("other", "id", "username", "password"))
 	assert.NoError(t, err)
 
-	err = sess.CreateUserColl(*storage.NewUserCollConfig("); drop table other; --", "id", "username", "password"))
+	err = usersSess.CreateUserColl(*storage.NewUserCollConfig("); drop table other; --", "id", "username", "password"))
 	assert.NoError(t, err)
 
-	isOtherExist, err := sess.IsCollExists(*storage.NewCollConfig("other", "id"))
+	isOtherExist, err := usersSess.IsCollExists(*storage.NewCollConfig("other", "id"))
 	assert.True(t, isOtherExist)
 
-	isDropExist, err := sess.IsCollExists(*storage.NewCollConfig("); drop table other; --", "id"))
+	isDropExist, err := usersSess.IsCollExists(*storage.NewCollConfig("); drop table other; --", "id"))
 	assert.True(t, isDropExist)
 }
 
 func Test_Session_InsertUser(t *testing.T) {
-	rawConnData := storage.RawConnConfig{
-		"connection_url": "postgresql://root:password@localhost:5432/test",
-	}
+	usersSess := createUsersSess(t)
+	defer usersSess.Close()
 
-	sess, err := storage.Open(rawConnData)
-	if err != nil {
-		t.Fatalf("open connection by url: %v", err)
-	}
-	defer sess.Close()
-
-	res, err := sess.InsertUser(
+	res, err := usersSess.InsertUser(
 		*storage.NewUserCollConfig("users", "id", "username", "password"),
 		*storage.NewInsertUserData("hello", "secret"),
 	)

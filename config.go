@@ -17,31 +17,40 @@ type ProjectConfig struct {
 
 // AppConfig represents settings for one application
 type AppConfig struct {
-	PathPrefix string              `yaml:"path_prefix"`
-	Session    storage.ConnSession     `yaml:"-"`
-	Main       MainConfig         `yaml:"auth"`
-	Hash       HashConfig          `yaml:"pwhash"`
-	// Raw data
-	RawConnConfig storage.RawConnConfig `yaml:"storage"`
+	PathPrefix       string                              `yaml:"path_prefix"`
+	StorageByFeature map[string]storage.ConnSession      `yaml:"-"`
+	RawStorageConfs  map[string]storage.RawStorageConfig `yaml:"storages"`
+	Main             MainConfig                          `yaml:"main"`
+	Hash             HashConfig                          `yaml:"hasher"`
 }
 
 // MainConfig represents settings for authentication
 type MainConfig struct {
-	UseExistentColl bool                    `yaml:"use_existent_collection"`
-	UserColl        *storage.UserCollConfig `yaml:"user_collection"`
-	AuthZ           AuthZConfig             `yaml:"authZ"`
-	AuthN           AuthNConfig             `yaml:"authN"`
-	Register        RegisterConfig          `yaml:"register"`
+	UseExistColl bool                    `yaml:"use_existent_collection"`
+	UserColl     *storage.UserCollConfig `yaml:"user_collection"`
+	AuthN        AuthNConfig             `yaml:"authN"`
+	AuthZ        AuthZConfig             `yaml:"authZ"`
+	Register     RegisterConfig          `yaml:"register"`
+}
+
+type CookieAuthConfig struct {
+	StorageName string `yaml:"storage"`
+	Domain      string `yaml:"domain"`
+	Path        string `yaml:"path"`
+	MaxAge      int    `yaml:"max_age"`
+	IsSecure    bool   `yaml:"secure"`
+	IsHttpOnly  bool   `yaml:"http_only"`
 }
 
 // AuthNConfig represents settings for authentication methods
 type AuthNConfig struct {
-	PasswordBased PasswordBasedConfig `yaml:"password_based"`
+	PasswdBased PasswordBasedConfig `yaml:"password_based"`
 }
 
 // AuthZConfig represents settings for authorization methods
 type AuthZConfig struct {
-	Jwt JWTConfig `yaml:"jwt"`
+	CookieConf CookieAuthConfig `yaml:"cookie"`
+	Jwt        JWTConfig        `yaml:"jwt"`
 }
 
 // RegisterConfig represents settings for registering account
@@ -57,16 +66,16 @@ type PasswordBasedConfig struct {
 }
 
 type JWTConfig struct {
-	Alg     string            `yaml:"alg"`
-	Keys    []string          `yaml:"keys"`
-	KidAlg  string            `yaml:"kid_alg"`
-	Payload map[string]string `yaml:"payload"`
+	Alg     string                   `yaml:"alg"`
+	Keys    []map[string]interface{} `yaml:"keys"`
+	KidAlg  string                   `yaml:"kid_alg"`
+	Payload map[string]string        `yaml:"payload"`
 }
 
 // HashConfig represents settings for hashing
 type HashConfig struct {
-	Algorithm string               `yaml:"algorithm"`
-	RawHash   pwhash.RawHashConfig `yaml:"settings"`
+	AlgName     string               `yaml:"alg"`
+	RawHashConf pwhash.RawHashConfig `yaml:"settings"`
 }
 
 // Init loads settings for whole project into global object conf
@@ -87,32 +96,53 @@ func (c *ProjectConfig) Init(data []byte) {
 
 // init initializes app by creating table users
 func (a *AppConfig) init() {
-	sess, err := storage.Open(a.RawConnConfig)
-	if err != nil {
-		log.Panicf("app open session: %v", err)
+	storageFeatures := map[string][]string{}
+	a.StorageByFeature = map[string]storage.ConnSession{}
+
+	for storageName := range a.RawStorageConfs {
+		if _, ok := storageFeatures[storageName]; !ok {
+			storageFeatures[storageName] = []string{}
+		}
 	}
 
-	a.Session = sess
+	usersStorage := a.Main.UserColl.StorageName
+	storageFeatures[usersStorage] = append(storageFeatures[usersStorage], "users")
 
-	if err = a.initUserColl(); err != nil {
+	sessionStorage := a.Main.AuthZ.CookieConf.StorageName
+	storageFeatures[sessionStorage] = append(storageFeatures[sessionStorage], "sessions")
+
+	for storageName, features := range storageFeatures {
+		connSess, err := storage.Open(a.RawStorageConfs[storageName], features)
+		if err != nil {
+			log.Panicf("app open session: %v", err)
+		}
+
+		for _, f := range features {
+			a.StorageByFeature[f] = connSess
+		}
+	}
+
+	if err := a.initUserColl(); err != nil {
 		log.Panicf("app init: %v", err)
 	}
 }
 
 func (a *AppConfig) initUserColl() error {
+	usersStorage := a.StorageByFeature["users"]
+
 	if a.Main.UserColl == nil {
 		a.Main.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
 	}
-	isExists, err := a.Session.IsCollExists(a.Main.UserColl.ToCollConfig())
+	isExists, err := usersStorage.IsCollExists(a.Main.UserColl.ToCollConfig())
 	if err != nil {
 		return err
 	}
 
-	if !a.Main.UseExistentColl && !isExists {
-		if err = a.Session.CreateUserColl(*a.Main.UserColl); err != nil {
+	if !a.Main.UseExistColl && !isExists {
+		if err = usersStorage.CreateUserColl(*a.Main.UserColl); err != nil {
 			return err
 		}
-	} else if a.Main.UseExistentColl && !isExists {
+	} else if a.Main.UseExistColl && !isExists {
 		return errors.New("user collection is not found")
 	}
 

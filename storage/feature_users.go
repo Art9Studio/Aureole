@@ -6,6 +6,7 @@ type CollConfig struct {
 }
 
 type UserCollConfig struct {
+	StorageName string `yaml:"storage"`
 	Name        string `yaml:"name"`
 	Pk          string `yaml:"pk,omitempty"`
 	UserUnique  string `yaml:"user_unique"`
