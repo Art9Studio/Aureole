@@ -1,18 +1,34 @@
 package main
 
 import (
-	"io/ioutil"
+	"aureole/configs"
+	"aureole/context"
+	"aureole/context/types"
+	"aureole/plugins/authn"
 	"log"
 )
 
-// conf is global object that holds all project level settings variables
-var conf ProjectConfig
+// Project is global object that holds all project level settings variables
+var Project types.ProjectCtx
 
 func main() {
-	data, err := ioutil.ReadFile("config.yaml")
+	projConf, err := configs.LoadMainConfig()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
-	conf.Init(data)
-	log.Fatal(initRouter().Run())
+
+	authn.InitRepository(&Project)
+
+	if err := context.InitContext(projConf, &Project); err != nil {
+		log.Panic(err)
+	}
+
+	router, err := initRouter()
+	if err != nil {
+		log.Panicf("router init: %v", err)
+	}
+
+	if err := router.Listen(":3000"); err != nil {
+		log.Panicf("router start: %v", err)
+	}
 }
