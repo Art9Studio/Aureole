@@ -27,7 +27,7 @@ var (
 //
 //		$argon2i$v=19$m=65536,t=3,p=2$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
-func (a Argon2) HashPw(pw string) (string, error) {
+func (a *Argon2) HashPw(pw string) (string, error) {
 	salt := make([]byte, a.conf.SaltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
@@ -58,7 +58,7 @@ func (a Argon2) HashPw(pw string) (string, error) {
 // ComparePw performs a constant-time comparison between a plain-text password and
 // Argon2 pwhash, using the parameters and salt contained in the pwhash.
 // It returns true if they match, otherwise it returns false.
-func (a Argon2) ComparePw(pw string, hash string) (bool, error) {
+func (a *Argon2) ComparePw(pw string, hash string) (bool, error) {
 	conf, salt, key, err := decodePwHash(hash)
 	if err != nil {
 		return false, err

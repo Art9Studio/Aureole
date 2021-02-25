@@ -24,7 +24,7 @@ func (a argon2Adapter) GetPwHasher(rawConf *pwhash.RawHashConfig) (pwhash.PwHash
 		return nil, err
 	}
 
-	return Argon2{conf: config}, nil
+	return &Argon2{conf: config}, nil
 }
 
 // newConfig creates new HashConfig struct from the raw data, parsed from the config file

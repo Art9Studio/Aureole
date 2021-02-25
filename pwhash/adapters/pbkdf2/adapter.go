@@ -27,7 +27,7 @@ func (a pbkdf2Adapter) GetPwHasher(rawConf *pwhash.RawHashConfig) (pwhash.PwHash
 		return nil, err
 	}
 
-	return Pbkdf2{conf: config}, nil
+	return &Pbkdf2{conf: config}, nil
 }
 
 // newConfig creates new HashConfig struct from the raw data, parsed from the config file

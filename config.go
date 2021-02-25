@@ -2,100 +2,154 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"github.com/jinzhu/copier"
+	"github.com/sherifabdlnaby/configuro"
 	"gouth/pwhash"
 	"gouth/storage"
-	"log"
-
-	"gopkg.in/yaml.v3"
 )
 
-// ProjectConfig represents settings for whole project
-type ProjectConfig struct {
-	APIVersion string               `yaml:"api_version"`
-	Apps       map[string]AppConfig `yaml:"apps"`
-}
+type (
+	// RawProjectConfig represents raw settings for whole project. Based on raw
+	// project settings initializes pure project settings, which describes below
+	RawProjectConfig struct {
+		APIVersion string                  `config:"api_version"`
+		Apps       map[string]RawAppConfig `config:"apps"`
+	}
 
-// AppConfig represents settings for one application
-type AppConfig struct {
-	PathPrefix       string                              `yaml:"path_prefix"`
-	StorageByFeature map[string]storage.ConnSession      `yaml:"-"`
-	RawStorageConfs  map[string]storage.RawStorageConfig `yaml:"storages"`
-	Main             MainConfig                          `yaml:"main"`
-	Hash             HashConfig                          `yaml:"hasher"`
-}
+	// RawAppConfig represents raw settings for one application. Based on raw
+	// app settings initializes pure app settings, which describes below
+	RawAppConfig struct {
+		PathPrefix       string                              `config:"path_prefix"`
+		RawStorageConfs  map[string]storage.RawStorageConfig `config:"storages"`
+		Main             MainConfig                          `config:"main"`
+		HashConf         RawHashConfig                       `config:"hasher"`
+		StorageByFeature map[string]storage.ConnSession
+		Hash             pwhash.PwHasher
+	}
 
-// MainConfig represents settings for authentication
-type MainConfig struct {
-	UseExistColl bool                    `yaml:"use_existent_collection"`
-	UserColl     *storage.UserCollConfig `yaml:"user_collection"`
-	AuthN        AuthNConfig             `yaml:"authN"`
-	AuthZ        AuthZConfig             `yaml:"authZ"`
-	Register     RegisterConfig          `yaml:"register"`
-}
+	// RawHashConfig represents raw settings for initializing hashers
+	RawHashConfig struct {
+		AlgName     string               `config:"alg"`
+		RawHashConf pwhash.RawHashConfig `config:"settings"`
+	}
+)
 
-type CookieAuthConfig struct {
-	StorageName string `yaml:"storage"`
-	Domain      string `yaml:"domain"`
-	Path        string `yaml:"path"`
-	MaxAge      int    `yaml:"max_age"`
-	IsSecure    bool   `yaml:"secure"`
-	IsHttpOnly  bool   `yaml:"http_only"`
-}
+type (
+	// ProjectConfig represents settings for whole project
+	ProjectConfig struct {
+		APIVersion string
+		Apps       map[string]AppConfig
+	}
 
-// AuthNConfig represents settings for authentication methods
-type AuthNConfig struct {
-	PasswdBased PasswordBasedConfig `yaml:"password_based"`
-}
+	// AppConfig represents settings for one application
+	AppConfig struct {
+		PathPrefix       string
+		Main             MainConfig
+		StorageByFeature map[string]storage.ConnSession
+		Hash             pwhash.PwHasher
+	}
 
-// AuthZConfig represents settings for authorization methods
-type AuthZConfig struct {
-	CookieConf CookieAuthConfig `yaml:"cookie"`
-	Jwt        JWTConfig        `yaml:"jwt"`
-}
+	// MainConfig represents settings for authentication
+	MainConfig struct {
+		UseExistColl bool                    `config:"use_existent_collection"`
+		UserColl     *storage.UserCollConfig `config:"user_collection"`
+		AuthN        AuthNConfig             `config:"authN"`
+		AuthZ        AuthZConfig             `config:"authZ"`
+		Register     RegisterConfig          `config:"register"`
+	}
 
-// RegisterConfig represents settings for registering account
-type RegisterConfig struct {
-	LoginAfter bool              `yaml:"login_after"`
-	AuthType   string            `yaml:"auth_type"`
-	Fields     map[string]string `yaml:"fields"`
-}
+	// AuthNConfig represents settings for authentication methods
+	AuthNConfig struct {
+		PasswdBased PasswordBasedConfig `config:"password_based"`
+	}
 
-type PasswordBasedConfig struct {
-	UserUnique  string `yaml:"user_unique"`
-	UserConfirm string `yaml:"user_confirm"`
-}
+	// AuthZConfig represents settings for authorization methods
+	AuthZConfig struct {
+		CookieConf CookieAuthConfig `config:"cookie"`
+		Jwt        JWTConfig        `config:"jwt"`
+	}
 
-type JWTConfig struct {
-	Alg     string                   `yaml:"alg"`
-	Keys    []map[string]interface{} `yaml:"keys"`
-	KidAlg  string                   `yaml:"kid_alg"`
-	Payload map[string]string        `yaml:"payload"`
-}
+	// RegisterConfig represents settings for registering account
+	RegisterConfig struct {
+		LoginAfter bool              `config:"login_after"`
+		AuthType   string            `config:"auth_type"`
+		Fields     map[string]string `config:"fields"`
+	}
 
-// HashConfig represents settings for hashing
-type HashConfig struct {
-	AlgName     string               `yaml:"alg"`
-	RawHashConf pwhash.RawHashConfig `yaml:"settings"`
-}
+	PasswordBasedConfig struct {
+		UserUnique  string `config:"user_unique"`
+		UserConfirm string `config:"user_confirm"`
+	}
+
+	CookieAuthConfig struct {
+		StorageName string `config:"storage"`
+		Domain      string `config:"domain"`
+		Path        string `config:"path"`
+		MaxAge      int    `config:"max_age"`
+		IsSecure    bool   `config:"secure"`
+		IsHttpOnly  bool   `config:"http_only"`
+	}
+
+	JWTConfig struct {
+		Alg     string                   `config:"alg"`
+		Keys    []map[string]interface{} `config:"keys"`
+		KidAlg  string                   `config:"kid_alg"`
+		Payload map[string]string        `config:"payload"`
+	}
+)
 
 // Init loads settings for whole project into global object conf
-func (c *ProjectConfig) Init(data []byte) {
-	if err := yaml.Unmarshal(data, c); err != nil {
-		log.Panicf("project config init: %v", err)
+func (c *ProjectConfig) Init() error {
+	confLoader, err := configuro.NewConfig(
+		configuro.WithLoadFromConfigFile("./config.yaml", true),
+	)
+	if err != nil {
+		return fmt.Errorf("project config init: %v", err)
 	}
 
-	for i := range c.Apps {
-		if app, ok := c.Apps[i]; ok {
-			app.init()
-			c.Apps[i] = app
+	rawConf := &RawProjectConfig{}
+
+	if err = confLoader.Load(rawConf); err != nil {
+		return fmt.Errorf("project config init: %v", err)
+	}
+
+	for i := range rawConf.Apps {
+		if app, ok := rawConf.Apps[i]; ok {
+			if err = app.init(); err != nil {
+				return err
+			}
+			rawConf.Apps[i] = app
 		} else {
-			log.Panicf("project config init: cannot init app %s", i)
+			return fmt.Errorf("project config init: cannot init app %s", i)
 		}
 	}
+
+	if err = copier.Copy(c, rawConf); err != nil {
+		return fmt.Errorf("project config init: %v", err)
+	}
+
+	return nil
 }
 
-// init initializes app by creating table users
-func (a *AppConfig) init() {
+// init initializes app
+func (a *RawAppConfig) init() error {
+	if err := a.initStorages(); err != nil {
+		return fmt.Errorf("app init: %v", err)
+	}
+
+	if err := a.initUserColl(); err != nil {
+		return fmt.Errorf("app init: %v", err)
+	}
+
+	if err := a.initPwHasher(); err != nil {
+		return fmt.Errorf("app init: %v", err)
+	}
+
+	return nil
+}
+
+func (a *RawAppConfig) initStorages() error {
 	storageFeatures := map[string][]string{}
 	a.StorageByFeature = map[string]storage.ConnSession{}
 
@@ -108,13 +162,15 @@ func (a *AppConfig) init() {
 	usersStorage := a.Main.UserColl.StorageName
 	storageFeatures[usersStorage] = append(storageFeatures[usersStorage], "users")
 
-	sessionStorage := a.Main.AuthZ.CookieConf.StorageName
-	storageFeatures[sessionStorage] = append(storageFeatures[sessionStorage], "sessions")
+	if a.Main.AuthZ.CookieConf.StorageName != "" {
+		sessionStorage := a.Main.AuthZ.CookieConf.StorageName
+		storageFeatures[sessionStorage] = append(storageFeatures[sessionStorage], "sessions")
+	}
 
 	for storageName, features := range storageFeatures {
 		connSess, err := storage.Open(a.RawStorageConfs[storageName], features)
 		if err != nil {
-			log.Panicf("app open session: %v", err)
+			return fmt.Errorf("open connection session to storage '%s': %v", storageName, err)
 		}
 
 		for _, f := range features {
@@ -122,12 +178,10 @@ func (a *AppConfig) init() {
 		}
 	}
 
-	if err := a.initUserColl(); err != nil {
-		log.Panicf("app init: %v", err)
-	}
+	return nil
 }
 
-func (a *AppConfig) initUserColl() error {
+func (a *RawAppConfig) initUserColl() error {
 	usersStorage := a.StorageByFeature["users"]
 
 	if a.Main.UserColl == nil {
@@ -146,5 +200,15 @@ func (a *AppConfig) initUserColl() error {
 		return errors.New("user collection is not found")
 	}
 
+	return nil
+}
+
+func (a *RawAppConfig) initPwHasher() error {
+	h, err := pwhash.New(a.HashConf.AlgName, &a.HashConf.RawHashConf)
+	if err != nil {
+		return fmt.Errorf("cannot init hasher '%s': %v", a.HashConf.AlgName, err)
+	}
+
+	a.Hash = h
 	return nil
 }

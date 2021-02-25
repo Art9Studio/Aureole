@@ -89,7 +89,7 @@ apps:
                   - ./private.pem
           kid_alg: "docker_registry" # implement docker_registry and default and none
           payload:
-            "$.userID": "id"
+            "userID": "id"
       #     "$.userPosts": "@getUserPosts" raw querie
       register:
         login_after: true
@@ -101,8 +101,8 @@ apps:
 
     hasher:
       alg: "pbkdf2"
-        settings:
-          iterations: 1
-          salt_length: 16
-          key_length: 16
-          func: "sha1"
+      settings:
+        iterations: 1
+        salt_length: 16
+        key_length: 16
+        func: "sha1"

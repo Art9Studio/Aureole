@@ -1,18 +1,16 @@
 package main
 
-import (
-	"io/ioutil"
-	"log"
-)
+import "log"
 
 // conf is global object that holds all project level settings variables
 var conf ProjectConfig
 
 func main() {
-	data, err := ioutil.ReadFile("config.yaml")
-	if err != nil {
-		panic(err)
+	if err := conf.Init(); err != nil {
+		log.Panic(err)
 	}
-	conf.Init(data)
-	log.Fatal(initRouter().Run())
+
+	if err := initRouter().Run(); err != nil {
+		log.Panicf("router init: %v", err)
+	}
 }

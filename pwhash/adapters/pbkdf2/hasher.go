@@ -27,7 +27,7 @@ var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhash is not in the correc
 //
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
-func (p Pbkdf2) HashPw(pw string) (string, error) {
+func (p *Pbkdf2) HashPw(pw string) (string, error) {
 	salt := make([]byte, p.conf.SaltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
@@ -48,7 +48,7 @@ func (p Pbkdf2) HashPw(pw string) (string, error) {
 // ComparePw performs a constant-time comparison between a plain-text password and
 // Pbkdf2 pwhash, using the parameters and salt contained in the pwhash.
 // It returns true if they match, otherwise it returns false.
-func (p Pbkdf2) ComparePw(pw string, hash string) (bool, error) {
+func (p *Pbkdf2) ComparePw(pw string, hash string) (bool, error) {
 	conf, salt, key, err := decodePwHash(hash)
 	if err != nil {
 		return false, err
