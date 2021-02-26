@@ -12,8 +12,8 @@ func initRouter() *gin.Engine {
 	for _, app := range conf.Apps {
 		appR := v.Group(app.PathPrefix)
 
-		appR.POST("/register", registerFunc(app))
-		appR.POST("/login", loginFunc(app))
+		appR.POST("/register", registerHandler(app))
+		appR.POST("/login", loginHandler(app))
 	}
 
 	return r

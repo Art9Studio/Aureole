@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func registerFunc(app AppConfig) func(c *gin.Context) {
+func registerHandler(app AppConfig) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var regData interface{}
 
@@ -99,7 +99,7 @@ func registerFunc(app AppConfig) func(c *gin.Context) {
 	}
 }
 
-func loginFunc(app AppConfig) func(c *gin.Context) {
+func loginHandler(app AppConfig) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var authData interface{}
 
