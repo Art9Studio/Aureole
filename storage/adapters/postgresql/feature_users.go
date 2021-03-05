@@ -1,9 +1,9 @@
 package postgresql
 
 import (
+	"aureole/storage"
 	"fmt"
 	"github.com/jackc/pgx/v4"
-	"gouth/storage"
 )
 
 // IsCollExists checks whether the given collection exists

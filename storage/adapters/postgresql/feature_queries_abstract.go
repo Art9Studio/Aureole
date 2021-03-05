@@ -1,6 +1,6 @@
 package postgresql
 
-import "gouth/storage"
+import "aureole/storage"
 
 func (s *ConnSession) RelInfo() map[storage.CollPair]storage.RelInfo {
 	return s.relInfo

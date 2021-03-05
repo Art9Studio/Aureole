@@ -1,8 +1,8 @@
 package postgresql
 
 import (
+	"aureole/storage"
 	"github.com/stretchr/testify/assert"
-	"gouth/storage"
 	"reflect"
 	"testing"
 )

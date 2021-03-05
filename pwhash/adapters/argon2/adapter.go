@@ -1,8 +1,8 @@
 package argon2
 
 import (
+	"aureole/pwhash"
 	"fmt"
-	"gouth/pwhash"
 )
 
 // AdapterName is the internal name of the adapter
