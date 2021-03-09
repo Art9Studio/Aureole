@@ -10,96 +10,76 @@ import (
 )
 
 type (
-	// RawProjectConfig represents raw settings for whole project. Based on raw
-	// project settings initializes pure project settings, which describes below
+	RawConfig = map[string]interface{}
+
 	RawProjectConfig struct {
-		APIVersion string                  `c:"api_version" v:"required,numeric"`
-		Apps       map[string]RawAppConfig `c:"apps" v:"required,dive"`
+		APIVersion  string                         `с:"api_version"`
+		Apps        []App                          `с:"apps"`
+		RawStorages []Storages                     `с:"storages,omitempty"`
+		Collections []Collections                  `с:"collections,omitempty"`
+		RawHashers  []Hashers                      `с:"hashers,omitempty"`
+		CryptoKeys  []CryptoKeys                   `с:"crypto_keys,omitempty"`
+		Storages    map[string]storage.ConnSession `c:"-"`
+		Hashers     pwhash.PwHasher                `c:"-"`
 	}
 
-	// RawAppConfig represents raw settings for one application. Based on raw
-	// app settings initializes pure app settings, which describes below
-	RawAppConfig struct {
-		PathPrefix       string                              `c:"path_prefix" v:"required"`
-		RawStorageConfs  map[string]storage.RawStorageConfig `c:"storages" v:"required,dive,dive,keys,eq=connection_url|eq=connection_config,endkeys"`
-		Main             MainConfig                          `c:"main" v:"required"`
-		HashConf         RawHashConfig                       `c:"hasher" v:"required"`
-		StorageByFeature map[string]storage.ConnSession
-		Hash             pwhash.PwHasher
-	}
-
-	// RawHashConfig represents raw settings for initializing hashers
-	RawHashConfig struct {
-		AlgName     string               `c:"alg" v:"required,oneof=argon2 pbkdf2"`
-		RawHashConf pwhash.RawHashConfig `c:"settings" v:"required"`
-	}
-)
-
-type (
-	// ProjectConfig represents settings for whole project
 	ProjectConfig struct {
-		APIVersion string
-		Apps       map[string]AppConfig
+		APIVersion  string
+		Apps        []App
+		Collections []Collections
+		Storages    map[string]storage.ConnSession
+		Hashers     pwhash.PwHasher
 	}
 
-	// AppConfig represents settings for one application
-	AppConfig struct {
-		PathPrefix       string
-		Main             *MainConfig
-		StorageByFeature map[string]storage.ConnSession
-		Hash             pwhash.PwHasher
+	App struct {
+		PathPrefix    string          `с:"path_prefix"`
+		AuthN         []AuthN         `с:"authN"`
+		AuthZ         AuthZ           `с:"authZ"`
+		IdentityFlows []IdentityFlows `с:"identity_flows"`
 	}
 
-	// MainConfig represents settings for authentication
-	MainConfig struct {
-		UseExistColl bool                    `c:"use_existent_collection"`
-		UserColl     *storage.UserCollConfig `c:"user_collection" v:"required"`
-		AuthN        *AuthNConfig            `c:"authN" v:"required"`
-		AuthZ        *AuthZConfig            `c:"authZ" v:"required"`
-		Register     *RegisterConfig         `c:"register" v:"required"`
+	AuthN struct {
+		Type   string    `с:"type"`
+		URL    string    `с:"url,omitempty"`
+		Config RawConfig `с:"config,omitempty"`
 	}
 
-	// AuthNConfig represents settings for authentication methods
-	AuthNConfig struct {
-		PasswdBased *PasswordBasedConfig `c:"password_based" v:"required"`
+	AuthZ struct {
+		Type   string    `с:"type"`
+		Config RawConfig `с:"config,omitempty"`
 	}
 
-	// AuthZConfig represents settings for authorization methods
-	AuthZConfig struct {
-		CookieConf *CookieAuthConfig `c:"cookie" v:"required_without=Jwt"`
-		Jwt        *JWTConfig        `c:"jwt" v:"required_without=CookieConf"`
+	IdentityFlows struct {
+		Type   string    `с:"type"`
+		Config RawConfig `с:"config,omitempty"`
 	}
 
-	// RegisterConfig represents settings for registering account
-	RegisterConfig struct {
-		LoginAfter bool              `c:"login_after" v:"required"`
-		AuthType   string            `c:"auth_type" v:"required"`
-		Fields     map[string]string `c:"fields" v:"required"`
+	Storages struct {
+		Name   string    `с:"name"`
+		Config RawConfig `с:"config,omitempty"`
 	}
 
-	PasswordBasedConfig struct {
-		UserUnique  string `c:"user_unique" v:"required"`
-		UserConfirm string `c:"user_confirm" v:"required"`
+	Collections struct {
+		Type    string    `с:"type"`
+		Name    string    `с:"name"`
+		Storage string    `с:"storage"`
+		Config  RawConfig `с:"config,omitempty"`
 	}
 
-	CookieAuthConfig struct {
-		StorageName string `c:"storage" v:"required"`
-		Domain      string `c:"domain" v:"required"`
-		Path        string `c:"path" v:"required"`
-		MaxAge      int    `c:"max_age" v:"required"`
-		IsSecure    bool   `c:"secure"`
-		IsHttpOnly  bool   `c:"http_only"`
+	Hashers struct {
+		Type   string    `с:"type"`
+		Name   string    `с:"name"`
+		Config RawConfig `с:"config,omitempty"`
 	}
 
-	JWTConfig struct {
-		Alg     string                   `c:"alg" v:"required"`
-		Keys    []map[string]interface{} `c:"keys" v:"required"`
-		KidAlg  string                   `c:"kid_alg" v:"required"`
-		Payload map[string]string        `c:"payload" v:"required"`
+	CryptoKeys struct {
+		Type   string    `с:"type"`
+		Driver string    `с:"driver"`
+		Name   string    `с:"name"`
+		Config RawConfig `с:"config,omitempty"`
 	}
 )
 
-// Init loads settings for whole project into global object conf
 func (c *ProjectConfig) Init() error {
 	confLoader, err := configuro.NewConfig(
 		configuro.WithLoadFromConfigFile("./config.yaml", true),
@@ -116,22 +96,13 @@ func (c *ProjectConfig) Init() error {
 	if err = confLoader.Load(rawConf); err != nil {
 		return fmt.Errorf("project config init: %v", err)
 	}
-
 	if err = confLoader.Validate(rawConf); err != nil {
 		return fmt.Errorf("project config init: %v", err)
 	}
 
-	for i := range rawConf.Apps {
-		if app, ok := rawConf.Apps[i]; ok {
-			if err = app.init(); err != nil {
-				return err
-			}
-			rawConf.Apps[i] = app
-		} else {
-			return fmt.Errorf("project config init: cannot init app %s", i)
-		}
+	if err = rawConf.init(); err != nil {
+		return err
 	}
-
 	if err = copier.Copy(c, rawConf); err != nil {
 		return fmt.Errorf("project config init: %v", err)
 	}
@@ -139,84 +110,28 @@ func (c *ProjectConfig) Init() error {
 	return nil
 }
 
-// init initializes app
-func (a *RawAppConfig) init() error {
-	if err := a.initStorages(); err != nil {
-		return fmt.Errorf("app init: %v", err)
+func (rawC *RawProjectConfig) init() error {
+	if err := rawC.initStorages(); err != nil {
+		return fmt.Errorf("project init: %v", err)
 	}
-
-	if err := a.initUserColl(); err != nil {
-		return fmt.Errorf("app init: %v", err)
+	if err := rawC.initCollections(); err != nil {
+		return fmt.Errorf("project init: %v", err)
 	}
-
-	if err := a.initPwHasher(); err != nil {
-		return fmt.Errorf("app init: %v", err)
+	if err := rawC.initPwHashers(); err != nil {
+		return fmt.Errorf("project init: %v", err)
 	}
 
 	return nil
 }
 
-func (a *RawAppConfig) initStorages() error {
-	storageFeatures := map[string][]string{}
-	a.StorageByFeature = map[string]storage.ConnSession{}
-
-	for storageName := range a.RawStorageConfs {
-		if _, ok := storageFeatures[storageName]; !ok {
-			storageFeatures[storageName] = []string{}
-		}
-	}
-
-	usersStorage := a.Main.UserColl.StorageName
-	storageFeatures[usersStorage] = append(storageFeatures[usersStorage], "users")
-
-	if a.Main.AuthZ.CookieConf != nil {
-		sessionStorage := a.Main.AuthZ.CookieConf.StorageName
-		storageFeatures[sessionStorage] = append(storageFeatures[sessionStorage], "sessions")
-	}
-
-	for storageName, features := range storageFeatures {
-		connSess, err := storage.Open(a.RawStorageConfs[storageName], features)
-		if err != nil {
-			return fmt.Errorf("open connection session to storage '%s': %v", storageName, err)
-		}
-
-		for _, f := range features {
-			a.StorageByFeature[f] = connSess
-		}
-	}
-
+func (rawC *RawProjectConfig) initStorages() error {
 	return nil
 }
 
-func (a *RawAppConfig) initUserColl() error {
-	usersStorage := a.StorageByFeature["users"]
-
-	if a.Main.UserColl == nil {
-		a.Main.UserColl = storage.NewUserCollConfig("users", "id", "username", "password")
-	}
-
-	isExists, err := usersStorage.IsCollExists(a.Main.UserColl.ToCollConfig())
-	if err != nil {
-		return err
-	}
-
-	if !a.Main.UseExistColl && !isExists {
-		if err = usersStorage.CreateUserColl(*a.Main.UserColl); err != nil {
-			return err
-		}
-	} else if a.Main.UseExistColl && !isExists {
-		return errors.New("user collection is not found")
-	}
-
+func (rawC *RawProjectConfig) initCollections() error {
 	return nil
 }
 
-func (a *RawAppConfig) initPwHasher() error {
-	h, err := pwhash.New(a.HashConf.AlgName, &a.HashConf.RawHashConf)
-	if err != nil {
-		return fmt.Errorf("cannot init hasher '%s': %v", a.HashConf.AlgName, err)
-	}
-
-	a.Hash = h
+func (rawC *RawProjectConfig) initPwHashers() error {
 	return nil
 }
