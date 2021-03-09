@@ -1,16 +1,16 @@
 package storage
 
 type CollConfig struct {
-	Name string `config:"name"`
-	Pk   string `config:"pk,omitempty"`
+	Name string
+	Pk   string
 }
 
 type UserCollConfig struct {
-	StorageName string `config:"storage"`
-	Name        string `config:"name"`
-	Pk          string `config:"pk,omitempty"`
-	UserUnique  string `config:"user_unique"`
-	UserConfirm string `config:"user_confirm"`
+	StorageName string `c:"storage" v:"required"`
+	Name        string `c:"name" v:"required"`
+	Pk          string `c:"pk" v:"required"`
+	UserUnique  string `c:"user_unique" v:"required"`
+	UserConfirm string `c:"user_confirm" v:"required"`
 }
 
 type InsertUserData struct {

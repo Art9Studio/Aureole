@@ -4,81 +4,54 @@ apps:
   one:
     path_prefix: "/one"
 
-    storages:
-      main_db:
-        connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
-      session_db:
-        connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
-
-    main:
-      use_existent_collection: false
-      user_collection:
-        storage: "main_db"
-        name: "users"
-        pk: "id"
-        user_unique: "username"
-        user_confirm: "password"
-
-      authN:
-        password_based:
+    authN:
+      - type: password_based
+        url: "/login"
+        config:
+          main_hasher: argon2
+          compat_hashers: []
+          collection: identity
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
 
-      authZ:
-        cookie:
-          storage: "session_db"
-          domain: "localhost"
-          path: "/"
-          max_age: 3600
-          secure: true
-          http_only: false
+    authZ:
+      type: cookie
+      config:
+        storage: one_db
+        collection:
+        domain: "localhost"
+        path: "/"
+        max_age: 3600
+        secure: true
+        http_only: false
 
-      register:
+    identity_flows:
+      - type: register
         login_after: true
-        auth_type: "jwt"
         fields:
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
           email: "{$.email}"
 
-    hasher:
-      alg: "argon2"
-      settings:
-        type: "argon2i"
-        iterations: 1
-        parallelism: 1
-        salt_length: 16
-        key_length: 16
-        memory: 16384
 
   two:
     path_prefix: "/two"
 
-    storages:
-      main_db:
-        connection_config:
-          adapter: "postgresql"
-          username: "root"
-          password: "password"
-          host: "localhost"
-          port: "5432"
-          db_name: "test"
-          options:
-            sslmode: "disable"
-            search_path: "public"
-
     main:
-      use_existent_collection: false
+      use_existent_collection: true
       user_collection:
         storage: "main_db"
         name: "users"
         pk: "id"
         user_unique: "username"
         user_confirm: "password"
+
       authN:
-        password_based:
-          user_unique: "{$.name}"
-          user_confirm: "{$.passwd}"
+          - type: password_based
+            config:
+              user_unique: "{$.name}"
+              user_confirm: "{$.passwd}"
+
       authZ:
         jwt:
           alg: "RS256"
@@ -89,8 +62,9 @@ apps:
                   - ./private.pem
           kid_alg: "docker_registry" # implement docker_registry and default and none
           payload:
-            "userID": "id"
+            "$.userID": "id"
       #     "$.userPosts": "@getUserPosts" raw querie
+
       register:
         login_after: true
         auth_type: "jwt"
@@ -106,3 +80,51 @@ apps:
         salt_length: 16
         key_length: 16
         func: "sha1"
+
+storages:
+  - name: one_db
+    config:
+      connection_url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
+
+  - name: two_db
+    config:
+      adapter: "postgresql"
+      username: "root"
+      password: "password"
+      host: "localhost"
+      port: "5432"
+      db_name: "test"
+      options:
+        sslmode: "disable"
+        search_path: "public"
+
+collections:
+  - type: identity
+    name: identity
+    storage: one_db
+    config:
+      use_existent: false
+      name: "users"
+      pk: "id"
+      user_unique: "username"
+      user_confirm: "password"
+
+  - type: session
+    name: session
+    storage: one_db
+    config:
+      use_existent: false
+      name: "sessions"
+      pk: "id"
+      # todo: fill rest
+
+hashers:
+  - type: argon2
+    name: argon2
+    config:
+      kind: "argon2i"
+      iterations: 1
+      parallelism: 1
+      salt_length: 16
+      key_length: 16
+      memory: 16384
