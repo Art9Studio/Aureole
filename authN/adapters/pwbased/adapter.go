@@ -1,4 +1,4 @@
-package argon2
+package pwbased
 
 import (
 	"gouth/authN"
@@ -12,6 +12,6 @@ func init() {
 	authN.RegisterAdapter(AdapterName, pwBasedAdapter{})
 }
 
-// pwBasedAdapter represents adapter for argon2 pwhasher algorithm
+// pwBasedAdapter represents adapter for password based authentication
 type pwBasedAdapter struct {
 }

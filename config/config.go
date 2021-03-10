@@ -24,3 +24,8 @@ type AuthNConfig struct {
 	Type   authN.Type
 	Config RawConfig
 }
+
+type AuthZConfig struct {
+	Type   string
+	Config RawConfig
+}

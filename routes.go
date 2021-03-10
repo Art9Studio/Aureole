@@ -1,23 +1,29 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"github.com/gofiber/fiber/v2"
+	"gouth/authN"
 )
 
 // initRouter initializes router and creates routes for each application
-func initRouter() *gin.Engine {
-	r := gin.Default()
+func initRouter() (*fiber.App, error) {
+	r := fiber.New()
 	v := r.Group("v" + Project.APIVersion)
 
 	for _, app := range Project.Apps {
 		appR := v.Group(app.PathPrefix)
 		for _, authNVariant := range app.AuthN {
-			appR.POST(authNVariant.Path, authNHandler(&app, &authNVariant))
-		}
+			authController, err := authN.New(authNVariant.Type, &authNVariant.Config)
+			if err != nil {
+				return nil, fmt.Errorf("router init error: %v", err)
+			}
 
-		//appR.POST("/register", registerHandler(&app))
-		//appR.POST("/login", authNHandler(&app))
+			for _, route := range authController.GetRoutes() {
+				appR.Post(route.Path, route.Handler)
+			}
+		}
 	}
 
-	return r
+	return r, nil
 }

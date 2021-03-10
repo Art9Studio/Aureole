@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"gouth/authN"
 	"gouth/config"
 	"gouth/jwt"
@@ -92,8 +93,8 @@ func registerHandler(app *config.App) func(c *gin.Context) {
 	}
 }
 
-func authNHandler(app *config.App, authNConfig *config.AuthNConfig) func(c *gin.Context) {
-	passwordBased := func(c *gin.Context) {
+func authNHandler(app *config.App, authNConfig *config.AuthNConfig) func(c *fiber.Ctx) error {
+	passwordBased := func(c *fiber.Ctx) error {
 		var authData interface{}
 
 		if err := c.BindJSON(&authData); err != nil {

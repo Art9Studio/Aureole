@@ -11,13 +11,13 @@ var (
 	adaptersMU sync.Mutex
 )
 
-// Adapter defines methods for pwhasher adapters
+// Adapter defines methods for authentication adapters
 type Adapter interface {
-	//GetHasher returns desired PwHasher depends on the given config
+	// GetAuthNController returns desired authentication controller depends on the given config
 	GetAuthNController(config *config.RawConfig) (Controller, error)
 }
 
-// RegisterAdapter register pwhasher adapter
+// RegisterAdapter register authentication adapter
 func RegisterAdapter(name string, a Adapter) {
 	adaptersMU.Lock()
 	defer adaptersMU.Unlock()
@@ -33,7 +33,7 @@ func RegisterAdapter(name string, a Adapter) {
 	adapters[name] = a
 }
 
-// GetAdapter returns pwhasher adapter if it exists
+// GetAdapter returns authentication adapter if it exists
 func GetAdapter(name string) (Adapter, error) {
 	adaptersMU.Lock()
 	defer adaptersMU.Unlock()

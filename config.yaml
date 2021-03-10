@@ -90,7 +90,7 @@ collections:
 
   - type: "session"
     name: session
-    #storage: one_db
+    storage: one_db
     config:
       use_existent: false
       name: "sessions"

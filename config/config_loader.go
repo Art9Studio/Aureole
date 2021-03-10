@@ -9,69 +9,66 @@ type (
 	RawConfig = map[string]interface{}
 
 	projectConfig struct {
-		APIVersion  string        `с:"api_version"`
-		Apps        []app         `с:"apps"`
-		Storages    []storages    `с:"storages,omitempty"`
-		Collections []collections `с:"collections,omitempty"`
-		Hashers     []hashers     `с:"hashers,omitempty"`
-		CryptoKeys  []cryptoKeys  `с:"crypto_keys,omitempty"`
+		APIVersion  string        `config:"api_version"`
+		Apps        []app         `config:"apps"`
+		Storages    []storages    `config:"storages,omitempty"`
+		Collections []collections `config:"collections,omitempty"`
+		Hashers     []hashers     `config:"hashers,omitempty"`
+		CryptoKeys  []cryptoKeys  `config:"crypto_keys,omitempty"`
 	}
 
 	app struct {
-		PathPrefix    string          `с:"path_prefix"`
-		AuthN         []authNConfig   `с:"authN"`
-		AuthZ         authZ           `с:"authZ"`
-		IdentityFlows []identityFlows `с:"identity_flows"`
+		PathPrefix    string          `config:"path_prefix"`
+		AuthN         []authNConfig   `config:"authN"`
+		AuthZ         authZ           `config:"authZ"`
+		IdentityFlows []identityFlows `config:"identity_flows"`
 	}
 
 	authNConfig struct {
-		Type   string    `с:"type"`
-		Path   string    `с:"path,omitempty"`
-		Config RawConfig `с:"config,omitempty"`
+		Type   string    `config:"type"`
+		Path   string    `config:"path,omitempty"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
 	authZ struct {
-		Type   string    `с:"type"`
-		Config RawConfig `с:"config,omitempty"`
+		Type   string    `config:"type"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
 	identityFlows struct {
-		Type   string    `с:"type"`
-		Config RawConfig `с:"config,omitempty"`
+		Type   string    `config:"type"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
 	storages struct {
-		Name   string    `с:"name"`
-		Config RawConfig `с:"config,omitempty"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
 	collections struct {
-		Type    string    `с:"type"`
-		Name    string    `с:"name"`
-		Storage string    `с:"storage"`
-		Config  RawConfig `с:"config,omitempty"`
+		Type    string    `config:"type"`
+		Name    string    `config:"name"`
+		Storage string    `config:"storage"`
+		Config  RawConfig `config:"config,omitempty"`
 	}
 
 	hashers struct {
-		Type   string    `с:"type"`
-		Name   string    `с:"name"`
-		Config RawConfig `с:"config,omitempty"`
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
 	cryptoKeys struct {
-		Type   string    `с:"type"`
-		Driver string    `с:"driver"`
-		Name   string    `с:"name"`
-		Config RawConfig `с:"config,omitempty"`
+		Type   string    `config:"type"`
+		Driver string    `config:"driver"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 )
 
 func LoadMainConfig(project *Project) error {
 	confLoader, err := configuro.NewConfig(
 		configuro.WithLoadFromConfigFile("./config.yaml", true),
-		//configuro.KeyDelimiter(":"),
-		configuro.Tag("c", "v"),
-		//configuro.WithoutValidateByFunc(),
 		configuro.WithoutValidateByTags(),
 	)
 	if err != nil {

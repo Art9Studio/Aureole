@@ -1,6 +1,9 @@
 package authN
 
-import "gouth/config"
+import (
+	"github.com/gofiber/fiber/v2"
+	"gouth/config"
+)
 
 type Controller interface {
 	GetRoutes() []Route
@@ -8,7 +11,7 @@ type Controller interface {
 
 type Route struct {
 	Path    string
-	Handler func(interface{}) interface{}
+	Handler func(*fiber.Ctx) error
 }
 
 type Type int
@@ -18,12 +21,12 @@ const (
 	Passwordless
 )
 
-func (d Type) String() string {
-	return [...]string{"password_based", "passwordless"}[d]
+func (t Type) String() string {
+	return [...]string{"password_based", "passwordless"}[t]
 }
 
-func New(algoName string, rawConf *config.RawConfig) (Controller, error) {
-	adapter, err := GetAdapter(algoName)
+func New(authType Type, rawConf *config.RawConfig) (Controller, error) {
+	adapter, err := GetAdapter(authType.String())
 	if err != nil {
 		return nil, err
 	}
