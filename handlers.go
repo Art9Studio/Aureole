@@ -2,13 +2,15 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"gouth/authN"
+	"gouth/config"
 	"gouth/jwt"
 	"gouth/storage"
 	"net/http"
 	"strings"
 )
 
-func registerHandler(app AppConfig) func(c *gin.Context) {
+func registerHandler(app *config.App) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		var regData interface{}
 
@@ -19,7 +21,7 @@ func registerHandler(app AppConfig) func(c *gin.Context) {
 			return
 		}
 
-		var regConfig = app.Main.Register
+		var regConfig = app.Register
 		mapKeys := regConfig.Fields
 
 		userUnique, err := GetJSONPath(mapKeys["user_unique"], regData)
@@ -69,7 +71,7 @@ func registerHandler(app AppConfig) func(c *gin.Context) {
 
 		usersStorage := app.StorageByFeature["users"]
 		res, err := usersStorage.InsertUser(
-			*app.Main.UserColl,
+			*app.UserColl,
 			*storage.NewInsertUserData(userUnique, pwHash),
 		)
 		if err != nil {
@@ -90,8 +92,8 @@ func registerHandler(app AppConfig) func(c *gin.Context) {
 	}
 }
 
-func loginHandler(app AppConfig) func(c *gin.Context) {
-	return func(c *gin.Context) {
+func authNHandler(app *config.App, authNConfig *config.AuthNConfig) func(c *gin.Context) {
+	passwordBased := func(c *gin.Context) {
 		var authData interface{}
 
 		if err := c.BindJSON(&authData); err != nil {
@@ -101,9 +103,7 @@ func loginHandler(app AppConfig) func(c *gin.Context) {
 			return
 		}
 
-		authConf := app.Main.AuthN
-
-		userUnique, err := GetJSONPath(authConf.PasswdBased.UserUnique, authData)
+		userUnique, err := GetJSONPath(authNConfig.PasswdBased.UserUnique, authData)
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusBadRequest,
@@ -121,7 +121,7 @@ func loginHandler(app AppConfig) func(c *gin.Context) {
 			}
 		}
 
-		rawUserConfirm, err := GetJSONPath(authConf.PasswdBased.UserConfirm, authData)
+		rawUserConfirm, err := GetJSONPath(authNConfig.PasswdBased.UserConfirm, authData)
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusBadRequest,
@@ -140,7 +140,7 @@ func loginHandler(app AppConfig) func(c *gin.Context) {
 
 		// TODO: add a user existence check
 		usersStorage := app.StorageByFeature["users"]
-		pw, err := usersStorage.GetUserPassword(*app.Main.UserColl, userUnique)
+		pw, err := usersStorage.GetUserPassword(*app.UserColl, userUnique)
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -165,5 +165,12 @@ func loginHandler(app AppConfig) func(c *gin.Context) {
 				gin.H{"error": "invalid data"})
 			return
 		}
+	}
+
+	switch authNConfig.Type {
+	case authN.PasswordBased:
+		return passwordBased
+	default:
+		return nil
 	}
 }

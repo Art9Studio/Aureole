@@ -16,12 +16,12 @@ type Argon2 struct {
 }
 
 var (
-	ErrInvalidHash         = errors.New("argon2: the encoded pwhash is not in the correct format")
+	ErrInvalidHash         = errors.New("argon2: the encoded pwhasher is not in the correct format")
 	ErrIncompatibleVersion = errors.New("argon2: incompatible version of argon2")
 )
 
-// HashPw returns a Argon2 pwhash of a plain-text password using the provided algorithm
-// parameters. The returned pwhash follows the format used by the Argon2 reference
+// HashPw returns a Argon2 pwhasher of a plain-text password using the provided algorithm
+// parameters. The returned pwhasher follows the format used by the Argon2 reference
 // C implementation and contains the base64-encoded Argon2 derived key prefixed
 // by the salt and parameters. It looks like this:
 //
@@ -56,7 +56,7 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 }
 
 // ComparePw performs a constant-time comparison between a plain-text password and
-// Argon2 pwhash, using the parameters and salt contained in the pwhash.
+// Argon2 pwhasher, using the parameters and salt contained in the pwhasher.
 // It returns true if they match, otherwise it returns false.
 func (a *Argon2) ComparePw(pw string, hash string) (bool, error) {
 	conf, salt, key, err := decodePwHash(hash)
@@ -80,7 +80,7 @@ func (a *Argon2) ComparePw(pw string, hash string) (bool, error) {
 	return false, nil
 }
 
-// decodePwHash expects a pwhash created from this package, and parses it to return the config
+// decodePwHash expects a pwhasher created from this package, and parses it to return the config
 // used to create it, as well as the salt and key
 func decodePwHash(hash string) (*HashConfig, []byte, []byte, error) {
 	vals := strings.Split(hash, "$")

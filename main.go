@@ -1,12 +1,16 @@
 package main
 
-import "log"
+import (
+	"gouth/config"
+	"log"
+)
 
-// conf is global object that holds all project level settings variables
-var conf ProjectConfig
+// Project is global object that holds all project level settings variables
+var Project config.Project
 
 func main() {
-	if err := conf.Init(); err != nil {
+
+	if err := config.LoadMainConfig(&Project); err != nil {
 		log.Panic(err)
 	}
 

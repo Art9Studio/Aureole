@@ -18,10 +18,10 @@ type Pbkdf2 struct {
 	conf *HashConfig
 }
 
-var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhash is not in the correct format")
+var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhasher is not in the correct format")
 
-// HashPw returns a Pbkdf2 pwhash of a plain-text password using the provided
-// algorithm parameters. The returned pwhash follows the format used by the
+// HashPw returns a Pbkdf2 pwhasher of a plain-text password using the provided
+// algorithm parameters. The returned pwhasher follows the format used by the
 // Django and contains the base64-encoded Pbkdf2 derived key prefixed by the
 // salt and parameters. It looks like this:
 //
@@ -46,7 +46,7 @@ func (p *Pbkdf2) HashPw(pw string) (string, error) {
 }
 
 // ComparePw performs a constant-time comparison between a plain-text password and
-// Pbkdf2 pwhash, using the parameters and salt contained in the pwhash.
+// Pbkdf2 pwhasher, using the parameters and salt contained in the pwhasher.
 // It returns true if they match, otherwise it returns false.
 func (p *Pbkdf2) ComparePw(pw string, hash string) (bool, error) {
 	conf, salt, key, err := decodePwHash(hash)
@@ -63,7 +63,7 @@ func (p *Pbkdf2) ComparePw(pw string, hash string) (bool, error) {
 	return false, nil
 }
 
-// decodePwHash expects a pwhash created from this package, and parses it to return the config
+// decodePwHash expects a pwhasher created from this package, and parses it to return the config
 // used to create it, as well as the salt and key
 func decodePwHash(hash string) (*HashConfig, []byte, []byte, error) {
 	vals := strings.Split(hash, "$")

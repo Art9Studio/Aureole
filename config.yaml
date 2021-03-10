@@ -6,11 +6,10 @@ apps:
 
     authN:
       - type: "password_based"
-        url: "/login"
+        path: "/login"
         config:
           main_hasher: argon2
           compat_hashers: []
-          storage: one_db
           collection: identity
           user_unique: "{$.name}"
           user_confirm: "{$.passwd}"
@@ -18,7 +17,6 @@ apps:
     authZ:
       type: "cookie"
       config:
-        storage: one_db
         collection: session
         domain: "localhost"
         path: "/"
@@ -82,7 +80,7 @@ storages:
 collections:
   - type: "identity"
     name: identity
-    #storage: one_db
+    storage: one_db
     config:
       use_existent: true
       name: "users"

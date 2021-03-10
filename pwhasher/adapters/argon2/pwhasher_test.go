@@ -142,7 +142,7 @@ func TestArgon2_Compare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "argon2i invalid pwhash",
+			name:   "argon2i invalid pwhasher",
 			fields: fields{conf: DefaultConfig},
 			args: args{
 				data: "qwerty",
@@ -182,7 +182,7 @@ func TestArgon2_Compare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "argon2id invalid pwhash",
+			name:   "argon2id invalid pwhasher",
 			fields: fields{conf: DefaultConfig},
 			args: args{
 				data: "qwerty",
