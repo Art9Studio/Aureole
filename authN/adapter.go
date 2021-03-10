@@ -1,7 +1,8 @@
-package pwhash
+package authN
 
 import (
 	"fmt"
+	"gouth/config"
 	"sync"
 )
 
@@ -10,16 +11,13 @@ var (
 	adaptersMU sync.Mutex
 )
 
-// RawHashConfig represents unparsed config data from config file
-type RawHashConfig = map[string]interface{}
-
-// Adapter defines methods for pwhash adapters
+// Adapter defines methods for pwhasher adapters
 type Adapter interface {
 	//GetHasher returns desired PwHasher depends on the given config
-	GetPwHasher(*RawHashConfig) (PwHasher, error)
+	GetAuthNController(config *config.RawConfig) (Controller, error)
 }
 
-// RegisterAdapter register pwhash adapter
+// RegisterAdapter register pwhasher adapter
 func RegisterAdapter(name string, a Adapter) {
 	adaptersMU.Lock()
 	defer adaptersMU.Unlock()
@@ -35,7 +33,7 @@ func RegisterAdapter(name string, a Adapter) {
 	adapters[name] = a
 }
 
-// GetAdapter returns pwhash adapter if it exists
+// GetAdapter returns pwhasher adapter if it exists
 func GetAdapter(name string) (Adapter, error) {
 	adaptersMU.Lock()
 	defer adaptersMU.Unlock()
