@@ -11,8 +11,8 @@ apps:
           main_hasher: argon2
           compat_hashers: []
           collection: identity
-          user_unique: "{$.name}"
-          user_confirm: "{$.passwd}"
+          identity: "{$.name}"
+          password: "{$.passwd}"
 
     authZ:
       type: "cookie"
@@ -29,8 +29,8 @@ apps:
         config:
           login_after: true
           fields:
-            user_unique: "{$.name}"
-            user_confirm: "{$.passwd}"
+            identity: "{$.name}"
+            password: "{$.passwd}"
             email: "{$.email}"
 
   two:
@@ -56,8 +56,8 @@ apps:
       - type: register
         config:
           fields:
-            user_unique: "{$.name}"
-            user_confirm: "{$.passwd}"
+            identity: "{$.name}"
+            password: "{$.passwd}"
             email: "{$.email}"
 
 storages:
@@ -85,8 +85,8 @@ collections:
       use_existent: true
       name: "users"
       pk: "id"
-      user_unique: "username"
-      user_confirm: "password"
+      identity: "username"
+      password: "password"
 
   - type: "session"
     name: session

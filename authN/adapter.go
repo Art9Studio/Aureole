@@ -14,7 +14,7 @@ var (
 // Adapter defines methods for authentication adapters
 type Adapter interface {
 	// GetAuthNController returns desired authentication controller depends on the given config
-	GetAuthNController(config *config.RawConfig) (Controller, error)
+	GetAuthNController(path string, config *config.RawConfig) (Controller, error)
 }
 
 // RegisterAdapter register authentication adapter

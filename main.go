@@ -13,8 +13,12 @@ func main() {
 	if err := config.LoadMainConfig(&Project); err != nil {
 		log.Panic(err)
 	}
-
-	if err := initRouter().Run(); err != nil {
+	router, err := initRouter()
+	if err != nil {
 		log.Panicf("router init: %v", err)
+	}
+
+	if err := router.Listen(":3000"); err != nil {
+		log.Panicf("router start: %v", err)
 	}
 }

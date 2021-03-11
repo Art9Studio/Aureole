@@ -9,8 +9,8 @@ type UserCollConfig struct {
 	StorageName string `c:"storage" v:"required"`
 	Name        string `c:"name" v:"required"`
 	Pk          string `c:"pk" v:"required"`
-	UserUnique  string `c:"user_unique" v:"required"`
-	UserConfirm string `c:"user_confirm" v:"required"`
+	UserUnique  string `c:"identity" v:"required"`
+	UserConfirm string `c:"password" v:"required"`
 }
 
 type InsertUserData struct {

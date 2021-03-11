@@ -1,4 +1,4 @@
-package main
+package jsonpath
 
 // from https://github.com/hairyhenderson/gomplate/blob/master/coll/jsonpath.go
 

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"gouth/authN"
+	"gouth/authN/types"
 	"gouth/pwhasher"
 	"gouth/storage"
 )
@@ -21,7 +21,7 @@ type App struct {
 
 type AuthNConfig struct {
 	Path   string
-	Type   authN.Type
+	Type   types.Type
 	Config RawConfig
 }
 

@@ -9,5 +9,11 @@ type pwBased struct {
 }
 
 func (p pwBased) GetRoutes() []authN.Route {
-	panic("implement me")
+	return []authN.Route{
+		{
+			Method:  "POST",
+			Path:    p.conf.Path,
+			Handler: Auth,
+		},
+	}
 }
