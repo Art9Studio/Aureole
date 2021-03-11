@@ -1,0 +1,10 @@
+package message
+
+// RawStorageConfig represents unparsed data from config file
+type RawStorageConfig = map[string]interface{}
+
+// ConnConfig represents a parsed connection config
+type ConnConfig interface {
+	// AdapterName return the adapter Name, that was used to set up connection
+	AdapterName() string
+}

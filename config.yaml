@@ -51,6 +51,21 @@ apps:
         key_length: 16
         memory: 16384
 
+    message:
+      main:
+        adapter: "email"
+        config:
+          host: ""
+          username: ""
+          password: ""
+          from: ""
+          bcc: [""]
+          cc: [""]
+          subject: ""
+          template: ""
+
+
+
   two:
     path_prefix: "/two"
 
