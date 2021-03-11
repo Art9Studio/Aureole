@@ -5,16 +5,16 @@ type CollConfig struct {
 	Pk   string
 }
 
-type UserCollConfig struct {
+type IdentityCollConfig struct {
 	StorageName string `c:"storage" v:"required"`
 	Name        string `c:"name" v:"required"`
 	Pk          string `c:"pk" v:"required"`
-	UserUnique  string `c:"identity" v:"required"`
-	UserConfirm string `c:"password" v:"required"`
+	Identity    string `c:"identity" v:"required"`
+	Password    string `c:"password" v:"required"`
 }
 
 type InsertUserData struct {
-	UserUnique  interface{}
+	Identity    interface{}
 	UserConfirm interface{}
 }
 
@@ -23,27 +23,27 @@ type Application interface {
 	IsCollExists(CollConfig) (bool, error)
 
 	// CreateUserColl creates user collection with traits passed by UserCollectionConfig
-	CreateUserColl(UserCollConfig) error
+	CreateIdentityColl(IdentityCollConfig) error
 
 	// InsertUser inserts user entity in the user collection
-	InsertUser(UserCollConfig, InsertUserData) (JSONCollResult, error)
+	InsertIdentity(IdentityCollConfig, InsertUserData) (JSONCollResult, error)
 
-	GetUserPassword(UserCollConfig, interface{}) (JSONCollResult, error)
+	GetPasswordByIdentity(IdentityCollConfig, interface{}) (JSONCollResult, error)
 }
 
 func NewCollConfig(name string, pk string) *CollConfig {
 	return &CollConfig{Name: name, Pk: pk}
 }
 
-func NewUserCollConfig(name string, pk string, userUnique string, userConfirm string) *UserCollConfig {
-	return &UserCollConfig{Name: name, Pk: pk, UserUnique: userUnique, UserConfirm: userConfirm}
+func NewUserCollConfig(name string, pk string, userUnique string, userConfirm string) *IdentityCollConfig {
+	return &IdentityCollConfig{Name: name, Pk: pk, Identity: userUnique, Password: userConfirm}
 }
 
 func NewInsertUserData(userUnique interface{}, userConfirm interface{}) *InsertUserData {
-	return &InsertUserData{UserUnique: userUnique, UserConfirm: userConfirm}
+	return &InsertUserData{Identity: userUnique, UserConfirm: userConfirm}
 }
 
-func (conf UserCollConfig) ToCollConfig() CollConfig {
+func (conf IdentityCollConfig) ToCollConfig() CollConfig {
 	return CollConfig{
 		Name: conf.Name,
 		Pk:   conf.Pk,

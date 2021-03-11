@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gouth/authN"
 	"gouth/config"
 	"log"
 )
@@ -13,6 +14,9 @@ func main() {
 	if err := config.LoadMainConfig(&Project); err != nil {
 		log.Panic(err)
 	}
+
+	authN.InitRepository(&Project)
+
 	router, err := initRouter()
 	if err != nil {
 		log.Panicf("router init: %v", err)

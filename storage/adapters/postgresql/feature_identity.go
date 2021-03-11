@@ -22,7 +22,7 @@ func (s *ConnSession) IsCollExists(collConf storage.CollConfig) (bool, error) {
 }
 
 // CreateUserCollection creates user collection with traits passed by UserCollectionConfig
-func (s *ConnSession) CreateUserColl(collConf storage.UserCollConfig) error {
+func (s *ConnSession) CreateIdentityColl(collConf storage.IdentityCollConfig) error {
 	// TODO: check types of fields
 	sql := fmt.Sprintf(`create table %s
                        (%s serial primary key,
@@ -30,25 +30,25 @@ func (s *ConnSession) CreateUserColl(collConf storage.UserCollConfig) error {
                        %s text not null);`,
 		Sanitize(collConf.Name),
 		Sanitize(collConf.Pk),
-		Sanitize(collConf.UserUnique),
-		Sanitize(collConf.UserConfirm))
+		Sanitize(collConf.Identity),
+		Sanitize(collConf.Password))
 	return s.RawExec(sql)
 }
 
 // InsertUser inserts user entity in the user collection
-func (s *ConnSession) InsertUser(collConf storage.UserCollConfig, insUserData storage.InsertUserData) (storage.JSONCollResult, error) {
+func (s *ConnSession) InsertIdentity(collConf storage.IdentityCollConfig, insUserData storage.InsertUserData) (storage.JSONCollResult, error) {
 	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning $3;",
 		Sanitize(collConf.Name),
-		Sanitize(collConf.UserUnique),
-		Sanitize(collConf.UserConfirm))
-	return s.RawQuery(sql, insUserData.UserUnique, insUserData.UserConfirm, collConf.Pk)
+		Sanitize(collConf.Identity),
+		Sanitize(collConf.Password))
+	return s.RawQuery(sql, insUserData.Identity, insUserData.UserConfirm, collConf.Pk)
 }
 
-func (s *ConnSession) GetUserPassword(collConf storage.UserCollConfig, userUnique interface{}) (storage.JSONCollResult, error) {
+func (s *ConnSession) GetPasswordByIdentity(collConf storage.IdentityCollConfig, userUnique interface{}) (storage.JSONCollResult, error) {
 	sql := fmt.Sprintf("select %s from %s where %s=$1",
-		Sanitize(collConf.UserConfirm),
+		Sanitize(collConf.Password),
 		Sanitize(collConf.Name),
-		Sanitize(collConf.UserUnique),
+		Sanitize(collConf.Identity),
 	)
 	return s.RawQuery(sql, userUnique)
 }

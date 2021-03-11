@@ -25,9 +25,9 @@ type (
 	}
 
 	authNConfig struct {
-		Type   string    `config:"type"`
-		Path   string    `config:"path,omitempty"`
-		Config RawConfig `config:"config,omitempty"`
+		Type       string    `config:"type"`
+		PathPrefix string    `config:"path_prefix,omitempty"`
+		Config     RawConfig `config:"config,omitempty"`
 	}
 
 	authZ struct {

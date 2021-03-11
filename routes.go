@@ -14,6 +14,7 @@ func initRouter() (*fiber.App, error) {
 	for _, app := range Project.Apps {
 		appR := v.Group(app.PathPrefix)
 		for _, authNVariant := range app.AuthN {
+			// todo: move it outside
 			authController, err := authN.New(authNVariant.Type, &authNVariant)
 			if err != nil {
 				return nil, fmt.Errorf("router init error: %v", err)

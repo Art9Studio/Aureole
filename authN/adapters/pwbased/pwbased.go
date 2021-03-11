@@ -5,15 +5,15 @@ import (
 )
 
 type pwBased struct {
-	conf *Config
+	ctx *Ctx
 }
 
 func (p pwBased) GetRoutes() []authN.Route {
 	return []authN.Route{
 		{
 			Method:  "POST",
-			Path:    p.conf.Path,
-			Handler: Auth,
+			Path:    p.ctx.PathPrefix,
+			Handler: Auth(p.ctx),
 		},
 	}
 }

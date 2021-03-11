@@ -59,8 +59,8 @@ package main
 //			return
 //		}
 //
-//		usersStorage := app.StorageByFeature["users"]
-//		res, err := usersStorage.InsertUser(
+//		usersStorage := app.StorageByFeature["identity"]
+//		res, err := usersStorage.InsertIdentity(
 //			*app.UserColl,
 //			*storage.NewInsertUserData(userUnique, pwHash),
 //		)

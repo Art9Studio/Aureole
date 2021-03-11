@@ -20,9 +20,9 @@ type App struct {
 }
 
 type AuthNConfig struct {
-	Path   string
-	Type   types.Type
-	Config RawConfig
+	PathPrefix string
+	Type       types.Type
+	Config     RawConfig
 }
 
 type AuthZConfig struct {

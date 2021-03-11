@@ -22,5 +22,5 @@ func New(authType types.Type, conf *config.AuthNConfig) (Controller, error) {
 		return nil, err
 	}
 
-	return adapter.GetAuthNController(conf.Path, &conf.Config)
+	return adapter.GetAuthNController(conf.PathPrefix, &conf.Config, projectContext)
 }

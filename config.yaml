@@ -6,7 +6,7 @@ apps:
 
     authN:
       - type: "password_based"
-        path: "/login"
+        path_prefix: "/login"
         config:
           main_hasher: argon2
           compat_hashers: []
@@ -38,6 +38,7 @@ apps:
 
     authN:
       - type: "password_based"
+        path_prefix: "/login"
         config:
           main_hasher: argon2
           collection: identity

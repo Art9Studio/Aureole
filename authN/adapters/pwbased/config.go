@@ -4,12 +4,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"gouth/authN"
 	"gouth/config"
+	"gouth/pwhasher"
+	"gouth/storage"
 )
 
 type Config struct {
-	// common info
-	Path string
-	// config
 	MainHasher    string   `mapstructure:"main_hasher"`
 	CompatHashers []string `mapstructure:"compat_hashers"`
 	Collection    string   `mapstructure:"collection"`
@@ -17,15 +16,32 @@ type Config struct {
 	Password      string   `mapstructure:"password"`
 }
 
-func (p pwBasedAdapter) GetAuthNController(path string, configMap *config.RawConfig) (authN.Controller, error) {
+type Ctx struct {
+	ProjectContext *config.Project
+	// common info
+	PathPrefix string
+	//
+	PwHasher     pwhasher.PwHasher
+	Storage      storage.ConnSession
+	IdentityColl storage.IdentityCollConfig
+	Identity     string
+	Password     string
+}
+
+func (p pwBasedAdapter) GetAuthNController(pathPrefix string, configMap *config.RawConfig, projectContext *config.Project) (authN.Controller, error) {
 	controllerConfig := Config{}
-	controllerConfig.Path = path
 
 	err := mapstructure.Decode(configMap, &controllerConfig)
+
+	// todo: init context by config. also use copier
+
+	context := Ctx{}
+	context.PathPrefix = pathPrefix
+	context.ProjectContext = projectContext
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &pwBased{&controllerConfig}, nil
+	return &pwBased{&context}, nil
 }

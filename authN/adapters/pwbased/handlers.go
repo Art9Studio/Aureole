@@ -1,79 +1,85 @@
 package pwbased
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"gouth/jsonpath"
+	"gouth/jwt"
+	"strings"
+)
 
-func Auth() func  {
-	(c *fiber.Ctx) error {
+func Auth(context *Ctx) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 
 		if err := c.BodyParser(&authInput); err != nil {
-		return c.Status(400).JSON(&fiber.Map{
-		"success": false,
-		"message": err,
-	})
-	}
+			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
+		}
 
-		userUnique, err := jsonpath.GetJSONPath(authNConfig.PasswdBased.UserUnique, authInput)
+		IIdentity, err := jsonpath.GetJSONPath(context.Identity, authInput)
 		if err != nil {
-		c.AbortWithStatusJSON(
-		http.StatusBadRequest,
-		gin.H{"error": "identity didn't passed"},
-	)
-		return
-	}
-		if userUnique, ok := userUnique.(string); ok {
-		if strings.TrimSpace(userUnique) == "" {
-		c.AbortWithStatusJSON(
-		http.StatusBadRequest,
-		gin.H{"error": "identity can't be blank"},
-	)
-		return
-	}
-	}
+			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+				"success": false,
+				"message": "identity didn't passed",
+			})
+		}
 
-		rawUserConfirm, err := jsonpath.GetJSONPath(authNConfig.PasswdBased.UserConfirm, authInput)
+		identity, ok := IIdentity.(string)
+		if ok {
+			if strings.TrimSpace(identity) == "" {
+				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+					"success": false,
+					"message": "identity can't be blank",
+				})
+			}
+		}
+
+		IPassword, err := jsonpath.GetJSONPath(context.Password, authInput)
 		if err != nil {
-		c.AbortWithStatusJSON(
-		http.StatusBadRequest,
-		gin.H{"error": "password didn't passed"},
-	)
-		return
-	}
-		userConfirm := rawUserConfirm.(string)
-		if strings.TrimSpace(userConfirm) == "" {
-		c.AbortWithStatusJSON(
-		http.StatusBadRequest,
-		gin.H{"error": "password can't be blank"},
-	)
-		return
-	}
+			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+				"success": false,
+				"message": "password didn't passed",
+			})
+		}
+
+		password, ok := IPassword.(string)
+		if ok {
+			if strings.TrimSpace(password) == "" {
+				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+					"success": false,
+					"message": "password can't be blank",
+				})
+			}
+		}
 
 		// TODO: add a user existence check
-		usersStorage := app.StorageByFeature["users"]
-		pw, err := usersStorage.GetUserPassword(*app.UserColl, userUnique)
+		indentityStorage := context.Storage
+		pw, err := indentityStorage.GetPasswordByIdentity(context.IdentityColl, identity)
 		if err != nil {
-		c.AbortWithStatusJSON(
-		http.StatusInternalServerError,
-		gin.H{"error": err.Error()})
-		return
-	}
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
+		}
 
-		isMatch, err := app.Hash.ComparePw(userConfirm, pw.(string))
+		isMatch, err := context.PwHasher.ComparePw(password, pw.(string))
 		if err != nil {
-		c.AbortWithStatusJSON(
-		http.StatusInternalServerError,
-		gin.H{"error": err.Error()})
-		return
-	}
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
+		}
 
 		if isMatch {
-		token := jwt.IssueToken()
-		c.JSON(http.StatusOK, gin.H{"token": token})
-	} else {
-		c.AbortWithStatusJSON(
-		http.StatusUnauthorized,
-		gin.H{"error": "invalid data"})
-		return
-	}
+			token := jwt.IssueToken()
+			return c.JSON(&fiber.Map{"token": token})
+		} else {
+			return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
+		}
 	}
 }

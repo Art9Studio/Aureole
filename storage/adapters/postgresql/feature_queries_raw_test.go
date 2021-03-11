@@ -12,7 +12,7 @@ func Test_Session_RawExec(t *testing.T) {
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
-	features := []string{"users"}
+	features := []string{"identity"}
 	usersSess, err := storage.Open(rawConnData, features)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
@@ -31,7 +31,7 @@ func Test_Session_RawQuery(t *testing.T) {
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
-	features := []string{"users"}
+	features := []string{"identity"}
 	usersSess, err := storage.Open(rawConnData, features)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)

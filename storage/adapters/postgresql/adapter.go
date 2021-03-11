@@ -11,7 +11,7 @@ import (
 // AdapterName is the internal name of the adapter
 const AdapterName = "postgresql"
 
-var AdapterFeatures = map[string]bool{"users": true, "sessions": true}
+var AdapterFeatures = map[string]bool{"identity": true, "sessions": true}
 
 // init initializes package by register adapter
 func init() {
