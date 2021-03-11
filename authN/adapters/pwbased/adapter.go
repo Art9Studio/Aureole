@@ -5,7 +5,7 @@ import (
 )
 
 // AdapterName is the internal name of the adapter
-const AdapterName = "pwbased"
+const AdapterName = "password_based"
 
 // init initializes package by register adapter
 func init() {

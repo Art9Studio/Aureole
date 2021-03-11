@@ -1,6 +1,7 @@
 package config
 
 import (
+	"gouth/authN"
 	"gouth/authN/types"
 	"gouth/pwhasher"
 	"gouth/storage"
@@ -9,14 +10,15 @@ import (
 type Project struct {
 	APIVersion  string
 	Apps        []App
-	Collections []interface{}
+	Collections map[string]interface{}
 	Storages    map[string]storage.ConnSession
-	Hashers     pwhasher.PwHasher
+	Hashers     map[string]pwhasher.PwHasher
 }
 
 type App struct {
-	PathPrefix string
-	AuthN      []AuthNConfig
+	PathPrefix       string
+	AuthNControllers []authN.Controller
+	AuthNConfigs     []AuthNConfig
 }
 
 type AuthNConfig struct {

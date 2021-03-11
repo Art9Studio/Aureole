@@ -3,9 +3,9 @@ module gouth
 go 1.15
 
 require (
-	github.com/gin-gonic/gin v1.6.3
 	github.com/gofiber/fiber/v2 v2.5.0
 	github.com/jackc/pgx/v4 v4.10.1
+	github.com/jinzhu/copier v0.2.8
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/pkg/errors v0.9.1
 	github.com/sherifabdlnaby/configuro v0.0.2

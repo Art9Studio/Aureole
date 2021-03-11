@@ -7,15 +7,20 @@ import (
 )
 
 var (
-	adapters       map[string]Adapter
-	adaptersMU     sync.Mutex
-	projectContext *config.Project
+	adapters   map[string]Adapter
+	adaptersMU sync.Mutex
+	projectCtx *config.Project
 )
 
 // Adapter defines methods for authentication adapters
 type Adapter interface {
 	// GetAuthNController returns desired authentication controller depends on the given config
-	GetAuthNController(pathPrefix string, config *config.RawConfig, projectContext *config.Project) (Controller, error)
+	GetAuthNController(pathPrefix string, config *config.RawConfig, projectCtx *config.Project) (Controller, error)
+}
+
+func InitRepository(context *config.Project) {
+	adapters = make(map[string]Adapter)
+	projectCtx = context
 }
 
 // RegisterAdapter register authentication adapter
@@ -43,9 +48,4 @@ func GetAdapter(name string) (Adapter, error) {
 		return a, nil
 	}
 	return nil, fmt.Errorf("can't find adapter named %s", name)
-}
-
-func InitRepository(context *config.Project) {
-	adapters = make(map[string]Adapter)
-	projectContext = context
 }

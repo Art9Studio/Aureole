@@ -2,7 +2,6 @@ package authN
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"gouth/authN/types"
 	"gouth/config"
 )
 
@@ -16,11 +15,11 @@ type Route struct {
 	Handler func(*fiber.Ctx) error
 }
 
-func New(authType types.Type, conf *config.AuthNConfig) (Controller, error) {
-	adapter, err := GetAdapter(authType.String())
+func New(conf *config.AuthNConfig) (Controller, error) {
+	adapter, err := GetAdapter(conf.Type.String())
 	if err != nil {
 		return nil, err
 	}
 
-	return adapter.GetAuthNController(conf.PathPrefix, &conf.Config, projectContext)
+	return adapter.GetAuthNController(conf.PathPrefix, &conf.Config, projectCtx)
 }
