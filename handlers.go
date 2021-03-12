@@ -82,9 +82,9 @@ package main
 //	}
 //}
 //
-//func authNHandler(app *config.App, authNConfig *config.AuthNConfig) func(c *fiber.Ctx) error {
+//func authNHandler(app *config.App, authnConfig *config.AuthnConfig) func(c *fiber.Ctx) error {
 //
-//	switch authNConfig.TypeName {
+//	switch authnConfig.TypeName {
 //	case types.PasswordBased:
 //		return passwordBased
 //	default:

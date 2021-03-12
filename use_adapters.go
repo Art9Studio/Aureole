@@ -1,5 +1,5 @@
 package main
 
-import _ "gouth/storage/adapters/postgresql"
-import _ "gouth/pwhasher/adapters/argon2"
-import _ "gouth/pwhasher/adapters/pbkdf2"
+import _ "gouth/adapters/storage/adapters/postgresql"
+import _ "gouth/adapters/pwhasher/adapters/argon2"
+import _ "gouth/adapters/pwhasher/adapters/pbkdf2"
