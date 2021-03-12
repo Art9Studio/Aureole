@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// todo: unused type, cause we get controllers by string name
 type Type int
 
 const (

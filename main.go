@@ -23,6 +23,8 @@ func main() {
 		log.Panic(err)
 	}
 
+	authn.InitRepository(&Project)
+
 	router, err := initRouter()
 	if err != nil {
 		log.Panicf("router init: %v", err)

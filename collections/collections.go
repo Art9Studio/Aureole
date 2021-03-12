@@ -7,10 +7,9 @@ import (
 // todo: reorganize this structures
 type (
 	Collection struct {
-		Type          string
-		Name          string
-		UseExistent   bool
-		Specification Specification
+		Type        string
+		UseExistent bool
+		Spec        Specification
 	}
 
 	Specification struct {
@@ -20,47 +19,14 @@ type (
 	}
 )
 
-func NewCollection(collType string, conf *configs.Collections) (Collection, error) {
-
-	//switch collConf.Type {
-	//case "identity":
-	//	identityColl := storage.NewIdentityCollection(collConf.Storage, collConf.Specification)
-	//	identityStorage := conf.Storages[collConf.Storage]
-	//
-	//	isExists, err := identityStorage.IsCollExists(identityColl.ToCollConfig())
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	useExistent := collConf.Specification["use_existent"].(bool)
-	//	if !useExistent && !isExists {
-	//		if err = identityStorage.CreateUserColl(*identityColl); err != nil {
-	//			return err
-	//		}
-	//	} else if useExistent && !isExists {
-	//		return fmt.Errorf("identity collection '%s' is not found", collConf.Name)
-	//	}
-	//
-	//	conf.Collections[collConf.Name] = identityColl
-	//case "session":
-	//	sessionColl := storage.NewSessionCollection(collConf.Storage, collConf.Specification)
-	//	sessionStorage := conf.Storages[collConf.Storage]
-	//
-	//	isExists, err := sessionStorage.IsCollExists(sessionColl.ToCollConfig())
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	useExistent := collConf.Specification["use_existent"].(bool)
-	//	if !useExistent && !isExists {
-	//		if err = sessionStorage.CreateUserColl(*sessionColl); err != nil {
-	//			return err
-	//		}
-	//	} else if useExistent && !isExists {
-	//		return fmt.Errorf("session collection '%s' is not found", collConf.Name)
-	//	}
-	//
-	//	conf.Collections[collConf.Name] = sessionColl
-	//}
-	return Collection{}, nil
+func NewCollection(collType string, conf *configs.Collection) *Collection {
+	return &Collection{
+		Type:        collType,
+		UseExistent: conf.UseExistent,
+		Spec: Specification{
+			Name:      conf.Spec.Name,
+			Pk:        conf.Spec.Pk,
+			FieldsMap: conf.Spec.FieldsMap,
+		},
+	}
 }

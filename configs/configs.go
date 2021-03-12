@@ -9,67 +9,62 @@ type (
 	RawConfig = map[string]interface{}
 
 	ProjectConfig struct {
-		APIVersion      string         `config:"api_version"`
-		Apps            map[string]App `config:"apps"`
-		StorageConfs    []storages     `config:"storages,omitempty"`
-		CollectionConfs []Collections  `config:"collections,omitempty"`
-		HasherConfs     []hashers      `config:"hashers,omitempty"`
-		CryptoKeys      []cryptoKeys   `config:"crypto_keys,omitempty"`
-		//Collections     map[string]interface{}         `config:"-"`
-		//Storages        map[string]storage.ConnSession `config:"-"`
-		//Hashers         map[string]pwhasher.PwHasher   `config:"-"`
+		APIVersion   string         `config:"api_version"`
+		Apps         map[string]app `config:"apps"`
+		StorageConfs []storage      `config:"storages,omitempty"`
+		CollConfs    []Collection   `config:"collections,omitempty"`
+		HasherConfs  []hasher       `config:"hashers,omitempty"`
+		CryptoKeys   []cryptoKey    `config:"crypto_keys,omitempty"`
 	}
 
-	App struct {
+	app struct {
 		PathPrefix    string          `config:"path_prefix"`
 		Authn         []AuthnConfig   `config:"authn"`
 		AuthZ         authZ           `config:"authZ"`
 		IdentityFlows []identityFlows `config:"identity_flows"`
-		//AuthnControllers []authnTypes.Controller `config:"-"`
 	}
 
 	AuthnConfig struct {
-		TypeName   string    `config:"type"`
+		Type       string    `config:"type"`
 		PathPrefix string    `config:"path_prefix,omitempty"`
-		Config     RawConfig `config:"configs,omitempty"`
-		//Type       types.Type `config:"-"`
+		Config     RawConfig `config:"config,omitempty"`
 	}
 
 	authZ struct {
 		Type   string    `config:"type"`
-		Config RawConfig `config:"configs,omitempty"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
 	identityFlows struct {
 		Type   string    `config:"type"`
-		Config RawConfig `config:"configs,omitempty"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
-	storages struct {
+	storage struct {
 		Name   string    `config:"name"`
-		Config RawConfig `config:"configs,omitempty"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
-	Collections struct {
-		Type        string `config:"type"`
-		Name        string `config:"name"`
-		UseExistent bool   `config:"use_existent"`
-		Config      Config `config:"config"`
+	Collection struct {
+		Type        string        `config:"type"`
+		Name        string        `config:"name"`
+		UseExistent bool          `config:"use_existent"`
+		Spec        specification `config:"config"`
 	}
 
-	Config struct {
+	specification struct {
 		Name      string            `config:"name"`
 		Pk        string            `config:"pk"`
 		FieldsMap map[string]string `config:"fields_map"`
 	}
 
-	hashers struct {
+	hasher struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
-		Config RawConfig `config:"configs,omitempty"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 
-	cryptoKeys struct {
+	cryptoKey struct {
 		Type   string    `config:"type"`
 		Driver string    `config:"driver"`
 		Name   string    `config:"name"`
@@ -79,9 +74,6 @@ type (
 
 func LoadMainConfig() (*ProjectConfig, error) {
 	confLoader, err := configuro.NewConfig(
-		// todo: make pr which fix a "configFileErrIfNotFound" feature
-		// In load.go:32 must be `if c.configFileErrIfNotFound && pathErr.Op == "open" {`
-		// it has typo with excess `'` after "open"
 		configuro.WithLoadFromConfigFile("./config.yaml", true),
 		configuro.WithoutValidateByTags(),
 	)
@@ -99,21 +91,3 @@ func LoadMainConfig() (*ProjectConfig, error) {
 
 	return &rawConf, nil
 }
-
-//
-//func old() {
-//	isExists, err := usersStorage.IsCollExists(a.Main.UserColl.ToCollConfig())
-//	if err != nil {
-//		return err
-//	}
-//
-//	if !a.Main.UseExistColl && !isExists {
-//		if err = usersStorage.CreateUserColl(*a.Main.UserColl); err != nil {
-//			return err
-//		}
-//	} else if a.Main.UseExistColl && !isExists {
-//		return errors.New("user collection is not found")
-//	}
-//
-//	return nil
-//}

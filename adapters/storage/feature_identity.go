@@ -1,16 +1,6 @@
 package storage
 
-type CollConfig struct {
-	Name string
-	Pk   string
-}
-
-type IdentityCollConfig struct {
-	Name     string
-	Pk       string
-	Identity string
-	Password string
-}
+import "gouth/collections"
 
 type InsertIdentityData struct {
 	Identity    interface{}
@@ -19,32 +9,17 @@ type InsertIdentityData struct {
 
 type Application interface {
 	// IsCollExists checks whether the given collection exists
-	IsCollExists(CollConfig) (bool, error)
+	IsCollExists(collections.Specification) (bool, error)
 
 	// CreateUserColl creates user collection with traits passed by UserCollectionConfig
-	CreateIdentityColl(IdentityCollConfig) error
+	CreateIdentityColl(collections.Specification) error
 
 	// InsertUser inserts user entity in the user collection
-	InsertIdentity(IdentityCollConfig, InsertIdentityData) (JSONCollResult, error)
+	InsertIdentity(collections.Specification, InsertIdentityData) (JSONCollResult, error)
 
-	GetPasswordByIdentity(IdentityCollConfig, interface{}) (JSONCollResult, error)
-}
-
-func NewCollConfig(name string, pk string) *CollConfig {
-	return &CollConfig{Name: name, Pk: pk}
-}
-
-func NewIdentityCollConfig(name string, pk string, userUnique string, userConfirm string) *IdentityCollConfig {
-	return &IdentityCollConfig{Name: name, Pk: pk, Identity: userUnique, Password: userConfirm}
+	GetPasswordByIdentity(collections.Specification, interface{}) (JSONCollResult, error)
 }
 
 func NewInsertIdentityData(userUnique interface{}, userConfirm interface{}) *InsertIdentityData {
 	return &InsertIdentityData{Identity: userUnique, UserConfirm: userConfirm}
-}
-
-func (conf IdentityCollConfig) ToCollConfig() CollConfig {
-	return CollConfig{
-		Name: conf.Name,
-		Pk:   conf.Pk,
-	}
 }

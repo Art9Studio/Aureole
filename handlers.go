@@ -84,7 +84,7 @@ package main
 //
 //func authNHandler(app *configs.App, authnConfig *configs.AuthnConfig) func(c *fiber.Ctx) error {
 //
-//	switch authnConfig.TypeName {
+//	switch authnConfig.Type {
 //	case types.PasswordBased:
 //		return passwordBased
 //	default:

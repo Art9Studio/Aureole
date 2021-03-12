@@ -44,7 +44,7 @@ apps:
         config:
           main_hasher: argon2
           collection: identity
-          storage: two_db
+          storage: one_db
 
     authZ:
       type: "jwt"

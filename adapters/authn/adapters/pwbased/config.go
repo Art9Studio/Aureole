@@ -24,7 +24,7 @@ type Ctx struct {
 	PathPrefix     string
 	PwHasher       pwhasher.PwHasher
 	Storage        storage.ConnSession
-	IdentityColl   collections.Collection
+	IdentityColl   *collections.Collection
 	Identity       string
 	Password       string
 }

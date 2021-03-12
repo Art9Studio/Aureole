@@ -11,7 +11,7 @@ import (
 type ProjectCtx struct {
 	APIVersion  string
 	Apps        map[string]App
-	Collections map[string]collections.Collection
+	Collections map[string]*collections.Collection
 	Storages    map[string]storage.ConnSession
 	Hashers     map[string]pwhasher.PwHasher
 }
@@ -21,6 +21,7 @@ type App struct {
 	AuthnControllers []types.Controller
 }
 
+// todo: unused type, cause we init AuthnControllers by raw configs and further uses them
 type AuthnConfig struct {
 	PathPrefix string
 	Type       types.Type

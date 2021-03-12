@@ -6,7 +6,7 @@ import (
 )
 
 func New(conf *configs.AuthnConfig) (types.Controller, error) {
-	adapter, err := GetAdapter(conf.TypeName)
+	adapter, err := GetAdapter(conf.Type)
 	if err != nil {
 		return nil, err
 	}
