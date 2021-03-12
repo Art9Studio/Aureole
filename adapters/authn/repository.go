@@ -2,26 +2,25 @@ package authn
 
 import (
 	"fmt"
-	"gouth/adapters/authn/types"
-	"gouth/config"
-	types2 "gouth/context/types"
+	authnTypes "gouth/adapters/authn/types"
+	"gouth/configs"
+	ctxTypes "gouth/context/types"
 	"sync"
 )
 
 var (
-	adapters   map[string]Adapter
+	adapters   = make(map[string]Adapter)
 	adaptersMU sync.Mutex
-	projectCtx *types2.ProjectCtx
+	projectCtx *ctxTypes.ProjectCtx
 )
 
 // Adapter defines methods for authentication adapters
 type Adapter interface {
-	// GetAuthnController returns desired authentication controller depends on the given config
-	GetAuthnController(pathPrefix string, config *config.RawConfig, projectCtx *types2.ProjectCtx) (types.Controller, error)
+	// GetAuthnController returns desired authentication controller depends on the given configs
+	GetAuthnController(pathPrefix string, config *configs.RawConfig, projectCtx *ctxTypes.ProjectCtx) (authnTypes.Controller, error)
 }
 
-func InitRepository(context *types2.ProjectCtx) {
-	adapters = make(map[string]Adapter)
+func InitRepository(context *ctxTypes.ProjectCtx) {
 	projectCtx = context
 }
 

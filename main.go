@@ -2,26 +2,26 @@ package main
 
 import (
 	"gouth/adapters/authn"
-	"gouth/config"
+	"gouth/configs"
 	"gouth/context"
 	"gouth/context/types"
 	"log"
 )
 
-// Project is global object that holds all project level settings variabces
+// Project is global object that holds all project level settings variables
 var Project types.ProjectCtx
 
 func main() {
-	projConf, err := config.LoadMainConfig()
+	projConf, err := configs.LoadMainConfig()
 	if err != nil {
 		log.Panic(err)
 	}
 
+	authn.InitRepository(&Project)
+
 	if err := context.InitContext(projConf, &Project); err != nil {
 		log.Panic(err)
 	}
-
-	authn.InitRepository(&Project)
 
 	router, err := initRouter()
 	if err != nil {

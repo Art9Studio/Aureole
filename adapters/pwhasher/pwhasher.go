@@ -9,7 +9,7 @@ type PwHasher interface {
 	ComparePw(string, string) (bool, error)
 }
 
-// New returns desired PwHasher depends on the given config
+// New returns desired PwHasher depends on the given configs
 func New(algoName string, rawConf *RawHashConfig) (PwHasher, error) {
 	adapter, err := GetAdapter(algoName)
 	if err != nil {

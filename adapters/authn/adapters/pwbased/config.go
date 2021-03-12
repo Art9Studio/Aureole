@@ -5,7 +5,8 @@ import (
 	authnTypes "gouth/adapters/authn/types"
 	"gouth/adapters/pwhasher"
 	"gouth/adapters/storage"
-	"gouth/config"
+	"gouth/collections"
+	"gouth/configs"
 	contextTypes "gouth/context/types"
 )
 
@@ -13,6 +14,7 @@ type Config struct {
 	MainHasher    string   `mapstructure:"main_hasher"`
 	CompatHashers []string `mapstructure:"compat_hashers"`
 	Collection    string   `mapstructure:"collection"`
+	Storage       string   `mapstructure:"storage"`
 	Identity      string   `mapstructure:"identity"`
 	Password      string   `mapstructure:"password"`
 }
@@ -22,12 +24,12 @@ type Ctx struct {
 	PathPrefix     string
 	PwHasher       pwhasher.PwHasher
 	Storage        storage.ConnSession
-	IdentityColl   storage.IdentityCollConfig
+	IdentityColl   collections.Collection
 	Identity       string
 	Password       string
 }
 
-func (p pwBasedAdapter) GetAuthnController(pathPrefix string, confMap *config.RawConfig, projectCtx *contextTypes.ProjectCtx) (authnTypes.Controller, error) {
+func (p pwBasedAdapter) GetAuthnController(pathPrefix string, confMap *configs.RawConfig, projectCtx *contextTypes.ProjectCtx) (authnTypes.Controller, error) {
 	controllerConfig := &Config{}
 	err := mapstructure.Decode(confMap, controllerConfig)
 	if err != nil {
@@ -41,8 +43,8 @@ func (p pwBasedAdapter) GetAuthnController(pathPrefix string, confMap *config.Ra
 		Password:       controllerConfig.Password,
 	}
 	context.PwHasher = projectCtx.Hashers[controllerConfig.MainHasher]
-	context.IdentityColl = projectCtx.Collections[controllerConfig.Collection].(storage.IdentityCollConfig)
-	context.Storage = projectCtx.Storages[context.IdentityColl.StorageName]
+	context.IdentityColl = projectCtx.Collections[controllerConfig.Collection]
+	context.Storage = projectCtx.Storages[controllerConfig.Storage]
 
 	return &pwBased{context}, nil
 }

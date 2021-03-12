@@ -6,14 +6,14 @@ import (
 )
 
 // Open attempts to establish a connection with a database
-func Open(data RawStorageConfig, features []string) (ConnSession, error) {
+func Open(data RawStorageConfig) (ConnSession, error) {
 	if data["adapter"] != nil {
 		adapterName, ok := data["adapter"].(string)
 		if !ok {
 			return nil, errors.New("invalid adapter Name")
 		}
 
-		adapter, err := GetAdapter(adapterName, features)
+		adapter, err := GetAdapter(adapterName)
 		if err != nil {
 			return nil, err
 		}
@@ -27,7 +27,7 @@ func Open(data RawStorageConfig, features []string) (ConnSession, error) {
 	} else if connStr, ok := data["url"].(string); ok && connStr != "" {
 		adapterName := strings.Split(connStr, "://")[0]
 
-		adapter, err := GetAdapter(adapterName, features)
+		adapter, err := GetAdapter(adapterName)
 		if err != nil {
 			return nil, err
 		}

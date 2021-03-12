@@ -1,6 +1,6 @@
 package main
 
-//func registerHandler(app *config.App) func(c *gin.Context) {
+//func registerHandler(app *configs.App) func(c *gin.Context) {
 //	return func(c *gin.Context) {
 //		var regData interface{}
 //
@@ -82,7 +82,7 @@ package main
 //	}
 //}
 //
-//func authNHandler(app *config.App, authnConfig *config.AuthnConfig) func(c *fiber.Ctx) error {
+//func authNHandler(app *configs.App, authnConfig *configs.AuthnConfig) func(c *fiber.Ctx) error {
 //
 //	switch authnConfig.TypeName {
 //	case types.PasswordBased:

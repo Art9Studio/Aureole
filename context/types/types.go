@@ -4,13 +4,14 @@ import (
 	"gouth/adapters/authn/types"
 	"gouth/adapters/pwhasher"
 	"gouth/adapters/storage"
-	"gouth/config"
+	"gouth/collections"
+	"gouth/configs"
 )
 
 type ProjectCtx struct {
 	APIVersion  string
-	Apps        []App
-	Collections map[string]interface{}
+	Apps        map[string]App
+	Collections map[string]collections.Collection
 	Storages    map[string]storage.ConnSession
 	Hashers     map[string]pwhasher.PwHasher
 }
@@ -23,10 +24,10 @@ type App struct {
 type AuthnConfig struct {
 	PathPrefix string
 	Type       types.Type
-	Config     config.RawConfig
+	Config     configs.RawConfig
 }
 
 type AuthZConfig struct {
 	Type   string
-	Config config.RawConfig
+	Config configs.RawConfig
 }

@@ -21,7 +21,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "full config to sring",
+			name: "full configs to sring",
 			fields: fields{
 				User:     "admin",
 				Password: "admin",
@@ -34,7 +34,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "config without opts to sring",
+			name: "configs without opts to sring",
 			fields: fields{
 				User:     "admin",
 				Password: "admin",
@@ -47,7 +47,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "config without userinfo to sring",
+			name: "configs without userinfo to sring",
 			fields: fields{
 				Adapter:  "postgresql",
 				Host:     "localhost",
@@ -59,7 +59,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "config without host to sring",
+			name: "configs without host to sring",
 			fields: fields{
 				User:     "admin",
 				Password: "admin",
@@ -71,7 +71,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "config without port to sring",
+			name: "configs without port to sring",
 			fields: fields{
 				User:     "admin",
 				Password: "admin",
@@ -83,7 +83,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "config without db name to sring",
+			name: "configs without db name to sring",
 			fields: fields{
 				User:     "admin",
 				Password: "admin",

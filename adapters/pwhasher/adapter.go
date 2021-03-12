@@ -10,12 +10,12 @@ var (
 	adaptersMU sync.Mutex
 )
 
-// RawHashConfig represents unparsed config data from config file
+// RawHashConfig represents unparsed configs data from configs file
 type RawHashConfig = map[string]interface{}
 
 // Adapter defines methods for pwhasher adapters
 type Adapter interface {
-	//GetHasher returns desired PwHasher depends on the given config
+	//GetHasher returns desired PwHasher depends on the given configs
 	GetPwHasher(*RawHashConfig) (PwHasher, error)
 }
 

@@ -11,6 +11,7 @@ apps:
           main_hasher: argon2
           compat_hashers: []
           collection: identity
+          storage: one_db
           identity: "{$.name}"
           password: "{$.passwd}"
 
@@ -18,6 +19,7 @@ apps:
       type: "cookie"
       config:
         collection: session
+        storage: one_db
         domain: "localhost"
         path: "/"
         max_age: 3600
@@ -42,6 +44,7 @@ apps:
         config:
           main_hasher: argon2
           collection: identity
+          storage: two_db
 
     authZ:
       type: "jwt"
@@ -81,19 +84,18 @@ storages:
 collections:
   - type: "identity"
     name: identity
-    storage: one_db
+    use_existent: true
     config:
-      use_existent: true
       name: "users"
       pk: "id"
-      identity: "username"
-      password: "password"
+      fields_map:
+        identity: "username"
+        password: "password"
 
 #  - type: "session"
 #    name: session
-#    storage: one_db
-#    config:
-#      use_existent: false
+#    use_existent: false
+#    configs:
 #      name: "sessions"
 #      pk: "id"
 #      # todo: fill rest

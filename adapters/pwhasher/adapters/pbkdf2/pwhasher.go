@@ -63,7 +63,7 @@ func (p *Pbkdf2) ComparePw(pw string, hash string) (bool, error) {
 	return false, nil
 }
 
-// decodePwHash expects a pwhasher created from this package, and parses it to return the config
+// decodePwHash expects a pwhasher created from this package, and parses it to return the configs
 // used to create it, as well as the salt and key
 func decodePwHash(hash string) (*HashConfig, []byte, []byte, error) {
 	vals := strings.Split(hash, "$")

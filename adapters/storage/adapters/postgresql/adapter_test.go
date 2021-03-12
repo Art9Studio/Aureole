@@ -143,7 +143,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "full raw connection config",
+			name: "full raw connection configs",
 			args: args{map[string]interface{}{
 				"adapter":  "postgresql",
 				"username": "root",
@@ -168,7 +168,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "connection config without userinfo",
+			name: "connection configs without userinfo",
 			args: args{map[string]interface{}{
 				"adapter": "postgresql",
 				"host":    "localhost",
@@ -201,7 +201,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "raw connection config without port",
+			name: "raw connection configs without port",
 			args: args{map[string]interface{}{
 				"adapter":  "postgresql",
 				"username": "root",
@@ -218,7 +218,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "raw connection config without host",
+			name: "raw connection configs without host",
 			args: args{map[string]interface{}{
 				"adapter":  "postgresql",
 				"username": "root",
@@ -235,7 +235,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "raw connection config without db name",
+			name: "raw connection configs without db name",
 			args: args{map[string]interface{}{
 				"adapter":  "postgresql",
 				"username": "root",
@@ -252,7 +252,7 @@ func Test_pgAdapter_NewConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "raw connection config without options",
+			name: "raw connection configs without options",
 			args: args{map[string]interface{}{
 				"adapter":  "postgresql",
 				"username": "root",

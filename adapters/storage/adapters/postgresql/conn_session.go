@@ -16,6 +16,10 @@ type ConnSession struct {
 	relInfo map[storage.CollPair]storage.RelInfo
 }
 
+func (s *ConnSession) CheckFeaturesAvailable(requiredFeatures []string) error {
+	return storage.CheckFeaturesAvailable(requiredFeatures, AdapterFeatures)
+}
+
 // Open creates connection with postgresql database
 func (s *ConnSession) Open() error {
 	str, err := s.connConf.String()

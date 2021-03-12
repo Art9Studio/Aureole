@@ -2,11 +2,10 @@ package authn
 
 import (
 	"gouth/adapters/authn/types"
-	"gouth/config"
-	contextTypes "gouth/context/types"
+	"gouth/configs"
 )
 
-func New(conf *config.AuthnConfig, projectCtx *contextTypes.ProjectCtx) (types.Controller, error) {
+func New(conf *configs.AuthnConfig) (types.Controller, error) {
 	adapter, err := GetAdapter(conf.TypeName)
 	if err != nil {
 		return nil, err

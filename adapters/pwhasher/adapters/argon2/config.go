@@ -5,7 +5,7 @@ import (
 	"gouth/adapters/pwhasher"
 )
 
-// HashConfig represents parsed pwhasher config from the config file
+// HashConfig represents parsed pwhasher configs from the configs file
 type HashConfig struct {
 	// AlgName type (argon2i, argon2id)
 	Type string
@@ -49,14 +49,14 @@ func (a argon2Adapter) GetPwHasher(rawConf *pwhasher.RawHashConfig) (pwhasher.Pw
 }
 
 // todo: completely rewrite this method
-// newConfig creates new HashConfig struct from the raw data, parsed from the config file
+// newConfig creates new HashConfig struct from the raw data, parsed from the configs file
 func newConfig(rawConf *pwhasher.RawHashConfig) (*HashConfig, error) {
 	// todo: make validation with package for this and converting to structure
 	requiredKeys := []string{"kind", "iterations", "parallelism", "salt_length", "key_length", "memory"}
 
 	for _, key := range requiredKeys {
 		if _, ok := (*rawConf)[key]; !ok {
-			return &HashConfig{}, fmt.Errorf("pwhasher config: missing %s statement", key)
+			return &HashConfig{}, fmt.Errorf("pwhasher configs: missing %s statement", key)
 		}
 	}
 

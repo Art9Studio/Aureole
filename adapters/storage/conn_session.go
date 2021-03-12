@@ -1,10 +1,14 @@
 package storage
 
+import "fmt"
+
 // ConnSession is an interface that defines methods for database session
 type ConnSession interface {
 	Application
 
-	// ConnConfig returns the connection config that was used to set up the adapter
+	CheckFeaturesAvailable([]string) error
+
+	// ConnConfig returns the connection configs that was used to set up the adapter
 	GetConfig() ConnConfig
 
 	// RelInfo returns information about tables relationships
@@ -24,4 +28,14 @@ type ConnSession interface {
 
 	// Close terminates the currently active connection to the DBMS
 	Close() error
+}
+
+func CheckFeaturesAvailable(requiredFeatures []string, implementedFeatures map[string]bool) error {
+	for _, feature := range requiredFeatures {
+		if isImplemented, ok := implementedFeatures[feature]; !ok || !isImplemented {
+			return fmt.Errorf("feature %s hasn't implemented", feature)
+		}
+	}
+
+	return nil
 }

@@ -6,14 +6,13 @@ type CollConfig struct {
 }
 
 type IdentityCollConfig struct {
-	StorageName string `c:"storage" v:"required"`
-	Name        string `c:"name" v:"required"`
-	Pk          string `c:"pk" v:"required"`
-	Identity    string `c:"identity" v:"required"`
-	Password    string `c:"password" v:"required"`
+	Name     string
+	Pk       string
+	Identity string
+	Password string
 }
 
-type InsertUserData struct {
+type InsertIdentityData struct {
 	Identity    interface{}
 	UserConfirm interface{}
 }
@@ -26,7 +25,7 @@ type Application interface {
 	CreateIdentityColl(IdentityCollConfig) error
 
 	// InsertUser inserts user entity in the user collection
-	InsertIdentity(IdentityCollConfig, InsertUserData) (JSONCollResult, error)
+	InsertIdentity(IdentityCollConfig, InsertIdentityData) (JSONCollResult, error)
 
 	GetPasswordByIdentity(IdentityCollConfig, interface{}) (JSONCollResult, error)
 }
@@ -39,8 +38,8 @@ func NewIdentityCollConfig(name string, pk string, userUnique string, userConfir
 	return &IdentityCollConfig{Name: name, Pk: pk, Identity: userUnique, Password: userConfirm}
 }
 
-func NewInsertUserData(userUnique interface{}, userConfirm interface{}) *InsertUserData {
-	return &InsertUserData{Identity: userUnique, UserConfirm: userConfirm}
+func NewInsertIdentityData(userUnique interface{}, userConfirm interface{}) *InsertIdentityData {
+	return &InsertIdentityData{Identity: userUnique, UserConfirm: userConfirm}
 }
 
 func (conf IdentityCollConfig) ToCollConfig() CollConfig {

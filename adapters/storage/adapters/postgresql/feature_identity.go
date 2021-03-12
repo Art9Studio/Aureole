@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"gouth/adapters/storage"
+	"gouth/collections"
 )
 
 // IsCollExists checks whether the given collection exists
@@ -22,21 +23,21 @@ func (s *ConnSession) IsCollExists(collConf storage.CollConfig) (bool, error) {
 }
 
 // CreateUserCollection creates user collection with traits passed by UserCollectionConfig
-func (s *ConnSession) CreateIdentityColl(collConf storage.IdentityCollConfig) error {
+func (s *ConnSession) CreateIdentityColl(spec collections.Specification) error {
 	// TODO: check types of fields
 	sql := fmt.Sprintf(`create table %s
                        (%s serial primary key,
                        %s text not null unique,
                        %s text not null);`,
-		Sanitize(collConf.Name),
-		Sanitize(collConf.Pk),
-		Sanitize(collConf.Identity),
-		Sanitize(collConf.Password))
+		Sanitize(spec.Name),
+		Sanitize(spec.Pk),
+		Sanitize(spec.FieldsMap["identity"]),
+		Sanitize(spec.FieldsMap["password"])
 	return s.RawExec(sql)
 }
 
 // InsertUser inserts user entity in the user collection
-func (s *ConnSession) InsertIdentity(collConf storage.IdentityCollConfig, insUserData storage.InsertUserData) (storage.JSONCollResult, error) {
+func (s *ConnSession) InsertIdentity(collConf storage.IdentityCollConfig, insUserData storage.InsertIdentityData) (storage.JSONCollResult, error) {
 	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning $3;",
 		Sanitize(collConf.Name),
 		Sanitize(collConf.Identity),

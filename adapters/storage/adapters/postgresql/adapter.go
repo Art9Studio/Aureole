@@ -22,11 +22,7 @@ func init() {
 type pgAdapter struct {
 }
 
-func (pg pgAdapter) GetFeatures() map[string]bool {
-	return AdapterFeatures
-}
-
-// OpenConfig attempts to establish a connection with a db by connection config
+// OpenConfig attempts to establish a connection with a db by connection configs
 func (pg pgAdapter) OpenWithConfig(connConf storage.ConnConfig) (storage.ConnSession, error) {
 	sess := &ConnSession{
 		ctx:      context.Background(),
@@ -89,15 +85,15 @@ func (pg pgAdapter) ParseUrl(connUrl string) (storage.ConnConfig, error) {
 	return connConf, err
 }
 
-// NewConfig creates new ConnConfig struct from the raw data, parsed from the config file
+// NewConfig creates new ConnConfig struct from the raw data, parsed from the configs file
 func (pg pgAdapter) NewConfig(data map[string]interface{}) (storage.ConnConfig, error) {
 	requiredKeys := []string{"username", "password", "host", "port", "db_name"}
 
 	for _, key := range requiredKeys {
 		if _, ok := data[key]; !ok {
-			return nil, fmt.Errorf("connection config: missing %s statement", key)
+			return nil, fmt.Errorf("connection configs: missing %s statement", key)
 		} else if data[key] == "" {
-			return nil, fmt.Errorf("connection config: %s statement cannot be empty", key)
+			return nil, fmt.Errorf("connection configs: %s statement cannot be empty", key)
 		}
 	}
 

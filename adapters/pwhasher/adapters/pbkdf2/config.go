@@ -19,7 +19,7 @@ var DefaultConfig = &HashConfig{
 	Func:       sha1.New,
 }
 
-// HashConfig represents parsed pwhasher config from the config file
+// HashConfig represents parsed pwhasher configs from the configs file
 type HashConfig struct {
 	// The number of iterations over the memory
 	Iterations int
@@ -47,13 +47,13 @@ func (a pbkdf2Adapter) GetPwHasher(rawConf *pwhasher.RawHashConfig) (pwhasher.Pw
 	return &Pbkdf2{conf: config}, nil
 }
 
-// newConfig creates new HashConfig struct from the raw data, parsed from the config file
+// newConfig creates new HashConfig struct from the raw data, parsed from the configs file
 func newConfig(rawConf *pwhasher.RawHashConfig) (*HashConfig, error) {
 	requiredKeys := []string{"iterations", "salt_length", "key_length", "func"}
 
 	for _, key := range requiredKeys {
 		if _, ok := (*rawConf)[key]; !ok {
-			return &HashConfig{}, fmt.Errorf("pwhasher config: missing %s statement", key)
+			return &HashConfig{}, fmt.Errorf("pwhasher configs: missing %s statement", key)
 		}
 	}
 

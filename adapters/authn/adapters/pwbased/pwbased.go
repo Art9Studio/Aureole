@@ -1,15 +1,15 @@
 package pwbased
 
 import (
-	"gouth/adapters/authn"
+	authnTypes "gouth/adapters/authn/types"
 )
 
 type pwBased struct {
 	ctx *Ctx
 }
 
-func (p pwBased) GetRoutes() []authn.Route {
-	return []authn.Route{
+func (p pwBased) GetRoutes() []authnTypes.Route {
+	return []authnTypes.Route{
 		{
 			Method:  "POST",
 			Path:    p.ctx.PathPrefix,

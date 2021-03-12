@@ -15,7 +15,7 @@ type ConnConfig struct {
 	Options  map[string]string
 }
 
-// String reassembles PostgreSQL connection config into a valid connection url
+// String reassembles PostgreSQL connection configs into a valid connection url
 func (connConf ConnConfig) String() (string, error) {
 	vv := url.Values{}
 	if connConf.Options != nil {
@@ -44,7 +44,7 @@ func (connConf ConnConfig) String() (string, error) {
 	return u.String(), nil
 }
 
-// DBName returns the name of the database, that we've connected by this config
+// DBName returns the name of the database, that we've connected by this configs
 func (connConf ConnConfig) DBName() string {
 	return connConf.Database
 }

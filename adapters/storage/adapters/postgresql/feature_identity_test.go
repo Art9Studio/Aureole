@@ -62,7 +62,7 @@ func Test_Session_InsertUser(t *testing.T) {
 
 	res, err := usersSess.InsertIdentity(
 		*storage.NewIdentityCollConfig("users", "id", "username", "password"),
-		*storage.NewInsertUserData("hello", "secret"),
+		*storage.NewInsertIdentityData("hello", "secret"),
 	)
 	assert.NoError(t, err)
 	fmt.Printf("new id: %v\n", res)
