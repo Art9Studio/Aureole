@@ -35,7 +35,7 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 
 	var key []byte
 
-	switch a.conf.Type {
+	switch a.conf.Kind {
 	case "argon2i":
 		key = argon2.Key([]byte(pw), salt, a.conf.Iterations, a.conf.Memory, a.conf.Parallelism, a.conf.KeyLen)
 	case "argon2id":
@@ -43,7 +43,7 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 	}
 
 	hash := fmt.Sprintf("$%s$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		a.conf.Type,
+		a.conf.Kind,
 		argon2.Version,
 		a.conf.Memory,
 		a.conf.Iterations,
@@ -66,7 +66,7 @@ func (a *Argon2) ComparePw(pw string, hash string) (bool, error) {
 
 	var otherKey []byte
 
-	switch conf.Type {
+	switch conf.Kind {
 	case "argon2i":
 		otherKey = argon2.Key([]byte(pw), salt, conf.Iterations, conf.Memory, conf.Parallelism, conf.KeyLen)
 	case "argon2id":
@@ -99,7 +99,7 @@ func decodePwHash(hash string) (*HashConfig, []byte, []byte, error) {
 	}
 
 	conf := &HashConfig{}
-	conf.Type = vals[1]
+	conf.Kind = vals[1]
 	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &conf.Memory, &conf.Iterations, &conf.Parallelism)
 	if err != nil {
 		return nil, nil, nil, err

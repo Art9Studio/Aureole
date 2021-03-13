@@ -2,13 +2,14 @@ package storage
 
 import (
 	"errors"
+	"gouth/configs"
 	"strings"
 )
 
 // Open attempts to establish a connection with a database
-func Open(data RawStorageConfig) (ConnSession, error) {
-	if data["adapter"] != nil {
-		adapterName, ok := data["adapter"].(string)
+func Open(confMap configs.RawConfig) (ConnSession, error) {
+	if confMap["adapter"] != nil {
+		adapterName, ok := confMap["adapter"].(string)
 		if !ok {
 			return nil, errors.New("invalid adapter Name")
 		}
@@ -18,13 +19,13 @@ func Open(data RawStorageConfig) (ConnSession, error) {
 			return nil, err
 		}
 
-		config, err := adapter.NewConfig(data)
+		config, err := adapter.NewConfig(confMap)
 		if err != nil {
 			return nil, err
 		}
 
 		return adapter.OpenWithConfig(config)
-	} else if connStr, ok := data["url"].(string); ok && connStr != "" {
+	} else if connStr, ok := confMap["url"].(string); ok && connStr != "" {
 		adapterName := strings.Split(connStr, "://")[0]
 
 		adapter, err := GetAdapter(adapterName)
@@ -40,5 +41,5 @@ func Open(data RawStorageConfig) (ConnSession, error) {
 		return adapter.OpenWithConfig(config)
 
 	}
-	return nil, errors.New("missing connection data")
+	return nil, errors.New("missing connection confMap")
 }

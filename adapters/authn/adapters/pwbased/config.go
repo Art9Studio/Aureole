@@ -46,5 +46,10 @@ func (p pwBasedAdapter) GetAuthnController(pathPrefix string, confMap *configs.R
 	context.IdentityColl = projectCtx.Collections[controllerConfig.Collection]
 	context.Storage = projectCtx.Storages[controllerConfig.Storage]
 
+	err = context.Storage.CheckFeaturesAvailable([]string{context.IdentityColl.Type})
+	if err != nil {
+		return nil, err
+	}
+
 	return &pwBased{context}, nil
 }

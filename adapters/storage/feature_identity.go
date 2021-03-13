@@ -20,6 +20,6 @@ type Application interface {
 	GetPasswordByIdentity(collections.Specification, interface{}) (JSONCollResult, error)
 }
 
-func NewInsertIdentityData(userUnique interface{}, userConfirm interface{}) *InsertIdentityData {
-	return &InsertIdentityData{Identity: userUnique, UserConfirm: userConfirm}
+func NewInsertIdentityData(userUnique interface{}, userConfirm interface{}) InsertIdentityData {
+	return InsertIdentityData{Identity: userUnique, UserConfirm: userConfirm}
 }

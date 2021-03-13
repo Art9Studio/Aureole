@@ -33,7 +33,7 @@ func (p *Pbkdf2) HashPw(pw string) (string, error) {
 		return "", err
 	}
 
-	key := pbkdf2.Key([]byte(pw), salt, p.conf.Iterations, p.conf.KeyLen, p.conf.Func)
+	key := pbkdf2.Key([]byte(pw), salt, p.conf.Iterations, p.conf.KeyLen, p.conf.Function)
 
 	hash := fmt.Sprintf("pbkdf2_%s$%d$%s$%s",
 		p.conf.FuncName,
@@ -54,7 +54,7 @@ func (p *Pbkdf2) ComparePw(pw string, hash string) (bool, error) {
 		return false, err
 	}
 
-	otherKey := pbkdf2.Key([]byte(pw), salt, conf.Iterations, conf.KeyLen, conf.Func)
+	otherKey := pbkdf2.Key([]byte(pw), salt, conf.Iterations, conf.KeyLen, conf.Function)
 
 	if subtle.ConstantTimeCompare(key, otherKey) == 1 {
 		return true, nil
@@ -82,15 +82,15 @@ func decodePwHash(hash string) (*HashConfig, []byte, []byte, error) {
 
 	switch funcName {
 	case "sha1":
-		conf.Func = sha1.New
+		conf.Function = sha1.New
 	case "sha224":
-		conf.Func = sha256.New224
+		conf.Function = sha256.New224
 	case "sha256":
-		conf.Func = sha256.New
+		conf.Function = sha256.New
 	case "sha384":
-		conf.Func = sha512.New384
+		conf.Function = sha512.New384
 	case "sha512":
-		conf.Func = sha512.New
+		conf.Function = sha512.New
 	default:
 		return nil, nil, nil, fmt.Errorf("pbkdf2: function '%s' don't supported", funcName)
 	}

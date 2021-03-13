@@ -27,7 +27,7 @@ func TestArgon2_Hash(t *testing.T) {
 		{
 			name: "argon2i 32/64",
 			fields: fields{conf: &HashConfig{
-				Type:        "argon2i",
+				Kind:        "argon2i",
 				Iterations:  4,
 				Parallelism: 4,
 				SaltLen:     32,
@@ -40,7 +40,7 @@ func TestArgon2_Hash(t *testing.T) {
 		{
 			name: "argon2i 64/128",
 			fields: fields{conf: &HashConfig{
-				Type:        "argon2i",
+				Kind:        "argon2i",
 				Iterations:  3,
 				Parallelism: 2,
 				SaltLen:     64,
@@ -53,7 +53,7 @@ func TestArgon2_Hash(t *testing.T) {
 		{
 			name: "argon2id default",
 			fields: fields{conf: &HashConfig{
-				Type:        "argon2id",
+				Kind:        "argon2id",
 				Iterations:  3,
 				Parallelism: 2,
 				SaltLen:     16,
@@ -66,7 +66,7 @@ func TestArgon2_Hash(t *testing.T) {
 		{
 			name: "argon2id 32/64",
 			fields: fields{conf: &HashConfig{
-				Type:        "argon2id",
+				Kind:        "argon2id",
 				Iterations:  1,
 				Parallelism: 2,
 				SaltLen:     32,
@@ -79,7 +79,7 @@ func TestArgon2_Hash(t *testing.T) {
 		{
 			name: "argon2id 64/128",
 			fields: fields{conf: &HashConfig{
-				Type:        "argon2id",
+				Kind:        "argon2id",
 				Iterations:  3,
 				Parallelism: 2,
 				SaltLen:     64,

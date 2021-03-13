@@ -56,13 +56,6 @@ func Auth(context *Ctx) func(*fiber.Ctx) error {
 
 		// TODO: add a user existence check
 		identityStorage := context.Storage
-		if err = identityStorage.CheckFeaturesAvailable([]string{context.IdentityColl.Type}); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-				"success": false,
-				"message": err,
-			})
-		}
-
 		pw, err := identityStorage.GetPasswordByIdentity(context.IdentityColl.Spec, identity)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{

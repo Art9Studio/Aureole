@@ -7,12 +7,12 @@ import (
 
 // ConnConfig represents a parsed PostgreSQL connection URL
 type ConnConfig struct {
-	User     string
-	Password string
-	Host     string
-	Port     string
-	Database string
-	Options  map[string]string
+	User     string            `mapstructure:"username"`
+	Password string            `mapstructure:"password"`
+	Host     string            `mapstructure:"host"`
+	Port     string            `mapstructure:"port"`
+	Database string            `mapstructure:"db_name"`
+	Options  map[string]string `mapstructure:"options"`
 }
 
 // String reassembles PostgreSQL connection configs into a valid connection url

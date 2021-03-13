@@ -1,5 +1,7 @@
 package pwhasher
 
+import "gouth/configs"
+
 // PwHasher is an interface that defined method for pwhasher implementation
 type PwHasher interface {
 	// Hash returns hashed data encoded by base64
@@ -10,7 +12,7 @@ type PwHasher interface {
 }
 
 // New returns desired PwHasher depends on the given configs
-func New(algoName string, rawConf *RawHashConfig) (PwHasher, error) {
+func New(algoName string, rawConf *configs.RawConfig) (PwHasher, error) {
 	adapter, err := GetAdapter(algoName)
 	if err != nil {
 		return nil, err

@@ -3,7 +3,9 @@ package postgresql
 import (
 	"context"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"gouth/adapters/storage"
+	"gouth/configs"
 	"net/url"
 	"strings"
 )
@@ -86,30 +88,39 @@ func (pg pgAdapter) ParseUrl(connUrl string) (storage.ConnConfig, error) {
 }
 
 // NewConfig creates new ConnConfig struct from the raw data, parsed from the configs file
-func (pg pgAdapter) NewConfig(data map[string]interface{}) (storage.ConnConfig, error) {
-	requiredKeys := []string{"username", "password", "host", "port", "db_name"}
-
-	for _, key := range requiredKeys {
-		if _, ok := data[key]; !ok {
-			return nil, fmt.Errorf("connection configs: missing %s statement", key)
-		} else if data[key] == "" {
-			return nil, fmt.Errorf("connection configs: %s statement cannot be empty", key)
-		}
+func (pg pgAdapter) NewConfig(confMap configs.RawConfig) (storage.ConnConfig, error) {
+	connConfig := &ConnConfig{}
+	err := mapstructure.Decode(confMap, connConfig)
+	if err != nil {
+		return nil, err
 	}
 
-	opts := make(map[string]string)
-	if rawOpts, ok := data["options"].(map[string]interface{}); ok {
-		for key, value := range rawOpts {
-			opts[key] = fmt.Sprintf("%v", value)
-		}
-	}
+	return connConfig, nil
+	/*
+		requiredKeys := []string{"username", "password", "host", "port", "db_name"}
 
-	return ConnConfig{
-		User:     data["username"].(string),
-		Password: data["password"].(string),
-		Host:     data["host"].(string),
-		Port:     data["port"].(string),
-		Database: data["db_name"].(string),
-		Options:  opts,
-	}, nil
+		for _, key := range requiredKeys {
+			if _, ok := data[key]; !ok {
+				return nil, fmt.Errorf("connection configs: missing %s statement", key)
+			} else if data[key] == "" {
+				return nil, fmt.Errorf("connection configs: %s statement cannot be empty", key)
+			}
+		}
+
+		opts := make(map[string]string)
+		if rawOpts, ok := data["options"].(map[string]interface{}); ok {
+			for key, value := range rawOpts {
+				opts[key] = fmt.Sprintf("%v", value)
+			}
+		}
+
+		return ConnConfig{
+			User:     data["username"].(string),
+			Password: data["password"].(string),
+			Host:     data["host"].(string),
+			Port:     data["port"].(string),
+			Database: data["db_name"].(string),
+			Options:  opts,
+		}, nil
+	*/
 }

@@ -5,7 +5,9 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"gouth/adapters/pwhasher"
+	"gouth/configs"
 	"hash"
 )
 
@@ -16,73 +18,49 @@ var DefaultConfig = &HashConfig{
 	SaltLen:    16,
 	KeyLen:     32,
 	FuncName:   "sha1",
-	Func:       sha1.New,
+	Function:   sha1.New,
 }
 
 // HashConfig represents parsed pwhasher configs from the configs file
 type HashConfig struct {
 	// The number of iterations over the memory
-	Iterations int
+	Iterations int `mapstructure:"iterations"`
 
 	// Length of the random salt. 16 bytes is recommended for password hashing
-	SaltLen int
+	SaltLen int `mapstructure:"salt_length"`
 
 	// Length of the generated key. 16 bytes or more is recommended
-	KeyLen int
+	KeyLen int `mapstructure:"key_length"`
 
 	// Name of the pseudorandom function
-	FuncName string
+	FuncName string `mapstructure:"func"`
 
 	// Pseudorandom function used to derive a secure encryption key based on the password
-	Func func() hash.Hash
+	Function func() hash.Hash
 }
 
-//GetHasher returns Argon2 hasher with the given settings
-func (a pbkdf2Adapter) GetPwHasher(rawConf *pwhasher.RawHashConfig) (pwhasher.PwHasher, error) {
-	config, err := newConfig(rawConf)
+// GetPwHasher returns Pbkdf2 hasher with the given settings
+func (a pbkdf2Adapter) GetPwHasher(confMap *configs.RawConfig) (pwhasher.PwHasher, error) {
+	hashConfig := &HashConfig{}
+	err := mapstructure.Decode(confMap, hashConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Pbkdf2{conf: config}, nil
-}
-
-// newConfig creates new HashConfig struct from the raw data, parsed from the configs file
-func newConfig(rawConf *pwhasher.RawHashConfig) (*HashConfig, error) {
-	requiredKeys := []string{"iterations", "salt_length", "key_length", "func"}
-
-	for _, key := range requiredKeys {
-		if _, ok := (*rawConf)[key]; !ok {
-			return &HashConfig{}, fmt.Errorf("pwhasher configs: missing %s statement", key)
-		}
-	}
-
-	// TODO: add rawConf validation
-
-	conf := &HashConfig{
-		Iterations: (*rawConf)["iterations"].(int),
-		SaltLen:    (*rawConf)["salt_length"].(int),
-		KeyLen:     (*rawConf)["key_length"].(int),
-	}
-
-	funcName := (*rawConf)["func"].(string)
-
-	switch funcName {
+	switch hashConfig.FuncName {
 	case "sha1":
-		conf.Func = sha1.New
+		hashConfig.Function = sha1.New
 	case "sha224":
-		conf.Func = sha256.New224
+		hashConfig.Function = sha256.New224
 	case "sha256":
-		conf.Func = sha256.New
+		hashConfig.Function = sha256.New
 	case "sha384":
-		conf.Func = sha512.New384
+		hashConfig.Function = sha512.New384
 	case "sha512":
-		conf.Func = sha512.New
+		hashConfig.Function = sha512.New
 	default:
-		return nil, fmt.Errorf("pbkdf2: function '%s' don't supported", funcName)
+		return nil, fmt.Errorf("pbkdf2: function '%s' don't supported", hashConfig.FuncName)
 	}
 
-	conf.FuncName = funcName
-
-	return conf, nil
+	return &Pbkdf2{conf: hashConfig}, nil
 }
