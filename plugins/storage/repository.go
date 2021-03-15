@@ -2,6 +2,7 @@ package storage
 
 import (
 	"aureole/configs"
+	ctxTypes "aureole/context/types"
 	"fmt"
 	"sync"
 )
@@ -23,6 +24,10 @@ type Adapter interface {
 	//
 	//// NewConfig creates new ConnConfig struct from the raw data, parsed from the config file
 	//NewConfig(data map[string]interface{}) (ConnConfig, error)
+}
+
+func InitRepository(context *ctxTypes.ProjectCtx) {
+	// For now, ignore project context.
 }
 
 // RegisterAdapter register storage adapter
