@@ -1,9 +1,9 @@
 package main
 
 import (
+	"aureole/pwhash"
+	"aureole/storage"
 	"errors"
-	"gouth/pwhash"
-	"gouth/storage"
 	"log"
 
 	"gopkg.in/yaml.v3"

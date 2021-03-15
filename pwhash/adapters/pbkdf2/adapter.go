@@ -1,11 +1,11 @@
 package pbkdf2
 
 import (
+	"aureole/pwhash"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"gouth/pwhash"
 )
 
 // AdapterName is the internal name of the adapter

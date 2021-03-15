@@ -5,4 +5,4 @@ name = "go"
 enabled = true
 
   [analyzers.meta]
-  import_paths = ["github.com/Art9Studio/gouth"]
+  import_paths = ["github.com/Art9Studio/Aureole"]

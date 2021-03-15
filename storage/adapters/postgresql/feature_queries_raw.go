@@ -1,6 +1,6 @@
 package postgresql
 
-import "gouth/storage"
+import "aureole/storage"
 
 // Exec executes the given sql query with no returning results
 func (s *ConnSession) RawExec(sql string, args ...interface{}) error {

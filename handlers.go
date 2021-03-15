@@ -1,10 +1,10 @@
 package main
 
 import (
+	"aureole/jwt"
+	"aureole/pwhash"
+	"aureole/storage"
 	"github.com/gin-gonic/gin"
-	"gouth/jwt"
-	"gouth/pwhash"
-	"gouth/storage"
 	"net/http"
 	"strings"
 )
