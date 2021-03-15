@@ -1,16 +1,13 @@
 package pwbased
 
 import (
-	"aureole/collections"
 	"aureole/configs"
 	contextTypes "aureole/context/types"
-	authnTypes "aureole/plugins/authn/types"
-	"aureole/plugins/pwhasher"
-	"aureole/plugins/storage"
+	"aureole/plugins/authn/types"
 	"github.com/mitchellh/mapstructure"
 )
 
-type Config struct {
+type Conf struct {
 	MainHasher    string   `mapstructure:"main_hasher"`
 	CompatHashers []string `mapstructure:"compat_hashers"`
 	Collection    string   `mapstructure:"collection"`
@@ -19,37 +16,36 @@ type Config struct {
 	Password      string   `mapstructure:"password"`
 }
 
-type Ctx struct {
-	ProjectContext *contextTypes.ProjectCtx
-	PathPrefix     string
-	PwHasher       pwhasher.PwHasher
-	Storage        storage.ConnSession
-	IdentityColl   *collections.Collection
-	Identity       string
-	Password       string
+func (p pwBasedAdapter) Get(conf *configs.AuthnConfig, projectCtx *contextTypes.ProjectCtx) (types.Controller, error) {
+	adapterConfMap := conf.Config
+	adapterConf := &Conf{}
+	err := mapstructure.Decode(adapterConfMap, adapterConf)
+	if err != nil {
+		return nil, err
+	}
+
+	adapter, err := initAdapter(conf, adapterConf, projectCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = adapter.Storage.CheckFeaturesAvailable([]string{adapter.IdentityColl.Type})
+	if err != nil {
+		return nil, err
+	}
+
+	return adapter, nil
 }
 
-func (p pwBasedAdapter) GetAuthnController(pathPrefix string, confMap *configs.RawConfig, projectCtx *contextTypes.ProjectCtx) (authnTypes.Controller, error) {
-	controllerConfig := &Config{}
-	err := mapstructure.Decode(confMap, controllerConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	context := &Ctx{
-		PathPrefix:     pathPrefix,
+func initAdapter(conf *configs.AuthnConfig, adapterConf *Conf, projectCtx *contextTypes.ProjectCtx) (*pwBased, error) {
+	return &pwBased{
+		Conf:           adapterConf,
+		PathPrefix:     conf.PathPrefix,
 		ProjectContext: projectCtx,
-		Identity:       controllerConfig.Identity,
-		Password:       controllerConfig.Password,
-	}
-	context.PwHasher = projectCtx.Hashers[controllerConfig.MainHasher]
-	context.IdentityColl = projectCtx.Collections[controllerConfig.Collection]
-	context.Storage = projectCtx.Storages[controllerConfig.Storage]
-
-	err = context.Storage.CheckFeaturesAvailable([]string{context.IdentityColl.Type})
-	if err != nil {
-		return nil, err
-	}
-
-	return &pwBased{context}, nil
+		Identity:       adapterConf.Identity,
+		Password:       adapterConf.Password,
+		PwHasher:       projectCtx.Hashers[adapterConf.MainHasher],
+		IdentityColl:   projectCtx.Collections[adapterConf.Collection],
+		Storage:        projectCtx.Storages[adapterConf.Storage],
+	}, nil
 }

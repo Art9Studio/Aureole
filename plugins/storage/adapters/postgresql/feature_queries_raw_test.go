@@ -13,7 +13,7 @@ func Test_Session_RawExec(t *testing.T) {
 	}
 
 	features := []string{"identity"}
-	usersSess, err := storage.Open(rawConnData, features)
+	usersSess, err := storage.New(rawConnData, features)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
@@ -32,7 +32,7 @@ func Test_Session_RawQuery(t *testing.T) {
 	}
 
 	features := []string{"identity"}
-	usersSess, err := storage.Open(rawConnData, features)
+	usersSess, err := storage.New(rawConnData, features)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}

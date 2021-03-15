@@ -13,7 +13,7 @@ func createConnSess(t *testing.T) storage.ConnSession {
 		"connection_url": "postgresql://root:password@localhost:5432/test",
 	}
 
-	usersSess, err := storage.Open(rawConnData)
+	usersSess, err := storage.New(rawConnData)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}

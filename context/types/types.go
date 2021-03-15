@@ -4,7 +4,7 @@ import (
 	"aureole/collections"
 	"aureole/configs"
 	"aureole/plugins/authn/types"
-	"aureole/plugins/pwhasher"
+	types2 "aureole/plugins/pwhasher/types"
 	"aureole/plugins/storage"
 )
 
@@ -14,7 +14,7 @@ type (
 		Apps        map[string]App
 		Collections map[string]*collections.Collection
 		Storages    map[string]storage.ConnSession
-		Hashers     map[string]pwhasher.PwHasher
+		Hashers     map[string]types2.PwHasher
 	}
 
 	App struct {

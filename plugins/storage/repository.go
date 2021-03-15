@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"aureole/configs"
 	"fmt"
 	"sync"
 )
@@ -12,14 +13,16 @@ var (
 
 // Adapter define methods for storage plugins
 type Adapter interface {
-	// OpenConfig attempts to establish a connection with a db by ConnConfig
-	OpenWithConfig(connConf ConnConfig) (ConnSession, error)
+	Get(*configs.Storage) (ConnSession, error)
 
-	// ParseUrl parses the connection url into ConnConfig struct
-	ParseUrl(connUrl string) (ConnConfig, error)
-
-	// NewConfig creates new ConnConfig struct from the raw data, parsed from the configs file
-	NewConfig(data map[string]interface{}) (ConnConfig, error)
+	//// OpenConfig attempts to establish a connection with a db by ConnConfig
+	//OpenWithConfig(connConf ConnConfig) (ConnSession, error)
+	//
+	//// ParseUrl parses the connection url into ConnConfig struct
+	//ParseUrl(connUrl string) (ConnConfig, error)
+	//
+	//// NewConfig creates new ConnConfig struct from the raw data, parsed from the config file
+	//NewConfig(data map[string]interface{}) (ConnConfig, error)
 }
 
 // RegisterAdapter register storage adapter

@@ -5,11 +5,12 @@ import (
 	"aureole/plugins/authn/types"
 )
 
+// New returns desired Controller depends on the given config
 func New(conf *configs.AuthnConfig) (types.Controller, error) {
 	adapter, err := GetAdapter(conf.Type)
 	if err != nil {
 		return nil, err
 	}
 
-	return adapter.GetAuthnController(conf.PathPrefix, &conf.Config, projectCtx)
+	return adapter.Get(conf, projectCtx)
 }

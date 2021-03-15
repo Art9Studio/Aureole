@@ -7,6 +7,7 @@ import (
 	"aureole/plugins/authn"
 	authnTypes "aureole/plugins/authn/types"
 	"aureole/plugins/pwhasher"
+	types2 "aureole/plugins/pwhasher/types"
 	"aureole/plugins/storage"
 	"fmt"
 )
@@ -37,7 +38,7 @@ func initStorages(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
 	ctx.Storages = make(map[string]storage.ConnSession)
 
 	for _, storageConf := range conf.StorageConfs {
-		connSess, err := storage.Open(storageConf.Config)
+		connSess, err := storage.New(&storageConf)
 		if err != nil {
 			return fmt.Errorf("open connection session to storage '%s': %v", storageConf.Name, err)
 		}
@@ -88,9 +89,9 @@ func initCollections(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
 }
 
 func initPwHashers(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
-	ctx.Hashers = make(map[string]pwhasher.PwHasher)
+	ctx.Hashers = make(map[string]types2.PwHasher)
 	for _, hasherConf := range conf.HasherConfs {
-		h, err := pwhasher.New(hasherConf.Type, &hasherConf.Config)
+		h, err := pwhasher.New(&hasherConf)
 		if err != nil {
 			return fmt.Errorf("cannot init hasher '%s': %v", hasherConf.Name, err)
 		}

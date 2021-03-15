@@ -9,7 +9,7 @@ import (
 
 func TestPbkdf2_HashPw(t *testing.T) {
 	type fields struct {
-		conf *HashConfig
+		conf *Conf
 	}
 	type args struct {
 		pw string
@@ -28,48 +28,48 @@ func TestPbkdf2_HashPw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha224",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha224",
-				Function:   sha256.New224,
+				Func:       sha256.New224,
 			}},
 			args:    args{pw: "qwerty"},
 			wantErr: false,
 		},
 		{
 			name: "pbkdf2 sha256",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha256",
-				Function:   sha256.New,
+				Func:       sha256.New,
 			}},
 			args:    args{pw: "qwerty"},
 			wantErr: false,
 		},
 		{
 			name: "pbkdf2 sha384",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha384",
-				Function:   sha512.New384,
+				Func:       sha512.New384,
 			}},
 			args:    args{pw: "qwerty"},
 			wantErr: false,
 		},
 		{
 			name: "pbkdf2 sha512",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha512",
-				Function:   sha512.New,
+				Func:       sha512.New,
 			}},
 			args:    args{pw: "qwerty"},
 			wantErr: false,
@@ -93,7 +93,7 @@ func TestPbkdf2_HashPw(t *testing.T) {
 
 func TestPbkdf2_ComparePw(t *testing.T) {
 	type fields struct {
-		conf *HashConfig
+		conf *Conf
 	}
 	type args struct {
 		pw   string
@@ -118,12 +118,12 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha224",
-				Function:   sha256.New224,
+				Func:       sha256.New224,
 			}},
 			args: args{
 				pw:   "qwerty",
@@ -134,12 +134,12 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha256",
-				Function:   sha256.New,
+				Func:       sha256.New,
 			}},
 			args: args{
 				pw:   "qwerty",
@@ -150,12 +150,12 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha384",
-				Function:   sha512.New384,
+				Func:       sha512.New384,
 			}},
 			args: args{
 				pw:   "qwerty",
@@ -166,12 +166,12 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
 				FuncName:   "sha512",
-				Function:   sha512.New,
+				Func:       sha512.New,
 			}},
 			args: args{
 				pw:   "qwerty",

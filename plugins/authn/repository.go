@@ -3,7 +3,7 @@ package authn
 import (
 	"aureole/configs"
 	ctxTypes "aureole/context/types"
-	authnTypes "aureole/plugins/authn/types"
+	"aureole/plugins/authn/types"
 	"fmt"
 	"sync"
 )
@@ -16,8 +16,8 @@ var (
 
 // Adapter defines methods for authentication plugins
 type Adapter interface {
-	// GetAuthnController returns desired authentication controller depends on the given configs
-	GetAuthnController(pathPrefix string, config *configs.RawConfig, projectCtx *ctxTypes.ProjectCtx) (authnTypes.Controller, error)
+	// GetAuthnController returns desired authentication Controller depneds on the given config
+	Get(config *configs.AuthnConfig, projectCtx *ctxTypes.ProjectCtx) (types.Controller, error)
 }
 
 func InitRepository(context *ctxTypes.ProjectCtx) {

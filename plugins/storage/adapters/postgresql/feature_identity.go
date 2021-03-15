@@ -8,7 +8,7 @@ import (
 )
 
 // IsCollExists checks whether the given collection exists
-func (s *ConnSession) IsCollExists(spec collections.Specification) (bool, error) {
+func (s *Storage) IsCollExists(spec collections.Specification) (bool, error) {
 	// TODO: use current schema instead constant 'public'
 	sql := fmt.Sprintf(
 		"select exists (select from pg_tables where schemaname = 'public' AND tablename = '%s');",
@@ -23,7 +23,7 @@ func (s *ConnSession) IsCollExists(spec collections.Specification) (bool, error)
 }
 
 // CreateIdentityColl creates user collection with traits passed by UserCollectionConfig
-func (s *ConnSession) CreateIdentityColl(spec collections.Specification) error {
+func (s *Storage) CreateIdentityColl(spec collections.Specification) error {
 	// TODO: check types of fields
 	sql := fmt.Sprintf(`create table %s
                        (%s serial primary key,
@@ -37,7 +37,7 @@ func (s *ConnSession) CreateIdentityColl(spec collections.Specification) error {
 }
 
 // InsertIdentity inserts user entity in the user collection
-func (s *ConnSession) InsertIdentity(spec collections.Specification, insUserData storage.InsertIdentityData) (storage.JSONCollResult, error) {
+func (s *Storage) InsertIdentity(spec collections.Specification, insUserData storage.InsertIdentityData) (storage.JSONCollResult, error) {
 	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning $3;",
 		Sanitize(spec.Name),
 		Sanitize(spec.FieldsMap["identity"]),
@@ -45,7 +45,7 @@ func (s *ConnSession) InsertIdentity(spec collections.Specification, insUserData
 	return s.RawQuery(sql, insUserData.Identity, insUserData.UserConfirm, spec.Pk)
 }
 
-func (s *ConnSession) GetPasswordByIdentity(spec collections.Specification, userUnique interface{}) (storage.JSONCollResult, error) {
+func (s *Storage) GetPasswordByIdentity(spec collections.Specification, userUnique interface{}) (storage.JSONCollResult, error) {
 	sql := fmt.Sprintf("select %s from %s where %s=$1",
 		Sanitize(spec.FieldsMap["password"]),
 		Sanitize(spec.Name),

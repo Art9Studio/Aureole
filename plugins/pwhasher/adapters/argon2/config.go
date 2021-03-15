@@ -2,23 +2,24 @@ package argon2
 
 import (
 	"aureole/configs"
-	"aureole/plugins/pwhasher"
+	"aureole/plugins/pwhasher/types"
 	"github.com/mitchellh/mapstructure"
 )
 
 // TODO: figure out best default settings
+// todo: use default
 // DefaultConfig provides some sane default settings for hashing passwords
-var DefaultConfig = &HashConfig{
-	Kind:        "argon2i",
-	Iterations:  3,
-	Parallelism: 2,
-	SaltLen:     16,
-	KeyLen:      32,
-	Memory:      32 * 1024,
-}
+//var DefaultConfig = &Conf{
+//	Kind:        "argon2i",
+//	Iterations:  3,
+//	Parallelism: 2,
+//	SaltLen:     16,
+//	KeyLen:      32,
+//	Memory:      32 * 1024,
+//}
 
-// HashConfig represents parsed pwhasher configs from the configs file
-type HashConfig struct {
+// Conf represents parsed pwhasher config from the config file
+type Conf struct {
 	// AlgName kind (argon2i, argon2id)
 	Kind string `mapstructure:"kind"`
 
@@ -40,12 +41,17 @@ type HashConfig struct {
 }
 
 //GetHasher returns Argon2 hasher with the given settings
-func (a argon2Adapter) GetPwHasher(confMap *configs.RawConfig) (pwhasher.PwHasher, error) {
-	hashConfig := &HashConfig{}
-	err := mapstructure.Decode(confMap, hashConfig)
+func (a argon2Adapter) Get(conf *configs.Hasher) (types.PwHasher, error) {
+	adapterConfMap := conf.Config
+	adapterConf := &Conf{}
+	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Argon2{conf: hashConfig}, nil
+	return initAdapter(conf, adapterConf)
+}
+
+func initAdapter(conf *configs.Hasher, adapterConf *Conf) (*Argon2, error) {
+	return &Argon2{Conf: adapterConf}, nil
 }

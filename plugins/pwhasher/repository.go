@@ -2,6 +2,8 @@ package pwhasher
 
 import (
 	"aureole/configs"
+	ctxTypes "aureole/context/types"
+	"aureole/plugins/pwhasher/types"
 	"fmt"
 	"sync"
 )
@@ -13,8 +15,12 @@ var (
 
 // Adapter defines methods for pwhasher plugins
 type Adapter interface {
-	//GetHasher returns desired PwHasher depends on the given configs
-	GetPwHasher(*configs.RawConfig) (PwHasher, error)
+	//GetPwHasher returns desired PwHasher depends on the given config
+	Get(*configs.Hasher) (types.PwHasher, error)
+}
+
+func InitRepository(context *ctxTypes.ProjectCtx) {
+	// For now, ignore project context. At 95% we dont need pass the Project context to hasher
 }
 
 // RegisterAdapter register pwhasher adapter

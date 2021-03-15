@@ -97,7 +97,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			connConf := ConnConfig{
+			connConf := Conf{
 				User:     tt.fields.User,
 				Password: tt.fields.Password,
 				Host:     tt.fields.Host,

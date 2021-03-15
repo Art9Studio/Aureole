@@ -2,27 +2,23 @@ package pbkdf2
 
 import (
 	"aureole/configs"
-	"aureole/plugins/pwhasher"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
-	"fmt"
+	"aureole/plugins/pwhasher/types"
 	"github.com/mitchellh/mapstructure"
-	"hash"
 )
 
 // TODO: figure out best default settings
+// todo: use default
 // DefaultConfig provides some sane default settings for hashing passwords
-var DefaultConfig = &HashConfig{
-	Iterations: 4096,
-	SaltLen:    16,
-	KeyLen:     32,
-	FuncName:   "sha1",
-	Function:   sha1.New,
-}
+//var DefaultConfig = &Conf{
+//	Iterations: 4096,
+//	SaltLen:    16,
+//	KeyLen:     32,
+//	FuncName:   "sha1",
+//	Func:       sha1.New,
+//}
 
-// HashConfig represents parsed pwhasher configs from the configs file
-type HashConfig struct {
+// Conf represents parsed pwhasher config from the config file
+type Conf struct {
 	// The number of iterations over the memory
 	Iterations int `mapstructure:"iterations"`
 
@@ -34,33 +30,25 @@ type HashConfig struct {
 
 	// Name of the pseudorandom function
 	FuncName string `mapstructure:"func"`
-
-	// Pseudorandom function used to derive a secure encryption key based on the password
-	Function func() hash.Hash
 }
 
 // GetPwHasher returns Pbkdf2 hasher with the given settings
-func (a pbkdf2Adapter) GetPwHasher(confMap *configs.RawConfig) (pwhasher.PwHasher, error) {
-	hashConfig := &HashConfig{}
-	err := mapstructure.Decode(confMap, hashConfig)
+func (a pbkdf2Adapter) Get(conf *configs.Hasher) (types.PwHasher, error) {
+	adapterConfMap := conf.Config
+	adapterConf := &Conf{}
+	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
 		return nil, err
 	}
 
-	switch hashConfig.FuncName {
-	case "sha1":
-		hashConfig.Function = sha1.New
-	case "sha224":
-		hashConfig.Function = sha256.New224
-	case "sha256":
-		hashConfig.Function = sha256.New
-	case "sha384":
-		hashConfig.Function = sha512.New384
-	case "sha512":
-		hashConfig.Function = sha512.New
-	default:
-		return nil, fmt.Errorf("pbkdf2: function '%s' don't supported", hashConfig.FuncName)
+	return initAdapter(conf, adapterConf)
+}
+
+func initAdapter(conf *configs.Hasher, adapterConf *Conf) (*Pbkdf2, error) {
+	function, err := initFunc(adapterConf.FuncName)
+	if err != nil {
+		return nil, err
 	}
 
-	return &Pbkdf2{conf: hashConfig}, nil
+	return &Pbkdf2{Conf: adapterConf, Func: function}, nil
 }

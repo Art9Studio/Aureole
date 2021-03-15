@@ -12,7 +12,7 @@ import (
 
 // Argon2 represents argon2 hasher
 type Argon2 struct {
-	conf *HashConfig
+	Conf *Conf
 }
 
 var (
@@ -28,31 +28,32 @@ var (
 //		$argon2i$v=19$m=65536,t=3,p=2$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
 func (a *Argon2) HashPw(pw string) (string, error) {
-	salt := make([]byte, a.conf.SaltLen)
+	salt := make([]byte, a.Conf.SaltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
 	}
 
 	var key []byte
 
-	switch a.conf.Kind {
+	// todo: save chosen function in context when init and use it here.
+	switch a.Conf.Kind {
 	case "argon2i":
-		key = argon2.Key([]byte(pw), salt, a.conf.Iterations, a.conf.Memory, a.conf.Parallelism, a.conf.KeyLen)
+		key = argon2.Key([]byte(pw), salt, a.Conf.Iterations, a.Conf.Memory, a.Conf.Parallelism, a.Conf.KeyLen)
 	case "argon2id":
-		key = argon2.IDKey([]byte(pw), salt, a.conf.Iterations, a.conf.Memory, a.conf.Parallelism, a.conf.KeyLen)
+		key = argon2.IDKey([]byte(pw), salt, a.Conf.Iterations, a.Conf.Memory, a.Conf.Parallelism, a.Conf.KeyLen)
 	}
 
-	hash := fmt.Sprintf("$%s$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		a.conf.Kind,
+	hashed := fmt.Sprintf("$%s$v=%d$m=%d,t=%d,p=%d$%s$%s",
+		a.Conf.Kind,
 		argon2.Version,
-		a.conf.Memory,
-		a.conf.Iterations,
-		a.conf.Parallelism,
+		a.Conf.Memory,
+		a.Conf.Iterations,
+		a.Conf.Parallelism,
 		base64.RawStdEncoding.EncodeToString(salt),
 		base64.RawStdEncoding.EncodeToString(key),
 	)
 
-	return hash, nil
+	return hashed, nil
 }
 
 // ComparePw performs a constant-time comparison between a plain-text password and
@@ -80,9 +81,9 @@ func (a *Argon2) ComparePw(pw string, hash string) (bool, error) {
 	return false, nil
 }
 
-// decodePwHash expects a pwhasher created from this package, and parses it to return the configs
+// decodePwHash expects a pwhasher created from this package, and parses it to return the config
 // used to create it, as well as the salt and key
-func decodePwHash(hash string) (*HashConfig, []byte, []byte, error) {
+func decodePwHash(hash string) (*Conf, []byte, []byte, error) {
 	vals := strings.Split(hash, "$")
 	if len(vals) != 6 {
 		return nil, nil, nil, ErrInvalidHash
@@ -98,7 +99,7 @@ func decodePwHash(hash string) (*HashConfig, []byte, []byte, error) {
 		return nil, nil, nil, ErrIncompatibleVersion
 	}
 
-	conf := &HashConfig{}
+	conf := &Conf{}
 	conf.Kind = vals[1]
 	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &conf.Memory, &conf.Iterations, &conf.Parallelism)
 	if err != nil {

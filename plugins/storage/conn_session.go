@@ -8,9 +8,6 @@ type ConnSession interface {
 
 	CheckFeaturesAvailable([]string) error
 
-	// ConnConfig returns the connection configs that was used to set up the adapter
-	GetConfig() ConnConfig
-
 	// RelInfo returns information about tables relationships
 	RelInfo() map[CollPair]RelInfo
 

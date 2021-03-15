@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func Auth(context *Ctx) func(*fiber.Ctx) error {
+func Auth(context *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 

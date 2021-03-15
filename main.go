@@ -5,6 +5,7 @@ import (
 	"aureole/context"
 	"aureole/context/types"
 	"aureole/plugins/authn"
+	"aureole/plugins/pwhasher"
 	"log"
 )
 
@@ -17,6 +18,7 @@ func main() {
 		log.Panic(err)
 	}
 
+	pwhasher.InitRepository(&Project)
 	authn.InitRepository(&Project)
 
 	if err := context.InitContext(projConf, &Project); err != nil {

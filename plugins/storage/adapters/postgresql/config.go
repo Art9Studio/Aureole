@@ -1,0 +1,69 @@
+package postgresql
+
+import (
+	"aureole/configs"
+	"aureole/plugins/storage"
+	"fmt"
+	"github.com/mitchellh/mapstructure"
+	"net/url"
+)
+
+// Conf represents a parsed PostgreSQL connection URL
+type Conf struct {
+	Url      string            `mapstructure:"url"`
+	User     string            `mapstructure:"username"`
+	Password string            `mapstructure:"password"`
+	Host     string            `mapstructure:"host"`
+	Port     string            `mapstructure:"port"`
+	Database string            `mapstructure:"db_name"`
+	Options  map[string]string `mapstructure:"options"`
+}
+
+type Ctx struct {
+	Conf *Conf
+}
+
+func (pg pgAdapter) Get(conf *configs.Storage) (storage.ConnSession, error) {
+	adapterConfMap := conf.Config
+	adapterConf := &Conf{}
+	err := mapstructure.Decode(adapterConfMap, adapterConf)
+	if err != nil {
+		return nil, err
+	}
+
+	return initAdapter(conf, adapterConf)
+}
+
+func initAdapter(conf *configs.Storage, adapterConf *Conf) (*Storage, error) {
+	return &Storage{
+		Conf: adapterConf,
+	}, nil
+}
+
+//// String reassembles PostgreSQL connection config into a valid connection url
+func (conf Conf) ToURL() (string, error) {
+	vv := url.Values{}
+	if conf.Options != nil {
+		for k, v := range conf.Options {
+			vv.Set(k, v)
+		}
+	}
+
+	if conf.User == "" ||
+		conf.Password == "" ||
+		conf.Host == "" ||
+		conf.Port == "" ||
+		conf.Database == "" {
+		return "", fmt.Errorf("invalid connection url")
+	}
+
+	u := url.URL{
+		Scheme:     AdapterName,
+		User:       url.UserPassword(conf.User, conf.Password),
+		Host:       fmt.Sprintf("%s:%s", conf.Host, conf.Port),
+		Path:       conf.Database,
+		ForceQuery: false,
+		RawQuery:   vv.Encode(),
+	}
+	return u.String(), nil
+}

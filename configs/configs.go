@@ -11,9 +11,9 @@ type (
 	ProjectConfig struct {
 		APIVersion   string         `config:"api_version"`
 		Apps         map[string]app `config:"apps"`
-		StorageConfs []storage      `config:"storages,omitempty"`
+		StorageConfs []Storage      `config:"storages,omitempty"`
 		CollConfs    []Collection   `config:"collections,omitempty"`
-		HasherConfs  []hasher       `config:"hashers,omitempty"`
+		HasherConfs  []Hasher       `config:"hashers,omitempty"`
 		CryptoKeys   []cryptoKey    `config:"crypto_keys,omitempty"`
 	}
 
@@ -40,7 +40,8 @@ type (
 		Config RawConfig `config:"config,omitempty"`
 	}
 
-	storage struct {
+	Storage struct {
+		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config,omitempty"`
 	}
@@ -58,7 +59,7 @@ type (
 		FieldsMap map[string]string `config:"fields_map"`
 	}
 
-	hasher struct {
+	Hasher struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config,omitempty"`
@@ -68,7 +69,7 @@ type (
 		Type   string    `config:"type"`
 		Driver string    `config:"driver"`
 		Name   string    `config:"name"`
-		Config RawConfig `config:"configs,omitempty"`
+		Config RawConfig `config:"config,omitempty"`
 	}
 )
 
@@ -78,15 +79,15 @@ func LoadMainConfig() (*ProjectConfig, error) {
 		configuro.WithoutValidateByTags(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("project configs init: %v", err)
+		return nil, fmt.Errorf("project config init: %v", err)
 	}
 
 	rawConf := ProjectConfig{}
 	if err = confLoader.Load(&rawConf); err != nil {
-		return nil, fmt.Errorf("project configs init: %v", err)
+		return nil, fmt.Errorf("project config init: %v", err)
 	}
 	if err = confLoader.Validate(rawConf); err != nil {
-		return nil, fmt.Errorf("project configs init: %v", err)
+		return nil, fmt.Errorf("project config init: %v", err)
 	}
 
 	return &rawConf, nil

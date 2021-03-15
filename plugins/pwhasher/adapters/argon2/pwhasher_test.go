@@ -7,7 +7,7 @@ import (
 
 func TestArgon2_Hash(t *testing.T) {
 	type fields struct {
-		conf *HashConfig
+		conf *Conf
 	}
 	type args struct {
 		data string
@@ -26,7 +26,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2i 32/64",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Kind:        "argon2i",
 				Iterations:  4,
 				Parallelism: 4,
@@ -39,7 +39,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2i 64/128",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Kind:        "argon2i",
 				Iterations:  3,
 				Parallelism: 2,
@@ -52,7 +52,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2id default",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Kind:        "argon2id",
 				Iterations:  3,
 				Parallelism: 2,
@@ -65,7 +65,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2id 32/64",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Kind:        "argon2id",
 				Iterations:  1,
 				Parallelism: 2,
@@ -78,7 +78,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2id 64/128",
-			fields: fields{conf: &HashConfig{
+			fields: fields{conf: &Conf{
 				Kind:        "argon2id",
 				Iterations:  3,
 				Parallelism: 2,
@@ -93,7 +93,7 @@ func TestArgon2_Hash(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := Argon2{
-				conf: tt.fields.conf,
+				Ctx: tt.fields.conf,
 			}
 			got, err := a.HashPw(tt.args.data)
 			if (err != nil) != tt.wantErr {
@@ -108,7 +108,7 @@ func TestArgon2_Hash(t *testing.T) {
 
 func TestArgon2_Compare(t *testing.T) {
 	type fields struct {
-		conf *HashConfig
+		conf *Conf
 	}
 	type args struct {
 		data string
@@ -205,7 +205,7 @@ func TestArgon2_Compare(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := Argon2{
-				conf: tt.fields.conf,
+				Ctx: tt.fields.conf,
 			}
 			got, err := a.ComparePw(tt.args.data, tt.args.hash)
 			if (err != nil) != tt.wantErr {
