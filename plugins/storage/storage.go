@@ -2,12 +2,13 @@ package storage
 
 import (
 	"aureole/configs"
+	"aureole/plugins/storage/types"
 	"errors"
 	"strings"
 )
 
-// New returns desired ConnSession depends on the given config
-func New(conf *configs.Storage) (ConnSession, error) {
+// New returns desired Storage depends on the given config
+func New(conf *configs.Storage) (types.Storage, error) {
 	name, err := getAdapterName(conf)
 
 	adapter, err := GetAdapter(name)

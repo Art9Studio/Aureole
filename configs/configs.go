@@ -8,7 +8,7 @@ import (
 type (
 	RawConfig = map[string]interface{}
 
-	ProjectConfig struct {
+	Project struct {
 		APIVersion   string         `config:"api_version"`
 		Apps         map[string]app `config:"apps"`
 		StorageConfs []Storage      `config:"storages,omitempty"`
@@ -19,25 +19,28 @@ type (
 
 	app struct {
 		PathPrefix    string          `config:"path_prefix"`
-		Authn         []AuthnConfig   `config:"authn"`
-		AuthZ         authZ           `config:"authZ"`
+		Authn         []Authn         `config:"authN"`
+		Authz         []Authz         `config:"authZ"`
 		IdentityFlows []identityFlows `config:"identity_flows"`
 	}
 
-	AuthnConfig struct {
+	Authn struct {
 		Type       string    `config:"type"`
 		PathPrefix string    `config:"path_prefix,omitempty"`
+		AuthZ      string    `config:"authZ,omitempty"`
 		Config     RawConfig `config:"config,omitempty"`
 	}
 
-	authZ struct {
+	Authz struct {
 		Type   string    `config:"type"`
+		Name   string    `config:"name"`
 		Config RawConfig `config:"config,omitempty"`
 	}
 
 	identityFlows struct {
-		Type   string    `config:"type"`
-		Config RawConfig `config:"config,omitempty"`
+		Type       string    `config:"type"`
+		PathPrefix string    `config:"path_prefix,omitempty"`
+		Config     RawConfig `config:"config,omitempty"`
 	}
 
 	Storage struct {
@@ -73,7 +76,7 @@ type (
 	}
 )
 
-func LoadMainConfig() (*ProjectConfig, error) {
+func LoadMainConfig() (*Project, error) {
 	confLoader, err := configuro.NewConfig(
 		configuro.WithLoadFromConfigFile("./config.yaml", true),
 		configuro.WithoutValidateByTags(),
@@ -82,7 +85,7 @@ func LoadMainConfig() (*ProjectConfig, error) {
 		return nil, fmt.Errorf("project config init: %v", err)
 	}
 
-	rawConf := ProjectConfig{}
+	rawConf := Project{}
 	if err = confLoader.Load(&rawConf); err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)
 	}

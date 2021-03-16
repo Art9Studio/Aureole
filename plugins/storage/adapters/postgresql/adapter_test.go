@@ -27,7 +27,7 @@ func Test_pgAdapter_OpenConfig(t *testing.T) {
 		Options:  map[string]string{},
 	}
 
-	usersSess, err := adapter.OpenWithConfig(validConnConf)
+	usersSess, err := adapter.Get(validConnConf)
 	assert.NoError(t, err)
 	assert.NotNil(t, usersSess)
 

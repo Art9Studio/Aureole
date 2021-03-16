@@ -1,7 +1,7 @@
 package postgresql
 
 import (
-	"aureole/plugins/storage"
+	"aureole/plugins/storage/types"
 	"context"
 	"errors"
 )
@@ -27,7 +27,7 @@ func (s *Storage) RawExec(sql string, args ...interface{}) error {
 }
 
 // RawQuery executes the given sql query and returns results
-func (s *Storage) RawQuery(sql string, args ...interface{}) (storage.JSONCollResult, error) {
+func (s *Storage) RawQuery(sql string, args ...interface{}) (types.JSONCollResult, error) {
 	var res interface{}
 
 	err := s.conn.QueryRow(context.Background(), sql, args...).Scan(&res)

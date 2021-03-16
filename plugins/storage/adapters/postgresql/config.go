@@ -2,7 +2,7 @@ package postgresql
 
 import (
 	"aureole/configs"
-	"aureole/plugins/storage"
+	"aureole/plugins/storage/types"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"net/url"
@@ -19,11 +19,7 @@ type Conf struct {
 	Options  map[string]string `mapstructure:"options"`
 }
 
-type Ctx struct {
-	Conf *Conf
-}
-
-func (pg pgAdapter) Get(conf *configs.Storage) (storage.ConnSession, error) {
+func (pg pgAdapter) Get(conf *configs.Storage) (types.Storage, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
 	err := mapstructure.Decode(adapterConfMap, adapterConf)

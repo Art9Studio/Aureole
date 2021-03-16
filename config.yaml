@@ -7,6 +7,7 @@ apps:
     authN:
       - type: "password_based"
         path_prefix: "/login"
+        authZ: sessions
         config:
           main_hasher: argon2
           compat_hashers: []  # todo: implement it
@@ -16,15 +17,16 @@ apps:
           password: "{$.passwd}"
 
     authZ:
-      type: "cookie"
-      config:
-        collection: session
-        storage: one_db
-        domain: "localhost"
-        path: "/"
-        max_age: 3600
-        secure: true
-        http_only: false
+      - name: sessions
+        type: "sessions"
+        config:
+          collection: session
+          storage: one_db
+          domain: "localhost"
+          path: "/"
+          max_age: 3600
+          secure: true
+          http_only: false
 
     identity_flows:
       - type: register
@@ -41,24 +43,27 @@ apps:
 
     authN:
       - type: "password_based"
-        path_prefix: "/login"
+        path_prefix: "/register"
+        authZ: jwt
         config:
           main_hasher: argon2
           collection: identity
           storage: one_db
 
     authZ:
-      type: "jwt"
-      config:
-        alg: "RS256"
-        kid_alg: "docker_registry" # implement docker_registry and default and none
-        keys: [rsa]
-        payload: "jwt_payload.json"
-#          "$.userID": "id"
-#          "$.userPosts": "@getUserPosts" raw query
+      - name: jwt
+        type: "jwt"
+        config:
+          alg: "RS256"
+          kid_alg: "docker_registry" # implement docker_registry and default and none
+          keys: [ rsa ]
+          payload: "jwt_payload.json"
+      #          "$.userID": "id"
+      #          "$.userPosts": "@getUserPosts" raw query
 
     identity_flows:
       - type: register
+        path_prefix: "/register"
         config:
           fields:
             identity: "{$.name}"

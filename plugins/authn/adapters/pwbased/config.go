@@ -16,7 +16,7 @@ type Conf struct {
 	Password      string   `mapstructure:"password"`
 }
 
-func (p pwBasedAdapter) Get(conf *configs.AuthnConfig, projectCtx *contextTypes.ProjectCtx) (types.Controller, error) {
+func (p pwBasedAdapter) Get(conf *configs.Authn, projectCtx *contextTypes.ProjectCtx) (types.Controller, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
@@ -37,7 +37,7 @@ func (p pwBasedAdapter) Get(conf *configs.AuthnConfig, projectCtx *contextTypes.
 	return adapter, nil
 }
 
-func initAdapter(conf *configs.AuthnConfig, adapterConf *Conf, projectCtx *contextTypes.ProjectCtx) (*pwBased, error) {
+func initAdapter(conf *configs.Authn, adapterConf *Conf, projectCtx *contextTypes.ProjectCtx) (*pwBased, error) {
 	return &pwBased{
 		Conf:           adapterConf,
 		PathPrefix:     conf.PathPrefix,

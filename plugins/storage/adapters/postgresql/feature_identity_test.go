@@ -2,18 +2,24 @@ package postgresql
 
 import (
 	"aureole/collections"
+	"aureole/configs"
 	"aureole/plugins/storage"
+	"aureole/plugins/storage/types"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func createConnSess(t *testing.T) storage.ConnSession {
-	rawConnData := storage.RawStorageConfig{
-		"connection_url": "postgresql://root:password@localhost:5432/test",
+func createConnSess(t *testing.T) types.Storage {
+	conf := &configs.Storage{
+		Type: "",
+		Name: "",
+		Config: configs.RawConfig{
+			"connection_url": "postgresql://root:password@localhost:5432/test",
+		},
 	}
 
-	usersSess, err := storage.New(rawConnData)
+	usersSess, err := storage.New(conf)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
@@ -76,7 +82,7 @@ func Test_Session_InsertIdentity(t *testing.T) {
 			Pk:        "id",
 			FieldsMap: map[string]string{"identity": "username", "password": "password"},
 		},
-		storage.NewInsertIdentityData("hello", "secret"),
+		types.InsertIdentityData{Identity: "hello", UserConfirm: "secret"},
 	)
 	assert.NoError(t, err)
 	fmt.Printf("new id: %v\n", res)

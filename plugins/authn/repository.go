@@ -17,7 +17,7 @@ var (
 // Adapter defines methods for authentication plugins
 type Adapter interface {
 	// GetAuthnController returns desired authentication Controller depneds on the given config
-	Get(config *configs.AuthnConfig, projectCtx *ctxTypes.ProjectCtx) (types.Controller, error)
+	Get(config *configs.Authn, projectCtx *ctxTypes.ProjectCtx) (types.Controller, error)
 }
 
 func InitRepository(context *ctxTypes.ProjectCtx) {

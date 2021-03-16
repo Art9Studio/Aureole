@@ -1,11 +1,13 @@
 package postgresql
 
-import "aureole/plugins/storage"
+import (
+	"aureole/plugins/storage/types"
+)
 
-func (s *Storage) RelInfo() map[storage.CollPair]storage.RelInfo {
+func (s *Storage) RelInfo() map[types.CollPair]types.RelInfo {
 	return s.relInfo
 }
 
-func (s *Storage) Read(string) (storage.JSONCollResult, error) {
+func (s *Storage) Read(string) (types.JSONCollResult, error) {
 	panic("implement me")
 }

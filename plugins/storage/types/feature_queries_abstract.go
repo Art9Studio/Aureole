@@ -1,4 +1,4 @@
-package storage
+package types
 
 type CollPair struct {
 	from, to string

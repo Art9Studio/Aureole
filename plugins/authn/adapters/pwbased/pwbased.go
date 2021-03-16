@@ -5,7 +5,7 @@ import (
 	contextTypes "aureole/context/types"
 	authnTypes "aureole/plugins/authn/types"
 	"aureole/plugins/pwhasher/types"
-	"aureole/plugins/storage"
+	types2 "aureole/plugins/storage/types"
 )
 
 type pwBased struct {
@@ -13,7 +13,7 @@ type pwBased struct {
 	ProjectContext *contextTypes.ProjectCtx
 	PathPrefix     string
 	PwHasher       types.PwHasher
-	Storage        storage.ConnSession
+	Storage        types2.Storage
 	IdentityColl   *collections.Collection
 	Identity       string
 	Password       string

@@ -6,7 +6,7 @@ import (
 )
 
 // New returns desired Controller depends on the given config
-func New(conf *configs.AuthnConfig) (types.Controller, error) {
+func New(conf *configs.Authn) (types.Controller, error) {
 	adapter, err := GetAdapter(conf.Type)
 	if err != nil {
 		return nil, err

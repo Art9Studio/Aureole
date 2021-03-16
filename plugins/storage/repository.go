@@ -3,6 +3,7 @@ package storage
 import (
 	"aureole/configs"
 	ctxTypes "aureole/context/types"
+	"aureole/plugins/storage/types"
 	"fmt"
 	"sync"
 )
@@ -14,16 +15,7 @@ var (
 
 // Adapter define methods for storage plugins
 type Adapter interface {
-	Get(*configs.Storage) (ConnSession, error)
-
-	//// OpenConfig attempts to establish a connection with a db by ConnConfig
-	//OpenWithConfig(connConf ConnConfig) (ConnSession, error)
-	//
-	//// ParseUrl parses the connection url into ConnConfig struct
-	//ParseUrl(connUrl string) (ConnConfig, error)
-	//
-	//// NewConfig creates new ConnConfig struct from the raw data, parsed from the config file
-	//NewConfig(data map[string]interface{}) (ConnConfig, error)
+	Get(*configs.Storage) (types.Storage, error)
 }
 
 func InitRepository(context *ctxTypes.ProjectCtx) {

@@ -7,12 +7,13 @@ import (
 	"aureole/plugins/authn"
 	authnTypes "aureole/plugins/authn/types"
 	"aureole/plugins/pwhasher"
-	types2 "aureole/plugins/pwhasher/types"
+	pwhasherTypes "aureole/plugins/pwhasher/types"
 	"aureole/plugins/storage"
+	types2 "aureole/plugins/storage/types"
 	"fmt"
 )
 
-func InitContext(conf *configs.ProjectConfig, ctx *types.ProjectCtx) interface{} {
+func InitContext(conf *configs.Project, ctx *types.ProjectCtx) interface{} {
 	ctx.APIVersion = conf.APIVersion
 
 	if err := initStorages(conf, ctx); err != nil {
@@ -34,8 +35,8 @@ func InitContext(conf *configs.ProjectConfig, ctx *types.ProjectCtx) interface{}
 	return nil
 }
 
-func initStorages(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
-	ctx.Storages = make(map[string]storage.ConnSession)
+func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
+	ctx.Storages = make(map[string]types2.Storage)
 
 	for _, storageConf := range conf.StorageConfs {
 		connSess, err := storage.New(&storageConf)
@@ -50,16 +51,18 @@ func initStorages(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
 	return nil
 }
 
-func cleanupConnections(conf *configs.ProjectConfig, ctx *types.ProjectCtx) {
+func cleanupConnections(conf *configs.Project, ctx *types.ProjectCtx) {
 	isUsedStorage := make(map[string]bool)
 
 	for storageName := range ctx.Storages {
 		isUsedStorage[storageName] = false
 
 		for _, app := range conf.Apps {
-			if storageName == app.AuthZ.Config["storage"] {
-				isUsedStorage[storageName] = true
-				break
+			for _, authzItem := range app.Authz {
+				if storageName == authzItem.Config["storage"] {
+					isUsedStorage[storageName] = true
+					break
+				}
 			}
 
 			for _, authnItem := range app.Authn {
@@ -78,7 +81,7 @@ func cleanupConnections(conf *configs.ProjectConfig, ctx *types.ProjectCtx) {
 	}
 }
 
-func initCollections(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
+func initCollections(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Collections = make(map[string]*collections.Collection)
 	for _, collConf := range conf.CollConfs {
 		coll := collections.NewCollection(collConf.Type, &collConf)
@@ -88,8 +91,8 @@ func initCollections(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
 	return nil
 }
 
-func initPwHashers(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
-	ctx.Hashers = make(map[string]types2.PwHasher)
+func initPwHashers(conf *configs.Project, ctx *types.ProjectCtx) error {
+	ctx.Hashers = make(map[string]pwhasherTypes.PwHasher)
 	for _, hasherConf := range conf.HasherConfs {
 		h, err := pwhasher.New(&hasherConf)
 		if err != nil {
@@ -102,7 +105,7 @@ func initPwHashers(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
 	return nil
 }
 
-func initApps(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
+func initApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Apps = make(map[string]types.App)
 	for i, app := range conf.Apps {
 		authnControllers, err := getAuthnControllers(app.Authn)
@@ -118,7 +121,7 @@ func initApps(conf *configs.ProjectConfig, ctx *types.ProjectCtx) error {
 	return nil
 }
 
-func getAuthnControllers(authnList []configs.AuthnConfig) ([]authnTypes.Controller, error) {
+func getAuthnControllers(authnList []configs.Authn) ([]authnTypes.Controller, error) {
 	res := make([]authnTypes.Controller, len(authnList))
 	for i, authnItem := range authnList {
 		controller, err := authn.New(&authnItem)

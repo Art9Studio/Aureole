@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"aureole/plugins/storage"
+	"aureole/plugins/storage/types"
 	"context"
 	"github.com/jackc/pgx/v4"
 )
@@ -11,7 +12,7 @@ type Storage struct {
 	Conf *Conf
 	conn *pgx.Conn
 	// for abstract queries
-	relInfo map[storage.CollPair]storage.RelInfo
+	relInfo map[types.CollPair]types.RelInfo
 }
 
 func (s *Storage) CheckFeaturesAvailable(requiredFeatures []string) error {
