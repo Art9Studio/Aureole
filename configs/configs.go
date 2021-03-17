@@ -18,10 +18,9 @@ type (
 	}
 
 	app struct {
-		PathPrefix    string          `config:"path_prefix"`
-		Authn         []Authn         `config:"authN"`
-		Authz         []Authz         `config:"authZ"`
-		IdentityFlows []identityFlows `config:"identity_flows"`
+		PathPrefix string  `config:"path_prefix"`
+		Authn      []Authn `config:"authN"`
+		Authz      []Authz `config:"authZ"`
 	}
 
 	Authn struct {
@@ -35,12 +34,6 @@ type (
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config,omitempty"`
-	}
-
-	identityFlows struct {
-		Type       string    `config:"type"`
-		PathPrefix string    `config:"path_prefix,omitempty"`
-		Config     RawConfig `config:"config,omitempty"`
 	}
 
 	Storage struct {

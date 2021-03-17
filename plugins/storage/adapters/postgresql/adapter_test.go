@@ -1,37 +1,42 @@
 package postgresql
 
 import (
+	"aureole/configs"
 	"aureole/plugins/storage"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
 
-func Test_pgAdapter_OpenConfig(t *testing.T) {
+func Test_pgAdapter_Get(t *testing.T) {
 	adapter := pgAdapter{}
 
-	validConnConf := Conf{
-		User:     "root",
-		Password: "password",
-		Host:     "localhost",
-		Port:     "5432",
-		Database: "test",
-		Options:  map[string]string{},
+	validConf := &configs.Storage{
+		Config: configs.RawConfig{
+			"user":     "root",
+			"password": "password",
+			"host":     "localhost",
+			"port":     "5432",
+			"database": "test",
+			"options":  map[string]string{},
+		},
 	}
-	invalidConnConf := Conf{
-		User:     "",
-		Password: "password",
-		Host:     "localhost",
-		Port:     "",
-		Database: "test",
-		Options:  map[string]string{},
+	invalidConf := &configs.Storage{
+		Config: configs.RawConfig{
+			"user":     "root",
+			"password": "password",
+			"host":     "localhost",
+			"port":     "5432",
+			"database": "test",
+			"options":  map[string]string{},
+		},
 	}
 
-	usersSess, err := adapter.Get(validConnConf)
+	usersSess, err := adapter.Get(validConf)
 	assert.NoError(t, err)
 	assert.NotNil(t, usersSess)
 
-	usersSess, err = adapter.OpenWithConfig(invalidConnConf)
+	usersSess, err = adapter.Get(invalidConf)
 	assert.Error(t, err)
 	assert.Nil(t, usersSess)
 }
@@ -43,7 +48,6 @@ func Test_pgAdapter_ParseUrl(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    storage.ConnConfig
 		wantErr bool
 	}{
 		{
