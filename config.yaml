@@ -6,15 +6,25 @@ apps:
 
     authN:
       - type: "password_based"
-        path_prefix: "/login"
+        path_prefix: "/"
         authZ: sessions
         config:
           main_hasher: argon2
           compat_hashers: []  # todo: implement it
           collection: identity
           storage: one_db
-          identity: "{$.name}"
-          password: "{$.passwd}"
+          login:
+            path: "/login"
+            fields:
+              identity: "{$.name}"
+              password: "{$.passwd}"
+          register:
+            path: "/register"
+            login_after: true
+            fields:
+              identity: "{$.name}"
+              password: "{$.passwd}"
+              email: "{$.email}"
 
     authZ:
       - name: sessions
@@ -27,16 +37,6 @@ apps:
           max_age: 3600
           secure: true
           http_only: false
-
-    identity_flows:
-      - type: register
-        path_prefix: "/register"
-        config:
-          login_after: true
-          fields:
-            identity: "{$.name}"
-            password: "{$.passwd}"
-            email: "{$.email}"
 
   two:
     path_prefix: "/two"
@@ -61,14 +61,6 @@ apps:
       #          "$.userID": "id"
       #          "$.userPosts": "@getUserPosts" raw query
 
-    identity_flows:
-      - type: register
-        path_prefix: "/register"
-        config:
-          fields:
-            identity: "{$.name}"
-            password: "{$.passwd}"
-            email: "{$.email}"
 
 storages:
   - name: one_db
