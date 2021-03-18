@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"net/url"
-	"strings"
 )
 
 // Conf represents a parsed PostgreSQL connection URL
@@ -24,17 +23,9 @@ func (pg pgAdapter) Get(conf *configs.Storage) (types.Storage, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
 
-	specificConf := conf.Config
-	if specificConf["adapter"] != nil {
-		err := mapstructure.Decode(adapterConfMap, adapterConf)
-		if err != nil {
-			return nil, err
-		}
-	} else if connStr, ok := specificConf["url"].(string); ok && connStr != "" {
-		err := ParseUrl(specificConf, adapterConf)
-		if err != nil {
-			return nil, err
-		}
+	err := mapstructure.Decode(adapterConfMap, adapterConf)
+	if err != nil {
+		return nil, err
 	}
 
 	return initAdapter(conf, adapterConf)
@@ -46,7 +37,7 @@ func initAdapter(conf *configs.Storage, adapterConf *Conf) (*Storage, error) {
 	}, nil
 }
 
-//// String reassembles PostgreSQL connection config into a valid connection url
+// ToURL reassembles PostgreSQL connection config into a valid connection url
 func (conf Conf) ToURL() (string, error) {
 	vv := url.Values{}
 	if conf.Options != nil {
@@ -72,53 +63,4 @@ func (conf Conf) ToURL() (string, error) {
 		RawQuery:   vv.Encode(),
 	}
 	return u.String(), nil
-}
-
-// ParseUrl parses the connection url into ConnConfig struct
-func ParseUrl(rawConf configs.RawConfig, conf *Conf) error {
-	connUrl := rawConf["url"].(string)
-	if !strings.HasPrefix(connUrl, AdapterName+"://") {
-		return fmt.Errorf("expecting postgresql:// connection schema")
-	}
-
-	var (
-		u   *url.URL
-		err error
-	)
-	if u, err = url.Parse(connUrl); err != nil {
-		return err
-	}
-
-	var addr = strings.Split(u.Host, ":")
-	if len(addr) < 2 {
-		return fmt.Errorf("invalid connection url")
-	}
-
-	_, isSetPasswd := u.User.Password()
-	dbName := strings.Trim(u.Path, "/")
-	if addr[0] == "" ||
-		addr[1] == "" ||
-		dbName == "" ||
-		u.User.Username() == "" ||
-		!isSetPasswd {
-		return fmt.Errorf("invalid connection url")
-	}
-
-	conf.Host = addr[0]
-	conf.Port = addr[1]
-	conf.Database = dbName
-	conf.User = u.User.Username()
-	conf.Password, _ = u.User.Password()
-	conf.Options = map[string]string{}
-
-	var vv url.Values
-	if vv, err = url.ParseQuery(u.RawQuery); err != nil {
-		return err
-	}
-
-	for k := range vv {
-		conf.Options[k] = vv.Get(k)
-	}
-
-	return nil
 }

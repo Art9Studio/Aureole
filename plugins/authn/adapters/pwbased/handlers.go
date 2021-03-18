@@ -3,11 +3,12 @@ package pwbased
 import (
 	"aureole/jsonpath"
 	"aureole/jwt"
+	storageTypes "aureole/plugins/storage/types"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )
 
-func Auth(context *pwBased) func(*fiber.Ctx) error {
+func Login(context *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 
@@ -18,7 +19,8 @@ func Auth(context *pwBased) func(*fiber.Ctx) error {
 			})
 		}
 
-		IIdentity, err := jsonpath.GetJSONPath(context.Identity, authInput)
+		identityPath := context.Conf.Login.FieldsMap["identity"]
+		IIdentity, err := jsonpath.GetJSONPath(identityPath, authInput)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
@@ -36,7 +38,8 @@ func Auth(context *pwBased) func(*fiber.Ctx) error {
 			}
 		}
 
-		IPassword, err := jsonpath.GetJSONPath(context.Password, authInput)
+		passwordPath := context.Conf.Login.FieldsMap["password"]
+		IPassword, err := jsonpath.GetJSONPath(passwordPath, authInput)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
@@ -80,6 +83,86 @@ func Auth(context *pwBased) func(*fiber.Ctx) error {
 				"success": false,
 				"message": err,
 			})
+		}
+	}
+}
+
+func Register(context *pwBased) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		var authInput interface{}
+
+		if err := c.BodyParser(&authInput); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
+		}
+
+		identityPath := context.Conf.Login.FieldsMap["identity"]
+		IIdentity, err := jsonpath.GetJSONPath(identityPath, authInput)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+				"success": false,
+				"message": "identity didn't passed",
+			})
+		}
+
+		identity, ok := IIdentity.(string)
+		if ok {
+			if strings.TrimSpace(identity) == "" {
+				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+					"success": false,
+					"message": "identity can't be blank",
+				})
+			}
+		}
+
+		passwordPath := context.Conf.Login.FieldsMap["password"]
+		IPassword, err := jsonpath.GetJSONPath(passwordPath, authInput)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+				"success": false,
+				"message": "password didn't passed",
+			})
+		}
+
+		password, ok := IPassword.(string)
+		if ok {
+			if strings.TrimSpace(password) == "" {
+				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+					"success": false,
+					"message": "password can't be blank",
+				})
+			}
+		}
+
+		pwHash, err := context.PwHasher.HashPw(password)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
+		}
+
+		// TODO: add a user existence check
+		identityStorage := context.Storage
+		insertData := storageTypes.InsertIdentityData{
+			Identity:    identity,
+			UserConfirm: pwHash,
+		}
+		res, err := identityStorage.InsertIdentity(context.IdentityColl.Spec, insertData)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
+		}
+
+		if context.Conf.Register.IsLoginAfter {
+			token := jwt.IssueToken()
+			return c.JSON(&fiber.Map{"token": token})
+		} else {
+			return c.JSON(&fiber.Map{"id": res})
 		}
 	}
 }

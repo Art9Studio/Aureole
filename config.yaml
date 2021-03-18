@@ -6,22 +6,22 @@ apps:
 
     authN:
       - type: "password_based"
-        path_prefix: "/"
+        #path_prefix: "/" # df
         authZ: sessions
         config:
           main_hasher: argon2
-          compat_hashers: []  # todo: implement it
+          compat_hashers: []  # todo: implement it # df
           collection: identity
           storage: one_db
-          login:
+          login: # df
             path: "/login"
-            fields:
+            fields_map:
               identity: "{$.name}"
               password: "{$.passwd}"
-          register:
-            path: "/register"
-            login_after: true
-            fields:
+          register: # df
+            path: "/register" # df
+            login_after: true # df
+            fields_map: # df
               identity: "{$.name}"
               password: "{$.passwd}"
               email: "{$.email}"
@@ -43,7 +43,6 @@ apps:
 
     authN:
       - type: "password_based"
-        path_prefix: "/register"
         authZ: jwt
         config:
           main_hasher: argon2
@@ -75,14 +74,14 @@ storages:
       host: "localhost"
       port: "5432"
       db_name: "test"
-      options:
+      options: # df
         sslmode: "disable"
         search_path: "public"
 
 collections:
   - type: "identity"
     name: identity
-    use_existent: true
+    use_existent: true # df
     config:
       name: "users"
       pk: "id"

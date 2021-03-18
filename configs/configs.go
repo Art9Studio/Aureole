@@ -11,10 +11,10 @@ type (
 	Project struct {
 		APIVersion   string         `config:"api_version"`
 		Apps         map[string]app `config:"apps"`
-		StorageConfs []Storage      `config:"storages,omitempty"`
-		CollConfs    []Collection   `config:"collections,omitempty"`
-		HasherConfs  []Hasher       `config:"hashers,omitempty"`
-		CryptoKeys   []cryptoKey    `config:"crypto_keys,omitempty"`
+		StorageConfs []Storage      `config:"storages"`
+		CollConfs    []Collection   `config:"collections"`
+		HasherConfs  []Hasher       `config:"hashers"`
+		CryptoKeys   []cryptoKey    `config:"crypto_keys"`
 	}
 
 	app struct {
@@ -25,21 +25,21 @@ type (
 
 	Authn struct {
 		Type       string    `config:"type"`
-		PathPrefix string    `config:"path_prefix,omitempty"`
-		AuthZ      string    `config:"authZ,omitempty"`
-		Config     RawConfig `config:"config,omitempty"`
+		PathPrefix string    `config:"path_prefix"`
+		AuthZ      string    `config:"authZ"`
+		Config     RawConfig `config:"config"`
 	}
 
 	Authz struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
-		Config RawConfig `config:"config,omitempty"`
+		Config RawConfig `config:"config"`
 	}
 
 	Storage struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
-		Config RawConfig `config:"config,omitempty"`
+		Config RawConfig `config:"config"`
 	}
 
 	Collection struct {
@@ -58,14 +58,14 @@ type (
 	Hasher struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
-		Config RawConfig `config:"config,omitempty"`
+		Config RawConfig `config:"config"`
 	}
 
 	cryptoKey struct {
 		Type   string    `config:"type"`
 		Driver string    `config:"driver"`
 		Name   string    `config:"name"`
-		Config RawConfig `config:"config,omitempty"`
+		Config RawConfig `config:"config"`
 	}
 )
 
