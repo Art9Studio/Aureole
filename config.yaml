@@ -6,7 +6,7 @@ apps:
 
     authN:
       - type: "password_based"
-        path_prefix: "/" # df
+        path_prefix: "/"
         authZ: sessions
         config:
           main_hasher: argon2
@@ -81,7 +81,7 @@ storages:
 collections:
   - type: "identity"
     name: identity
-    use_existent: true # df
+    use_existent: true
     config:
       name: "users"
       pk: "id"

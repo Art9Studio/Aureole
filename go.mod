@@ -23,7 +23,7 @@ require (
 	golang.org/x/mod v0.4.1 // indirect
 	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 // indirect
 	golang.org/x/text v0.3.5 // indirect
-	golang.org/x/tools v0.0.0-20210114065538-d78b04bdf963 // indirect
+	golang.org/x/tools v0.0.0-20210114065538-d78b04bdf963
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect

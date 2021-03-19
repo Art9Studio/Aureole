@@ -5,10 +5,6 @@ import (
 	"github.com/sherifabdlnaby/configuro"
 )
 
-type Defaultable interface {
-	setDefaults()
-}
-
 type (
 	RawConfig = map[string]interface{}
 
@@ -72,50 +68,6 @@ type (
 		Config RawConfig `config:"config"`
 	}
 )
-
-func (p *Project) setDefaults() {
-	for i := range p.Apps {
-		a := p.Apps[i]
-		a.setDefaults()
-		p.Apps[i] = a
-	}
-}
-
-func (a *app) setDefaults() {
-	for i := range a.Authn {
-		a.Authn[i].setDefaults()
-	}
-}
-
-func (authn *Authn) setDefaults() {
-	if authn.PathPrefix == "" {
-		authn.PathPrefix = "/"
-	}
-}
-
-func (a *Authz) setDefaults() {
-	panic("implement me")
-}
-
-func (s *Storage) setDefaults() {
-	panic("implement me")
-}
-
-func (c *Collection) setDefaults() {
-	panic("implement me")
-}
-
-func (s *specification) setDefaults() {
-	panic("implement me")
-}
-
-func (h *PwHasher) setDefaults() {
-	panic("implement me")
-}
-
-func (c *cryptoKey) setDefaults() {
-	panic("implement me")
-}
 
 func LoadMainConfig() (*Project, error) {
 	confLoader, err := configuro.NewConfig(
