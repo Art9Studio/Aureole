@@ -6,18 +6,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// TODO: figure out best default settings
-// todo: use default
-// DefaultConfig provides some sane default settings for hashing passwords
-//var DefaultConfig = &Conf{
-//	Kind:        "argon2i",
-//	Iterations:  3,
-//	Parallelism: 2,
-//	SaltLen:     16,
-//	KeyLen:      32,
-//	Memory:      32 * 1024,
-//}
-
 // Conf represents parsed pwhasher config from the config file
 type Conf struct {
 	// AlgName kind (argon2i, argon2id)
@@ -40,18 +28,48 @@ type Conf struct {
 	Memory uint32 `mapstructure:""`
 }
 
-//GetHasher returns Argon2 hasher with the given settings
+// TODO: figure out best default settings
+func (c *Conf) setDefaults() {
+	if c.Kind == "" {
+		c.Kind = "argon2i"
+	}
+
+	if c.Iterations == 0 {
+		c.Iterations = 3
+	}
+
+	if c.Parallelism == 0 {
+		c.Parallelism = 2
+	}
+
+	if c.SaltLen == 0 {
+		c.SaltLen = 16
+	}
+
+	if c.KeyLen == 0 {
+		c.KeyLen = 32
+	}
+
+	if c.Memory == 0 {
+		c.Memory = 32 * 1024
+	}
+}
+
+// Create returns Argon2 hasher with the given settings
 func (a argon2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
+
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
 		return nil, err
 	}
 
-	return initAdapter(conf, adapterConf)
+	adapterConf.setDefaults()
+
+	return initAdapter(adapterConf)
 }
 
-func initAdapter(conf *configs.PwHasher, adapterConf *Conf) (*Argon2, error) {
+func initAdapter(adapterConf *Conf) (*Argon2, error) {
 	return &Argon2{Conf: adapterConf}, nil
 }

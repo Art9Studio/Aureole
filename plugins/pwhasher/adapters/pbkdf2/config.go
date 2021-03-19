@@ -6,17 +6,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// TODO: figure out best default settings
-// todo: use default
-// DefaultConfig provides some sane default settings for hashing passwords
-//var DefaultConfig = &Conf{
-//	Iterations: 4096,
-//	SaltLen:    16,
-//	KeyLen:     32,
-//	FuncName:   "sha1",
-//	Func:       sha1.New,
-//}
-
 // Conf represents parsed pwhasher config from the config file
 type Conf struct {
 	// The number of iterations over the memory
@@ -32,19 +21,41 @@ type Conf struct {
 	FuncName string `mapstructure:"func"`
 }
 
-// GetPwHasher returns Pbkdf2 hasher with the given settings
+// TODO: figure out best default settings
+func (c *Conf) setDefaults() {
+	if c.Iterations == 0 {
+		c.Iterations = 4096
+	}
+
+	if c.SaltLen == 0 {
+		c.SaltLen = 16
+	}
+
+	if c.KeyLen == 0 {
+		c.KeyLen = 32
+	}
+
+	if c.FuncName == "" {
+		c.FuncName = "sha1"
+	}
+}
+
+// Create returns Pbkdf2 hasher with the given settings
 func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
+
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
 		return nil, err
 	}
 
-	return initAdapter(conf, adapterConf)
+	adapterConf.setDefaults()
+
+	return initAdapter(adapterConf)
 }
 
-func initAdapter(conf *configs.PwHasher, adapterConf *Conf) (*Pbkdf2, error) {
+func initAdapter(adapterConf *Conf) (*Pbkdf2, error) {
 	function, err := initFunc(adapterConf.FuncName)
 	if err != nil {
 		return nil, err

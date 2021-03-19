@@ -26,7 +26,7 @@ func (repo *Repository) Get(name string) (Adapter, error) {
 	return nil, fmt.Errorf("can't find adapter named %s", name)
 }
 
-// Register register storage adapter
+// Register registers adapter
 func (repo *Repository) Register(name string, a Adapter) {
 	repo.adaptersMU.Lock()
 	defer repo.adaptersMU.Unlock()

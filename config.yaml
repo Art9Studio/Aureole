@@ -6,7 +6,7 @@ apps:
 
     authN:
       - type: "password_based"
-        #path_prefix: "/" # df
+        path_prefix: "/" # df
         authZ: sessions
         config:
           main_hasher: argon2
@@ -16,14 +16,14 @@ apps:
           login: # df
             path: "/login"
             fields_map:
-              identity: "{$.name}"
-              password: "{$.passwd}"
+              identity: "{$.username}"
+              password: "{$.password}"
           register: # df
-            path: "/register" # df
-            login_after: true # df
-            fields_map: # df
-              identity: "{$.name}"
-              password: "{$.passwd}"
+            path: "/register"
+            login_after: true
+            fields_map:
+              identity: "{$.username}"
+              password: "{$.password}"
               email: "{$.email}"
 
     authZ:

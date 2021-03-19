@@ -28,10 +28,10 @@ func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
 		return nil, err
 	}
 
-	return initAdapter(conf, adapterConf)
+	return initAdapter(adapterConf)
 }
 
-func initAdapter(conf *configs.Storage, adapterConf *Conf) (*Storage, error) {
+func initAdapter(adapterConf *Conf) (*Storage, error) {
 	a := &Storage{
 		Conf: adapterConf,
 	}
