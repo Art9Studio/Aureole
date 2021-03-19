@@ -29,7 +29,7 @@ type (
 	}
 )
 
-func (p pwBasedAdapter) Get(conf *configs.Authn, projectCtx *contextTypes.ProjectCtx) (types.Controller, error) {
+func (p pwBasedAdapter) Create(conf *configs.Authn, projectCtx *contextTypes.ProjectCtx) (types.Controller, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &сonf{}
 	err := mapstructure.Decode(adapterConfMap, adapterConf)

@@ -9,7 +9,7 @@ const AdapterName = "password_based"
 
 // init initializes package by register adapter
 func init() {
-	authn.RegisterAdapter(AdapterName, pwBasedAdapter{})
+	authn.Repository.Register(AdapterName, pwBasedAdapter{})
 }
 
 // pwBasedAdapter represents adapter for password based authentication

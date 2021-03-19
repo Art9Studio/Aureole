@@ -19,7 +19,7 @@ type Conf struct {
 	Options  map[string]string `mapstructure:"options"`
 }
 
-func (pg pgAdapter) Get(conf *configs.Storage) (types.Storage, error) {
+func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
 
@@ -32,9 +32,15 @@ func (pg pgAdapter) Get(conf *configs.Storage) (types.Storage, error) {
 }
 
 func initAdapter(conf *configs.Storage, adapterConf *Conf) (*Storage, error) {
-	return &Storage{
+	a := &Storage{
 		Conf: adapterConf,
-	}, nil
+	}
+
+	err := a.Open()
+	if err != nil {
+		return nil, err
+	}
+	return a, nil
 }
 
 // ToURL reassembles PostgreSQL connection config into a valid connection url

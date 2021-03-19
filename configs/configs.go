@@ -13,7 +13,7 @@ type (
 		Apps         map[string]app `config:"apps"`
 		StorageConfs []Storage      `config:"storages"`
 		CollConfs    []Collection   `config:"collections"`
-		HasherConfs  []Hasher       `config:"hashers"`
+		HasherConfs  []PwHasher     `config:"hashers"`
 		CryptoKeys   []cryptoKey    `config:"crypto_keys"`
 	}
 
@@ -55,7 +55,7 @@ type (
 		FieldsMap map[string]string `config:"fields_map"`
 	}
 
-	Hasher struct {
+	PwHasher struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`

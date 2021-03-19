@@ -9,7 +9,7 @@ const AdapterName = "argon2"
 
 // init initializes package by register adapter
 func init() {
-	pwhasher.RegisterAdapter(AdapterName, argon2Adapter{})
+	pwhasher.Repository.Register(AdapterName, argon2Adapter{})
 }
 
 // argon2Adapter represents adapter for argon2 pwhasher algorithm

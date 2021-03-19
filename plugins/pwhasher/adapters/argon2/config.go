@@ -41,7 +41,7 @@ type Conf struct {
 }
 
 //GetHasher returns Argon2 hasher with the given settings
-func (a argon2Adapter) Get(conf *configs.Hasher) (types.PwHasher, error) {
+func (a argon2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
@@ -52,6 +52,6 @@ func (a argon2Adapter) Get(conf *configs.Hasher) (types.PwHasher, error) {
 	return initAdapter(conf, adapterConf)
 }
 
-func initAdapter(conf *configs.Hasher, adapterConf *Conf) (*Argon2, error) {
+func initAdapter(conf *configs.PwHasher, adapterConf *Conf) (*Argon2, error) {
 	return &Argon2{Conf: adapterConf}, nil
 }

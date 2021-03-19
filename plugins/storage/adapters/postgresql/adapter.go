@@ -11,7 +11,7 @@ var AdapterFeatures = map[string]bool{"identity": true, "sessions": true}
 
 // init initializes package by register adapter
 func init() {
-	storage.RegisterAdapter(AdapterName, pgAdapter{})
+	storage.Repository.Register(AdapterName, pgAdapter{})
 }
 
 // pgAdapter represents adapter for postgresql database

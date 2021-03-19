@@ -33,7 +33,7 @@ type Conf struct {
 }
 
 // GetPwHasher returns Pbkdf2 hasher with the given settings
-func (a pbkdf2Adapter) Get(conf *configs.Hasher) (types.PwHasher, error) {
+func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &Conf{}
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
@@ -44,7 +44,7 @@ func (a pbkdf2Adapter) Get(conf *configs.Hasher) (types.PwHasher, error) {
 	return initAdapter(conf, adapterConf)
 }
 
-func initAdapter(conf *configs.Hasher, adapterConf *Conf) (*Pbkdf2, error) {
+func initAdapter(conf *configs.PwHasher, adapterConf *Conf) (*Pbkdf2, error) {
 	function, err := initFunc(adapterConf.FuncName)
 	if err != nil {
 		return nil, err

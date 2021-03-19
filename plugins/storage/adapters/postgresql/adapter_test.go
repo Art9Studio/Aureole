@@ -30,11 +30,11 @@ func Test_pgAdapter_Get(t *testing.T) {
 		},
 	}
 
-	usersSess, err := adapter.Get(validConf)
+	usersSess, err := adapter.Create(validConf)
 	assert.NoError(t, err)
 	assert.NotNil(t, usersSess)
 
-	usersSess, err = adapter.Get(invalidConf)
+	usersSess, err = adapter.Create(invalidConf)
 	assert.Error(t, err)
 	assert.Nil(t, usersSess)
 }

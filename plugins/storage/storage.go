@@ -4,19 +4,28 @@ import (
 	"aureole/configs"
 	"aureole/plugins/storage/types"
 	"errors"
+	"fmt"
 	"strings"
 )
 
 // New returns desired Storage depends on the given config
 func New(conf *configs.Storage) (types.Storage, error) {
 	name, err := getAdapterName(conf)
-
-	adapter, err := GetAdapter(name)
 	if err != nil {
 		return nil, err
 	}
 
-	return adapter.Get(conf)
+	a, err := Repository.Get(name)
+	if err != nil {
+		return nil, err
+	}
+
+	adapter, ok := interface{}(a).(Adapter)
+	if !ok {
+		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
+	}
+
+	return adapter.Create(conf)
 }
 
 func getAdapterName(conf *configs.Storage) (string, error) {

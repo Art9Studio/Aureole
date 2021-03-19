@@ -9,7 +9,7 @@ const AdapterName = "pbkdf2"
 
 // init initializes package by register adapter
 func init() {
-	pwhasher.RegisterAdapter(AdapterName, pbkdf2Adapter{})
+	pwhasher.Repository.Register(AdapterName, pbkdf2Adapter{})
 }
 
 // pbkdf2Adapter represents adapter for pbkdf2 pwhasher algorithm

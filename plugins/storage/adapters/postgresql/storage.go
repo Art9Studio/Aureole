@@ -21,9 +21,16 @@ func (s *Storage) CheckFeaturesAvailable(requiredFeatures []string) error {
 
 // Open creates connection with postgresql database
 func (s *Storage) Open() error {
-	url, err := s.Conf.ToURL()
-	if err != nil {
-		return err
+	var url string
+	var err error
+
+	if s.Conf.Url == "" {
+		url, err = s.Conf.ToURL()
+		if err != nil {
+			return err
+		}
+	} else {
+		url = s.Conf.Url
 	}
 
 	conn, err := pgx.Connect(context.Background(), url)

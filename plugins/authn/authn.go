@@ -3,14 +3,20 @@ package authn
 import (
 	"aureole/configs"
 	"aureole/plugins/authn/types"
+	"fmt"
 )
 
 // New returns desired Controller depends on the given config
 func New(conf *configs.Authn) (types.Controller, error) {
-	adapter, err := GetAdapter(conf.Type)
+	a, err := Repository.Get(conf.Type)
 	if err != nil {
 		return nil, err
 	}
 
-	return adapter.Get(conf, projectCtx)
+	adapter, ok := interface{}(a).(Adapter)
+	if !ok {
+		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
+	}
+
+	return adapter.Create(conf, Repository.ProjectCtx)
 }

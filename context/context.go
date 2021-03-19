@@ -44,6 +44,11 @@ func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
 			return fmt.Errorf("open connection session to storage '%s': %v", storageConf.Name, err)
 		}
 
+		err = connSess.Ping()
+		if err != nil {
+			return fmt.Errorf("trying to ping storage '%s' was failed: %v", storageConf.Name, err)
+		}
+
 		ctx.Storages[storageConf.Name] = connSess
 	}
 
