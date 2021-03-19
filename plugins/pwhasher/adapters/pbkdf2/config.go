@@ -52,10 +52,10 @@ func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 
 	adapterConf.setDefaults()
 
-	return initAdapter(adapterConf)
+	return initAdapter(conf, adapterConf)
 }
 
-func initAdapter(adapterConf *Conf) (*Pbkdf2, error) {
+func initAdapter(conf *configs.PwHasher, adapterConf *Conf) (*Pbkdf2, error) {
 	function, err := initFunc(adapterConf.FuncName)
 	if err != nil {
 		return nil, err
