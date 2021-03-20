@@ -28,16 +28,6 @@ type Conf struct {
 	Memory uint32 `mapstructure:""`
 }
 
-// TODO: figure out best default settings
-func (c *Conf) setDefaults() {
-	configs.SetDefault(&c.Kind, "argon2i")
-	configs.SetDefault(&c.Iterations, 3)
-	configs.SetDefault(&c.Parallelism, 2)
-	configs.SetDefault(&c.SaltLen, 16)
-	configs.SetDefault(&c.KeyLen, 32)
-	configs.SetDefault(&c.Memory, 32*1024)
-}
-
 // Create returns Argon2 hasher with the given settings
 func (a argon2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config

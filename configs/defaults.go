@@ -55,27 +55,3 @@ func (a *app) setDefaults() {
 func (authn *Authn) setDefaults() {
 	SetDefault(&authn.PathPrefix, "/")
 }
-
-func (a *Authz) setDefaults() {
-
-}
-
-func (s *Storage) setDefaults() {
-
-}
-
-func (c *Collection) setDefaults() {
-
-}
-
-func (s *specification) setDefaults() {
-
-}
-
-func (h *PwHasher) setDefaults() {
-
-}
-
-func (c *cryptoKey) setDefaults() {
-
-}

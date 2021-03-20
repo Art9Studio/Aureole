@@ -21,14 +21,6 @@ type Conf struct {
 	FuncName string `mapstructure:"func"`
 }
 
-// TODO: figure out best default settings
-func (c *Conf) setDefaults() {
-	configs.SetDefault(&c.Iterations, 4096)
-	configs.SetDefault(&c.SaltLen, 16)
-	configs.SetDefault(&c.KeyLen, 32)
-	configs.SetDefault(&c.FuncName, "sha1")
-}
-
 // Create returns Pbkdf2 hasher with the given settings
 func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config
