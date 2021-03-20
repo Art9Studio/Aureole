@@ -6,8 +6,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Conf represents parsed pwhasher config from the config file
-type Conf struct {
+// config represents parsed pwhasher config from the config file
+type config struct {
 	// AlgName kind (argon2i, argon2id)
 	Kind string `mapstructure:"kind"`
 
@@ -25,13 +25,13 @@ type Conf struct {
 	KeyLen uint32 `mapstructure:"key_length"`
 
 	// The amount of memory used by the algorithm (in kibibytes)
-	Memory uint32 `mapstructure:""`
+	Memory uint32 `mapstructure:"memory"`
 }
 
 // Create returns Argon2 hasher with the given settings
 func (a argon2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config
-	adapterConf := &Conf{}
+	adapterConf := &config{}
 
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
@@ -43,6 +43,6 @@ func (a argon2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	return initAdapter(conf, adapterConf)
 }
 
-func initAdapter(conf *configs.PwHasher, adapterConf *Conf) (*Argon2, error) {
+func initAdapter(conf *configs.PwHasher, adapterConf *config) (*Argon2, error) {
 	return &Argon2{Conf: adapterConf}, nil
 }

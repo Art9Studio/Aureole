@@ -6,7 +6,7 @@ import (
 )
 
 // todo: remove when default config will exist in plugin
-var DefaultConfig = &Conf{
+var DefaultConfig = &config{
 	Kind:        "argon2i",
 	Iterations:  3,
 	Parallelism: 2,
@@ -21,7 +21,7 @@ func TestArgon2_Hash(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		conf    *Conf
+		conf    *config
 		args    args
 		wantErr bool
 	}{
@@ -33,7 +33,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2i 32/64",
-			conf: &Conf{
+			conf: &config{
 				Kind:        "argon2i",
 				Iterations:  4,
 				Parallelism: 4,
@@ -46,7 +46,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2i 64/128",
-			conf: &Conf{
+			conf: &config{
 				Kind:        "argon2i",
 				Iterations:  3,
 				Parallelism: 2,
@@ -59,7 +59,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2id default",
-			conf: &Conf{
+			conf: &config{
 				Kind:        "argon2id",
 				Iterations:  3,
 				Parallelism: 2,
@@ -72,7 +72,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2id 32/64",
-			conf: &Conf{
+			conf: &config{
 				Kind:        "argon2id",
 				Iterations:  1,
 				Parallelism: 2,
@@ -85,7 +85,7 @@ func TestArgon2_Hash(t *testing.T) {
 		},
 		{
 			name: "argon2id 64/128",
-			conf: &Conf{
+			conf: &config{
 				Kind:        "argon2id",
 				Iterations:  3,
 				Parallelism: 2,
@@ -117,7 +117,7 @@ func TestArgon2_Hash(t *testing.T) {
 
 func TestArgon2_Compare(t *testing.T) {
 	type fields struct {
-		conf *Conf
+		conf *config
 	}
 	type args struct {
 		data string
@@ -125,7 +125,7 @@ func TestArgon2_Compare(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		conf    *Conf
+		conf    *config
 		args    args
 		want    bool
 		wantErr bool

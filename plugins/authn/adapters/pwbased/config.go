@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	сonf struct {
+	сonfig struct {
 		MainHasher    string   `mapstructure:"main_hasher"`
 		CompatHashers []string `mapstructure:"compat_hashers"`
 		Collection    string   `mapstructure:"collection"`
@@ -32,7 +32,7 @@ type (
 
 func (p pwBasedAdapter) Create(conf *configs.Authn) (types.Controller, error) {
 	adapterConfMap := conf.Config
-	adapterConf := &сonf{}
+	adapterConf := &сonfig{}
 
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
@@ -54,7 +54,7 @@ func (p pwBasedAdapter) Create(conf *configs.Authn) (types.Controller, error) {
 	return adapter, nil
 }
 
-func initAdapter(conf *configs.Authn, adapterConf *сonf) (*pwBased, error) {
+func initAdapter(conf *configs.Authn, adapterConf *сonfig) (*pwBased, error) {
 	projectCtx := authn.Repository.ProjectCtx
 
 	hasher, ok := projectCtx.Hashers[adapterConf.MainHasher]

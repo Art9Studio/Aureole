@@ -10,7 +10,7 @@ import (
 )
 
 type pwBased struct {
-	Conf           *сonf
+	Conf           *сonfig
 	ProjectContext *contextTypes.ProjectCtx
 	PathPrefix     string
 	PwHasher       types.PwHasher

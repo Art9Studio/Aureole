@@ -6,7 +6,7 @@ import (
 )
 
 // todo: remove when default config will exist in plugin
-var DefaultConfig = &Conf{
+var DefaultConfig = &config{
 	Iterations: 4096,
 	SaltLen:    16,
 	KeyLen:     32,
@@ -19,7 +19,7 @@ func TestPbkdf2_HashPw(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		conf    *Conf
+		conf    *config
 		args    args
 		wantErr bool
 	}{
@@ -31,7 +31,7 @@ func TestPbkdf2_HashPw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha224",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
@@ -42,7 +42,7 @@ func TestPbkdf2_HashPw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha256",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
@@ -53,7 +53,7 @@ func TestPbkdf2_HashPw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha384",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
@@ -64,7 +64,7 @@ func TestPbkdf2_HashPw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha512",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
@@ -99,7 +99,7 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		conf    *Conf
+		conf    *config
 		args    args
 		want    bool
 		wantErr bool
@@ -116,7 +116,7 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
@@ -131,7 +131,7 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
@@ -146,7 +146,7 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,
@@ -161,7 +161,7 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 		},
 		{
 			name: "pbkdf2 sha1",
-			conf: &Conf{
+			conf: &config{
 				Iterations: 4096,
 				SaltLen:    16,
 				KeyLen:     32,

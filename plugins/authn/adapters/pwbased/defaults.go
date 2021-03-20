@@ -2,7 +2,7 @@ package pwbased
 
 import "aureole/configs"
 
-func (c *сonf) setDefaults() {
+func (c *сonfig) setDefaults() {
 	configs.SetDefault(&c.CompatHashers, []string{})
 	c.Login.setDefaults()
 	c.Register.setDefaults()

@@ -11,7 +11,7 @@ var Repository = plugins.InitRepository()
 
 // Adapter defines methods for authentication plugins
 type Adapter interface {
-	// Create returns desired authentication Controller depneds on the given config
+	// Create returns desired authentication Controller depends on the given config
 	Create(*configs.Authn) (types.Controller, error)
 }
 

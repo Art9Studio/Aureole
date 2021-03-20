@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_ConnectionConfig_String(t *testing.T) {
+func Test_config_ToUrl(t *testing.T) {
 	type fields struct {
 		Adapter  string
 		User     string
@@ -97,7 +97,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			connConf := Conf{
+			connConf := config{
 				User:     tt.fields.User,
 				Password: tt.fields.Password,
 				Host:     tt.fields.Host,
@@ -105,7 +105,7 @@ func Test_ConnectionConfig_String(t *testing.T) {
 				Database: tt.fields.Database,
 				Options:  tt.fields.Options,
 			}
-			got, err := connConf.String()
+			got, err := connConf.ToURL()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("String() error = %v, wantErr %v", err, tt.wantErr)
 				return

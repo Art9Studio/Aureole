@@ -9,7 +9,7 @@ import (
 
 // Storage represents a postgresql database
 type Storage struct {
-	Conf *Conf
+	Conf *config
 	conn *pgx.Conn
 	// for abstract queries
 	relInfo map[types.CollPair]types.RelInfo

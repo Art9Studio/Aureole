@@ -16,7 +16,7 @@ import (
 
 // Pbkdf2 represents pbkdf2 hasher
 type Pbkdf2 struct {
-	Conf *Conf
+	Conf *config
 	// Pseudorandom function used to derive a secure encryption key based on the password
 	Func func() hash.Hash
 }
@@ -85,13 +85,13 @@ func (p *Pbkdf2) ComparePw(pw string, hash string) (bool, error) {
 
 // decodePwHash expects a pwhasher created from this package, and parses it to return the config
 // used to create it, as well as the salt and key
-func decodePwHash(hashed string) (*Conf, func() hash.Hash, []byte, []byte, error) {
+func decodePwHash(hashed string) (*config, func() hash.Hash, []byte, []byte, error) {
 	vals := strings.Split(hashed, "$")
 	if len(vals) != 4 {
 		return nil, nil, nil, nil, ErrInvalidHash
 	}
 
-	conf := &Conf{}
+	conf := &config{}
 	var funcName string
 
 	_, err := fmt.Sscanf(vals[0], "%s", &funcName)

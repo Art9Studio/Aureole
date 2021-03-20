@@ -13,7 +13,7 @@ func New(conf *configs.Authn) (types.Controller, error) {
 		return nil, err
 	}
 
-	adapter, ok := interface{}(a).(Adapter)
+	adapter, ok := a.(Adapter)
 	if !ok {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}

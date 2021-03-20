@@ -8,8 +8,8 @@ import (
 	"net/url"
 )
 
-// Conf represents a parsed PostgreSQL connection URL
-type Conf struct {
+// config represents a parsed PostgreSQL connection URL
+type config struct {
 	Url      string            `mapstructure:"url"`
 	User     string            `mapstructure:"username"`
 	Password string            `mapstructure:"password"`
@@ -21,7 +21,7 @@ type Conf struct {
 
 func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
 	adapterConfMap := conf.Config
-	adapterConf := &Conf{}
+	adapterConf := &config{}
 
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
@@ -31,7 +31,7 @@ func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
 	return initAdapter(conf, adapterConf)
 }
 
-func initAdapter(conf *configs.Storage, adapterConf *Conf) (*Storage, error) {
+func initAdapter(conf *configs.Storage, adapterConf *config) (*Storage, error) {
 	a := &Storage{
 		Conf: adapterConf,
 	}
@@ -44,7 +44,7 @@ func initAdapter(conf *configs.Storage, adapterConf *Conf) (*Storage, error) {
 }
 
 // ToURL reassembles PostgreSQL connection config into a valid connection url
-func (conf Conf) ToURL() (string, error) {
+func (conf config) ToURL() (string, error) {
 	vv := url.Values{}
 	if conf.Options != nil {
 		for k, v := range conf.Options {

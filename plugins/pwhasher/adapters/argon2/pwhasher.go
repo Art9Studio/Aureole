@@ -12,7 +12,7 @@ import (
 
 // Argon2 represents argon2 hasher
 type Argon2 struct {
-	Conf *Conf
+	Conf *config
 }
 
 var (
@@ -83,7 +83,7 @@ func (a *Argon2) ComparePw(pw string, hash string) (bool, error) {
 
 // decodePwHash expects a pwhasher created from this package, and parses it to return the config
 // used to create it, as well as the salt and key
-func decodePwHash(hash string) (*Conf, []byte, []byte, error) {
+func decodePwHash(hash string) (*config, []byte, []byte, error) {
 	vals := strings.Split(hash, "$")
 	if len(vals) != 6 {
 		return nil, nil, nil, ErrInvalidHash
@@ -99,7 +99,7 @@ func decodePwHash(hash string) (*Conf, []byte, []byte, error) {
 		return nil, nil, nil, ErrIncompatibleVersion
 	}
 
-	conf := &Conf{}
+	conf := &config{}
 	conf.Kind = vals[1]
 	_, err = fmt.Sscanf(vals[3], "m=%d,t=%d,p=%d", &conf.Memory, &conf.Iterations, &conf.Parallelism)
 	if err != nil {

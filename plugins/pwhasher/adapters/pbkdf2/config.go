@@ -6,8 +6,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Conf represents parsed pwhasher config from the config file
-type Conf struct {
+// config represents parsed pwhasher config from the config file
+type config struct {
 	// The number of iterations over the memory
 	Iterations int `mapstructure:"iterations"`
 
@@ -24,7 +24,7 @@ type Conf struct {
 // Create returns Pbkdf2 hasher with the given settings
 func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	adapterConfMap := conf.Config
-	adapterConf := &Conf{}
+	adapterConf := &config{}
 
 	err := mapstructure.Decode(adapterConfMap, adapterConf)
 	if err != nil {
@@ -36,7 +36,7 @@ func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 	return initAdapter(conf, adapterConf)
 }
 
-func initAdapter(conf *configs.PwHasher, adapterConf *Conf) (*Pbkdf2, error) {
+func initAdapter(conf *configs.PwHasher, adapterConf *config) (*Pbkdf2, error) {
 	function, err := initFunc(adapterConf.FuncName)
 	if err != nil {
 		return nil, err
