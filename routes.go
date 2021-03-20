@@ -7,7 +7,6 @@ import (
 // initRouter initializes router and creates routes for each application
 func initRouter() (*fiber.App, error) {
 	r := fiber.New()
-	//v := r.Group("v" + Project.APIVersion)
 	v := r.Group("")
 
 	for _, app := range Project.Apps {
