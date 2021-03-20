@@ -1,19 +1,23 @@
 package postgresql
 
 import (
-	"aureole/plugins/storage"
+	"aureole/configs"
+	"aureole/internal/plugins/storage"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func Test_Session_RawExec(t *testing.T) {
-	rawConnData := storage.RawStorageConfig{
-		"connection_url": "postgresql://root:password@localhost:5432/test",
+	conf := &configs.Storage{
+		Type: "",
+		Name: "",
+		Config: configs.RawConfig{
+			"connection_url": "postgresql://root:password@localhost:5432/test",
+		},
 	}
 
-	features := []string{"identity"}
-	usersSess, err := storage.New(rawConnData, features)
+	usersSess, err := storage.New(conf)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
@@ -27,12 +31,16 @@ func Test_Session_RawExec(t *testing.T) {
 }
 
 func Test_Session_RawQuery(t *testing.T) {
-	rawConnData := storage.RawStorageConfig{
-		"connection_url": "postgresql://root:password@localhost:5432/test",
+	// todo: check it
+	conf := &configs.Storage{
+		Type: "",
+		Name: "",
+		Config: configs.RawConfig{
+			"connection_url": "postgresql://root:password@localhost:5432/test",
+		},
 	}
 
-	features := []string{"identity"}
-	usersSess, err := storage.New(rawConnData, features)
+	usersSess, err := storage.New(conf)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}

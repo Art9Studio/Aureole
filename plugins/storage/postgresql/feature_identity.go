@@ -2,7 +2,7 @@ package postgresql
 
 import (
 	"aureole/collections"
-	storageTypes "aureole/plugins/storage/types"
+	"aureole/internal/plugins/storage/types"
 	"fmt"
 	"github.com/jackc/pgx/v4"
 )
@@ -37,7 +37,7 @@ func (s *Storage) CreateIdentityColl(spec collections.Specification) error {
 }
 
 // InsertIdentity inserts user entity in the user collection
-func (s *Storage) InsertIdentity(spec collections.Specification, insUserData storageTypes.InsertIdentityData) (storageTypes.JSONCollResult, error) {
+func (s *Storage) InsertIdentity(spec collections.Specification, insUserData types.InsertIdentityData) (types.JSONCollResult, error) {
 	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning $3;",
 		Sanitize(spec.Name),
 		Sanitize(spec.FieldsMap["identity"]),
@@ -45,7 +45,7 @@ func (s *Storage) InsertIdentity(spec collections.Specification, insUserData sto
 	return s.RawQuery(sql, insUserData.Identity, insUserData.UserConfirm, spec.Pk)
 }
 
-func (s *Storage) GetPasswordByIdentity(spec collections.Specification, userUnique interface{}) (storageTypes.JSONCollResult, error) {
+func (s *Storage) GetPasswordByIdentity(spec collections.Specification, userUnique interface{}) (types.JSONCollResult, error) {
 	sql := fmt.Sprintf("select %s from %s where %s=$1",
 		Sanitize(spec.FieldsMap["password"]),
 		Sanitize(spec.Name),

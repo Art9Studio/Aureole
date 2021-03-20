@@ -2,7 +2,7 @@ package argon2
 
 import (
 	"aureole/configs"
-	"aureole/plugins/pwhasher/types"
+	"aureole/internal/plugins/pwhasher/types"
 	"github.com/mitchellh/mapstructure"
 )
 

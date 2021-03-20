@@ -1,9 +1,9 @@
 package pwbased
 
 import (
+	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/jsonpath"
 	"aureole/jwt"
-	storageTypes "aureole/plugins/storage/types"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )

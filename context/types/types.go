@@ -3,9 +3,9 @@ package types
 import (
 	"aureole/collections"
 	"aureole/configs"
-	authnTypes "aureole/plugins/authn/types"
-	pwhasherTypes "aureole/plugins/pwhasher/types"
-	storageTypes "aureole/plugins/storage/types"
+	authnTypes "aureole/internal/plugins/authn/types"
+	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
+	storageTypes "aureole/internal/plugins/storage/types"
 )
 
 type (

@@ -2,7 +2,7 @@ package authn
 
 import (
 	"aureole/configs"
-	"aureole/plugins/authn/types"
+	"aureole/internal/plugins/authn/types"
 	"fmt"
 )
 

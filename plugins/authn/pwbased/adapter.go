@@ -1,7 +1,7 @@
 package pwbased
 
 import (
-	"aureole/plugins/authn"
+	"aureole/internal/plugins/authn"
 )
 
 // AdapterName is the internal name of the adapter

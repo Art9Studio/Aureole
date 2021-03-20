@@ -2,7 +2,7 @@ package postgresql
 
 import (
 	"aureole/configs"
-	"aureole/plugins/storage/types"
+	"aureole/internal/plugins/storage/types"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"net/url"

@@ -3,8 +3,8 @@ package authn
 import (
 	"aureole/configs"
 	ctxTypes "aureole/context/types"
-	"aureole/plugins"
-	"aureole/plugins/authn/types"
+	"aureole/internal/plugins"
+	"aureole/internal/plugins/authn/types"
 )
 
 var Repository = plugins.InitRepository()

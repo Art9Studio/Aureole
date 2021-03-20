@@ -1,6 +1,6 @@
 package main
 
-import _ "aureole/plugins/storage/adapters/postgresql"
-import _ "aureole/plugins/authn/adapters/pwbased"
-import _ "aureole/plugins/pwhasher/adapters/argon2"
-import _ "aureole/plugins/pwhasher/adapters/pbkdf2"
+import _ "aureole/plugins/storage/postgresql"
+import _ "aureole/plugins/authn/pwbased"
+import _ "aureole/plugins/pwhasher/argon2"
+import _ "aureole/plugins/pwhasher/pbkdf2"

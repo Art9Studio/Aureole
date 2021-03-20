@@ -3,8 +3,8 @@ package pwhasher
 import (
 	"aureole/configs"
 	ctxTypes "aureole/context/types"
-	"aureole/plugins"
-	"aureole/plugins/pwhasher/types"
+	"aureole/internal/plugins"
+	"aureole/internal/plugins/pwhasher/types"
 )
 
 var Repository = plugins.InitRepository()

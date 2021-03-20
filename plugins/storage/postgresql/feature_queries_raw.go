@@ -1,7 +1,7 @@
 package postgresql
 
 import (
-	"aureole/plugins/storage/types"
+	"aureole/internal/plugins/storage/types"
 	"context"
 	"errors"
 )

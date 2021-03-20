@@ -1,7 +1,7 @@
 package postgresql
 
 import (
-	"aureole/plugins/storage"
+	"aureole/internal/plugins/storage"
 )
 
 // AdapterName is the internal name of the adapter

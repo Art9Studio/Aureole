@@ -1,8 +1,8 @@
 package postgresql
 
 import (
-	"aureole/plugins/storage"
-	"aureole/plugins/storage/types"
+	"aureole/internal/plugins/storage"
+	"aureole/internal/plugins/storage/types"
 	"context"
 	"github.com/jackc/pgx/v4"
 )

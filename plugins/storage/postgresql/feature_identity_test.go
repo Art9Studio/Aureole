@@ -3,8 +3,8 @@ package postgresql
 import (
 	"aureole/collections"
 	"aureole/configs"
-	"aureole/plugins/storage"
-	"aureole/plugins/storage/types"
+	"aureole/internal/plugins/storage"
+	"aureole/internal/plugins/storage/types"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"

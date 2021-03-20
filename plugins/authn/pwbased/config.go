@@ -2,8 +2,8 @@ package pwbased
 
 import (
 	"aureole/configs"
-	"aureole/plugins/authn"
-	"aureole/plugins/authn/types"
+	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins/authn/types"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 )

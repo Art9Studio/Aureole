@@ -3,9 +3,9 @@ package pwbased
 import (
 	"aureole/collections"
 	contextTypes "aureole/context/types"
-	authnTypes "aureole/plugins/authn/types"
-	"aureole/plugins/pwhasher/types"
-	storageTypes "aureole/plugins/storage/types"
+	authnTypes "aureole/internal/plugins/authn/types"
+	"aureole/internal/plugins/pwhasher/types"
+	storageTypes "aureole/internal/plugins/storage/types"
 	"path"
 )
 

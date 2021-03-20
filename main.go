@@ -4,9 +4,9 @@ import (
 	"aureole/configs"
 	"aureole/context"
 	"aureole/context/types"
-	"aureole/plugins/authn"
-	"aureole/plugins/pwhasher"
-	"aureole/plugins/storage"
+	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins/pwhasher"
+	"aureole/internal/plugins/storage"
 	"log"
 )
 

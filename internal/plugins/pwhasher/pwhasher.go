@@ -2,7 +2,7 @@ package pwhasher
 
 import (
 	"aureole/configs"
-	"aureole/plugins/pwhasher/types"
+	"aureole/internal/plugins/pwhasher/types"
 	"fmt"
 )
 

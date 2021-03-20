@@ -1,7 +1,7 @@
 package pbkdf2
 
 import (
-	"aureole/plugins/pwhasher"
+	"aureole/internal/plugins/pwhasher"
 )
 
 // AdapterName is the internal name of the adapter

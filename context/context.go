@@ -4,12 +4,12 @@ import (
 	"aureole/collections"
 	"aureole/configs"
 	"aureole/context/types"
-	"aureole/plugins/authn"
-	authnTypes "aureole/plugins/authn/types"
-	"aureole/plugins/pwhasher"
-	pwhasherTypes "aureole/plugins/pwhasher/types"
-	"aureole/plugins/storage"
-	storageTypes "aureole/plugins/storage/types"
+	"aureole/internal/plugins/authn"
+	authnTypes "aureole/internal/plugins/authn/types"
+	"aureole/internal/plugins/pwhasher"
+	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
+	"aureole/internal/plugins/storage"
+	storageTypes "aureole/internal/plugins/storage/types"
 	"fmt"
 )
 

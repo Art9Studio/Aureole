@@ -2,7 +2,7 @@ package storage
 
 import (
 	"aureole/configs"
-	"aureole/plugins/storage/types"
+	"aureole/internal/plugins/storage/types"
 	"errors"
 	"fmt"
 	"strings"

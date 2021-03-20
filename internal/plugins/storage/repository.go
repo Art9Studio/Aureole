@@ -3,8 +3,8 @@ package storage
 import (
 	"aureole/configs"
 	ctxTypes "aureole/context/types"
-	"aureole/plugins"
-	"aureole/plugins/storage/types"
+	"aureole/internal/plugins"
+	"aureole/internal/plugins/storage/types"
 )
 
 var Repository = plugins.InitRepository()
