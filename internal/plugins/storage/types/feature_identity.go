@@ -1,7 +1,7 @@
 package types
 
 import (
-	"aureole/collections"
+	"aureole/internal/collections"
 )
 
 type InsertIdentityData struct {

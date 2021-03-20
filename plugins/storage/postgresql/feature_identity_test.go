@@ -1,8 +1,8 @@
 package postgresql
 
 import (
-	"aureole/collections"
 	"aureole/configs"
+	"aureole/internal/collections"
 	"aureole/internal/plugins/storage"
 	"aureole/internal/plugins/storage/types"
 	"fmt"

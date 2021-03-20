@@ -1,7 +1,7 @@
 package postgresql
 
 import (
-	"aureole/collections"
+	"aureole/internal/collections"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
 	"github.com/jackc/pgx/v4"

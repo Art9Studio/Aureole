@@ -1,9 +1,9 @@
 package context
 
 import (
-	"aureole/collections"
 	"aureole/configs"
 	"aureole/context/types"
+	"aureole/internal/collections"
 	"aureole/internal/plugins/authn"
 	authnTypes "aureole/internal/plugins/authn/types"
 	"aureole/internal/plugins/pwhasher"

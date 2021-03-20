@@ -1,8 +1,7 @@
 package types
 
 import (
-	"aureole/collections"
-	"aureole/configs"
+	"aureole/internal/collections"
 	authnTypes "aureole/internal/plugins/authn/types"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	storageTypes "aureole/internal/plugins/storage/types"
@@ -20,10 +19,5 @@ type (
 	App struct {
 		PathPrefix       string
 		AuthnControllers []authnTypes.Controller
-	}
-
-	AuthZConfig struct {
-		Type   string
-		Config configs.RawConfig
 	}
 )

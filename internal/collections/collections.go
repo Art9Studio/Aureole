@@ -1,8 +1,6 @@
 package collections
 
-import (
-	"aureole/configs"
-)
+import "aureole/configs"
 
 // todo: reorganize this structures
 type (
