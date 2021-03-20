@@ -6,6 +6,7 @@ import (
 
 type Controller interface {
 	GetRoutes() []Route
+	// todo: add method successAuthz, which works with authorization
 }
 
 type Route struct {

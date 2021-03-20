@@ -30,29 +30,12 @@ type Conf struct {
 
 // TODO: figure out best default settings
 func (c *Conf) setDefaults() {
-	if c.Kind == "" {
-		c.Kind = "argon2i"
-	}
-
-	if c.Iterations == 0 {
-		c.Iterations = 3
-	}
-
-	if c.Parallelism == 0 {
-		c.Parallelism = 2
-	}
-
-	if c.SaltLen == 0 {
-		c.SaltLen = 16
-	}
-
-	if c.KeyLen == 0 {
-		c.KeyLen = 32
-	}
-
-	if c.Memory == 0 {
-		c.Memory = 32 * 1024
-	}
+	configs.SetDefault(&c.Kind, "argon2i")
+	configs.SetDefault(&c.Iterations, 3)
+	configs.SetDefault(&c.Parallelism, 2)
+	configs.SetDefault(&c.SaltLen, 16)
+	configs.SetDefault(&c.KeyLen, 32)
+	configs.SetDefault(&c.Memory, 32*1024)
 }
 
 // Create returns Argon2 hasher with the given settings

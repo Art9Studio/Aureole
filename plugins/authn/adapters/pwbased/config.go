@@ -2,8 +2,9 @@ package pwbased
 
 import (
 	"aureole/configs"
-	contextTypes "aureole/context/types"
+	"aureole/plugins/authn"
 	"aureole/plugins/authn/types"
+	"fmt"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -30,18 +31,13 @@ type (
 )
 
 func (c *сonf) setDefaults() {
-	if len(c.CompatHashers) == 0 {
-		c.CompatHashers = []string{}
-	}
-
+	configs.SetDefault(&c.CompatHashers, []string{})
 	c.Login.setDefaults()
 	c.Register.setDefaults()
 }
 
 func (l *login) setDefaults() {
-	if l.Path == "" {
-		l.Path = "/login"
-	}
+	configs.SetDefault(&l.Path, "/login")
 
 	if l.FieldsMap == nil {
 		l.FieldsMap = map[string]string{
@@ -60,9 +56,7 @@ func (l *login) setDefaults() {
 }
 
 func (r *register) setDefaults() {
-	if r.Path == "" {
-		r.Path = "/register"
-	}
+	configs.SetDefault(&r.Path, "/register")
 
 	if r.FieldsMap == nil {
 		r.FieldsMap = map[string]string{
@@ -80,7 +74,7 @@ func (r *register) setDefaults() {
 	}
 }
 
-func (p pwBasedAdapter) Create(conf *configs.Authn, projectCtx *contextTypes.ProjectCtx) (types.Controller, error) {
+func (p pwBasedAdapter) Create(conf *configs.Authn) (types.Controller, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &сonf{}
 
@@ -91,7 +85,7 @@ func (p pwBasedAdapter) Create(conf *configs.Authn, projectCtx *contextTypes.Pro
 
 	adapterConf.setDefaults()
 
-	adapter, err := initAdapter(conf, adapterConf, projectCtx)
+	adapter, err := initAdapter(conf, adapterConf)
 	if err != nil {
 		return nil, err
 	}
@@ -104,13 +98,30 @@ func (p pwBasedAdapter) Create(conf *configs.Authn, projectCtx *contextTypes.Pro
 	return adapter, nil
 }
 
-func initAdapter(conf *configs.Authn, adapterConf *сonf, projectCtx *contextTypes.ProjectCtx) (*pwBased, error) {
+func initAdapter(conf *configs.Authn, adapterConf *сonf) (*pwBased, error) {
+	projectCtx := authn.Repository.ProjectCtx
+
+	hasher, ok := projectCtx.Hashers[adapterConf.MainHasher]
+	if !ok {
+		return nil, fmt.Errorf("hasher named '%s' is not declared", adapterConf.MainHasher)
+	}
+
+	collection, ok := projectCtx.Collections[adapterConf.Collection]
+	if !ok {
+		return nil, fmt.Errorf("collection named '%s' is not declared", adapterConf.Collection)
+	}
+
+	storage, ok := projectCtx.Storages[adapterConf.Storage]
+	if !ok {
+		return nil, fmt.Errorf("storage named '%s' is not declared", adapterConf.Storage)
+	}
+
 	return &pwBased{
 		Conf:           adapterConf,
 		PathPrefix:     conf.PathPrefix,
 		ProjectContext: projectCtx,
-		PwHasher:       projectCtx.Hashers[adapterConf.MainHasher],
-		IdentityColl:   projectCtx.Collections[adapterConf.Collection],
-		Storage:        projectCtx.Storages[adapterConf.Storage],
+		PwHasher:       hasher,
+		IdentityColl:   collection,
+		Storage:        storage,
 	}, nil
 }

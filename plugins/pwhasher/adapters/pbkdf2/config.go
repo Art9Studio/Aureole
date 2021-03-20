@@ -23,21 +23,10 @@ type Conf struct {
 
 // TODO: figure out best default settings
 func (c *Conf) setDefaults() {
-	if c.Iterations == 0 {
-		c.Iterations = 4096
-	}
-
-	if c.SaltLen == 0 {
-		c.SaltLen = 16
-	}
-
-	if c.KeyLen == 0 {
-		c.KeyLen = 32
-	}
-
-	if c.FuncName == "" {
-		c.FuncName = "sha1"
-	}
+	configs.SetDefault(&c.Iterations, 4096)
+	configs.SetDefault(&c.SaltLen, 16)
+	configs.SetDefault(&c.KeyLen, 32)
+	configs.SetDefault(&c.FuncName, "sha1")
 }
 
 // Create returns Pbkdf2 hasher with the given settings

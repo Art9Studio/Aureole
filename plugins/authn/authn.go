@@ -18,5 +18,5 @@ func New(conf *configs.Authn) (types.Controller, error) {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}
 
-	return adapter.Create(conf, Repository.ProjectCtx)
+	return adapter.Create(conf)
 }

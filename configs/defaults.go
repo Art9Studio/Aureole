@@ -8,7 +8,7 @@ type Defaultable interface {
 	setDefaults()
 }
 
-func setDefault(target interface{}, def interface{}) {
+func SetDefault(target interface{}, def interface{}) {
 	val := reflect.ValueOf(target)
 	if isZero(val.Elem()) {
 		val.Elem().Set(reflect.ValueOf(def))
@@ -53,7 +53,7 @@ func (a *app) setDefaults() {
 }
 
 func (authn *Authn) setDefaults() {
-	setDefault(&authn.PathPrefix, "/")
+	SetDefault(&authn.PathPrefix, "/")
 }
 
 func (a *Authz) setDefaults() {

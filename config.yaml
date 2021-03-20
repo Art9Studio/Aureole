@@ -10,15 +10,15 @@ apps:
         authZ: sessions
         config:
           main_hasher: argon2
-          compat_hashers: []  # todo: implement it # df
+          compat_hashers: []  # todo: implement it
           collection: identity
           storage: one_db
-          login: # df
+          login:
             path: "/login"
             fields_map:
               identity: "{$.username}"
               password: "{$.password}"
-          register: # df
+          register:
             path: "/register"
             login_after: true
             fields_map:

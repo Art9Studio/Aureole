@@ -19,7 +19,7 @@ type (
 	}
 )
 
-func NewCollection(collType string, conf *configs.Collection) *Collection {
+func New(collType string, conf *configs.Collection) *Collection {
 	return &Collection{
 		Type:        collType,
 		UseExistent: conf.UseExistent,

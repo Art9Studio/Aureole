@@ -9,7 +9,7 @@ import (
 	"aureole/plugins/pwhasher"
 	pwhasherTypes "aureole/plugins/pwhasher/types"
 	"aureole/plugins/storage"
-	types2 "aureole/plugins/storage/types"
+	storageTypes "aureole/plugins/storage/types"
 	"fmt"
 )
 
@@ -36,7 +36,7 @@ func InitContext(conf *configs.Project, ctx *types.ProjectCtx) interface{} {
 }
 
 func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
-	ctx.Storages = make(map[string]types2.Storage)
+	ctx.Storages = make(map[string]storageTypes.Storage)
 
 	for _, storageConf := range conf.StorageConfs {
 		connSess, err := storage.New(&storageConf)
@@ -89,7 +89,7 @@ func cleanupConnections(conf *configs.Project, ctx *types.ProjectCtx) {
 func initCollections(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Collections = make(map[string]*collections.Collection)
 	for _, collConf := range conf.CollConfs {
-		coll := collections.NewCollection(collConf.Type, &collConf)
+		coll := collections.New(collConf.Type, &collConf)
 		ctx.Collections[collConf.Name] = coll
 	}
 
@@ -127,15 +127,15 @@ func initApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 }
 
 func getAuthnControllers(authnList []configs.Authn) ([]authnTypes.Controller, error) {
-	res := make([]authnTypes.Controller, len(authnList))
+	controllers := make([]authnTypes.Controller, len(authnList))
 	for i, authnItem := range authnList {
 		controller, err := authn.New(&authnItem)
 		if err != nil {
 			return nil, err
 		}
 
-		res[i] = controller
+		controllers[i] = controller
 	}
 
-	return res, nil
+	return controllers, nil
 }
