@@ -66,9 +66,11 @@ func Test_Session_CreateIdentitytColl(t *testing.T) {
 	assert.NoError(t, err)
 
 	isOtherExist, err := usersSess.IsCollExists(collections.Specification{Name: "other", Pk: "id"})
+	assert.NoError(t, err)
 	assert.True(t, isOtherExist)
 
 	isDropExist, err := usersSess.IsCollExists(collections.Specification{Name: "); drop table other; --", Pk: "id"})
+	assert.NoError(t, err)
 	assert.True(t, isDropExist)
 }
 

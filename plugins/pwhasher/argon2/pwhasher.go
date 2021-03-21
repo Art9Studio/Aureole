@@ -59,7 +59,7 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 // ComparePw performs a constant-time comparison between a plain-text password and
 // Argon2 pwhasher, using the parameters and salt contained in the pwhasher.
 // It returns true if they match, otherwise it returns false.
-func (a *Argon2) ComparePw(pw string, hash string) (bool, error) {
+func (a *Argon2) ComparePw(pw, hash string) (bool, error) {
 	conf, salt, key, err := decodePwHash(hash)
 	if err != nil {
 		return false, err

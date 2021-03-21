@@ -8,7 +8,7 @@ type Defaultable interface {
 	setDefaults()
 }
 
-func SetDefault(target interface{}, def interface{}) {
+func SetDefault(target, def interface{}) {
 	val := reflect.ValueOf(target)
 	if isZero(val.Elem()) {
 		val.Elem().Set(reflect.ValueOf(def))
