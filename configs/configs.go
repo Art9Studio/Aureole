@@ -15,6 +15,7 @@ type (
 		CollConfs    []Collection   `config:"collections"`
 		HasherConfs  []PwHasher     `config:"hashers"`
 		CryptoKeys   []cryptoKey    `config:"crypto_keys"`
+		Senders      []Sender       `config:"senders"`
 	}
 
 	app struct {
@@ -64,6 +65,12 @@ type (
 	cryptoKey struct {
 		Type   string    `config:"type"`
 		Driver string    `config:"driver"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
+	}
+
+	Sender struct {
+		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`
 	}

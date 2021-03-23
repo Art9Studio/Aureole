@@ -1,13 +1,13 @@
-package pwhasher
+package sender
 
 import (
 	"aureole/configs"
-	"aureole/internal/plugins/pwhasher/types"
+	"aureole/internal/plugins/sender/types"
 	"fmt"
 )
 
-// New returns desired PwHasher depends on the given config
-func New(conf *configs.PwHasher) (types.PwHasher, error) {
+// New returns desired messenger depends on the given config
+func New(conf *configs.Sender) (types.Sender, error) {
 	a, err := Repository.Get(conf.Type)
 	if err != nil {
 		return nil, err

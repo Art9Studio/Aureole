@@ -20,7 +20,7 @@ func New(conf *configs.Storage) (types.Storage, error) {
 		return nil, err
 	}
 
-	adapter, ok := interface{}(a).(Adapter)
+	adapter, ok := a.(Adapter)
 	if !ok {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}

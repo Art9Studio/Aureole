@@ -122,3 +122,17 @@ crypto_keys:
     name: rsa
     config:
       path: "./private.pem"
+
+senders:
+  - type: "email"
+    name: email
+    config:
+      host: ""
+      username: ""
+      password: ""
+      from: ""
+      bcc: []
+      cc: []
+      subject: ""
+      templates:
+        default: ".templates/default.txt"
