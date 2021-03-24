@@ -127,12 +127,11 @@ senders:
   - type: "email"
     name: email
     config:
-      host: ""
-      username: ""
-      password: ""
-      from: ""
+      host: "smtp.gmail.com:587"
+      username: "aureole@gmail.com"
+      password: "${SMTP_PASSWORD}"
+      from: "aureole@gmail.com"
       bcc: []
       cc: []
-      subject: ""
       templates:
-        default: ".templates/default.txt"
+        default: "default.txt"

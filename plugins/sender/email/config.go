@@ -13,7 +13,6 @@ type config struct {
 	From      string            `mapstructure:"from"`
 	Bcc       []string          `mapstructure:"bcc"`
 	Cc        []string          `mapstructure:"cc"`
-	Subject   string            `mapstructure:"subject"`
 	Templates map[string]string `mapstructure:"templates"`
 }
 
