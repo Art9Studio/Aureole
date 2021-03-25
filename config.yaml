@@ -64,27 +64,61 @@ apps:
           same_site: ""
           clean_interval: 60
 
-      #two:
-      #  path_prefix: "/two"
-      #
-      #  authN:
-      #    - type: "password_based"
-      #      authZ: jwt
-      #      config:
-      #        main_hasher: argon2
-      #        collection: identity
-      #        storage: one_db
-      #
-      #  authZ:
-      #    - name: jwt
-      #      type: "jwt"
-      #      config:
-      #        alg: "RS256"
-      #        kid_alg: "docker_registry" # implement docker_registry and default and none
-      #        keys: [ rsa ]
-      #        payload: "jwt_payload.json"
-      #          "$.userID": "id"
-      #          "$.userPosts": "@getUserPosts" raw query
+  two:
+    path_prefix: "/two"
+
+    identity:
+      collection: identity
+      id:
+        enabled: true
+        unique: true
+        required: true
+        internal: true
+      username:
+        enabled: true
+        unique: false
+        required: false # todo: can't be unique if not required
+        internal: false
+      phone:
+        enabled: false
+        unique: true
+        required: false
+        internal: false
+      email:
+        enabled: false
+        unique: true
+        required: true
+        internal: false
+
+    authN:
+      - type: "password_based"
+        authZ: jwt
+        config:
+          main_hasher: argon2
+          collection: identity
+          storage: one_db
+
+    authZ:
+      - type: "jwt"
+        name: jwt
+        path_prefix: "/"
+        config:
+          iss: "Aureole Server"
+          sub: true
+          aud: ["app1", "app2"]
+          nbf: 0
+          iat: true
+          jti: 0 # todo: implement jti
+          # todo: think about options [body, header, cookie] and split options for request and response
+          access_bearer: "cookie" # todo: add settings for cookie
+          refresh_bearer: "header"
+          alg: "RS256"
+          sign_key: jwk_file
+          verify_keys: [jwk_file]
+          access_exp: 900
+          refresh_exp: 7890000
+          refresh_url: "/refresh"
+          payload: "./templates/jwt_payload.json"
 
 storages:
   - type: "postgresql"

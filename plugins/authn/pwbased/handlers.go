@@ -1,6 +1,7 @@
 package pwbased
 
 import (
+	authzTypes "aureole/internal/plugins/authz/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/pkg/jsonpath"
 	"errors"
@@ -74,7 +75,8 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if isMatch {
 			// todo: add getUserId method
 			collSpec := context.identity.Collection.Spec
-			return context.authorizer.Authorize(c, map[string]interface{}{"user_id": identity[collSpec.FieldsMap["id"]]})
+			authzCtx := &authzTypes.Context{UserId: identity[collSpec.FieldsMap["id"]].(int)}
+			return context.authorizer.Authorize(c, authzCtx)
 		} else {
 			return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 				"success": false,
@@ -133,7 +135,8 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		if context.conf.Register.IsLoginAfter {
-			return context.authorizer.Authorize(c, map[string]interface{}{"user_id": userId})
+			authzCtx := &authzTypes.Context{UserId: userId.(int)}
+			return context.authorizer.Authorize(c, authzCtx)
 		} else {
 			return c.JSON(&fiber.Map{"id": userId})
 		}

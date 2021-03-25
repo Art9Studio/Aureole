@@ -5,6 +5,10 @@ import (
 )
 
 type Authorizer interface {
-	Init() error
-	Authorize(*fiber.Ctx, map[string]interface{}) error
+	Init(string) error
+	Authorize(*fiber.Ctx, *Context) error
+}
+
+type Context struct {
+	UserId int
 }

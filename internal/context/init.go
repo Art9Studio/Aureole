@@ -341,7 +341,7 @@ func initAppPlugins(ctx *ProjectCtx) error {
 		if err := initAuthenticators(appName, a); err != nil {
 			return err
 		}
-		if err := initAuthorizers(a); err != nil {
+		if err := initAuthorizers(appName, a); err != nil {
 			return err
 		}
 	}
@@ -359,9 +359,9 @@ func initAuthenticators(appName string, app *app.App) error {
 	return nil
 }
 
-func initAuthorizers(app *app.App) error {
+func initAuthorizers(appName string, app *app.App) error {
 	for _, authorizer := range app.Authorizers {
-		if err := authorizer.Init(); err != nil {
+		if err := authorizer.Init(appName); err != nil {
 			return err
 		}
 	}
