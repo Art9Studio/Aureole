@@ -30,9 +30,8 @@ func InitContext(conf *configs.Project, ctx *types.ProjectCtx) error {
 	if err := initApps(conf, ctx); err != nil {
 		return err
 	}
-	err := initSenders(conf, ctx)
 
-	return err
+	return initSenders(conf, ctx)
 }
 
 func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
