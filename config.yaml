@@ -128,10 +128,11 @@ senders:
     name: email
     config:
       host: "smtp.gmail.com:587"
-      username: "aureole@gmail.com"
+      username: "test.aureole@gmail.com"
       password: "${SMTP_PASSWORD}"
-      from: "aureole@gmail.com"
+      from: "test.aureole@gmail.com"
       bcc: []
       cc: []
       templates:
-        default: "default.txt"
+        default_text: "./templates/default.txt"
+        default_html: "./templates/default.html" # if extension is 'html' we send it as html

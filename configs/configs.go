@@ -80,6 +80,7 @@ func LoadMainConfig() (*Project, error) {
 	confLoader, err := configuro.NewConfig(
 		configuro.WithLoadFromConfigFile("./config.yaml", true),
 		configuro.WithoutValidateByTags(),
+		configuro.WithLoadDotEnv(".env"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)

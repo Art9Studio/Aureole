@@ -3,32 +3,45 @@ package email
 import (
 	"bytes"
 	"github.com/jordan-wright/email"
+	htmlTmpl "html/template"
 	"net/smtp"
 	"path"
 	"strings"
-	"text/template"
+	txtTmpl "text/template"
 )
 
 type Email struct {
 	Conf *config
 }
 
-func (e *Email) Send(recipient string, subject string, tmplFileName string, tmplCtx map[string]interface{}) error {
-	baseName := path.Base(tmplFileName)
-	tmpl := template.Must(template.New(baseName).ParseFiles(tmplFileName))
-
-	message := &bytes.Buffer{}
-	if err := tmpl.Execute(message, tmplCtx); err != nil {
-		return err
-	}
-
+func (e *Email) Send(recipient string, subject string, tmplName string, tmplCtx map[string]interface{}) error {
 	mail := &email.Email{
 		From:    e.Conf.From,
 		To:      []string{recipient},
 		Bcc:     e.Conf.Bcc,
 		Cc:      e.Conf.Cc,
 		Subject: subject,
-		Text:    message.Bytes(),
+	}
+
+	tmplFileName := e.Conf.Templates[tmplName]
+	baseName := path.Base(tmplFileName)
+	extension := path.Ext(tmplFileName)
+	message := &bytes.Buffer{}
+
+	if extension == ".html" {
+		tmpl := htmlTmpl.Must(htmlTmpl.New(baseName).ParseFiles(tmplFileName))
+		if err := tmpl.Execute(message, tmplCtx); err != nil {
+			return err
+		}
+
+		mail.HTML = message.Bytes()
+	} else {
+		tmpl := txtTmpl.Must(txtTmpl.New(baseName).ParseFiles(tmplFileName))
+		if err := tmpl.Execute(message, tmplCtx); err != nil {
+			return err
+		}
+
+		mail.Text = message.Bytes()
 	}
 
 	// todo: test custom ports support
@@ -49,8 +62,8 @@ func (e *Email) SendRaw(recipient string, subject string, message string) error 
 	}
 
 	// todo: test custom ports support
-	//hostname := strings.Split(e.Conf.Host, ":")[0]
-	plainAuth := smtp.PlainAuth("", e.Conf.Username, e.Conf.Password, e.Conf.Host)
+	hostname := strings.Split(e.Conf.Host, ":")[0]
+	plainAuth := smtp.PlainAuth("", e.Conf.Username, e.Conf.Password, hostname)
 
 	return mail.Send(e.Conf.Host, plainAuth)
 }
