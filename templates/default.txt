@@ -1,0 +1,1 @@
+This is test mail with random name: {{.name}}

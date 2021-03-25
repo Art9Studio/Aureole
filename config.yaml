@@ -122,3 +122,17 @@ crypto_keys:
     name: rsa
     config:
       path: "./private.pem"
+
+senders:
+  - type: "email"
+    name: email
+    config:
+      host: "smtp.gmail.com:587"
+      username: "test.aureole@gmail.com"
+      password: "${SMTP_PASSWORD}"
+      from: "test.aureole@gmail.com"
+      bcc: []
+      cc: []
+      templates:
+        default_text: "./templates/default.txt"
+        default_html: "./templates/default.html" # if extension is 'html' we send it as html

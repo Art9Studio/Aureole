@@ -15,6 +15,7 @@ type (
 		CollConfs    []Collection   `config:"collections"`
 		HasherConfs  []PwHasher     `config:"hashers"`
 		CryptoKeys   []cryptoKey    `config:"crypto_keys"`
+		Senders      []Sender       `config:"senders"`
 	}
 
 	app struct {
@@ -67,12 +68,19 @@ type (
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`
 	}
+
+	Sender struct {
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
+	}
 )
 
 func LoadMainConfig() (*Project, error) {
 	confLoader, err := configuro.NewConfig(
 		configuro.WithLoadFromConfigFile("./config.yaml", true),
 		configuro.WithoutValidateByTags(),
+		configuro.WithLoadDotEnv(".env"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)
