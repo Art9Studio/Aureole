@@ -14,7 +14,7 @@ type (
 		StorageConfs []Storage      `config:"storages"`
 		CollConfs    []Collection   `config:"collections"`
 		HasherConfs  []PwHasher     `config:"hashers"`
-		CryptoKeys   []cryptoKey    `config:"crypto_keys"`
+		CryptoKeys   []CryptoKey    `config:"crypto_keys"`
 		Senders      []Sender       `config:"senders"`
 	}
 
@@ -62,9 +62,8 @@ type (
 		Config RawConfig `config:"config"`
 	}
 
-	cryptoKey struct {
+	CryptoKey struct {
 		Type   string    `config:"type"`
-		Driver string    `config:"driver"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`
 	}

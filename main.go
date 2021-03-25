@@ -6,6 +6,7 @@ import (
 	"aureole/context/types"
 	"aureole/internal/plugins/authn"
 	"aureole/internal/plugins/authz"
+	"aureole/internal/plugins/cryptokey"
 	"aureole/internal/plugins/pwhasher"
 	"aureole/internal/plugins/sender"
 	"aureole/internal/plugins/storage"
@@ -26,6 +27,7 @@ func main() {
 	authn.InitRepository(&Project)
 	authz.InitRepository(&Project)
 	sender.InitRepository(&Project)
+	cryptokey.InitRepository(&Project)
 
 	if err := context.InitContext(projConf, &Project); err != nil {
 		log.Panic(err)
