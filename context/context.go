@@ -6,6 +6,8 @@ import (
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authn"
 	authnTypes "aureole/internal/plugins/authn/types"
+	"aureole/internal/plugins/authz"
+	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/pwhasher"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	"aureole/internal/plugins/sender"
@@ -120,9 +122,15 @@ func initApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 			return err
 		}
 
+		authorizers, err := getAuthorizers(app.Authz)
+		if err != nil {
+			return err
+		}
+
 		ctx.Apps[i] = types.App{
 			PathPrefix:       app.PathPrefix,
 			AuthnControllers: authnControllers,
+			Authorizers:      authorizers,
 		}
 	}
 	return nil
@@ -141,6 +149,21 @@ func getAuthnControllers(authnList []configs.Authn) ([]authnTypes.Controller, er
 	}
 
 	return controllers, nil
+}
+
+func getAuthorizers(authzList []configs.Authz) ([]authzTypes.Authorizer, error) {
+	authorizers := make([]authzTypes.Authorizer, len(authzList))
+
+	for i, authzItem := range authzList {
+		authorizer, err := authz.New(&authzItem)
+		if err != nil {
+			return nil, err
+		}
+
+		authorizers[i] = authorizer
+	}
+
+	return authorizers, nil
 }
 
 func initSenders(conf *configs.Project, ctx *types.ProjectCtx) error {

@@ -89,13 +89,13 @@ collections:
         identity: "username"
         password: "password"
 
-#  - type: "session"
-#    name: session
-#    use_existent: false
-#    configs:
-#      name: "sessions"
-#      pk: "id"
-#      # todo: fill rest
+ - type: "session"
+   name: session
+   use_existent: false
+   configs:
+     name: "sessions"
+     pk: "id"
+     # todo: fill rest
 
 hashers:
   - type: "argon2"

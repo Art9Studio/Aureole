@@ -5,6 +5,7 @@ import (
 	"aureole/context"
 	"aureole/context/types"
 	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins/authz"
 	"aureole/internal/plugins/pwhasher"
 	"aureole/internal/plugins/sender"
 	"aureole/internal/plugins/storage"
@@ -23,6 +24,7 @@ func main() {
 	pwhasher.InitRepository(&Project)
 	storage.InitRepository(&Project)
 	authn.InitRepository(&Project)
+	authz.InitRepository(&Project)
 	sender.InitRepository(&Project)
 
 	if err := context.InitContext(projConf, &Project); err != nil {
