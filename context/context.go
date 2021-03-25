@@ -15,7 +15,7 @@ import (
 	"fmt"
 )
 
-func InitContext(conf *configs.Project, ctx *types.ProjectCtx) interface{} {
+func InitContext(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.APIVersion = conf.APIVersion
 
 	if err := initStorages(conf, ctx); err != nil {
@@ -30,11 +30,9 @@ func InitContext(conf *configs.Project, ctx *types.ProjectCtx) interface{} {
 	if err := initApps(conf, ctx); err != nil {
 		return err
 	}
-	if err := initSenders(conf, ctx); err != nil {
-		return err
-	}
+	err := initSenders(conf, ctx)
 
-	return nil
+	return err
 }
 
 func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {

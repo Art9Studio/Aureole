@@ -14,7 +14,7 @@ type Email struct {
 	Conf *config
 }
 
-func (e *Email) Send(recipient string, subject string, tmplName string, tmplCtx map[string]interface{}) error {
+func (e *Email) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {
 	mail := &email.Email{
 		From:    e.Conf.From,
 		To:      []string{recipient},
@@ -51,7 +51,7 @@ func (e *Email) Send(recipient string, subject string, tmplName string, tmplCtx 
 	return mail.Send(e.Conf.Host, plainAuth)
 }
 
-func (e *Email) SendRaw(recipient string, subject string, message string) error {
+func (e *Email) SendRaw(recipient, subject, message string) error {
 	mail := &email.Email{
 		From:    e.Conf.From,
 		To:      []string{recipient},
