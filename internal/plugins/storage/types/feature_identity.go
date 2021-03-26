@@ -9,10 +9,7 @@ type InsertIdentityData struct {
 	UserConfirm interface{}
 }
 
-type Application interface {
-	// IsCollExists checks whether the given collection exists
-	IsCollExists(collections.Specification) (bool, error)
-
+type Identity interface {
 	// CreateUserColl creates user collection with traits passed by UserCollectionConfig
 	CreateIdentityColl(collections.Specification) error
 
