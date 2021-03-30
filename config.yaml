@@ -37,6 +37,7 @@ apps:
           max_age: 3600
           secure: true
           http_only: false
+          gc_interval: 60
 
   two:
     path_prefix: "/two"
@@ -94,8 +95,10 @@ collections:
    use_existent: false
    configs:
      name: "sessions"
-     pk: "id"
-     # todo: fill rest
+     pk: "user_id"
+     fields_map:
+       session_id: "session_id"
+       expiration: "expiration"
 
 hashers:
   - type: "argon2"

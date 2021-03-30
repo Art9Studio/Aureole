@@ -6,6 +6,7 @@ import (
 	"aureole/internal/plugins/authz/types"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
+	"time"
 )
 
 type config struct {
@@ -16,6 +17,7 @@ type config struct {
 	MaxAge     string `mapstructure:"max_age"`
 	Secure     bool   `mapstructure:"secure"`
 	HttpOnly   bool   `mapstructure:"http_only"`
+	GCInterval int    `mapstructure:"gc_interval"`
 }
 
 func (s sessionAdapter) Create(conf *configs.Authz) (types.Authorizer, error) {
@@ -54,6 +56,8 @@ func initAdapter(conf *configs.Authz, adapterConf *config) (*session, error) {
 	if !ok {
 		return nil, fmt.Errorf("storage named '%s' is not declared", adapterConf.Storage)
 	}
+
+	storage.SetGCInterval(time.Duration(adapterConf.GCInterval) * time.Second)
 
 	return &session{
 		Conf:           adapterConf,
