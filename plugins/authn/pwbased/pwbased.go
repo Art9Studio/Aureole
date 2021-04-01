@@ -4,6 +4,7 @@ import (
 	contextTypes "aureole/context/types"
 	"aureole/internal/collections"
 	authnTypes "aureole/internal/plugins/authn/types"
+	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/pwhasher/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"path"
@@ -16,6 +17,7 @@ type pwBased struct {
 	PwHasher       types.PwHasher
 	Storage        storageTypes.Storage
 	IdentityColl   *collections.Collection
+	Authorizer     authzTypes.Authorizer
 }
 
 func (p *pwBased) GetRoutes() []authnTypes.Route {

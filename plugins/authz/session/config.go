@@ -10,14 +10,15 @@ import (
 )
 
 type config struct {
-	Collection string `mapstructure:"collection"`
-	Storage    string `mapstructure:"storage"`
-	Domain     string `mapstructure:"domain"`
-	Path       string `mapstructure:"path"`
-	MaxAge     string `mapstructure:"max_age"`
-	Secure     bool   `mapstructure:"secure"`
-	HttpOnly   bool   `mapstructure:"http_only"`
-	GCInterval int    `mapstructure:"gc_interval"`
+	Collection    string `mapstructure:"collection"`
+	Storage       string `mapstructure:"storage"`
+	Domain        string `mapstructure:"domain"`
+	Path          string `mapstructure:"path"`
+	MaxAge        int    `mapstructure:"max_age"`
+	Secure        bool   `mapstructure:"secure"`
+	HttpOnly      bool   `mapstructure:"http_only"`
+	SameSite      string `mapstructure:"same_site"`
+	CleanInterval int    `mapstructure:"clean_interval"`
 }
 
 func (s sessionAdapter) Create(conf *configs.Authz) (types.Authorizer, error) {
@@ -57,7 +58,19 @@ func initAdapter(conf *configs.Authz, adapterConf *config) (*session, error) {
 		return nil, fmt.Errorf("storage named '%s' is not declared", adapterConf.Storage)
 	}
 
-	storage.SetGCInterval(time.Duration(adapterConf.GCInterval) * time.Second)
+	isCollExist, err := storage.IsCollExists(collection.Spec)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isCollExist {
+		err := storage.CreateSessionColl(collection.Spec)
+		if err != nil {
+			return nil, err
+		}
+	}
+	storage.SetCleanInterval(time.Duration(adapterConf.CleanInterval) * time.Second)
+	storage.StartCleaning(collection.Spec)
 
 	return &session{
 		Conf:           adapterConf,

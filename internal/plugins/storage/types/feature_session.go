@@ -2,17 +2,20 @@ package types
 
 import (
 	coll "aureole/internal/collections"
+	"github.com/gofrs/uuid"
 	"time"
 )
 
 type InsertSessionData struct {
 	UserId       int
-	SessionToken string
-	Expiration   time.Duration
+	SessionToken uuid.UUID
+	Expiration   time.Time
 }
 
 type Session interface {
-	SetGCInterval(time.Duration)
+	SetCleanInterval(time.Duration)
+
+	StartCleaning(spec coll.Specification)
 
 	CreateSessionColl(coll.Specification) error
 

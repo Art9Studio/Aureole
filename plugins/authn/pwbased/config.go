@@ -30,7 +30,7 @@ type (
 	}
 )
 
-func (p pwBasedAdapter) Create(conf *configs.Authn) (types.Controller, error) {
+func (p pwBasedAdapter) Create(appName string, conf *configs.Authn) (types.Authenticator, error) {
 	adapterConfMap := conf.Config
 	adapterConf := &сonfig{}
 
@@ -41,7 +41,7 @@ func (p pwBasedAdapter) Create(conf *configs.Authn) (types.Controller, error) {
 
 	adapterConf.setDefaults()
 
-	adapter, err := initAdapter(conf, adapterConf)
+	adapter, err := initAdapter(appName, conf, adapterConf)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (p pwBasedAdapter) Create(conf *configs.Authn) (types.Controller, error) {
 	return adapter, nil
 }
 
-func initAdapter(conf *configs.Authn, adapterConf *сonfig) (*pwBased, error) {
+func initAdapter(appName string, conf *configs.Authn, adapterConf *сonfig) (*pwBased, error) {
 	projectCtx := authn.Repository.ProjectCtx
 
 	hasher, ok := projectCtx.Hashers[adapterConf.MainHasher]
@@ -72,6 +72,11 @@ func initAdapter(conf *configs.Authn, adapterConf *сonfig) (*pwBased, error) {
 		return nil, fmt.Errorf("storage named '%s' is not declared", adapterConf.Storage)
 	}
 
+	authorizer, ok := projectCtx.Apps[appName].Authorizers[conf.AuthZ]
+	if !ok {
+		return nil, fmt.Errorf("authorizer named '%s' is not declared", conf.AuthZ)
+	}
+
 	return &pwBased{
 		Conf:           adapterConf,
 		PathPrefix:     conf.PathPrefix,
@@ -79,5 +84,6 @@ func initAdapter(conf *configs.Authn, adapterConf *сonfig) (*pwBased, error) {
 		PwHasher:       hasher,
 		IdentityColl:   collection,
 		Storage:        storage,
+		Authorizer:     authorizer,
 	}, nil
 }

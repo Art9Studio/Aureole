@@ -5,60 +5,47 @@ import (
 	"aureole/internal/plugins/storage/types"
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
 	"time"
 )
 
-func (s *Storage) SetGCInterval(interval time.Duration) {
+func (s *Storage) SetCleanInterval(interval time.Duration) {
 	s.gcInterval = interval
 }
 
 func (s *Storage) CreateSessionColl(spec coll.Specification) error {
 	// TODO: check types of fields
 	sql := fmt.Sprintf(`create table %s
-                       (%s text primary key not null default '',
+                       (%s int primary key not null,
                        %s text not null unique,
                        %s bigint not null default '0');`,
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk),
-		Sanitize(spec.FieldsMap["session_id"]),
+		Sanitize(spec.FieldsMap["session_token"]),
 		Sanitize(spec.FieldsMap["expiration"]))
 	return s.RawExec(sql)
 }
 
 func (s *Storage) GetSession(spec coll.Specification, userId int) (types.JSONCollResult, error) {
 	sql := fmt.Sprintf(`SELECT %s, %s FROM %s WHERE %s=$1;`,
-		Sanitize(spec.FieldsMap["session_id"]),
+		Sanitize(spec.FieldsMap["session_token"]),
 		Sanitize(spec.FieldsMap["expiration"]),
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk))
 
-	session, err := s.RawQuery(sql, userId)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	rawExp := session.(map[string]interface{})[spec.FieldsMap["expiration"]]
-	exp := rawExp.(int64)
-	if exp != 0 && exp <= time.Now().Unix() {
-		return nil, nil
-	}
-
-	return session, nil
+	return s.RawQuery(sql, userId)
 }
 
 func (s *Storage) InsertSession(spec coll.Specification, data types.InsertSessionData) (types.JSONCollResult, error) {
-	expSeconds := time.Now().Add(data.Expiration).Unix()
-	sql := fmt.Sprintf("INSERT INTO %s (%s, %s, %s) VALUES ($1, $2, $3) ON CONFLICT (%s) DO UPDATE SET v = $4, e = $5",
+	expires := data.Expiration.Unix()
+	sql := fmt.Sprintf("INSERT INTO %s (%s, %s, %s) VALUES ($1, $2, $3) ON CONFLICT (%s) DO UPDATE SET %s = $4, %s = $5 RETURNING $6",
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk),
-		Sanitize(spec.FieldsMap["session_id"]),
+		Sanitize(spec.FieldsMap["session_token"]),
 		Sanitize(spec.FieldsMap["expiration"]),
-		Sanitize(spec.Pk))
-	return s.RawQuery(sql, data.UserId, data.SessionToken, expSeconds, data.SessionToken, expSeconds)
+		Sanitize(spec.Pk),
+		Sanitize(spec.FieldsMap["session_token"]),
+		Sanitize(spec.FieldsMap["expiration"]))
+	return s.RawQuery(sql, data.UserId, data.SessionToken, expires, data.SessionToken, expires, spec.Pk)
 }
 
 func (s *Storage) DeleteSession(spec coll.Specification, userId int) (types.JSONCollResult, error) {
@@ -68,7 +55,7 @@ func (s *Storage) DeleteSession(spec coll.Specification, userId int) (types.JSON
 	return s.RawQuery(sql, userId)
 }
 
-func (s *Storage) StartGC(spec coll.Specification) {
+func (s *Storage) StartCleaning(spec coll.Specification) {
 	go s.gcTicker(spec)
 }
 

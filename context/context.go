@@ -114,53 +114,54 @@ func initPwHashers(conf *configs.Project, ctx *types.ProjectCtx) error {
 }
 
 func initApps(conf *configs.Project, ctx *types.ProjectCtx) error {
-	ctx.Apps = make(map[string]types.App)
+	ctx.Apps = make(map[string]*types.App)
 
-	for i, app := range conf.Apps {
-		authnControllers, err := getAuthnControllers(app.Authn)
+	for appName, app := range conf.Apps {
+		authorizers, err := getAuthorizers(&app)
 		if err != nil {
 			return err
 		}
 
-		authorizers, err := getAuthorizers(app.Authz)
+		ctx.Apps[appName] = &types.App{
+			PathPrefix:  app.PathPrefix,
+			Authorizers: authorizers,
+		}
+
+		authenticators, err := getAuthenticators(&app, appName)
 		if err != nil {
 			return err
 		}
 
-		ctx.Apps[i] = types.App{
-			PathPrefix:       app.PathPrefix,
-			AuthnControllers: authnControllers,
-			Authorizers:      authorizers,
-		}
+		ctx.Apps[appName].Authenticators = authenticators
 	}
 	return nil
 }
 
-func getAuthnControllers(authnList []configs.Authn) ([]authnTypes.Controller, error) {
-	controllers := make([]authnTypes.Controller, len(authnList))
+func getAuthenticators(app *configs.App, appName string) ([]authnTypes.Authenticator, error) {
+	authenticators := make([]authnTypes.Authenticator, len(app.Authn))
 
-	for i, authnItem := range authnList {
-		controller, err := authn.New(&authnItem)
+	for i, authnItem := range app.Authn {
+		authenticator, err := authn.New(appName, &authnItem)
 		if err != nil {
 			return nil, err
 		}
 
-		controllers[i] = controller
+		authenticators[i] = authenticator
 	}
 
-	return controllers, nil
+	return authenticators, nil
 }
 
-func getAuthorizers(authzList []configs.Authz) ([]authzTypes.Authorizer, error) {
-	authorizers := make([]authzTypes.Authorizer, len(authzList))
+func getAuthorizers(app *configs.App) (map[string]authzTypes.Authorizer, error) {
+	authorizers := make(map[string]authzTypes.Authorizer, len(app.Authz))
 
-	for i, authzItem := range authzList {
+	for _, authzItem := range app.Authz {
 		authorizer, err := authz.New(&authzItem)
 		if err != nil {
 			return nil, err
 		}
 
-		authorizers[i] = authorizer
+		authorizers[authzItem.Name] = authorizer
 	}
 
 	return authorizers, nil
