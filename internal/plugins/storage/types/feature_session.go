@@ -13,10 +13,6 @@ type InsertSessionData struct {
 }
 
 type Session interface {
-	SetCleanInterval(time.Duration)
-
-	StartCleaning(spec coll.Specification)
-
 	CreateSessionColl(coll.Specification) error
 
 	GetSession(coll.Specification, int) (JSONCollResult, error)
@@ -24,4 +20,8 @@ type Session interface {
 	InsertSession(coll.Specification, InsertSessionData) (JSONCollResult, error)
 
 	DeleteSession(coll.Specification, int) (JSONCollResult, error)
+
+	SetCleanInterval(int)
+
+	StartCleaning(spec coll.Specification)
 }

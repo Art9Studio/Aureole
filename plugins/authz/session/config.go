@@ -6,7 +6,6 @@ import (
 	"aureole/internal/plugins/authz/types"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 type config struct {
@@ -69,7 +68,8 @@ func initAdapter(conf *configs.Authz, adapterConf *config) (*session, error) {
 			return nil, err
 		}
 	}
-	storage.SetCleanInterval(time.Duration(adapterConf.CleanInterval) * time.Second)
+
+	storage.SetCleanInterval(adapterConf.CleanInterval)
 	storage.StartCleaning(collection.Spec)
 
 	return &session{

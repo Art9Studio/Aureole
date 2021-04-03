@@ -75,6 +75,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		if isMatch {
+			// todo: add getUserId method
 			return context.Authorizer.Authorize(c, map[string]interface{}{"user_id": 0})
 		} else {
 			return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{

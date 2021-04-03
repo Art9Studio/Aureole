@@ -3,14 +3,9 @@ package postgresql
 import (
 	coll "aureole/internal/collections"
 	"aureole/internal/plugins/storage/types"
-	"context"
 	"fmt"
 	"time"
 )
-
-func (s *Storage) SetCleanInterval(interval time.Duration) {
-	s.gcInterval = interval
-}
 
 func (s *Storage) CreateSessionColl(spec coll.Specification) error {
 	// TODO: check types of fields
@@ -55,12 +50,16 @@ func (s *Storage) DeleteSession(spec coll.Specification, userId int) (types.JSON
 	return s.RawQuery(sql, userId)
 }
 
-func (s *Storage) StartCleaning(spec coll.Specification) {
-	go s.gcTicker(spec)
+func (s *Storage) SetCleanInterval(interval int) {
+	s.gcInterval = time.Duration(interval) * time.Second
 }
 
-// gcTicker starts the gc ticker
-func (s *Storage) gcTicker(spec coll.Specification) {
+func (s *Storage) StartCleaning(spec coll.Specification) {
+	go s.cleanTicker(spec)
+}
+
+// cleanTicker starts the gc ticker
+func (s *Storage) cleanTicker(spec coll.Specification) {
 	ticker := time.NewTicker(s.gcInterval)
 	defer ticker.Stop()
 	for {
@@ -72,7 +71,7 @@ func (s *Storage) gcTicker(spec coll.Specification) {
 				Sanitize(spec.Name),
 				Sanitize(spec.FieldsMap["expiration"]),
 				Sanitize(spec.FieldsMap["expiration"]))
-			_, _ = s.conn.Exec(context.Background(), sql, t.Unix())
+			_ = s.RawExec(sql, t.Unix())
 		}
 	}
 }
