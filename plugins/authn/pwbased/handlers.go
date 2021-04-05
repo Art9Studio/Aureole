@@ -3,7 +3,6 @@ package pwbased
 import (
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/jsonpath"
-	"aureole/jwt"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )
@@ -76,8 +75,8 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		if isMatch {
-			token := jwt.IssueToken()
-			return c.JSON(&fiber.Map{"token": token})
+			// todo: add getUserId method
+			return context.Authorizer.Authorize(c, map[string]interface{}{"user_id": 0})
 		} else {
 			return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 				"success": false,
@@ -150,7 +149,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			Identity:    identity,
 			UserConfirm: pwHash,
 		}
-		res, err := identityStorage.InsertIdentity(context.IdentityColl.Spec, insertData)
+		userId, err := identityStorage.InsertIdentity(context.IdentityColl.Spec, insertData)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
@@ -159,10 +158,9 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		if context.Conf.Register.IsLoginAfter {
-			token := jwt.IssueToken()
-			return c.JSON(&fiber.Map{"token": token})
+			return context.Authorizer.Authorize(c, map[string]interface{}{"user_id": userId})
 		} else {
-			return c.JSON(&fiber.Map{"id": res})
+			return c.JSON(&fiber.Map{"id": userId})
 		}
 	}
 }

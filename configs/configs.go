@@ -10,7 +10,7 @@ type (
 
 	Project struct {
 		APIVersion   string         `config:"api_version"`
-		Apps         map[string]app `config:"apps"`
+		Apps         map[string]App `config:"apps"`
 		StorageConfs []Storage      `config:"storages"`
 		CollConfs    []Collection   `config:"collections"`
 		HasherConfs  []PwHasher     `config:"hashers"`
@@ -18,7 +18,7 @@ type (
 		Senders      []Sender       `config:"senders"`
 	}
 
-	app struct {
+	App struct {
 		PathPrefix string  `config:"path_prefix"`
 		Authn      []Authn `config:"authN"`
 		Authz      []Authz `config:"authZ"`

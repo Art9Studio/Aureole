@@ -6,8 +6,8 @@ import (
 	"fmt"
 )
 
-// New returns desired Controller depends on the given config
-func New(conf *configs.Authn) (types.Controller, error) {
+// New returns desired Authenticator depends on the given config
+func New(appName string, conf *configs.Authn) (types.Authenticator, error) {
 	a, err := Repository.Get(conf.Type)
 	if err != nil {
 		return nil, err
@@ -18,5 +18,5 @@ func New(conf *configs.Authn) (types.Controller, error) {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}
 
-	return adapter.Create(conf)
+	return adapter.Create(appName, conf)
 }

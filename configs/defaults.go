@@ -46,7 +46,7 @@ func (p *Project) setDefaults() {
 	}
 }
 
-func (a *app) setDefaults() {
+func (a *App) setDefaults() {
 	for i := range a.Authn {
 		a.Authn[i].setDefaults()
 	}

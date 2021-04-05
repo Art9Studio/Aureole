@@ -4,23 +4,7 @@ import (
 	"aureole/internal/collections"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
-	"github.com/jackc/pgx/v4"
 )
-
-// IsCollExists checks whether the given collection exists
-func (s *Storage) IsCollExists(spec collections.Specification) (bool, error) {
-	// TODO: use current schema instead constant 'public'
-	sql := fmt.Sprintf(
-		"select exists (select from pg_tables where schemaname = 'public' AND tablename = '%s');",
-		spec.Name)
-	res, err := s.RawQuery(sql)
-
-	if err != nil {
-		return false, err
-	}
-
-	return res.(bool), nil
-}
 
 // CreateIdentityColl creates user collection with traits passed by UserCollectionConfig
 func (s *Storage) CreateIdentityColl(spec collections.Specification) error {
@@ -52,8 +36,4 @@ func (s *Storage) GetPasswordByIdentity(spec collections.Specification, userUniq
 		Sanitize(spec.FieldsMap["identity"]),
 	)
 	return s.RawQuery(sql, userUnique)
-}
-
-func Sanitize(ident string) string {
-	return pgx.Identifier.Sanitize([]string{ident})
 }

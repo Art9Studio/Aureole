@@ -33,7 +33,8 @@ func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
 
 func initAdapter(conf *configs.Storage, adapterConf *config) (*Storage, error) {
 	a := &Storage{
-		Conf: adapterConf,
+		Conf:   adapterConf,
+		gcDone: make(chan struct{}),
 	}
 
 	err := a.Open()

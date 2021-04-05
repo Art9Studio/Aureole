@@ -7,7 +7,7 @@ apps:
     authN:
       - type: "password_based"
         path_prefix: "/"
-        authZ: sessions
+        authZ: session
         config:
           main_hasher: argon2
           compat_hashers: []  # todo: implement it
@@ -27,8 +27,8 @@ apps:
               email: "{$.email}"
 
     authZ:
-      - name: sessions
-        type: "sessions"
+      - name: session
+        type: "session"
         config:
           collection: session
           storage: one_db
@@ -37,26 +37,28 @@ apps:
           max_age: 3600
           secure: true
           http_only: false
+          same_site: ""
+          clean_interval: 60
 
-  two:
-    path_prefix: "/two"
-
-    authN:
-      - type: "password_based"
-        authZ: jwt
-        config:
-          main_hasher: argon2
-          collection: identity
-          storage: one_db
-
-    authZ:
-      - name: jwt
-        type: "jwt"
-        config:
-          alg: "RS256"
-          kid_alg: "docker_registry" # implement docker_registry and default and none
-          keys: [ rsa ]
-          payload: "jwt_payload.json"
+  #two:
+  #  path_prefix: "/two"
+  #
+  #  authN:
+  #    - type: "password_based"
+  #      authZ: jwt
+  #      config:
+  #        main_hasher: argon2
+  #        collection: identity
+  #        storage: one_db
+  #
+  #  authZ:
+  #    - name: jwt
+  #      type: "jwt"
+  #      config:
+  #        alg: "RS256"
+  #        kid_alg: "docker_registry" # implement docker_registry and default and none
+  #        keys: [ rsa ]
+  #        payload: "jwt_payload.json"
       #          "$.userID": "id"
       #          "$.userPosts": "@getUserPosts" raw query
 
@@ -89,13 +91,15 @@ collections:
         identity: "username"
         password: "password"
 
-#  - type: "session"
-#    name: session
-#    use_existent: false
-#    configs:
-#      name: "sessions"
-#      pk: "id"
-#      # todo: fill rest
+  - type: "session"
+    name: session
+    use_existent: false
+    config:
+      name: "sessions"
+      pk: "user_id"
+      fields_map:
+       session_token: "session_id"
+       expiration: "expiration"
 
 hashers:
   - type: "argon2"

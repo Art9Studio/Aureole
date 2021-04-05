@@ -3,6 +3,7 @@ package types
 import (
 	"aureole/internal/collections"
 	authnTypes "aureole/internal/plugins/authn/types"
+	authzTypes "aureole/internal/plugins/authz/types"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
@@ -11,7 +12,7 @@ import (
 type (
 	ProjectCtx struct {
 		APIVersion  string
-		Apps        map[string]App
+		Apps        map[string]*App
 		Collections map[string]*collections.Collection
 		Storages    map[string]storageTypes.Storage
 		Hashers     map[string]pwhasherTypes.PwHasher
@@ -19,7 +20,8 @@ type (
 	}
 
 	App struct {
-		PathPrefix       string
-		AuthnControllers []authnTypes.Controller
+		PathPrefix     string
+		Authenticators []authnTypes.Authenticator
+		Authorizers    map[string]authzTypes.Authorizer
 	}
 )

@@ -1,5 +1,14 @@
 package types
 
+import "aureole/internal/collections"
+
+type Application interface {
+	// IsCollExists checks whether the given collection exists
+	IsCollExists(collections.Specification) (bool, error)
+	Identity
+	Session
+}
+
 // Storage is an interface that defines methods for database session
 type Storage interface {
 	Application

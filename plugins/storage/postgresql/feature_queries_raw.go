@@ -4,6 +4,7 @@ import (
 	"aureole/internal/plugins/storage/types"
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v4"
 )
 
 // Ping returns an error if the DBMS could not be reached
@@ -36,4 +37,8 @@ func (s *Storage) RawQuery(sql string, args ...interface{}) (types.JSONCollResul
 	}
 
 	return res, nil
+}
+
+func Sanitize(ident string) string {
+	return pgx.Identifier.Sanitize([]string{ident})
 }
