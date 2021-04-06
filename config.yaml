@@ -121,11 +121,21 @@ hashers:
       key_length: 16
 
 crypto_keys:
-  - type: "rsa"
-    driver: "file"
-    name: rsa
+  - type: "jwk"
+    name: jwk_file
     config:
-      path: "./private.pem"
+      path: "./keys/private.json"
+  - type: "jwk"
+    name: jwk_url
+    config:
+      path: "https://www.googleapis.com/oauth2/v3/certs"
+  #- type: "file"
+  #  name: file
+  #  config:
+  #    alg: "rsa"
+  #    kid: "kkk"
+  #    path: "./keys/private.pem"
+
 
 senders:
   - type: "email"

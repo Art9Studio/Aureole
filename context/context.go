@@ -8,6 +8,8 @@ import (
 	authnTypes "aureole/internal/plugins/authn/types"
 	"aureole/internal/plugins/authz"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/cryptokey"
+	ckeysTypes "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/plugins/pwhasher"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	"aureole/internal/plugins/sender"
@@ -32,8 +34,11 @@ func InitContext(conf *configs.Project, ctx *types.ProjectCtx) error {
 	if err := initApps(conf, ctx); err != nil {
 		return err
 	}
+	if err := initSenders(conf, ctx); err != nil {
+		return err
+	}
 
-	return initSenders(conf, ctx)
+	return initCkeys(conf, ctx)
 }
 
 func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
@@ -177,6 +182,21 @@ func initSenders(conf *configs.Project, ctx *types.ProjectCtx) error {
 		}
 
 		ctx.Senders[senderConf.Name] = s
+	}
+
+	return nil
+}
+
+func initCkeys(conf *configs.Project, ctx *types.ProjectCtx) error {
+	ctx.CryptoKeys = make(map[string]ckeysTypes.CryptoKey)
+
+	for _, ckeyConf := range conf.CryptoKeys {
+		ckey, err := cryptokey.New(&ckeyConf)
+		if err != nil {
+			return fmt.Errorf("cannot init crypto key '%s': %v", ckeyConf.Name, err)
+		}
+
+		ctx.CryptoKeys[ckeyConf.Name] = ckey
 	}
 
 	return nil

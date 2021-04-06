@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/lestrrat-go/jwx v1.1.7
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nikoksr/notify v0.15.0 // indirect
