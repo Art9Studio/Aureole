@@ -10,6 +10,10 @@ type Jwk struct {
 	Conf *config
 }
 
+func (j *Jwk) Initialize() error {
+	return nil
+}
+
 func (j *Jwk) Get(path string) (jwk.Set, error) {
 	if _, err := url.ParseRequestURI(path); err != nil {
 		return jwk.ReadFile(path)

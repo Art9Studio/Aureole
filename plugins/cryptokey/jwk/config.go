@@ -19,9 +19,5 @@ func (j jwkAdapter) Create(conf *configs.CryptoKey) (types.CryptoKey, error) {
 		return nil, err
 	}
 
-	return initAdapter(conf, adapterConf)
-}
-
-func initAdapter(conf *configs.CryptoKey, adapterConf *config) (*Jwk, error) {
 	return &Jwk{Conf: adapterConf}, nil
 }

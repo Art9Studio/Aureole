@@ -20,6 +20,10 @@ var (
 	ErrIncompatibleVersion = errors.New("argon2: incompatible version of argon2")
 )
 
+func (a *Argon2) Initialize() error {
+	return nil
+}
+
 // HashPw returns a Argon2 pwhasher of a plain-text password using the provided algorithm
 // parameters. The returned pwhasher follows the format used by the Argon2 reference
 // C implementation and contains the base64-encoded Argon2 derived key prefixed

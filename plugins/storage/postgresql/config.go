@@ -19,31 +19,6 @@ type config struct {
 	Options  map[string]string `mapstructure:"options"`
 }
 
-func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
-	adapterConfMap := conf.Config
-	adapterConf := &config{}
-
-	err := mapstructure.Decode(adapterConfMap, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	return initAdapter(conf, adapterConf)
-}
-
-func initAdapter(conf *configs.Storage, adapterConf *config) (*Storage, error) {
-	a := &Storage{
-		Conf:   adapterConf,
-		gcDone: make(chan struct{}),
-	}
-
-	err := a.Open()
-	if err != nil {
-		return nil, err
-	}
-	return a, nil
-}
-
 // ToURL reassembles PostgreSQL connection config into a valid connection url
 func (conf config) ToURL() (string, error) {
 	vv := url.Values{}
@@ -70,4 +45,19 @@ func (conf config) ToURL() (string, error) {
 		RawQuery:   vv.Encode(),
 	}
 	return u.String(), nil
+}
+
+func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
+	adapterConfMap := conf.Config
+	adapterConf := &config{}
+
+	err := mapstructure.Decode(adapterConfMap, adapterConf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Storage{
+		Conf:   adapterConf,
+		gcDone: make(chan struct{}),
+	}, nil
 }

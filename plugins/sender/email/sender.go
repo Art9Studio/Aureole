@@ -14,6 +14,10 @@ type Email struct {
 	Conf *config
 }
 
+func (e *Email) Initialize() error {
+	return nil
+}
+
 func (e *Email) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {
 	mail := &email.Email{
 		From:    e.Conf.From,

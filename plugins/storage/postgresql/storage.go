@@ -20,6 +20,10 @@ type Storage struct {
 	relInfo map[types.CollPair]types.RelInfo
 }
 
+func (s *Storage) Initialize() error {
+	return s.Open()
+}
+
 func (s *Storage) CheckFeaturesAvailable(requiredFeatures []string) error {
 	return storage.CheckFeaturesAvailable(requiredFeatures, AdapterFeatures)
 }
@@ -44,7 +48,7 @@ func (s *Storage) Open() error {
 	}
 
 	s.conn = conn
-	return nil
+	return s.Ping()
 }
 
 // Close terminates the currently active connection to the DBMS

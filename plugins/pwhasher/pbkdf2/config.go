@@ -33,14 +33,5 @@ func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 
 	adapterConf.setDefaults()
 
-	return initAdapter(conf, adapterConf)
-}
-
-func initAdapter(conf *configs.PwHasher, adapterConf *config) (*Pbkdf2, error) {
-	function, err := initFunc(adapterConf.FuncName)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Pbkdf2{Conf: adapterConf, Func: function}, nil
+	return &Pbkdf2{Conf: adapterConf}, nil
 }

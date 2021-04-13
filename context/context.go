@@ -22,26 +22,42 @@ import (
 func InitContext(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.APIVersion = conf.APIVersion
 
-	if err := initStorages(conf, ctx); err != nil {
+	if err := createStorages(conf, ctx); err != nil {
 		return err
 	}
-	if err := initCollections(conf, ctx); err != nil {
+	if err := createCollections(conf, ctx); err != nil {
 		return err
 	}
-	if err := initPwHashers(conf, ctx); err != nil {
+	if err := createPwHashers(conf, ctx); err != nil {
 		return err
 	}
-	if err := initApps(conf, ctx); err != nil {
+	if err := createSenders(conf, ctx); err != nil {
 		return err
 	}
-	if err := initSenders(conf, ctx); err != nil {
+	if err := createCryptoKeys(conf, ctx); err != nil {
+		return err
+	}
+	if err := createApps(conf, ctx); err != nil {
 		return err
 	}
 
-	return initCkeys(conf, ctx)
+	if err := initStorages(ctx); err != nil {
+		return err
+	}
+	if err := initPwHashers(ctx); err != nil {
+		return err
+	}
+	if err := initSenders(ctx); err != nil {
+		return err
+	}
+	if err := initCryptoKeys(ctx); err != nil {
+		return err
+	}
+
+	return initApps(ctx)
 }
 
-func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
+func createStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Storages = make(map[string]storageTypes.Storage)
 
 	for _, storageConf := range conf.StorageConfs {
@@ -50,60 +66,24 @@ func initStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
 			return fmt.Errorf("open connection session to storage '%s': %v", storageConf.Name, err)
 		}
 
-		err = connSess.Ping()
-		if err != nil {
-			return fmt.Errorf("trying to ping storage '%s' was failed: %v", storageConf.Name, err)
-		}
-
 		ctx.Storages[storageConf.Name] = connSess
 	}
 
-	cleanupConnections(conf, ctx)
 	return nil
 }
 
-func cleanupConnections(conf *configs.Project, ctx *types.ProjectCtx) {
-	isUsedStorage := make(map[string]bool)
-
-	for storageName := range ctx.Storages {
-		isUsedStorage[storageName] = false
-
-		for _, app := range conf.Apps {
-			for _, authzItem := range app.Authz {
-				if storageName == authzItem.Config["storage"] {
-					isUsedStorage[storageName] = true
-					break
-				}
-			}
-
-			for _, authnItem := range app.Authn {
-				if storageName == authnItem.Config["storage"] {
-					isUsedStorage[storageName] = true
-					break
-				}
-			}
-		}
-	}
-
-	for storageName, isUse := range isUsedStorage {
-		if !isUse {
-			delete(ctx.Storages, storageName)
-		}
-	}
-}
-
-func initCollections(conf *configs.Project, ctx *types.ProjectCtx) error {
+func createCollections(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Collections = make(map[string]*collections.Collection)
 
 	for _, collConf := range conf.CollConfs {
-		coll := collections.New(collConf.Type, &collConf)
+		coll := collections.New(&collConf)
 		ctx.Collections[collConf.Name] = coll
 	}
 
 	return nil
 }
 
-func initPwHashers(conf *configs.Project, ctx *types.ProjectCtx) error {
+func createPwHashers(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Hashers = make(map[string]pwhasherTypes.PwHasher)
 
 	for _, hasherConf := range conf.HasherConfs {
@@ -118,61 +98,7 @@ func initPwHashers(conf *configs.Project, ctx *types.ProjectCtx) error {
 	return nil
 }
 
-func initApps(conf *configs.Project, ctx *types.ProjectCtx) error {
-	ctx.Apps = make(map[string]*types.App)
-
-	for appName, app := range conf.Apps {
-		authorizers, err := getAuthorizers(&app)
-		if err != nil {
-			return err
-		}
-
-		ctx.Apps[appName] = &types.App{
-			PathPrefix:  app.PathPrefix,
-			Authorizers: authorizers,
-		}
-
-		authenticators, err := getAuthenticators(&app, appName)
-		if err != nil {
-			return err
-		}
-
-		ctx.Apps[appName].Authenticators = authenticators
-	}
-	return nil
-}
-
-func getAuthenticators(app *configs.App, appName string) ([]authnTypes.Authenticator, error) {
-	authenticators := make([]authnTypes.Authenticator, len(app.Authn))
-
-	for i, authnItem := range app.Authn {
-		authenticator, err := authn.New(appName, &authnItem)
-		if err != nil {
-			return nil, err
-		}
-
-		authenticators[i] = authenticator
-	}
-
-	return authenticators, nil
-}
-
-func getAuthorizers(app *configs.App) (map[string]authzTypes.Authorizer, error) {
-	authorizers := make(map[string]authzTypes.Authorizer, len(app.Authz))
-
-	for _, authzItem := range app.Authz {
-		authorizer, err := authz.New(&authzItem)
-		if err != nil {
-			return nil, err
-		}
-
-		authorizers[authzItem.Name] = authorizer
-	}
-
-	return authorizers, nil
-}
-
-func initSenders(conf *configs.Project, ctx *types.ProjectCtx) error {
+func createSenders(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Senders = make(map[string]senderTypes.Sender)
 
 	for _, senderConf := range conf.Senders {
@@ -187,7 +113,7 @@ func initSenders(conf *configs.Project, ctx *types.ProjectCtx) error {
 	return nil
 }
 
-func initCkeys(conf *configs.Project, ctx *types.ProjectCtx) error {
+func createCryptoKeys(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.CryptoKeys = make(map[string]ckeysTypes.CryptoKey)
 
 	for _, ckeyConf := range conf.CryptoKeys {
@@ -197,6 +123,131 @@ func initCkeys(conf *configs.Project, ctx *types.ProjectCtx) error {
 		}
 
 		ctx.CryptoKeys[ckeyConf.Name] = ckey
+	}
+
+	return nil
+}
+
+func createApps(conf *configs.Project, ctx *types.ProjectCtx) error {
+	ctx.Apps = make(map[string]*types.App)
+
+	for appName, app := range conf.Apps {
+		authenticators, err := createAuthenticators(&app, appName)
+		if err != nil {
+			return err
+		}
+
+		authorizers, err := createAuthorizers(&app)
+		if err != nil {
+			return err
+		}
+
+		ctx.Apps[appName] = &types.App{
+			PathPrefix:     app.PathPrefix,
+			Authorizers:    authorizers,
+			Authenticators: authenticators,
+		}
+	}
+
+	return nil
+}
+
+func createAuthenticators(app *configs.App, appName string) ([]authnTypes.Authenticator, error) {
+	authenticators := make([]authnTypes.Authenticator, len(app.Authn))
+
+	for i, authnItem := range app.Authn {
+		authenticator, err := authn.New(appName, &authnItem)
+		if err != nil {
+			return nil, err
+		}
+
+		authenticators[i] = authenticator
+	}
+
+	return authenticators, nil
+}
+
+func createAuthorizers(app *configs.App) (map[string]authzTypes.Authorizer, error) {
+	authorizers := make(map[string]authzTypes.Authorizer, len(app.Authz))
+
+	for _, authzItem := range app.Authz {
+		authorizer, err := authz.New(&authzItem)
+		if err != nil {
+			return nil, err
+		}
+
+		authorizers[authzItem.Name] = authorizer
+	}
+
+	return authorizers, nil
+}
+
+func initStorages(ctx *types.ProjectCtx) error {
+	for _, storage := range ctx.Storages {
+		if err := storage.Initialize(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func initPwHashers(ctx *types.ProjectCtx) error {
+	for _, hasher := range ctx.Hashers {
+		if err := hasher.Initialize(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func initSenders(ctx *types.ProjectCtx) error {
+	for _, sender := range ctx.Senders {
+		if err := sender.Initialize(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func initCryptoKeys(ctx *types.ProjectCtx) error {
+	for _, cryptoKey := range ctx.CryptoKeys {
+		if err := cryptoKey.Initialize(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func initApps(ctx *types.ProjectCtx) error {
+	for _, app := range ctx.Apps {
+		if err := initAuthenticators(app); err != nil {
+			return err
+		}
+		return initAuthorizers(app)
+	}
+
+	return nil
+}
+
+func initAuthenticators(app *types.App) error {
+	for _, authenticator := range app.Authenticators {
+		if err := authenticator.Initialize(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func initAuthorizers(app *types.App) error {
+	for _, authorizer := range app.Authorizers {
+		if err := authorizer.Initialize(); err != nil {
+			return err
+		}
 	}
 
 	return nil

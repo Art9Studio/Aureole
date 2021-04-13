@@ -25,9 +25,5 @@ func (e emailAdapter) Create(conf *configs.Sender) (types.Sender, error) {
 		return nil, err
 	}
 
-	return initAdapter(conf, adapterConf)
-}
-
-func initAdapter(conf *configs.Sender, adapterConf *config) (*Email, error) {
 	return &Email{Conf: adapterConf}, nil
 }

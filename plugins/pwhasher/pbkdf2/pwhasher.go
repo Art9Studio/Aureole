@@ -23,21 +23,14 @@ type Pbkdf2 struct {
 
 var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhasher is not in the correct format")
 
-func initFunc(funcName string) (func() hash.Hash, error) {
-	switch funcName {
-	case "sha1":
-		return sha1.New, nil
-	case "sha224":
-		return sha256.New224, nil
-	case "sha256":
-		return sha256.New, nil
-	case "sha384":
-		return sha512.New384, nil
-	case "sha512":
-		return sha512.New, nil
-	default:
-		return nil, fmt.Errorf("pbkdf2: function '%s' don't supported", funcName)
+func (p *Pbkdf2) Initialize() error {
+	function, err := initFunc(p.Conf.FuncName)
+	if err != nil {
+		return err
 	}
+
+	p.Func = function
+	return nil
 }
 
 // HashPw returns a Pbkdf2 pwhasher of a plain-text password using the provided
@@ -135,4 +128,21 @@ func decodePwHash(hashed string) (*config, func() hash.Hash, []byte, []byte, err
 	conf.KeyLen = len(key)
 
 	return conf, function, salt, key, nil
+}
+
+func initFunc(funcName string) (func() hash.Hash, error) {
+	switch funcName {
+	case "sha1":
+		return sha1.New, nil
+	case "sha224":
+		return sha256.New224, nil
+	case "sha256":
+		return sha256.New, nil
+	case "sha384":
+		return sha512.New384, nil
+	case "sha512":
+		return sha512.New, nil
+	default:
+		return nil, fmt.Errorf("pbkdf2: function '%s' don't supported", funcName)
+	}
 }

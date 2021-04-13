@@ -40,9 +40,5 @@ func (a argon2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
 
 	adapterConf.setDefaults()
 
-	return initAdapter(conf, adapterConf)
-}
-
-func initAdapter(conf *configs.PwHasher, adapterConf *config) (*Argon2, error) {
 	return &Argon2{Conf: adapterConf}, nil
 }

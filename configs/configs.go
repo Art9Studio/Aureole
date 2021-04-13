@@ -27,7 +27,7 @@ type (
 	Authn struct {
 		Type       string    `config:"type"`
 		PathPrefix string    `config:"path_prefix"`
-		AuthZ      string    `config:"authZ"`
+		AuthzName  string    `config:"authZ"`
 		Config     RawConfig `config:"config"`
 	}
 

@@ -3,19 +3,19 @@ package storage
 import (
 	"aureole/configs"
 	"aureole/internal/plugins/storage/types"
-	"errors"
 	"fmt"
-	"strings"
 )
 
 // New returns desired Storage depends on the given config
 func New(conf *configs.Storage) (types.Storage, error) {
-	name, err := getAdapterName(conf)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		name, err := getAdapterName(conf)
+		if err != nil {
+			return nil, err
+		}
+	*/
 
-	a, err := Repository.Get(name)
+	a, err := Repository.Get(conf.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +28,7 @@ func New(conf *configs.Storage) (types.Storage, error) {
 	return adapter.Create(conf)
 }
 
+/*
 func getAdapterName(conf *configs.Storage) (string, error) {
 	if conf.Type != "" {
 		return conf.Type, nil
@@ -49,3 +50,4 @@ func getAdapterName(conf *configs.Storage) (string, error) {
 
 	return "", errors.New("invalid connection config")
 }
+*/
