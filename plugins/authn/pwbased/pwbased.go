@@ -2,7 +2,6 @@ package pwbased
 
 import (
 	"aureole/configs"
-	contextTypes "aureole/context/types"
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authn"
 	authnTypes "aureole/internal/plugins/authn/types"
@@ -15,17 +14,16 @@ import (
 )
 
 type pwBased struct {
-	rawConf        *configs.Authn
-	conf           *сonfig
-	projectContext *contextTypes.ProjectCtx
-	pwHasher       types.PwHasher
-	storage        storageTypes.Storage
-	identityColl   *collections.Collection
-	authorizer     authzTypes.Authorizer
+	rawConf      *configs.Authn
+	conf         *сonfig
+	pwHasher     types.PwHasher
+	storage      storageTypes.Storage
+	identityColl *collections.Collection
+	authorizer   authzTypes.Authorizer
 }
 
 func (p *pwBased) Initialize(appName string) error {
-	projectCtx := authn.Repository.ProjectCtx
+	pluginApi := authn.Repository.PluginApi
 	adapterConf := &сonfig{}
 	if err := mapstructure.Decode(p.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -33,25 +31,24 @@ func (p *pwBased) Initialize(appName string) error {
 	adapterConf.setDefaults()
 
 	p.conf = adapterConf
-	p.projectContext = projectCtx
 
-	hasher, ok := projectCtx.Hashers[p.conf.MainHasher]
-	if !ok {
+	hasher, err := pluginApi.GetHasher(p.conf.MainHasher)
+	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
-	collection, ok := projectCtx.Collections[p.conf.Collection]
-	if !ok {
+	collection, err := pluginApi.GetCollection(p.conf.Collection)
+	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
 	}
 
-	storage, ok := projectCtx.Storages[p.conf.Storage]
-	if !ok {
+	storage, err := pluginApi.GetStorage(p.conf.Storage)
+	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
 	}
 
-	authorizer, ok := projectCtx.Apps[appName].Authorizers[p.rawConf.AuthzName]
-	if !ok {
+	authorizer, err := pluginApi.GetAuthorizer(p.rawConf.AuthzName, appName)
+	if err != nil {
 		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
 	}
 

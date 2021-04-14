@@ -6,6 +6,7 @@ import (
 	"aureole/context/types"
 	"aureole/internal/plugins/authn"
 	"aureole/internal/plugins/authz"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/cryptokey"
 	"aureole/internal/plugins/pwhasher"
 	"aureole/internal/plugins/sender"
@@ -13,21 +14,23 @@ import (
 	"log"
 )
 
-// Project is global object that holds all project level settings variables
 var Project types.ProjectCtx
 
 func main() {
+
 	projConf, err := configs.LoadMainConfig()
 	if err != nil {
 		log.Panic(err)
 	}
 
-	pwhasher.InitRepository(&Project)
-	storage.InitRepository(&Project)
-	authn.InitRepository(&Project)
-	authz.InitRepository(&Project)
-	sender.InitRepository(&Project)
-	cryptokey.InitRepository(&Project)
+	pluginApi := core.InitPluginApi(&Project)
+
+	pwhasher.InitRepository(pluginApi)
+	storage.InitRepository(pluginApi)
+	authn.InitRepository(pluginApi)
+	authz.InitRepository(pluginApi)
+	sender.InitRepository(pluginApi)
+	cryptokey.InitRepository(pluginApi)
 
 	if err := context.InitContext(projConf, &Project); err != nil {
 		log.Panic(err)

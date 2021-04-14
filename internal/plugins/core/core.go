@@ -1,7 +1,6 @@
-package plugins
+package core
 
 import (
-	ctxTypes "aureole/context/types"
 	"fmt"
 	"sync"
 )
@@ -12,7 +11,7 @@ type Adapter interface {
 type Repository struct {
 	adapters   map[string]Adapter
 	adaptersMU sync.Mutex
-	ProjectCtx *ctxTypes.ProjectCtx
+	PluginApi  *PluginApi
 }
 
 // Get returns storage adapter if it exists

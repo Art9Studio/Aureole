@@ -2,12 +2,11 @@ package authz
 
 import (
 	"aureole/configs"
-	ctxTypes "aureole/context/types"
-	"aureole/internal/plugins"
 	"aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 )
 
-var Repository = plugins.InitRepository()
+var Repository = core.InitRepository()
 
 // Adapter defines methods for authorization plugins
 type Adapter interface {
@@ -15,6 +14,6 @@ type Adapter interface {
 	Create(*configs.Authz) types.Authorizer
 }
 
-func InitRepository(context *ctxTypes.ProjectCtx) {
-	Repository.ProjectCtx = context
+func InitRepository(api *core.PluginApi) {
+	Repository.PluginApi = api
 }

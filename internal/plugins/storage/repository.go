@@ -2,12 +2,11 @@ package storage
 
 import (
 	"aureole/configs"
-	ctxTypes "aureole/context/types"
-	"aureole/internal/plugins"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/storage/types"
 )
 
-var Repository = plugins.InitRepository()
+var Repository = core.InitRepository()
 
 // Adapter defines methods for storage plugins
 type Adapter interface {
@@ -15,6 +14,6 @@ type Adapter interface {
 	Create(*configs.Storage) types.Storage
 }
 
-func InitRepository(context *ctxTypes.ProjectCtx) {
-	Repository.ProjectCtx = context
+func InitRepository(api *core.PluginApi) {
+	Repository.PluginApi = api
 }

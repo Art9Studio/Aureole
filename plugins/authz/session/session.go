@@ -2,7 +2,6 @@ package session
 
 import (
 	"aureole/configs"
-	contextTypes "aureole/context/types"
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authz"
 	storageTypes "aureole/internal/plugins/storage/types"
@@ -14,15 +13,14 @@ import (
 )
 
 type session struct {
-	rawConf        *configs.Authz
-	conf           *config
-	projectContext *contextTypes.ProjectCtx
-	storage        storageTypes.Storage
-	collection     *collections.Collection
+	rawConf    *configs.Authz
+	conf       *config
+	storage    storageTypes.Storage
+	collection *collections.Collection
 }
 
 func (s *session) Initialize() error {
-	projectCtx := authz.Repository.ProjectCtx
+	pluginApi := authz.Repository.PluginApi
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -30,15 +28,14 @@ func (s *session) Initialize() error {
 	adapterConf.setDefaults()
 
 	s.conf = adapterConf
-	s.projectContext = projectCtx
 
-	collection, ok := projectCtx.Collections[s.conf.Collection]
-	if !ok {
+	collection, err := pluginApi.GetCollection(s.conf.Collection)
+	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", s.conf.Collection)
 	}
 
-	storage, ok := projectCtx.Storages[s.conf.Storage]
-	if !ok {
+	storage, err := pluginApi.GetStorage(s.conf.Storage)
+	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", s.conf.Storage)
 	}
 
