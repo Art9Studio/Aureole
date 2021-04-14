@@ -3,7 +3,6 @@ package session
 import (
 	"aureole/configs"
 	"aureole/internal/plugins/authz/types"
-	"github.com/mitchellh/mapstructure"
 )
 
 type config struct {
@@ -18,16 +17,6 @@ type config struct {
 	CleanInterval int    `mapstructure:"clean_interval"`
 }
 
-func (s sessionAdapter) Create(conf *configs.Authz) (types.Authorizer, error) {
-	adapterConfMap := conf.Config
-	adapterConf := &config{}
-
-	err := mapstructure.Decode(adapterConfMap, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	adapterConf.setDefaults()
-
-	return &session{Conf: adapterConf}, nil
+func (s sessionAdapter) Create(conf *configs.Authz) types.Authorizer {
+	return &session{rawConf: conf}
 }

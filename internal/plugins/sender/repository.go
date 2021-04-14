@@ -12,7 +12,7 @@ var Repository = plugins.InitRepository()
 // Adapter defines methods for authentication plugins
 type Adapter interface {
 	// Create returns desired messenger depends on the given config
-	Create(*configs.Sender) (types.Sender, error)
+	Create(*configs.Sender) types.Sender
 }
 
 func InitRepository(context *ctxTypes.ProjectCtx) {

@@ -4,7 +4,6 @@ import (
 	"aureole/configs"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"net/url"
 )
 
@@ -47,17 +46,6 @@ func (conf config) ToURL() (string, error) {
 	return u.String(), nil
 }
 
-func (pg pgAdapter) Create(conf *configs.Storage) (types.Storage, error) {
-	adapterConfMap := conf.Config
-	adapterConf := &config{}
-
-	err := mapstructure.Decode(adapterConfMap, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Storage{
-		Conf:   adapterConf,
-		gcDone: make(chan struct{}),
-	}, nil
+func (pg pgAdapter) Create(conf *configs.Storage) types.Storage {
+	return &Storage{rawConf: conf}
 }

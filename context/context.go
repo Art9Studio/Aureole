@@ -22,10 +22,10 @@ import (
 func InitContext(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.APIVersion = conf.APIVersion
 
-	if err := createStorages(conf, ctx); err != nil {
+	if err := createCollections(conf, ctx); err != nil {
 		return err
 	}
-	if err := createCollections(conf, ctx); err != nil {
+	if err := createStorages(conf, ctx); err != nil {
 		return err
 	}
 	if err := createPwHashers(conf, ctx); err != nil {
@@ -60,7 +60,8 @@ func InitContext(conf *configs.Project, ctx *types.ProjectCtx) error {
 func createStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Storages = make(map[string]storageTypes.Storage)
 
-	for _, storageConf := range conf.StorageConfs {
+	for i := range conf.StorageConfs {
+		storageConf := conf.StorageConfs[i]
 		connSess, err := storage.New(&storageConf)
 		if err != nil {
 			return fmt.Errorf("open connection session to storage '%s': %v", storageConf.Name, err)
@@ -86,8 +87,9 @@ func createCollections(conf *configs.Project, ctx *types.ProjectCtx) error {
 func createPwHashers(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Hashers = make(map[string]pwhasherTypes.PwHasher)
 
-	for _, hasherConf := range conf.HasherConfs {
-		h, err := pwhasher.New(&hasherConf)
+	for i := range conf.HasherConfs {
+		hasherConf := conf.HasherConfs[i]
+		h, err := pwhasher.New(&conf.HasherConfs[i])
 		if err != nil {
 			return fmt.Errorf("cannot init hasher '%s': %v", hasherConf.Name, err)
 		}
@@ -101,7 +103,8 @@ func createPwHashers(conf *configs.Project, ctx *types.ProjectCtx) error {
 func createSenders(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Senders = make(map[string]senderTypes.Sender)
 
-	for _, senderConf := range conf.Senders {
+	for i := range conf.Senders {
+		senderConf := conf.Senders[i]
 		s, err := sender.New(&senderConf)
 		if err != nil {
 			return fmt.Errorf("cannot init sender '%s': %v", senderConf.Name, err)
@@ -116,7 +119,8 @@ func createSenders(conf *configs.Project, ctx *types.ProjectCtx) error {
 func createCryptoKeys(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.CryptoKeys = make(map[string]ckeysTypes.CryptoKey)
 
-	for _, ckeyConf := range conf.CryptoKeys {
+	for i := range conf.CryptoKeys {
+		ckeyConf := conf.CryptoKeys[i]
 		ckey, err := cryptokey.New(&ckeyConf)
 		if err != nil {
 			return fmt.Errorf("cannot init crypto key '%s': %v", ckeyConf.Name, err)
@@ -131,7 +135,8 @@ func createCryptoKeys(conf *configs.Project, ctx *types.ProjectCtx) error {
 func createApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Apps = make(map[string]*types.App)
 
-	for appName, app := range conf.Apps {
+	for appName := range conf.Apps {
+		app := conf.Apps[appName]
 		authenticators, err := createAuthenticators(&app, appName)
 		if err != nil {
 			return err
@@ -155,8 +160,9 @@ func createApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 func createAuthenticators(app *configs.App, appName string) ([]authnTypes.Authenticator, error) {
 	authenticators := make([]authnTypes.Authenticator, len(app.Authn))
 
-	for i, authnItem := range app.Authn {
-		authenticator, err := authn.New(appName, &authnItem)
+	for i := range app.Authn {
+		authnConf := app.Authn[i]
+		authenticator, err := authn.New(appName, &authnConf)
 		if err != nil {
 			return nil, err
 		}
@@ -170,21 +176,22 @@ func createAuthenticators(app *configs.App, appName string) ([]authnTypes.Authen
 func createAuthorizers(app *configs.App) (map[string]authzTypes.Authorizer, error) {
 	authorizers := make(map[string]authzTypes.Authorizer, len(app.Authz))
 
-	for _, authzItem := range app.Authz {
-		authorizer, err := authz.New(&authzItem)
+	for i := range app.Authz {
+		authzConf := app.Authz[i]
+		authorizer, err := authz.New(&authzConf)
 		if err != nil {
 			return nil, err
 		}
 
-		authorizers[authzItem.Name] = authorizer
+		authorizers[authzConf.Name] = authorizer
 	}
 
 	return authorizers, nil
 }
 
 func initStorages(ctx *types.ProjectCtx) error {
-	for _, storage := range ctx.Storages {
-		if err := storage.Initialize(); err != nil {
+	for _, s := range ctx.Storages {
+		if err := s.Initialize(); err != nil {
 			return err
 		}
 	}
@@ -193,8 +200,8 @@ func initStorages(ctx *types.ProjectCtx) error {
 }
 
 func initPwHashers(ctx *types.ProjectCtx) error {
-	for _, hasher := range ctx.Hashers {
-		if err := hasher.Initialize(); err != nil {
+	for _, h := range ctx.Hashers {
+		if err := h.Initialize(); err != nil {
 			return err
 		}
 	}
@@ -203,8 +210,8 @@ func initPwHashers(ctx *types.ProjectCtx) error {
 }
 
 func initSenders(ctx *types.ProjectCtx) error {
-	for _, sender := range ctx.Senders {
-		if err := sender.Initialize(); err != nil {
+	for _, s := range ctx.Senders {
+		if err := s.Initialize(); err != nil {
 			return err
 		}
 	}
@@ -213,8 +220,8 @@ func initSenders(ctx *types.ProjectCtx) error {
 }
 
 func initCryptoKeys(ctx *types.ProjectCtx) error {
-	for _, cryptoKey := range ctx.CryptoKeys {
-		if err := cryptoKey.Initialize(); err != nil {
+	for _, k := range ctx.CryptoKeys {
+		if err := k.Initialize(); err != nil {
 			return err
 		}
 	}
@@ -223,19 +230,19 @@ func initCryptoKeys(ctx *types.ProjectCtx) error {
 }
 
 func initApps(ctx *types.ProjectCtx) error {
-	for _, app := range ctx.Apps {
-		if err := initAuthenticators(app); err != nil {
+	for appName, a := range ctx.Apps {
+		if err := initAuthenticators(appName, a); err != nil {
 			return err
 		}
-		return initAuthorizers(app)
+		return initAuthorizers(a)
 	}
 
 	return nil
 }
 
-func initAuthenticators(app *types.App) error {
+func initAuthenticators(appName string, app *types.App) error {
 	for _, authenticator := range app.Authenticators {
-		if err := authenticator.Initialize(); err != nil {
+		if err := authenticator.Initialize(appName); err != nil {
 			return err
 		}
 	}

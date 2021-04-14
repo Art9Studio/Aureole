@@ -22,11 +22,12 @@ func (s *Storage) CreateIdentityColl(spec collections.Specification) error {
 
 // InsertIdentity inserts user entity in the user collection
 func (s *Storage) InsertIdentity(spec collections.Specification, insUserData types.InsertIdentityData) (types.JSONCollResult, error) {
-	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning $3;",
+	sql := fmt.Sprintf("insert into %s (%s, %s) values ($1, $2) returning %s;",
 		Sanitize(spec.Name),
 		Sanitize(spec.FieldsMap["identity"]),
-		Sanitize(spec.FieldsMap["password"]))
-	return s.RawQuery(sql, insUserData.Identity, insUserData.UserConfirm, spec.Pk)
+		Sanitize(spec.FieldsMap["password"]),
+		Sanitize(spec.Pk))
+	return s.RawQuery(sql, insUserData.Identity, insUserData.UserConfirm)
 }
 
 func (s *Storage) GetPasswordByIdentity(spec collections.Specification, userUnique interface{}) (types.JSONCollResult, error) {

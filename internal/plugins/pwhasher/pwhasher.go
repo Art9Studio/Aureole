@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// New returns desired PwHasher depends on the given config
+// New returns desired pwHasher depends on the given config
 func New(conf *configs.PwHasher) (types.PwHasher, error) {
 	a, err := Repository.Get(conf.Type)
 	if err != nil {
@@ -18,5 +18,5 @@ func New(conf *configs.PwHasher) (types.PwHasher, error) {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}
 
-	return adapter.Create(conf)
+	return adapter.Create(conf), nil
 }

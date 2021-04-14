@@ -3,7 +3,6 @@ package argon2
 import (
 	"aureole/configs"
 	"aureole/internal/plugins/pwhasher/types"
-	"github.com/mitchellh/mapstructure"
 )
 
 // config represents parsed pwhasher config from the config file
@@ -29,16 +28,6 @@ type config struct {
 }
 
 // Create returns Argon2 hasher with the given settings
-func (a argon2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
-	adapterConfMap := conf.Config
-	adapterConf := &config{}
-
-	err := mapstructure.Decode(adapterConfMap, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	adapterConf.setDefaults()
-
-	return &Argon2{Conf: adapterConf}, nil
+func (a argon2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
+	return &Argon2{rawConf: conf}
 }

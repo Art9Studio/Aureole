@@ -1,12 +1,11 @@
 package types
 
 import (
-	"aureole/internal"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Authenticator interface {
-	internal.Initializer
+	Initialize(string) error
 	GetRoutes() []Route
 }
 

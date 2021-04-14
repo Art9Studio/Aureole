@@ -18,5 +18,5 @@ func New(appName string, conf *configs.Authn) (types.Authenticator, error) {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}
 
-	return adapter.Create(appName, conf)
+	return adapter.Create(appName, conf), nil
 }

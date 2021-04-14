@@ -1,6 +1,7 @@
 package pbkdf2
 
 import (
+	"aureole/configs"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -9,6 +10,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/pbkdf2"
 	"hash"
 	"strings"
@@ -16,20 +18,28 @@ import (
 
 // Pbkdf2 represents pbkdf2 hasher
 type Pbkdf2 struct {
-	Conf *config
+	rawConf *configs.PwHasher
+	conf    *config
 	// Pseudorandom function used to derive a secure encryption key based on the password
-	Func func() hash.Hash
+	function func() hash.Hash
 }
 
 var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhasher is not in the correct format")
 
 func (p *Pbkdf2) Initialize() error {
-	function, err := initFunc(p.Conf.FuncName)
+	adapterConf := &config{}
+	if err := mapstructure.Decode(p.rawConf.Config, adapterConf); err != nil {
+		return err
+	}
+	adapterConf.setDefaults()
+	p.conf = adapterConf
+
+	function, err := initFunc(p.conf.FuncName)
 	if err != nil {
 		return err
 	}
+	p.function = function
 
-	p.Func = function
 	return nil
 }
 
@@ -41,16 +51,16 @@ func (p *Pbkdf2) Initialize() error {
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
 func (p *Pbkdf2) HashPw(pw string) (string, error) {
-	salt := make([]byte, p.Conf.SaltLen)
+	salt := make([]byte, p.conf.SaltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
 	}
 
-	key := pbkdf2.Key([]byte(pw), salt, p.Conf.Iterations, p.Conf.KeyLen, p.Func)
+	key := pbkdf2.Key([]byte(pw), salt, p.conf.Iterations, p.conf.KeyLen, p.function)
 
 	hashed := fmt.Sprintf("pbkdf2_%s$%d$%s$%s",
-		p.Conf.FuncName,
-		p.Conf.Iterations,
+		p.conf.FuncName,
+		p.conf.Iterations,
 		base64.RawStdEncoding.EncodeToString(salt),
 		base64.RawStdEncoding.EncodeToString(key),
 	)

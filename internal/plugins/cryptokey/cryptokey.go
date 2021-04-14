@@ -18,5 +18,5 @@ func New(conf *configs.CryptoKey) (types.CryptoKey, error) {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}
 
-	return adapter.Create(conf)
+	return adapter.Create(conf), nil
 }

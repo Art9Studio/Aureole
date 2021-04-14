@@ -1,18 +1,21 @@
 package argon2
 
 import (
+	"aureole/configs"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/argon2"
 	"strings"
 )
 
 // Argon2 represents argon2 hasher
 type Argon2 struct {
-	Conf *config
+	rawConf *configs.PwHasher
+	conf    *config
 }
 
 var (
@@ -21,6 +24,13 @@ var (
 )
 
 func (a *Argon2) Initialize() error {
+	adapterConf := &config{}
+	if err := mapstructure.Decode(a.rawConf.Config, adapterConf); err != nil {
+		return err
+	}
+	adapterConf.setDefaults()
+	a.conf = adapterConf
+
 	return nil
 }
 
@@ -32,7 +42,7 @@ func (a *Argon2) Initialize() error {
 //		$argon2i$v=19$m=65536,t=3,p=2$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
 func (a *Argon2) HashPw(pw string) (string, error) {
-	salt := make([]byte, a.Conf.SaltLen)
+	salt := make([]byte, a.conf.SaltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err
 	}
@@ -40,19 +50,19 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 	var key []byte
 
 	// todo: save chosen function in context when init and use it here.
-	switch a.Conf.Kind {
+	switch a.conf.Kind {
 	case "argon2i":
-		key = argon2.Key([]byte(pw), salt, a.Conf.Iterations, a.Conf.Memory, a.Conf.Parallelism, a.Conf.KeyLen)
+		key = argon2.Key([]byte(pw), salt, a.conf.Iterations, a.conf.Memory, a.conf.Parallelism, a.conf.KeyLen)
 	case "argon2id":
-		key = argon2.IDKey([]byte(pw), salt, a.Conf.Iterations, a.Conf.Memory, a.Conf.Parallelism, a.Conf.KeyLen)
+		key = argon2.IDKey([]byte(pw), salt, a.conf.Iterations, a.conf.Memory, a.conf.Parallelism, a.conf.KeyLen)
 	}
 
 	hashed := fmt.Sprintf("$%s$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		a.Conf.Kind,
+		a.conf.Kind,
 		argon2.Version,
-		a.Conf.Memory,
-		a.Conf.Iterations,
-		a.Conf.Parallelism,
+		a.conf.Memory,
+		a.conf.Iterations,
+		a.conf.Parallelism,
 		base64.RawStdEncoding.EncodeToString(salt),
 		base64.RawStdEncoding.EncodeToString(key),
 	)

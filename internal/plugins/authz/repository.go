@@ -12,7 +12,7 @@ var Repository = plugins.InitRepository()
 // Adapter defines methods for authorization plugins
 type Adapter interface {
 	// Create returns desired authorization depends on the given config
-	Create(*configs.Authz) (types.Authorizer, error)
+	Create(*configs.Authz) types.Authorizer
 }
 
 func InitRepository(context *ctxTypes.ProjectCtx) {

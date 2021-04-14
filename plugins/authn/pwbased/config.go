@@ -3,7 +3,6 @@ package pwbased
 import (
 	"aureole/configs"
 	"aureole/internal/plugins/authn/types"
-	"github.com/mitchellh/mapstructure"
 )
 
 type (
@@ -28,21 +27,6 @@ type (
 	}
 )
 
-func (p pwBasedAdapter) Create(appName string, conf *configs.Authn) (types.Authenticator, error) {
-	adapterConfMap := conf.Config
-	adapterConf := &сonfig{}
-
-	err := mapstructure.Decode(adapterConfMap, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	adapterConf.setDefaults()
-
-	return &pwBased{
-		Conf:       adapterConf,
-		AppName:    appName,
-		AuthzName:  conf.AuthzName,
-		PathPrefix: conf.PathPrefix,
-	}, nil
+func (p pwBasedAdapter) Create(appName string, conf *configs.Authn) types.Authenticator {
+	return &pwBased{rawConf: conf}
 }

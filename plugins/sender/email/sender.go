@@ -1,8 +1,10 @@
 package email
 
 import (
+	"aureole/configs"
 	"bytes"
 	"github.com/jordan-wright/email"
+	"github.com/mitchellh/mapstructure"
 	htmlTmpl "html/template"
 	"net/smtp"
 	"path"
@@ -11,23 +13,30 @@ import (
 )
 
 type Email struct {
-	Conf *config
+	rawConf *configs.Sender
+	conf    *config
 }
 
 func (e *Email) Initialize() error {
+	adapterConf := &config{}
+	if err := mapstructure.Decode(e.rawConf.Config, adapterConf); err != nil {
+		return err
+	}
+	e.conf = adapterConf
+
 	return nil
 }
 
 func (e *Email) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {
 	mail := &email.Email{
-		From:    e.Conf.From,
+		From:    e.conf.From,
 		To:      []string{recipient},
-		Bcc:     e.Conf.Bcc,
-		Cc:      e.Conf.Cc,
+		Bcc:     e.conf.Bcc,
+		Cc:      e.conf.Cc,
 		Subject: subject,
 	}
 
-	tmplFileName := e.Conf.Templates[tmplName]
+	tmplFileName := e.conf.Templates[tmplName]
 	baseName := path.Base(tmplFileName)
 	extension := path.Ext(tmplFileName)
 	message := &bytes.Buffer{}
@@ -49,25 +58,25 @@ func (e *Email) Send(recipient, subject, tmplName string, tmplCtx map[string]int
 	}
 
 	// todo: test custom ports support
-	hostname := strings.Split(e.Conf.Host, ":")[0]
-	plainAuth := smtp.PlainAuth("", e.Conf.Username, e.Conf.Password, hostname)
+	hostname := strings.Split(e.conf.Host, ":")[0]
+	plainAuth := smtp.PlainAuth("", e.conf.Username, e.conf.Password, hostname)
 
-	return mail.Send(e.Conf.Host, plainAuth)
+	return mail.Send(e.conf.Host, plainAuth)
 }
 
 func (e *Email) SendRaw(recipient, subject, message string) error {
 	mail := &email.Email{
-		From:    e.Conf.From,
+		From:    e.conf.From,
 		To:      []string{recipient},
-		Bcc:     e.Conf.Bcc,
-		Cc:      e.Conf.Cc,
+		Bcc:     e.conf.Bcc,
+		Cc:      e.conf.Cc,
 		Subject: subject,
 		Text:    []byte(message),
 	}
 
 	// todo: test custom ports support
-	hostname := strings.Split(e.Conf.Host, ":")[0]
-	plainAuth := smtp.PlainAuth("", e.Conf.Username, e.Conf.Password, hostname)
+	hostname := strings.Split(e.conf.Host, ":")[0]
+	plainAuth := smtp.PlainAuth("", e.conf.Username, e.conf.Password, hostname)
 
-	return mail.Send(e.Conf.Host, plainAuth)
+	return mail.Send(e.conf.Host, plainAuth)
 }

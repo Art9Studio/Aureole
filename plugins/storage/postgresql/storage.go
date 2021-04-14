@@ -1,18 +1,21 @@
 package postgresql
 
 import (
+	"aureole/configs"
 	"aureole/internal/collections"
 	"aureole/internal/plugins/storage"
 	"aureole/internal/plugins/storage/types"
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4"
+	"github.com/mitchellh/mapstructure"
 	"time"
 )
 
 // Storage represents a postgresql database
 type Storage struct {
-	Conf       *config
+	rawConf    *configs.Storage
+	conf       *config
 	conn       *pgx.Conn
 	gcInterval time.Duration
 	gcDone     chan struct{}
@@ -21,6 +24,13 @@ type Storage struct {
 }
 
 func (s *Storage) Initialize() error {
+	adapterConf := &config{}
+	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
+		return err
+	}
+	s.conf = adapterConf
+	s.gcDone = make(chan struct{})
+
 	return s.Open()
 }
 
@@ -33,13 +43,13 @@ func (s *Storage) Open() error {
 	var url string
 	var err error
 
-	if s.Conf.Url == "" {
-		url, err = s.Conf.ToURL()
+	if s.conf.Url == "" {
+		url, err = s.conf.ToURL()
 		if err != nil {
 			return err
 		}
 	} else {
-		url = s.Conf.Url
+		url = s.conf.Url
 	}
 
 	conn, err := pgx.Connect(context.Background(), url)

@@ -1,7 +1,6 @@
 package types
 
 import (
-	"aureole/internal"
 	"aureole/internal/collections"
 )
 
@@ -14,7 +13,7 @@ type Application interface {
 
 // Storage is an interface that defines methods for database session
 type Storage interface {
-	internal.Initializer
+	Initialize() error
 
 	Application
 

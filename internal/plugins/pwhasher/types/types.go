@@ -1,12 +1,8 @@
 package types
 
-import (
-	"aureole/internal"
-)
-
 // PwHasher is an interface that defined method for pwhasher implementation
 type PwHasher interface {
-	internal.Initializer
+	Initialize() error
 
 	// HashPw returns hashed data encoded by base64
 	HashPw(string) (string, error)
