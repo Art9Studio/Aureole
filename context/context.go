@@ -70,7 +70,32 @@ func createStorages(conf *configs.Project, ctx *types.ProjectCtx) error {
 		ctx.Storages[storageConf.Name] = connSess
 	}
 
+	cleanupStorages(conf, ctx)
 	return nil
+}
+
+func cleanupStorages(conf *configs.Project, ctx *types.ProjectCtx) {
+	isUsedStorage := make(map[string]bool)
+
+	for storageName := range ctx.Storages {
+		isUsedStorage[storageName] = false
+
+		for _, app := range conf.Apps {
+			for _, authzItem := range app.Authz {
+				if storageName == authzItem.Config["storage"] {
+					isUsedStorage[storageName] = true
+					break
+				}
+			}
+
+			for _, authnItem := range app.Authn {
+				if storageName == authnItem.Config["storage"] {
+					isUsedStorage[storageName] = true
+					break
+				}
+			}
+		}
+	}
 }
 
 func createCollections(conf *configs.Project, ctx *types.ProjectCtx) error {
@@ -135,9 +160,9 @@ func createCryptoKeys(conf *configs.Project, ctx *types.ProjectCtx) error {
 func createApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.Apps = make(map[string]*types.App)
 
-	for appName := range conf.Apps {
-		app := conf.Apps[appName]
-		authenticators, err := createAuthenticators(&app, appName)
+	for i := range conf.Apps {
+		app := conf.Apps[i]
+		authenticators, err := createAuthenticators(&app)
 		if err != nil {
 			return err
 		}
@@ -147,7 +172,7 @@ func createApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 			return err
 		}
 
-		ctx.Apps[appName] = &types.App{
+		ctx.Apps[i] = &types.App{
 			PathPrefix:     app.PathPrefix,
 			Authorizers:    authorizers,
 			Authenticators: authenticators,
@@ -157,12 +182,12 @@ func createApps(conf *configs.Project, ctx *types.ProjectCtx) error {
 	return nil
 }
 
-func createAuthenticators(app *configs.App, appName string) ([]authnTypes.Authenticator, error) {
+func createAuthenticators(app *configs.App) ([]authnTypes.Authenticator, error) {
 	authenticators := make([]authnTypes.Authenticator, len(app.Authn))
 
 	for i := range app.Authn {
 		authnConf := app.Authn[i]
-		authenticator, err := authn.New(appName, &authnConf)
+		authenticator, err := authn.New(&authnConf)
 		if err != nil {
 			return nil, err
 		}
@@ -194,6 +219,7 @@ func initStorages(ctx *types.ProjectCtx) error {
 		if err := s.Initialize(); err != nil {
 			return err
 		}
+		return s.Ping()
 	}
 
 	return nil

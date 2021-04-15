@@ -58,7 +58,7 @@ func (s *Storage) Open() error {
 	}
 
 	s.conn = conn
-	return s.Ping()
+	return nil
 }
 
 // Close terminates the currently active connection to the DBMS

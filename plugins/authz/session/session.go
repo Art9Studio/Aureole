@@ -64,7 +64,7 @@ func (s *session) Initialize() error {
 }
 
 func (s *session) Authorize(ctx *fiber.Ctx, fields map[string]interface{}) error {
-	userId := fields["user_id"].(int32)
+	userId := fields["user_id"].(int)
 	expires := time.Now().Add(time.Duration(s.conf.MaxAge) * time.Second)
 
 	sessionToken, err := uuid.NewV4()

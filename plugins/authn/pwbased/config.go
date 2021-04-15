@@ -27,6 +27,6 @@ type (
 	}
 )
 
-func (p pwBasedAdapter) Create(appName string, conf *configs.Authn) types.Authenticator {
+func (p pwBasedAdapter) Create(conf *configs.Authn) types.Authenticator {
 	return &pwBased{rawConf: conf}
 }

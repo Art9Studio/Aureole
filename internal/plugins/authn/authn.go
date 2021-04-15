@@ -7,7 +7,7 @@ import (
 )
 
 // New returns desired Authenticator depends on the given config
-func New(appName string, conf *configs.Authn) (types.Authenticator, error) {
+func New(conf *configs.Authn) (types.Authenticator, error) {
 	a, err := Repository.Get(conf.Type)
 	if err != nil {
 		return nil, err
@@ -18,5 +18,5 @@ func New(appName string, conf *configs.Authn) (types.Authenticator, error) {
 		return nil, fmt.Errorf("trying to cast adapter was failed: %v", err)
 	}
 
-	return adapter.Create(appName, conf), nil
+	return adapter.Create(conf), nil
 }
