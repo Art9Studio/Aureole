@@ -11,15 +11,17 @@ import (
 	"fmt"
 )
 
-type PluginApi struct {
+type PluginsApi struct {
 	projectCtx *contextTypes.ProjectCtx
 }
 
-func InitPluginApi(ctx *contextTypes.ProjectCtx) *PluginApi {
-	return &PluginApi{projectCtx: ctx}
+var pluginsApi PluginsApi
+
+func InitPluginsApi(ctx *contextTypes.ProjectCtx) {
+	pluginsApi = PluginsApi{projectCtx: ctx}
 }
 
-func (api *PluginApi) GetCollection(name string) (*collections.Collection, error) {
+func (api *PluginsApi) GetCollection(name string) (*collections.Collection, error) {
 	c, ok := api.projectCtx.Collections[name]
 	if !ok {
 		return nil, fmt.Errorf("can't find collection named '%s'", name)
@@ -28,7 +30,7 @@ func (api *PluginApi) GetCollection(name string) (*collections.Collection, error
 	return c, nil
 }
 
-func (api *PluginApi) GetStorage(name string) (storageTypes.Storage, error) {
+func (api *PluginsApi) GetStorage(name string) (storageTypes.Storage, error) {
 	s, ok := api.projectCtx.Storages[name]
 	if !ok {
 		return nil, fmt.Errorf("can't find storage named '%s'", name)
@@ -37,7 +39,7 @@ func (api *PluginApi) GetStorage(name string) (storageTypes.Storage, error) {
 	return s, nil
 }
 
-func (api *PluginApi) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
+func (api *PluginsApi) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
 	h, ok := api.projectCtx.Hashers[name]
 	if !ok {
 		return nil, fmt.Errorf("can't find hasher named '%s'", name)
@@ -46,7 +48,7 @@ func (api *PluginApi) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
 	return h, nil
 }
 
-func (api *PluginApi) GetSender(name string) (senderTypes.Sender, error) {
+func (api *PluginsApi) GetSender(name string) (senderTypes.Sender, error) {
 	s, ok := api.projectCtx.Senders[name]
 	if !ok {
 		return nil, fmt.Errorf("can't find sender named '%s'", name)
@@ -55,7 +57,7 @@ func (api *PluginApi) GetSender(name string) (senderTypes.Sender, error) {
 	return s, nil
 }
 
-func (api *PluginApi) GetCryptoKey(name string) (ckeyTypes.CryptoKey, error) {
+func (api *PluginsApi) GetCryptoKey(name string) (ckeyTypes.CryptoKey, error) {
 	k, ok := api.projectCtx.CryptoKeys[name]
 	if !ok {
 		return nil, fmt.Errorf("can't find crypto key named '%s'", name)
@@ -64,7 +66,7 @@ func (api *PluginApi) GetCryptoKey(name string) (ckeyTypes.CryptoKey, error) {
 	return k, nil
 }
 
-func (api *PluginApi) GetAuthorizer(name, appName string) (authzTypes.Authorizer, error) {
+func (api *PluginsApi) GetAuthorizer(name, appName string) (authzTypes.Authorizer, error) {
 	app, ok := api.projectCtx.Apps[appName]
 	if !ok {
 		return nil, fmt.Errorf("can't find app named '%s'", appName)

@@ -20,7 +20,7 @@ type session struct {
 }
 
 func (s *session) Initialize() error {
-	pluginApi := authz.Repository.PluginApi
+	pluginsApi := authz.Repository.PluginsApi
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -29,12 +29,12 @@ func (s *session) Initialize() error {
 
 	s.conf = adapterConf
 
-	collection, err := pluginApi.GetCollection(s.conf.Collection)
+	collection, err := pluginsApi.GetCollection(s.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", s.conf.Collection)
 	}
 
-	storage, err := pluginApi.GetStorage(s.conf.Storage)
+	storage, err := pluginsApi.GetStorage(s.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", s.conf.Storage)
 	}

@@ -6,14 +6,10 @@ import (
 	"aureole/internal/plugins/core"
 )
 
-var Repository = core.InitRepository()
+var Repository = core.CreateRepository()
 
 // Adapter defines methods for authentication plugins
 type Adapter interface {
 	// Create returns desired authentication Authenticator depends on the given config
 	Create(*configs.Authn) types.Authenticator
-}
-
-func InitRepository(api *core.PluginApi) {
-	Repository.PluginApi = api
 }

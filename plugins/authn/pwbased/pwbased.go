@@ -23,7 +23,7 @@ type pwBased struct {
 }
 
 func (p *pwBased) Initialize(appName string) error {
-	pluginApi := authn.Repository.PluginApi
+	pluginsApi := authn.Repository.PluginsApi
 	adapterConf := &сonfig{}
 	if err := mapstructure.Decode(p.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -32,22 +32,22 @@ func (p *pwBased) Initialize(appName string) error {
 
 	p.conf = adapterConf
 
-	hasher, err := pluginApi.GetHasher(p.conf.MainHasher)
+	hasher, err := pluginsApi.GetHasher(p.conf.MainHasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
-	collection, err := pluginApi.GetCollection(p.conf.Collection)
+	collection, err := pluginsApi.GetCollection(p.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
 	}
 
-	storage, err := pluginApi.GetStorage(p.conf.Storage)
+	storage, err := pluginsApi.GetStorage(p.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
 	}
 
-	authorizer, err := pluginApi.GetAuthorizer(p.rawConf.AuthzName, appName)
+	authorizer, err := pluginsApi.GetAuthorizer(p.rawConf.AuthzName, appName)
 	if err != nil {
 		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
 	}
