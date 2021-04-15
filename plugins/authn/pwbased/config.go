@@ -2,10 +2,7 @@ package pwbased
 
 import (
 	"aureole/configs"
-	"aureole/internal/plugins/authn"
 	"aureole/internal/plugins/authn/types"
-	"fmt"
-	"github.com/mitchellh/mapstructure"
 )
 
 type (
@@ -30,60 +27,6 @@ type (
 	}
 )
 
-func (p pwBasedAdapter) Create(appName string, conf *configs.Authn) (types.Authenticator, error) {
-	adapterConfMap := conf.Config
-	adapterConf := &сonfig{}
-
-	err := mapstructure.Decode(adapterConfMap, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	adapterConf.setDefaults()
-
-	adapter, err := initAdapter(appName, conf, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	err = adapter.Storage.CheckFeaturesAvailable([]string{adapter.IdentityColl.Type})
-	if err != nil {
-		return nil, err
-	}
-
-	return adapter, nil
-}
-
-func initAdapter(appName string, conf *configs.Authn, adapterConf *сonfig) (*pwBased, error) {
-	projectCtx := authn.Repository.ProjectCtx
-
-	hasher, ok := projectCtx.Hashers[adapterConf.MainHasher]
-	if !ok {
-		return nil, fmt.Errorf("hasher named '%s' is not declared", adapterConf.MainHasher)
-	}
-
-	collection, ok := projectCtx.Collections[adapterConf.Collection]
-	if !ok {
-		return nil, fmt.Errorf("collection named '%s' is not declared", adapterConf.Collection)
-	}
-
-	storage, ok := projectCtx.Storages[adapterConf.Storage]
-	if !ok {
-		return nil, fmt.Errorf("storage named '%s' is not declared", adapterConf.Storage)
-	}
-
-	authorizer, ok := projectCtx.Apps[appName].Authorizers[conf.AuthZ]
-	if !ok {
-		return nil, fmt.Errorf("authorizer named '%s' is not declared", conf.AuthZ)
-	}
-
-	return &pwBased{
-		Conf:           adapterConf,
-		PathPrefix:     conf.PathPrefix,
-		ProjectContext: projectCtx,
-		PwHasher:       hasher,
-		IdentityColl:   collection,
-		Storage:        storage,
-		Authorizer:     authorizer,
-	}, nil
+func (p pwBasedAdapter) Create(conf *configs.Authn) types.Authenticator {
+	return &pwBased{rawConf: conf}
 }

@@ -17,9 +17,9 @@ type (
 	}
 )
 
-func New(collType string, conf *configs.Collection) *Collection {
+func New(conf *configs.Collection) *Collection {
 	return &Collection{
-		Type:        collType,
+		Type:        conf.Type,
 		UseExistent: conf.UseExistent,
 		Spec: Specification{
 			Name:      conf.Spec.Name,

@@ -11,8 +11,8 @@ var Repository = plugins.InitRepository()
 
 // Adapter defines methods for storage plugins
 type Adapter interface {
-	//Create returns desired PwHasher depends on the given config
-	Create(*configs.Storage) (types.Storage, error)
+	//Create returns desired pwHasher depends on the given config
+	Create(*configs.Storage) types.Storage
 }
 
 func InitRepository(context *ctxTypes.ProjectCtx) {

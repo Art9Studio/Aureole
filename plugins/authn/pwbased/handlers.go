@@ -18,7 +18,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 			})
 		}
 
-		identityPath := context.Conf.Login.FieldsMap["identity"]
+		identityPath := context.conf.Login.FieldsMap["identity"]
 		IIdentity, err := jsonpath.GetJSONPath(identityPath, authInput)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
@@ -37,7 +37,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 			}
 		}
 
-		passwordPath := context.Conf.Login.FieldsMap["password"]
+		passwordPath := context.conf.Login.FieldsMap["password"]
 		IPassword, err := jsonpath.GetJSONPath(passwordPath, authInput)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
@@ -57,8 +57,8 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		// TODO: add a user existence check
-		identityStorage := context.Storage
-		pw, err := identityStorage.GetPasswordByIdentity(context.IdentityColl.Spec, identity)
+		identityStorage := context.storage
+		pw, err := identityStorage.GetPasswordByIdentity(context.identityColl.Spec, identity)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
@@ -66,7 +66,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 			})
 		}
 
-		isMatch, err := context.PwHasher.ComparePw(password, pw.(string))
+		isMatch, err := context.pwHasher.ComparePw(password, pw.(string))
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
@@ -76,7 +76,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 
 		if isMatch {
 			// todo: add getUserId method
-			return context.Authorizer.Authorize(c, map[string]interface{}{"user_id": 0})
+			return context.authorizer.Authorize(c, map[string]interface{}{"user_id": 0})
 		} else {
 			return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 				"success": false,
@@ -97,7 +97,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			})
 		}
 
-		identityPath := context.Conf.Login.FieldsMap["identity"]
+		identityPath := context.conf.Login.FieldsMap["identity"]
 		IIdentity, err := jsonpath.GetJSONPath(identityPath, authInput)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
@@ -116,7 +116,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			}
 		}
 
-		passwordPath := context.Conf.Login.FieldsMap["password"]
+		passwordPath := context.conf.Login.FieldsMap["password"]
 		IPassword, err := jsonpath.GetJSONPath(passwordPath, authInput)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
@@ -135,7 +135,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			}
 		}
 
-		pwHash, err := context.PwHasher.HashPw(password)
+		pwHash, err := context.pwHasher.HashPw(password)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
@@ -144,12 +144,12 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		// TODO: add a user existence check
-		identityStorage := context.Storage
+		identityStorage := context.storage
 		insertData := storageTypes.InsertIdentityData{
 			Identity:    identity,
 			UserConfirm: pwHash,
 		}
-		userId, err := identityStorage.InsertIdentity(context.IdentityColl.Spec, insertData)
+		userId, err := identityStorage.InsertIdentity(context.identityColl.Spec, insertData)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
@@ -157,8 +157,8 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			})
 		}
 
-		if context.Conf.Register.IsLoginAfter {
-			return context.Authorizer.Authorize(c, map[string]interface{}{"user_id": userId})
+		if context.conf.Register.IsLoginAfter {
+			return context.authorizer.Authorize(c, map[string]interface{}{"user_id": userId})
 		} else {
 			return c.JSON(&fiber.Map{"id": userId})
 		}

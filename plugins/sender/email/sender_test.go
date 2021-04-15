@@ -60,7 +60,7 @@ func TestEmail_Send(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &Email{
-				Conf: tt.fields.Conf,
+				conf: tt.fields.Conf,
 			}
 			if err := e.Send(tt.args.recipient, tt.args.subject, tt.args.tmplName, tt.args.tmplCtx); (err != nil) != tt.wantErr {
 				t.Errorf("Send() error = %v, wantErr %v", err, tt.wantErr)
@@ -106,7 +106,7 @@ func TestEmail_SendRaw(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &Email{
-				Conf: tt.fields.Conf,
+				conf: tt.fields.Conf,
 			}
 			if err := e.SendRaw(tt.args.recipient, tt.args.subject, tt.args.message); (err != nil) != tt.wantErr {
 				t.Errorf("SendRaw() error = %v, wantErr %v", err, tt.wantErr)

@@ -5,6 +5,7 @@ import (
 )
 
 type Authenticator interface {
+	Initialize(string) error
 	GetRoutes() []Route
 }
 

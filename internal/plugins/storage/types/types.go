@@ -1,6 +1,8 @@
 package types
 
-import "aureole/internal/collections"
+import (
+	"aureole/internal/collections"
+)
 
 type Application interface {
 	// IsCollExists checks whether the given collection exists
@@ -11,6 +13,8 @@ type Application interface {
 
 // Storage is an interface that defines methods for database session
 type Storage interface {
+	Initialize() error
+
 	Application
 
 	CheckFeaturesAvailable([]string) error

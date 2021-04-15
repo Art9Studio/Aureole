@@ -1,13 +1,26 @@
 package jwk
 
 import (
+	"aureole/configs"
 	"context"
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/mitchellh/mapstructure"
 	"net/url"
 )
 
 type Jwk struct {
-	Conf *config
+	rawConf *configs.CryptoKey
+	conf    *config
+}
+
+func (j *Jwk) Initialize() error {
+	adapterConf := &config{}
+	if err := mapstructure.Decode(j.rawConf.Config, adapterConf); err != nil {
+		return err
+	}
+	j.conf = adapterConf
+
+	return nil
 }
 
 func (j *Jwk) Get(path string) (jwk.Set, error) {

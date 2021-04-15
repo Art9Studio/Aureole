@@ -3,7 +3,6 @@ package pbkdf2
 import (
 	"aureole/configs"
 	"aureole/internal/plugins/pwhasher/types"
-	"github.com/mitchellh/mapstructure"
 )
 
 // config represents parsed pwhasher config from the config file
@@ -22,25 +21,6 @@ type config struct {
 }
 
 // Create returns Pbkdf2 hasher with the given settings
-func (a pbkdf2Adapter) Create(conf *configs.PwHasher) (types.PwHasher, error) {
-	adapterConfMap := conf.Config
-	adapterConf := &config{}
-
-	err := mapstructure.Decode(adapterConfMap, adapterConf)
-	if err != nil {
-		return nil, err
-	}
-
-	adapterConf.setDefaults()
-
-	return initAdapter(conf, adapterConf)
-}
-
-func initAdapter(conf *configs.PwHasher, adapterConf *config) (*Pbkdf2, error) {
-	function, err := initFunc(adapterConf.FuncName)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Pbkdf2{Conf: adapterConf, Func: function}, nil
+func (a pbkdf2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
+	return &Pbkdf2{rawConf: conf}
 }
