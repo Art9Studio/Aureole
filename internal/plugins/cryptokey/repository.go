@@ -13,7 +13,3 @@ type Adapter interface {
 	// Create returns desired crypto key depends on the given config
 	Create(*configs.CryptoKey) types.CryptoKey
 }
-
-func InitRepository(api *core.PluginsApi) {
-	Repository.PluginsApi = api
-}

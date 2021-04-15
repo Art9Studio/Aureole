@@ -4,6 +4,7 @@ import (
 	"aureole/configs"
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authz"
+	"aureole/internal/plugins/core"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -17,6 +18,10 @@ type session struct {
 	conf       *config
 	storage    storageTypes.Storage
 	collection *collections.Collection
+}
+
+func (s *session) GetRoutes() []*core.Route {
+	return []*core.Route{}
 }
 
 func (s *session) Initialize() error {
@@ -61,7 +66,7 @@ func (s *session) Initialize() error {
 }
 
 func (s *session) Authorize(ctx *fiber.Ctx, fields map[string]interface{}) error {
-	userId := fields["user_id"].(int)
+	userId := fields["user_id"]
 	expires := time.Now().Add(time.Duration(s.conf.MaxAge) * time.Second)
 
 	sessionToken, err := uuid.NewV4()

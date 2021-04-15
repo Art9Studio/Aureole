@@ -13,7 +13,3 @@ type Adapter interface {
 	//Create returns desired pwHasher depends on the given config
 	Create(*configs.PwHasher) types.PwHasher
 }
-
-func InitRepository(api *core.PluginsApi) {
-	Repository.PluginsApi = api
-}

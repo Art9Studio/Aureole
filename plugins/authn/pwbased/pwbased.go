@@ -4,8 +4,8 @@ import (
 	"aureole/configs"
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authn"
-	authnTypes "aureole/internal/plugins/authn/types"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/pwhasher/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"fmt"
@@ -60,8 +60,8 @@ func (p *pwBased) Initialize(appName string) error {
 	return p.storage.CheckFeaturesAvailable([]string{p.identityColl.Type})
 }
 
-func (p *pwBased) GetRoutes() []authnTypes.Route {
-	return []authnTypes.Route{
+func (p *pwBased) GetRoutes() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  "POST",
 			Path:    path.Clean(p.rawConf.PathPrefix + p.conf.Login.Path),

@@ -1,16 +1,10 @@
 package types
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"aureole/internal/plugins/core"
 )
 
 type Authenticator interface {
 	Initialize(string) error
-	GetRoutes() []Route
-}
-
-type Route struct {
-	Method  string
-	Path    string
-	Handler func(*fiber.Ctx) error
+	GetRoutes() []*core.Route
 }

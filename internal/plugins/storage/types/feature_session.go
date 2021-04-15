@@ -7,7 +7,7 @@ import (
 )
 
 type InsertSessionData struct {
-	UserId       int
+	UserId       interface{}
 	SessionToken uuid.UUID
 	Expiration   time.Time
 }

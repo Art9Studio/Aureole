@@ -11,11 +11,10 @@ func initRouter() (*fiber.App, error) {
 
 	for _, app := range Project.Apps {
 		appR := v.Group(app.PathPrefix)
-		for _, controller := range app.Authenticators {
-			for _, route := range controller.GetRoutes() {
-				appR.Add(route.Method, route.Path, route.Handler)
-			}
+		for _, route := range Project.Routes {
+			appR.Add(route.Method, route.Path, route.Handler)
 		}
+
 	}
 
 	return r, nil

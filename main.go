@@ -11,7 +11,6 @@ import (
 var Project types.ProjectCtx
 
 func main() {
-
 	projConf, err := configs.LoadMainConfig()
 	if err != nil {
 		log.Panic(err)
@@ -23,6 +22,7 @@ func main() {
 		log.Panic(err)
 	}
 
+	core.InitRoutes()
 	router, err := initRouter()
 	if err != nil {
 		log.Panicf("router init: %v", err)
