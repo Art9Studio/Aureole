@@ -19,7 +19,7 @@ type PluginsApi struct {
 
 var pluginsApi PluginsApi
 
-func InitPluginsApi(ctx *contextTypes.ProjectCtx) {
+func Init(ctx *contextTypes.ProjectCtx) {
 	pluginsApi = PluginsApi{projectCtx: ctx}
 }
 

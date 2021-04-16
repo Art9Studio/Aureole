@@ -26,7 +26,7 @@ type Pbkdf2 struct {
 
 var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhasher is not in the correct format")
 
-func (p *Pbkdf2) Initialize() error {
+func (p *Pbkdf2) Init() error {
 	adapterConf := &config{}
 	if err := mapstructure.Decode(p.rawConf.Config, adapterConf); err != nil {
 		return err

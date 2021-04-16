@@ -13,8 +13,8 @@ type Route struct {
 
 var Routes []*Route
 
-// InitRouter initializes router and creates routes for each application
-func InitRouter(ctx *contextTypes.ProjectCtx) (*fiber.App, error) {
+// Init initializes router and creates routes for each application
+func Init(ctx *contextTypes.ProjectCtx) (*fiber.App, error) {
 	r := fiber.New()
 	v := r.Group("")
 

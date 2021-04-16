@@ -5,6 +5,6 @@ import (
 )
 
 type CryptoKey interface {
-	Initialize() error
+	Init() error
 	Get(string) (jwk.Set, error)
 }

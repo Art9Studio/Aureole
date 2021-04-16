@@ -5,7 +5,6 @@ import (
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/pwhasher/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router"
@@ -22,7 +21,7 @@ type pwBased struct {
 	authorizer   authzTypes.Authorizer
 }
 
-func (p *pwBased) Initialize(appName string) (err error) {
+func (p *pwBased) Init(appName string) (err error) {
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
@@ -53,7 +52,7 @@ func (p *pwBased) Initialize(appName string) (err error) {
 		return err
 	}
 
-	createRoutes(pluginsApi, p)
+	createRoutes(p)
 	return err
 }
 
@@ -67,7 +66,7 @@ func initConfig(rawConf *configs.RawConfig) (*сonfig, error) {
 	return adapterConf, nil
 }
 
-func createRoutes(pluginsApi *core.PluginsApi, p *pwBased) {
+func createRoutes(p *pwBased) {
 	routes := []*router.Route{
 		{
 			Method:  "POST",
@@ -80,5 +79,5 @@ func createRoutes(pluginsApi *core.PluginsApi, p *pwBased) {
 			Handler: Register(p),
 		},
 	}
-	pluginsApi.AddRoutes(routes)
+	authn.Repository.PluginsApi.AddRoutes(routes)
 }

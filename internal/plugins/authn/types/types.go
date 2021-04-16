@@ -1,5 +1,5 @@
 package types
 
 type Authenticator interface {
-	Initialize(string) error
+	Init(string) error
 }

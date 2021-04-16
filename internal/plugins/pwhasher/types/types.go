@@ -2,7 +2,7 @@ package types
 
 // PwHasher is an interface that defined method for pwhasher implementation
 type PwHasher interface {
-	Initialize() error
+	Init() error
 
 	// HashPw returns hashed data encoded by base64
 	HashPw(string) (string, error)

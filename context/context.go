@@ -19,7 +19,7 @@ import (
 	"fmt"
 )
 
-func InitContext(conf *configs.Project, ctx *types.ProjectCtx) error {
+func Init(conf *configs.Project, ctx *types.ProjectCtx) error {
 	ctx.APIVersion = conf.APIVersion
 
 	if err := createCollections(conf, ctx); err != nil {
@@ -216,7 +216,7 @@ func createAuthorizers(app *configs.App) (map[string]authzTypes.Authorizer, erro
 
 func initStorages(ctx *types.ProjectCtx) error {
 	for _, s := range ctx.Storages {
-		if err := s.Initialize(); err != nil {
+		if err := s.Init(); err != nil {
 			return err
 		}
 		return s.Ping()
@@ -227,7 +227,7 @@ func initStorages(ctx *types.ProjectCtx) error {
 
 func initPwHashers(ctx *types.ProjectCtx) error {
 	for _, h := range ctx.Hashers {
-		if err := h.Initialize(); err != nil {
+		if err := h.Init(); err != nil {
 			return err
 		}
 	}
@@ -237,7 +237,7 @@ func initPwHashers(ctx *types.ProjectCtx) error {
 
 func initSenders(ctx *types.ProjectCtx) error {
 	for _, s := range ctx.Senders {
-		if err := s.Initialize(); err != nil {
+		if err := s.Init(); err != nil {
 			return err
 		}
 	}
@@ -247,7 +247,7 @@ func initSenders(ctx *types.ProjectCtx) error {
 
 func initCryptoKeys(ctx *types.ProjectCtx) error {
 	for _, k := range ctx.CryptoKeys {
-		if err := k.Initialize(); err != nil {
+		if err := k.Init(); err != nil {
 			return err
 		}
 	}
@@ -268,7 +268,7 @@ func initApps(ctx *types.ProjectCtx) error {
 
 func initAuthenticators(appName string, app *types.App) error {
 	for _, authenticator := range app.Authenticators {
-		if err := authenticator.Initialize(appName); err != nil {
+		if err := authenticator.Init(appName); err != nil {
 			return err
 		}
 	}
@@ -278,7 +278,7 @@ func initAuthenticators(appName string, app *types.App) error {
 
 func initAuthorizers(app *types.App) error {
 	for _, authorizer := range app.Authorizers {
-		if err := authorizer.Initialize(); err != nil {
+		if err := authorizer.Init(); err != nil {
 			return err
 		}
 	}

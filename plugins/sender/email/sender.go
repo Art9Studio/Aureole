@@ -17,7 +17,7 @@ type Email struct {
 	conf    *config
 }
 
-func (e *Email) Initialize() error {
+func (e *Email) Init() error {
 	adapterConf := &config{}
 	if err := mapstructure.Decode(e.rawConf.Config, adapterConf); err != nil {
 		return err

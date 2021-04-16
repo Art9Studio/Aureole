@@ -17,12 +17,12 @@ func main() {
 		log.Panic(err)
 	}
 
-	core.InitPluginsApi(&Project)
-	if err := context.InitContext(projConf, &Project); err != nil {
+	core.Init(&Project)
+	if err := context.Init(projConf, &Project); err != nil {
 		log.Panic(err)
 	}
 
-	r, err := router.InitRouter(&Project)
+	r, err := router.Init(&Project)
 	if err != nil {
 		log.Panicf("router init: %v", err)
 	}

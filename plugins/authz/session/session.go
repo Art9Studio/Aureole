@@ -19,7 +19,7 @@ type session struct {
 	collection *collections.Collection
 }
 
-func (s *session) Initialize() (err error) {
+func (s *session) Init() (err error) {
 	s.conf, err = initConfig(&s.rawConf.Config)
 	if err != nil {
 		return err
