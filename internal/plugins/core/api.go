@@ -22,18 +22,8 @@ func InitPluginsApi(ctx *contextTypes.ProjectCtx) {
 	pluginsApi = PluginsApi{projectCtx: ctx}
 }
 
-func InitRoutes() {
-	projectCtx := pluginsApi.projectCtx
-
-	for _, app := range projectCtx.Apps {
-		for _, controller := range app.Authenticators {
-			router.Routes = append(router.Routes, controller.GetRoutes()...)
-		}
-
-		for _, controller := range app.Authorizers {
-			router.Routes = append(router.Routes, controller.GetRoutes()...)
-		}
-	}
+func (api *PluginsApi) AddRoutes(routes []*router.Route) {
+	router.Routes = append(router.Routes, routes...)
 }
 
 func (api *PluginsApi) GetCollection(name string) (*collections.Collection, error) {

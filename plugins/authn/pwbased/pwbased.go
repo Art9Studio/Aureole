@@ -5,6 +5,7 @@ import (
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/pwhasher/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router"
@@ -22,46 +23,53 @@ type pwBased struct {
 	authorizer   authzTypes.Authorizer
 }
 
-func (p *pwBased) Initialize(appName string) error {
-	pluginsApi := authn.Repository.PluginsApi
-	adapterConf := &сonfig{}
-	if err := mapstructure.Decode(p.rawConf.Config, adapterConf); err != nil {
+func (p *pwBased) Initialize(appName string) (err error) {
+	p.conf, err = initConfig(&p.rawConf.Config)
+	if err != nil {
 		return err
 	}
-	adapterConf.setDefaults()
 
-	p.conf = adapterConf
-
-	hasher, err := pluginsApi.GetHasher(p.conf.MainHasher)
+	pluginsApi := authn.Repository.PluginsApi
+	p.pwHasher, err = pluginsApi.GetHasher(p.conf.MainHasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
-	collection, err := pluginsApi.GetCollection(p.conf.Collection)
+	p.identityColl, err = pluginsApi.GetCollection(p.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
 	}
 
-	storage, err := pluginsApi.GetStorage(p.conf.Storage)
+	p.storage, err = pluginsApi.GetStorage(p.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
 	}
 
-	authorizer, err := pluginsApi.GetAuthorizer(p.rawConf.AuthzName, appName)
+	p.authorizer, err = pluginsApi.GetAuthorizer(p.rawConf.AuthzName, appName)
 	if err != nil {
 		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
 	}
 
-	p.pwHasher = hasher
-	p.identityColl = collection
-	p.storage = storage
-	p.authorizer = authorizer
+	if err = p.storage.CheckFeaturesAvailable([]string{p.identityColl.Type}); err != nil {
+		return err
+	}
 
-	return p.storage.CheckFeaturesAvailable([]string{p.identityColl.Type})
+	createRoutes(pluginsApi, p)
+	return err
 }
 
-func (p *pwBased) GetRoutes() []*router.Route {
-	return []*router.Route{
+func initConfig(rawConf *configs.RawConfig) (*сonfig, error) {
+	adapterConf := &сonfig{}
+	if err := mapstructure.Decode(rawConf, adapterConf); err != nil {
+		return nil, err
+	}
+	adapterConf.setDefaults()
+
+	return adapterConf, nil
+}
+
+func createRoutes(pluginsApi *core.PluginsApi, p *pwBased) {
+	routes := []*router.Route{
 		{
 			Method:  "POST",
 			Path:    path.Clean(p.rawConf.PathPrefix + p.conf.Login.Path),
@@ -73,4 +81,5 @@ func (p *pwBased) GetRoutes() []*router.Route {
 			Handler: Register(p),
 		},
 	}
+	pluginsApi.AddRoutes(routes)
 }
