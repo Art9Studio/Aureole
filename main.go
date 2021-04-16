@@ -5,6 +5,7 @@ import (
 	"aureole/context"
 	"aureole/context/types"
 	"aureole/internal/plugins/core"
+	"aureole/internal/router"
 	"log"
 )
 
@@ -23,12 +24,12 @@ func main() {
 	}
 
 	core.InitRoutes()
-	router, err := initRouter()
+	r, err := router.InitRouter(&Project)
 	if err != nil {
 		log.Panicf("router init: %v", err)
 	}
 
-	if err := router.Listen(":3000"); err != nil {
+	if err := r.Listen(":3000"); err != nil {
 		log.Panicf("router start: %v", err)
 	}
 }

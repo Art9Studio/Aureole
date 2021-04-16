@@ -8,6 +8,7 @@ import (
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
+	"aureole/internal/router"
 	"fmt"
 )
 
@@ -26,11 +27,11 @@ func InitRoutes() {
 
 	for _, app := range projectCtx.Apps {
 		for _, controller := range app.Authenticators {
-			projectCtx.Routes = append(projectCtx.Routes, controller.GetRoutes()...)
+			router.Routes = append(router.Routes, controller.GetRoutes()...)
 		}
 
 		for _, controller := range app.Authorizers {
-			projectCtx.Routes = append(projectCtx.Routes, controller.GetRoutes()...)
+			router.Routes = append(router.Routes, controller.GetRoutes()...)
 		}
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"aureole/internal/collections"
 	authnTypes "aureole/internal/plugins/authn/types"
 	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
 	ckeyTypes "aureole/internal/plugins/cryptokey/types"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
@@ -20,7 +19,6 @@ type (
 		Hashers     map[string]pwhasherTypes.PwHasher
 		Senders     map[string]senderTypes.Sender
 		CryptoKeys  map[string]ckeyTypes.CryptoKey
-		Routes      []*core.Route
 	}
 
 	App struct {

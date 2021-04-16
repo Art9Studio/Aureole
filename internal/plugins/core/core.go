@@ -2,17 +2,10 @@ package core
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"sync"
 )
 
 type Adapter interface {
-}
-
-type Route struct {
-	Method  string
-	Path    string
-	Handler func(*fiber.Ctx) error
 }
 
 type Repository struct {
