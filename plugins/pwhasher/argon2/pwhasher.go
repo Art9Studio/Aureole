@@ -23,7 +23,7 @@ var (
 	ErrIncompatibleVersion = errors.New("argon2: incompatible version of argon2")
 )
 
-func (a *Argon2) Initialize() error {
+func (a *Argon2) Init() error {
 	adapterConf := &config{}
 	if err := mapstructure.Decode(a.rawConf.Config, adapterConf); err != nil {
 		return err

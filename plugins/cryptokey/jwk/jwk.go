@@ -13,7 +13,7 @@ type Jwk struct {
 	conf    *config
 }
 
-func (j *Jwk) Initialize() error {
+func (j *Jwk) Init() error {
 	adapterConf := &config{}
 	if err := mapstructure.Decode(j.rawConf.Config, adapterConf); err != nil {
 		return err

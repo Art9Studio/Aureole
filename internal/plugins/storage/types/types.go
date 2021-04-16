@@ -13,7 +13,7 @@ type Application interface {
 
 // Storage is an interface that defines methods for database session
 type Storage interface {
-	Initialize() error
+	Init() error
 
 	Application
 

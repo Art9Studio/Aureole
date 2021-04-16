@@ -2,19 +2,14 @@ package authn
 
 import (
 	"aureole/configs"
-	ctxTypes "aureole/context/types"
-	"aureole/internal/plugins"
 	"aureole/internal/plugins/authn/types"
+	"aureole/internal/plugins/core"
 )
 
-var Repository = plugins.InitRepository()
+var Repository = core.CreateRepository()
 
 // Adapter defines methods for authentication plugins
 type Adapter interface {
 	// Create returns desired authentication Authenticator depends on the given config
 	Create(*configs.Authn) types.Authenticator
-}
-
-func InitRepository(context *ctxTypes.ProjectCtx) {
-	Repository.ProjectCtx = context
 }

@@ -1,7 +1,6 @@
-package plugins
+package core
 
 import (
-	ctxTypes "aureole/context/types"
 	"fmt"
 	"sync"
 )
@@ -12,7 +11,7 @@ type Adapter interface {
 type Repository struct {
 	adapters   map[string]Adapter
 	adaptersMU sync.Mutex
-	ProjectCtx *ctxTypes.ProjectCtx
+	PluginsApi *PluginsApi
 }
 
 // Get returns storage adapter if it exists
@@ -42,9 +41,10 @@ func (repo *Repository) Register(name string, a Adapter) {
 	repo.adapters[name] = a
 }
 
-func InitRepository() *Repository {
+func CreateRepository() *Repository {
 	return &Repository{
 		adapters:   make(map[string]Adapter),
 		adaptersMU: sync.Mutex{},
+		PluginsApi: &pluginsApi,
 	}
 }

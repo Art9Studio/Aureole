@@ -23,7 +23,7 @@ type Storage struct {
 	relInfo map[types.CollPair]types.RelInfo
 }
 
-func (s *Storage) Initialize() error {
+func (s *Storage) Init() error {
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err

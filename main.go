@@ -4,16 +4,11 @@ import (
 	"aureole/configs"
 	"aureole/context"
 	"aureole/context/types"
-	"aureole/internal/plugins/authn"
-	"aureole/internal/plugins/authz"
-	"aureole/internal/plugins/cryptokey"
-	"aureole/internal/plugins/pwhasher"
-	"aureole/internal/plugins/sender"
-	"aureole/internal/plugins/storage"
+	"aureole/internal/plugins/core"
+	"aureole/internal/router"
 	"log"
 )
 
-// Project is global object that holds all project level settings variables
 var Project types.ProjectCtx
 
 func main() {
@@ -22,23 +17,17 @@ func main() {
 		log.Panic(err)
 	}
 
-	pwhasher.InitRepository(&Project)
-	storage.InitRepository(&Project)
-	authn.InitRepository(&Project)
-	authz.InitRepository(&Project)
-	sender.InitRepository(&Project)
-	cryptokey.InitRepository(&Project)
-
-	if err := context.InitContext(projConf, &Project); err != nil {
+	core.Init(&Project)
+	if err := context.Init(projConf, &Project); err != nil {
 		log.Panic(err)
 	}
 
-	router, err := initRouter()
+	r, err := router.Init(&Project)
 	if err != nil {
 		log.Panicf("router init: %v", err)
 	}
 
-	if err := router.Listen(":3000"); err != nil {
+	if err := r.Listen(":3000"); err != nil {
 		log.Panicf("router start: %v", err)
 	}
 }

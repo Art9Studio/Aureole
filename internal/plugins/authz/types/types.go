@@ -5,6 +5,6 @@ import (
 )
 
 type Authorizer interface {
-	Initialize() error
+	Init() error
 	Authorize(*fiber.Ctx, map[string]interface{}) error
 }

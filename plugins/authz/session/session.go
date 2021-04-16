@@ -2,7 +2,6 @@ package session
 
 import (
 	"aureole/configs"
-	contextTypes "aureole/context/types"
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authz"
 	storageTypes "aureole/internal/plugins/storage/types"
@@ -14,57 +13,57 @@ import (
 )
 
 type session struct {
-	rawConf        *configs.Authz
-	conf           *config
-	projectContext *contextTypes.ProjectCtx
-	storage        storageTypes.Storage
-	collection     *collections.Collection
+	rawConf    *configs.Authz
+	conf       *config
+	storage    storageTypes.Storage
+	collection *collections.Collection
 }
 
-func (s *session) Initialize() error {
-	projectCtx := authz.Repository.ProjectCtx
-	adapterConf := &config{}
-	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
-		return err
-	}
-	adapterConf.setDefaults()
-
-	s.conf = adapterConf
-	s.projectContext = projectCtx
-
-	collection, ok := projectCtx.Collections[s.conf.Collection]
-	if !ok {
-		return fmt.Errorf("collection named '%s' is not declared", s.conf.Collection)
-	}
-
-	storage, ok := projectCtx.Storages[s.conf.Storage]
-	if !ok {
-		return fmt.Errorf("storage named '%s' is not declared", s.conf.Storage)
-	}
-
-	isCollExist, err := storage.IsCollExists(collection.Spec)
+func (s *session) Init() (err error) {
+	s.conf, err = initConfig(&s.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
+	pluginsApi := authz.Repository.PluginsApi
+	s.collection, err = pluginsApi.GetCollection(s.conf.Collection)
+	if err != nil {
+		return fmt.Errorf("collection named '%s' is not declared", s.conf.Collection)
+	}
+
+	s.storage, err = pluginsApi.GetStorage(s.conf.Storage)
+	if err != nil {
+		return fmt.Errorf("storage named '%s' is not declared", s.conf.Storage)
+	}
+
+	isCollExist, err := s.storage.IsCollExists(s.collection.Spec)
+	if err != nil {
+		return err
+	}
 	if !isCollExist {
-		err := storage.CreateSessionColl(collection.Spec)
+		err = s.storage.CreateSessionColl(s.collection.Spec)
 		if err != nil {
 			return err
 		}
 	}
 
-	storage.SetCleanInterval(s.conf.CleanInterval)
-	storage.StartCleaning(collection.Spec)
-
-	s.storage = storage
-	s.collection = collection
-
+	s.storage.SetCleanInterval(s.conf.CleanInterval)
+	s.storage.StartCleaning(s.collection.Spec)
 	return s.storage.CheckFeaturesAvailable([]string{s.collection.Type})
 }
 
+func initConfig(rawConf *configs.RawConfig) (*config, error) {
+	adapterConf := &config{}
+	if err := mapstructure.Decode(rawConf, adapterConf); err != nil {
+		return nil, err
+	}
+	adapterConf.setDefaults()
+
+	return adapterConf, nil
+}
+
 func (s *session) Authorize(ctx *fiber.Ctx, fields map[string]interface{}) error {
-	userId := fields["user_id"].(int)
+	userId := fields["user_id"]
 	expires := time.Now().Add(time.Duration(s.conf.MaxAge) * time.Second)
 
 	sessionToken, err := uuid.NewV4()
