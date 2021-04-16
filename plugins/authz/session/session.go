@@ -5,7 +5,6 @@ import (
 	"aureole/internal/collections"
 	"aureole/internal/plugins/authz"
 	storageTypes "aureole/internal/plugins/storage/types"
-	"aureole/internal/router"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
@@ -18,10 +17,6 @@ type session struct {
 	conf       *config
 	storage    storageTypes.Storage
 	collection *collections.Collection
-}
-
-func (s *session) GetRoutes() []*router.Route {
-	return []*router.Route{}
 }
 
 func (s *session) Initialize() (err error) {

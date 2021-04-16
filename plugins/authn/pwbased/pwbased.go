@@ -11,7 +11,6 @@ import (
 	"aureole/internal/router"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"path"
 )
 
 type pwBased struct {
@@ -72,12 +71,12 @@ func createRoutes(pluginsApi *core.PluginsApi, p *pwBased) {
 	routes := []*router.Route{
 		{
 			Method:  "POST",
-			Path:    path.Clean(p.rawConf.PathPrefix + p.conf.Login.Path),
+			Path:    p.rawConf.PathPrefix + p.conf.Login.Path,
 			Handler: Login(p),
 		},
 		{
 			Method:  "POST",
-			Path:    path.Clean(p.rawConf.PathPrefix + p.conf.Register.Path),
+			Path:    p.rawConf.PathPrefix + p.conf.Register.Path,
 			Handler: Register(p),
 		},
 	}

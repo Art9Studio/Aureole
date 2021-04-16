@@ -10,6 +10,7 @@ import (
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router"
 	"fmt"
+	"path"
 )
 
 type PluginsApi struct {
@@ -24,6 +25,10 @@ func InitPluginsApi(ctx *contextTypes.ProjectCtx) {
 
 func (api *PluginsApi) AddRoutes(routes []*router.Route) {
 	router.Routes = append(router.Routes, routes...)
+
+	for i := range router.Routes {
+		router.Routes[i].Path = path.Clean(router.Routes[i].Path)
+	}
 }
 
 func (api *PluginsApi) GetCollection(name string) (*collections.Collection, error) {
