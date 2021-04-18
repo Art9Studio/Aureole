@@ -2,12 +2,15 @@ version: '3'
 
 services:
 
-  server:
+  postgres:
     image: postgres:${POSTGRES_VERSION:-13}
     environment:
       POSTGRES_USER: ${DB_USERNAME:-root}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
-      POSTGRES_DB: ${DB_NAME:-test}
+      POSTGRES_DB: ${DB_NAME:-aureole}
+    volumes:
+      - ./schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ./data.sql:/docker-entrypoint-initdb.d/2-data.sql
     ports:
       - '${DB_HOST:-127.0.0.1}:${DB_PORT:-5432}:5432'
     command: ["postgres", "-c", "log_statement=all", "-c", "log_connections=on"]
