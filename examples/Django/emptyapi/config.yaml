@@ -1,0 +1,98 @@
+api_version: "0.1"
+
+apps:
+  emptyapi:
+    path_prefix: "/emptyapi"
+
+    identity:
+      collection: identity
+      id:
+        enabled: true
+        unique: true
+        required: true
+        internal: true
+      username:
+        enabled: true
+        unique: true
+        required: true
+        internal: false
+      phone:
+        enabled: false
+        unique: true
+        required: false
+        internal: false
+      email:
+        enabled: false
+        unique: true
+        required: false
+        internal: false
+
+    authN:
+      - type: "password_based"
+        authZ: jwt
+        config:
+          main_hasher: django
+          collection: pwbased
+          storage: one_db
+
+    authZ:
+      - type: "jwt"
+        name: jwt
+        path_prefix: "/"
+        config:
+          iss: "Aureole Server"
+          sub: true
+          aud: ["emptyapi"]
+          nbf: 0
+          iat: true
+          jti: 0
+          access_bearer: "header"
+          refresh_bearer: "header"
+          alg: "RS256"
+          sign_key: jwk_file
+          verify_keys: [jwk_file]
+          access_exp: 10
+          refresh_exp: 7890000
+          refresh_url: "/refresh"
+          payload: "lab/templates/jwt_payload.json"
+
+storages:
+  - type: "postgresql"
+    name: one_db
+    config:
+      url: "postgresql://root:password@localhost:5432/aureole?sslmode=disable&search_path=public"
+
+collections:
+  - type: "identity" # main coll
+    name: identity
+    use_existent: true
+    config:
+      name: "users"
+      pk: "id"
+      fields_map:
+        id: "id"
+        username: "username"
+        phone: "phone"
+        email: "email"
+
+  - type: "pwbased" # appendix coll
+    name: pwbased
+    parent: identity
+    config:
+      fields_map:
+        password: "password"
+
+hashers:
+  - type: "pbkdf2"
+    name: django
+    config:
+      func: "sha1"
+      iterations: 1
+      salt_length: 16
+      key_length: 16
+
+crypto_keys:
+  - type: "jwk"
+    name: jwk_file
+    config:
+      path: "lab/keys/keys.json"

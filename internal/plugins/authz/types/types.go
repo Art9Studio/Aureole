@@ -10,5 +10,6 @@ type Authorizer interface {
 }
 
 type Context struct {
-	UserId int
+	Username string
+	UserId   int
 }

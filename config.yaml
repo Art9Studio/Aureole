@@ -95,7 +95,7 @@ apps:
         authZ: jwt
         config:
           main_hasher: argon2
-          collection: identity
+          collection: pwbased
           storage: one_db
 
     authZ:
@@ -110,8 +110,8 @@ apps:
           iat: true
           jti: 0 # todo: implement jti
           # todo: think about options [body, header, cookie] and split options for request and response
-          access_bearer: "cookie" # todo: add settings for cookie
-          refresh_bearer: "header"
+          access_bearer: "cookie" # todo: add settings for cookie [cookie, header, both]
+          refresh_bearer: "header" # [cookie, body, both]
           alg: "RS256"
           sign_key: jwk_file
           verify_keys: [jwk_file]
@@ -192,7 +192,7 @@ crypto_keys:
   - type: "jwk"
     name: jwk_file
     config:
-      path: "lab/keys/private.json"
+      path: "lab/keys/keys.json"
 
   - type: "jwk"
     name: jwk_url

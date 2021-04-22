@@ -95,7 +95,7 @@ type (
 
 func LoadMainConfig() (*Project, error) {
 	confLoader, err := configuro.NewConfig(
-		configuro.WithLoadFromConfigFile("./config.yaml", true),
+		configuro.WithLoadFromConfigFile("./examples/Django/emptyapi/config.yaml", true),
 		configuro.WithoutValidateByTags(),
 		configuro.WithLoadDotEnv(".env"),
 	)

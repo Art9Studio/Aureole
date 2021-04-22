@@ -5,24 +5,16 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
-	"strings"
 )
 
 func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		rawRefreshT, err := getRawToken(c, j.conf.RefreshBearer, names["refresh"])
+		rawRefreshT, err := getRawToken(c, j.conf.RefreshBearer, keyMap["refresh"])
 		if err != nil {
 			return err
 		}
 
 		keySet := j.signKey.GetPublicSet()
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-				"success": false,
-				"message": err,
-			})
-		}
-
 		refreshT, err := jwt.ParseString(
 			rawRefreshT,
 			jwt.WithIssuer(j.conf.Iss),
@@ -32,43 +24,73 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
-		if userId, ok := refreshT.Get("user_id"); ok {
-			accessT, err := newToken(AccessToken, j.conf, &types.Context{UserId: int(userId.(float64))})
-			if err != nil {
-				return err
-			}
-
-			signedAccessT, err := signToken(j.signKey, accessT)
-			if err != nil {
-				return err
-			}
-
-			return sendToken(c, j.conf.AccessBearer, names["access"], signedAccessT)
-		} else {
+		userId, ok := refreshT.Get("user_id")
+		if !ok {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
 				"message": "can't access user_id from token",
 			})
 		}
+
+		username, ok := refreshT.Get("username")
+		if !ok {
+			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+				"success": false,
+				"message": "can't access username from token",
+			})
+		}
+
+		authzCtx := &types.Context{
+			Username: username.(string),
+			UserId:   int(userId.(float64)),
+		}
+
+		accessT, err := newToken(AccessToken, j.conf, authzCtx)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": err.Error(),
+			})
+		}
+
+		signedAccessT, err := signToken(j.signKey, accessT)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": err.Error(),
+			})
+		}
+
+		return attachTokens(c,
+			map[string]bearerType{"access": j.conf.AccessBearer},
+			keyMap,
+			map[string][]byte{"access": signedAccessT})
 	}
 }
 
 func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (string, error) {
 	switch bearer {
 	case Header:
-		authHeader := c.Get("Authorization")
+		/*authHeader := c.Get("Authorization")
 		splitHeader := strings.Split(authHeader, "Bearer ")
 		if len(splitHeader) != 2 {
 			return "", c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": "bearer token not in proper format",
+				"message": "bearer input not in proper format",
 			})
 		}
-		return strings.TrimSpace(splitHeader[1]), nil
+		return strings.TrimSpace(splitHeader[1]), nil*/
+		var input map[string]string
+
+		if err := c.BodyParser(&input); err != nil {
+			return "", err
+		}
+
+		return input["refresh"], nil
 	case Both, Cookie:
 		rawToken := c.Cookies(names["cookie"])
 		if rawToken == "" {

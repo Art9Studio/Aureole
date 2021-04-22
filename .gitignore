@@ -2,7 +2,6 @@
 #  Original  #
 ##############
 
-
 .env
 
 # directory structure
@@ -87,3 +86,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+venv
+vendor
+migrations
