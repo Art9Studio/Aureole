@@ -1,7 +1,7 @@
 package email
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"bytes"
 	"github.com/jordan-wright/email"
 	"github.com/mitchellh/mapstructure"

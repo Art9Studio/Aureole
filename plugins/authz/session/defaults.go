@@ -1,6 +1,6 @@
 package session
 
-import "aureole/configs"
+import "aureole/internal/configs"
 
 func (c *config) setDefaults() {
 	// todo: think about defaults parameters

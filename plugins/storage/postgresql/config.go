@@ -1,7 +1,7 @@
 package postgresql
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
 	"net/url"

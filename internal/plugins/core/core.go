@@ -11,7 +11,7 @@ type Adapter interface {
 type Repository struct {
 	adapters   map[string]Adapter
 	adaptersMU sync.Mutex
-	PluginsApi *PluginsApi
+	PluginApi  *PluginApi
 }
 
 // Get returns storage adapter if it exists
@@ -45,6 +45,6 @@ func CreateRepository() *Repository {
 	return &Repository{
 		adapters:   make(map[string]Adapter),
 		adaptersMU: sync.Mutex{},
-		PluginsApi: &pluginsApi,
+		PluginApi:  &pluginApi,
 	}
 }

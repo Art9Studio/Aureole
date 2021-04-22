@@ -14,7 +14,7 @@ apps:
       username:
         enabled: true
         unique: false
-        required: false
+        required: false # todo: can't be unique if not required
         internal: false
       phone:
         enabled: false
@@ -22,7 +22,7 @@ apps:
         required: false
         internal: false
       email:
-        enabled: true
+        enabled: false
         unique: true
         required: true
         internal: false
@@ -39,7 +39,7 @@ apps:
           login:
             path: "/login"
             fields_map:
-              identity: "{$.username}"
+              username: "{$.username}"
               password: "{$.password}"
           register:
             path: "/register"
@@ -95,18 +95,17 @@ storages:
   - type: "postgresql"
     name: two_db
     config:
-      #adapter: "postgresql"
       username: "root"
       password: "password"
       host: "localhost"
       port: "5432"
       db_name: "aureole"
-      options: # df
+      options:
         sslmode: "disable"
         search_path: "public"
 
 collections:
-  - type: "identity"
+  - type: "identity" # main coll
     name: identity
     use_existent: true
     config:
@@ -118,21 +117,21 @@ collections:
         phone: "phone"
         email: "email"
 
-  - type: "pwbased"
+  - type: "pwbased" # appendix coll
     name: pwbased
-    use_existent: true
+    parent: identity
     config:
-      identity_col: identity
       fields_map:
         password: "password"
 
-  - type: "session"
+  - type: "session" # main coll
     name: session
     use_existent: false
     config:
       name: "sessions"
       pk: "user_id"
       fields_map:
+        id: "user_id"
         session_token: "session_id"
         expiration: "expiration"
 
@@ -159,7 +158,7 @@ crypto_keys:
   - type: "jwk"
     name: jwk_file
     config:
-      path: "./keys/private.json"
+      path: "lab/keys/private.json"
 
   - type: "jwk"
     name: jwk_url
@@ -183,5 +182,5 @@ senders:
       bcc: [ ]
       cc: [ ]
       templates:
-        default_text: "./templates/default.txt"
-        default_html: "./templates/default.html" # if extension is 'html' we send it as html
+        default_text: "lab/templates/default.txt"
+        default_html: "lab/templates/default.html" # if extension is 'html' we send it as html

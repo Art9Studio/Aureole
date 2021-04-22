@@ -8,6 +8,8 @@ CREATE TABLE users
 (
     id       SERIAL PRIMARY KEY,
     username TEXT,
+    phone text,
+    email text,
     password text,
     org_id   int REFERENCES orgs
 );

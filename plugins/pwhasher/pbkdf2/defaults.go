@@ -1,6 +1,6 @@
 package pbkdf2
 
-import "aureole/configs"
+import "aureole/internal/configs"
 
 // TODO: figure out best default settings
 func (c *config) setDefaults() {

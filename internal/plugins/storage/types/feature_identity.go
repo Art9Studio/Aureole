@@ -1,20 +1,22 @@
 package types
 
 import (
-	"aureole/internal/collections"
+	"aureole/internal/identity"
 )
 
-type InsertIdentityData struct {
-	Identity    interface{}
-	UserConfirm interface{}
+type IdentityData struct {
+	Id       interface{}
+	Username interface{}
+	Phone    interface{}
+	Email    interface{}
 }
 
 type Identity interface {
-	// CreateUserColl creates user collection with traits passed by UserCollectionConfig
-	CreateIdentityColl(collections.Specification) error
+	// CreateIdentityColl creates user collection with traits passed by UserCollectionConfig
+	CreateIdentityColl(*identity.Identity) error
 
-	// InsertUser inserts user entity in the user collection
-	InsertIdentity(collections.Specification, InsertIdentityData) (JSONCollResult, error)
+	// InsertIdentity inserts user entity in the user collection
+	InsertIdentity(*identity.Identity, *IdentityData) (JSONCollResult, error)
 
-	GetPasswordByIdentity(collections.Specification, interface{}) (JSONCollResult, error)
+	GetIdentity(*identity.Identity, string, interface{}) (JSONCollResult, error)
 }

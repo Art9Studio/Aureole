@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/storage/types"
 )
