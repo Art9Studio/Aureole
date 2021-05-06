@@ -7,8 +7,3 @@ import (
 var sessionColType = &collections.CollectionType{
 	Name: "session",
 }
-
-func registerCollectionTypes() error {
-	collections.Repository.Register(sessionColType)
-	return nil
-}

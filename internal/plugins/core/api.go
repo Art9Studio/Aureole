@@ -17,7 +17,6 @@ func InitApi(ctx ctx.ProjectCtx, router _interface.IRouter) {
 	pluginApi = PluginApi{Project: ctx, Router: router}
 }
 
-func (api *PluginApi) RegisterCollectionType(col *collections.CollectionType) error {
+func (api *PluginApi) RegisterCollectionType(col *collections.CollectionType) {
 	collections.Repository.Register(col)
-	return nil
 }

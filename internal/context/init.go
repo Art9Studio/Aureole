@@ -33,9 +33,6 @@ func Init(conf *configs.Project, ctx *ProjectCtx) error {
 		return err
 	}
 
-	if err := createCoreCollectionTypes(); err != nil {
-		return err
-	}
 	if err := createCollections(conf, ctx); err != nil {
 		return err
 	}
@@ -135,13 +132,6 @@ func cleanupStorages(conf *configs.Project, ctx *ProjectCtx) {
 			}
 		}
 	}
-}
-
-func createCoreCollectionTypes() error {
-	if err := identity.RegisterCollectionTypes(); err != nil {
-		return err
-	}
-	return nil
 }
 
 func createCollections(conf *configs.Project, ctx *ProjectCtx) error {

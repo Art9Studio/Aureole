@@ -53,9 +53,7 @@ func (s *session) Init(appName string) (err error) {
 	if err := s.storage.CheckFeaturesAvailable([]string{s.collection.Type}); err != nil {
 		return err
 	}
-	if err := registerCollectionTypes(); err != nil {
-		return err
-	}
+
 	return nil
 }
 
