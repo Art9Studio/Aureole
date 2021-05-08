@@ -59,10 +59,8 @@ func (c Collection) Init(collections map[string]*Collection) error {
 		if collType.ParentCollType != parentColl.Type {
 			return fmt.Errorf("declared CollectionType is not same with used one in config for collection '%s'", c.Name)
 		}
-	} else {
-		if collType.ParentCollType != "" {
-			return fmt.Errorf("valid parent is required for collection '%s'", c.Name)
-		}
+	} else if collType.ParentCollType != "" {
+		return fmt.Errorf("valid parent is required for collection '%s'", c.Name)
 	}
 
 	return nil
