@@ -1,7 +1,7 @@
 package types
 
 import (
-	coll "aureole/internal/collections"
+	"aureole/internal/collections"
 	"github.com/gofrs/uuid"
 	"time"
 )
@@ -13,15 +13,15 @@ type InsertSessionData struct {
 }
 
 type Session interface {
-	CreateSessionColl(coll.Specification) error
+	CreateSessionColl(collections.Spec) error
 
-	GetSession(coll.Specification, int) (JSONCollResult, error)
+	GetSession(collections.Spec, int) (JSONCollResult, error)
 
-	InsertSession(coll.Specification, InsertSessionData) (JSONCollResult, error)
+	InsertSession(collections.Spec, InsertSessionData) (JSONCollResult, error)
 
-	DeleteSession(coll.Specification, int) (JSONCollResult, error)
+	DeleteSession(collections.Spec, int) (JSONCollResult, error)
 
 	SetCleanInterval(int)
 
-	StartCleaning(spec coll.Specification)
+	StartCleaning(spec collections.Spec)
 }

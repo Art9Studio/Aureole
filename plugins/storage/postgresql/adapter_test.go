@@ -1,7 +1,7 @@
 package postgresql
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -19,22 +19,7 @@ func Test_pgAdapter_Get(t *testing.T) {
 			"options":  map[string]string{},
 		},
 	}
-	invalidConf := &configs.Storage{
-		Config: configs.RawConfig{
-			"user":     "root",
-			"password": "password",
-			"host":     "localhost",
-			"port":     "5432",
-			"database": "test",
-			"options":  map[string]string{},
-		},
-	}
 
-	usersSess, err := adapter.Create(validConf)
-	assert.NoError(t, err)
+	usersSess := adapter.Create(validConf)
 	assert.NotNil(t, usersSess)
-
-	usersSess, err = adapter.Create(invalidConf)
-	assert.Error(t, err)
-	assert.Nil(t, usersSess)
 }

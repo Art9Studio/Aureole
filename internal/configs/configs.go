@@ -19,9 +19,25 @@ type (
 	}
 
 	App struct {
-		PathPrefix string  `config:"path_prefix"`
-		Authn      []Authn `config:"authN"`
-		Authz      []Authz `config:"authZ"`
+		PathPrefix string   `config:"path_prefix"`
+		Identity   Identity `config:"identity"`
+		Authn      []Authn  `config:"authN"`
+		Authz      []Authz  `config:"authZ"`
+	}
+
+	Identity struct {
+		Collection string `config:"collection"`
+		Id         trait  `config:"id"`
+		Username   trait  `config:"username"`
+		Phone      trait  `config:"phone"`
+		Email      trait  `config:"email"`
+	}
+
+	trait struct {
+		Enabled  bool `config:"enabled"`
+		Unique   bool `config:"unique"`
+		Required bool `config:"required"`
+		Internal bool `config:"internal"`
 	}
 
 	Authn struct {
@@ -44,13 +60,14 @@ type (
 	}
 
 	Collection struct {
-		Type        string        `config:"type"`
-		Name        string        `config:"name"`
-		UseExistent bool          `config:"use_existent"`
-		Spec        specification `config:"config"`
+		Type        string   `config:"type"`
+		Name        string   `config:"name"`
+		Parent      string   `config:"parent"`
+		UseExistent bool     `config:"use_existent"`
+		Spec        collSpec `config:"config"`
 	}
 
-	specification struct {
+	collSpec struct {
 		Name      string            `config:"name"`
 		Pk        string            `config:"pk"`
 		FieldsMap map[string]string `config:"fields_map"`

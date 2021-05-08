@@ -1,8 +1,8 @@
 package session
 
 import (
-	"aureole/configs"
-	"aureole/internal/plugins/authz/types"
+	"aureole/internal/configs"
+	authzTypes "aureole/internal/plugins/authz/types"
 )
 
 type config struct {
@@ -17,6 +17,6 @@ type config struct {
 	CleanInterval int    `mapstructure:"clean_interval"`
 }
 
-func (s sessionAdapter) Create(conf *configs.Authz) types.Authorizer {
+func (s sessionAdapter) Create(conf *configs.Authz) authzTypes.Authorizer {
 	return &session{rawConf: conf}
 }

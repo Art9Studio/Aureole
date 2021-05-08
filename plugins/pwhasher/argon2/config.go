@@ -1,7 +1,7 @@
 package argon2
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/pwhasher/types"
 )
 

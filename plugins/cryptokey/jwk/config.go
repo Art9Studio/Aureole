@@ -1,7 +1,7 @@
 package jwk
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/cryptokey/types"
 )
 

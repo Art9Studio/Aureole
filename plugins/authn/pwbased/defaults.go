@@ -1,6 +1,6 @@
 package pwbased
 
-import "aureole/configs"
+import "aureole/internal/configs"
 
 func (c *сonfig) setDefaults() {
 	configs.SetDefault(&c.CompatHashers, []string{})
@@ -13,12 +13,12 @@ func (l *login) setDefaults() {
 
 	if l.FieldsMap == nil {
 		l.FieldsMap = map[string]string{
-			"identity": "{$.username}",
+			"username": "{$.username}",
 			"password": "{$.password}",
 		}
 	} else {
-		if _, ok := l.FieldsMap["identity"]; !ok {
-			l.FieldsMap["identity"] = "{$.username}"
+		if _, ok := l.FieldsMap["username"]; !ok {
+			l.FieldsMap["username"] = "{$.username}"
 		}
 
 		if _, ok := l.FieldsMap["password"]; !ok {
@@ -32,12 +32,12 @@ func (r *register) setDefaults() {
 
 	if r.FieldsMap == nil {
 		r.FieldsMap = map[string]string{
-			"identity": "{$.username}",
+			"username": "{$.username}",
 			"password": "{$.password}",
 		}
 	} else {
-		if _, ok := r.FieldsMap["identity"]; !ok {
-			r.FieldsMap["identity"] = "{$.username}"
+		if _, ok := r.FieldsMap["username"]; !ok {
+			r.FieldsMap["username"] = "{$.username}"
 		}
 
 		if _, ok := r.FieldsMap["password"]; !ok {

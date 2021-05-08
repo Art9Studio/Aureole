@@ -1,41 +1,45 @@
 package postgresql
 
 import (
-	"aureole/configs"
 	"aureole/internal/collections"
+	"aureole/internal/configs"
+	"aureole/internal/identity"
 	"aureole/internal/plugins/storage"
 	"aureole/internal/plugins/storage/types"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func createConnSess(t *testing.T) types.Storage {
 	conf := &configs.Storage{
-		Type: "",
+		Type: "postgresql",
 		Name: "",
 		Config: configs.RawConfig{
-			"connection_url": "postgresql://root:password@localhost:5432/test",
+			"url": "postgresql://root:password@localhost:5432/aureole?sslmode=disable&search_path=public",
 		},
 	}
 
-	usersSess, err := storage.New(conf)
+	s, err := storage.New(conf)
 	if err != nil {
 		t.Fatalf("open connection by url: %v", err)
 	}
 
-	return usersSess
+	if err := s.Init(); err != nil {
+		t.Fatalf("open connection by url: %v", err)
+	}
+
+	return s
 }
 
 func Test_Session_IsCollExists(t *testing.T) {
 	usersSess := createConnSess(t)
 	defer usersSess.Close()
 
-	res, err := usersSess.IsCollExists(collections.Specification{Name: "users", Pk: "id"})
+	res, err := usersSess.IsCollExists(collections.Spec{Name: "users", Pk: "id"})
 	assert.NoError(t, err)
 	assert.Equal(t, res, true)
 
-	res, err = usersSess.IsCollExists(collections.Specification{Name: "users", Pk: "id"})
+	res, err = usersSess.IsCollExists(collections.Spec{Name: "users", Pk: "id"})
 	assert.NoError(t, err)
 	assert.Equal(t, res, false)
 }
@@ -44,48 +48,81 @@ func Test_Session_CreateIdentitytColl(t *testing.T) {
 	usersSess := createConnSess(t)
 	defer usersSess.Close()
 
-	err := usersSess.CreateIdentityColl(collections.Specification{
-		Name:      "users",
-		Pk:        "id",
-		FieldsMap: map[string]string{"identity": "username", "password": "password"},
-	})
+	i := &identity.Identity{
+		Id: identity.Trait{
+			Enabled:  true,
+			Unique:   true,
+			Required: true,
+			Internal: true,
+		},
+		Username: identity.Trait{
+			Enabled:  true,
+			Unique:   false,
+			Required: false,
+			Internal: false,
+		},
+		Phone: identity.Trait{
+			Enabled:  false,
+			Unique:   true,
+			Required: false,
+			Internal: false,
+		},
+		Email: identity.Trait{
+			Enabled:  true,
+			Unique:   true,
+			Required: true,
+			Internal: false,
+		},
+	}
+
+	i.Collection = &collections.Collection{
+		Spec: collections.Spec{
+			Name:      "users",
+			Pk:        "id",
+			FieldsMap: map[string]string{"username": "username", "phone": "phone", "email": "email"},
+		},
+	}
+	err := usersSess.CreateIdentityColl(i)
 	assert.Contains(t, err.Error(), "already exists")
+	/*
+		err = usersSess.CreateIdentityColl(collections.Spec{
+			Name:      "other",
+			Pk:        "id",
+			FieldsMap: map[string]string{"identity": "username", "password": "password"},
+		})
+		assert.NoError(t, err)
 
-	err = usersSess.CreateIdentityColl(collections.Specification{
-		Name:      "other",
-		Pk:        "id",
-		FieldsMap: map[string]string{"identity": "username", "password": "password"},
-	})
-	assert.NoError(t, err)
+		err = usersSess.CreateIdentityColl(collections.Spec{
+			Name:      "); drop table other; --",
+			Pk:        "id",
+			FieldsMap: map[string]string{"identity": "username", "password": "password"},
+		})
+		assert.NoError(t, err)
 
-	err = usersSess.CreateIdentityColl(collections.Specification{
-		Name:      "); drop table other; --",
-		Pk:        "id",
-		FieldsMap: map[string]string{"identity": "username", "password": "password"},
-	})
-	assert.NoError(t, err)
+		isOtherExist, err := usersSess.IsCollExists(collections.Spec{Name: "other", Pk: "id"})
+		assert.NoError(t, err)
+		assert.True(t, isOtherExist)
 
-	isOtherExist, err := usersSess.IsCollExists(collections.Specification{Name: "other", Pk: "id"})
-	assert.NoError(t, err)
-	assert.True(t, isOtherExist)
-
-	isDropExist, err := usersSess.IsCollExists(collections.Specification{Name: "); drop table other; --", Pk: "id"})
-	assert.NoError(t, err)
-	assert.True(t, isDropExist)
+		isDropExist, err := usersSess.IsCollExists(collections.Spec{Name: "); drop table other; --", Pk: "id"})
+		assert.NoError(t, err)
+		assert.True(t, isDropExist)
+	*/
 }
 
+/*
 func Test_Session_InsertIdentity(t *testing.T) {
 	usersSess := createConnSess(t)
 	defer usersSess.Close()
 
 	res, err := usersSess.InsertIdentity(
-		collections.Specification{
+		collTypes.Spec{
 			Name:      "users",
 			Pk:        "id",
 			FieldsMap: map[string]string{"identity": "username", "password": "password"},
 		},
-		types.InsertIdentityData{Identity: "hello", UserConfirm: "secret"},
+		types.IdentityData{Identity: "hello", Phone: "secret"},
 	)
 	assert.NoError(t, err)
 	fmt.Printf("new id: %v\n", res)
 }
+*/

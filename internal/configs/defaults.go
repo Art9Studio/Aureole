@@ -52,6 +52,38 @@ func (a *App) setDefaults() {
 	}
 }
 
+func (i *Identity) setDefaults() {
+	SetDefault(&i.Collection, "identity")
+
+	SetDefault(&i.Id, trait{
+		Enabled:  true,
+		Unique:   true,
+		Required: true,
+		Internal: true,
+	})
+
+	SetDefault(&i.Username, trait{
+		Enabled:  true,
+		Unique:   false,
+		Required: false,
+		Internal: false,
+	})
+
+	SetDefault(&i.Phone, trait{
+		Enabled:  false,
+		Unique:   true,
+		Required: false,
+		Internal: false,
+	})
+
+	SetDefault(&i.Email, trait{
+		Enabled:  true,
+		Unique:   true,
+		Required: true,
+		Internal: false,
+	})
+}
+
 func (authn *Authn) setDefaults() {
 	SetDefault(&authn.PathPrefix, "/")
 }

@@ -1,7 +1,7 @@
 package pbkdf2
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"

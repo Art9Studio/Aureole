@@ -4,27 +4,51 @@ apps:
   one:
     path_prefix: "/one"
 
+    identity:
+      collection: identity
+      id:
+        enabled: true
+        unique: true
+        required: true
+        internal: true
+      username:
+        enabled: true
+        unique: false
+        required: false # todo: can't be unique if not required
+        internal: false
+      phone:
+        enabled: false
+        unique: true
+        required: false
+        internal: false
+      email:
+        enabled: false
+        unique: true
+        required: true
+        internal: false
+
     authN:
       - type: "password_based"
         path_prefix: "/"
         authZ: session
         config:
           main_hasher: argon2
-          compat_hashers: []  # todo: implement it
-          collection: identity
+          compat_hashers: [ ]  # todo: implement it
+          collection: pwbased
           storage: one_db
           login:
             path: "/login"
             fields_map:
-              identity: "{$.username}"
+              username: "{$.username}"
               password: "{$.password}"
           register:
             path: "/register"
             login_after: true
             fields_map:
-              identity: "{$.username}"
-              password: "{$.password}"
+              username: "{$.username}"
               email: "{$.email}"
+              phone: "{$.phone}" # it's redundant in this case. we disabled phone
+              password: "{$.password}"
 
     authZ:
       - name: session
@@ -40,68 +64,76 @@ apps:
           same_site: ""
           clean_interval: 60
 
-  #two:
-  #  path_prefix: "/two"
-  #
-  #  authN:
-  #    - type: "password_based"
-  #      authZ: jwt
-  #      config:
-  #        main_hasher: argon2
-  #        collection: identity
-  #        storage: one_db
-  #
-  #  authZ:
-  #    - name: jwt
-  #      type: "jwt"
-  #      config:
-  #        alg: "RS256"
-  #        kid_alg: "docker_registry" # implement docker_registry and default and none
-  #        keys: [ rsa ]
-  #        payload: "jwt_payload.json"
+      #two:
+      #  path_prefix: "/two"
+      #
+      #  authN:
+      #    - type: "password_based"
+      #      authZ: jwt
+      #      config:
+      #        main_hasher: argon2
+      #        collection: identity
+      #        storage: one_db
+      #
+      #  authZ:
+      #    - name: jwt
+      #      type: "jwt"
+      #      config:
+      #        alg: "RS256"
+      #        kid_alg: "docker_registry" # implement docker_registry and default and none
+      #        keys: [ rsa ]
+      #        payload: "jwt_payload.json"
       #          "$.userID": "id"
       #          "$.userPosts": "@getUserPosts" raw query
-
 
 storages:
   - type: "postgresql"
     name: one_db
     config:
-      url: "postgresql://root:password@localhost:5432/test?sslmode=disable&search_path=public"
+      url: "postgresql://root:password@localhost:5432/aureole?sslmode=disable&search_path=public"
 
   - type: "postgresql"
     name: two_db
     config:
-      #adapter: "postgresql"
       username: "root"
       password: "password"
       host: "localhost"
       port: "5432"
-      db_name: "test"
-      options: # df
+      db_name: "aureole"
+      options:
         sslmode: "disable"
         search_path: "public"
 
 collections:
-  - type: "identity"
+  - type: "identity" # main coll
     name: identity
     use_existent: true
     config:
       name: "users"
       pk: "id"
       fields_map:
-        identity: "username"
+        id: "id"
+        username: "username"
+        phone: "phone"
+        email: "email"
+
+  - type: "pwbased" # appendix coll
+    name: pwbased
+    parent: identity
+    config:
+      fields_map:
         password: "password"
 
-  - type: "session"
+  - type: "session" # main coll
     name: session
     use_existent: false
     config:
       name: "sessions"
       pk: "user_id"
       fields_map:
-       session_token: "session_id"
-       expiration: "expiration"
+        id: "user_id"
+        session_token: "session_id"
+        expiration: "expiration"
 
 hashers:
   - type: "argon2"
@@ -126,7 +158,7 @@ crypto_keys:
   - type: "jwk"
     name: jwk_file
     config:
-      path: "./keys/private.json"
+      path: "lab/keys/private.json"
 
   - type: "jwk"
     name: jwk_url
@@ -139,7 +171,6 @@ crypto_keys:
   #    kid: "kkk"
   #    path: "./keys/private.pem"
 
-
 senders:
   - type: "email"
     name: email
@@ -148,8 +179,8 @@ senders:
       username: "test.aureole@gmail.com"
       password: "${SMTP_PASSWORD}"
       from: "test.aureole@gmail.com"
-      bcc: []
-      cc: []
+      bcc: [ ]
+      cc: [ ]
       templates:
-        default_text: "./templates/default.txt"
-        default_html: "./templates/default.html" # if extension is 'html' we send it as html
+        default_text: "lab/templates/default.txt"
+        default_html: "lab/templates/default.html" # if extension is 'html' we send it as html

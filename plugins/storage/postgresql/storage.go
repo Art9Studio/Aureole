@@ -1,8 +1,8 @@
 package postgresql
 
 import (
-	"aureole/configs"
 	"aureole/internal/collections"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/storage"
 	"aureole/internal/plugins/storage/types"
 	"context"
@@ -68,7 +68,7 @@ func (s *Storage) Close() error {
 }
 
 // IsCollExists checks whether the given collection exists
-func (s *Storage) IsCollExists(spec collections.Specification) (bool, error) {
+func (s *Storage) IsCollExists(spec collections.Spec) (bool, error) {
 	// TODO: use current schema instead constant 'public'
 	sql := fmt.Sprintf(
 		"select exists (select from pg_tables where schemaname = 'public' AND tablename = '%s');",

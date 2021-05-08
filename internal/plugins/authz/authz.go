@@ -1,7 +1,7 @@
 package authz
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/authz/types"
 	"fmt"
 )

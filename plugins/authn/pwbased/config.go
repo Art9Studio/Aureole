@@ -1,8 +1,8 @@
 package pwbased
 
 import (
-	"aureole/configs"
-	"aureole/internal/plugins/authn/types"
+	"aureole/internal/configs"
+	authnTypes "aureole/internal/plugins/authn/types"
 )
 
 type (
@@ -27,6 +27,6 @@ type (
 	}
 )
 
-func (p pwBasedAdapter) Create(conf *configs.Authn) types.Authenticator {
+func (p pwBasedAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
 	return &pwBased{rawConf: conf}
 }

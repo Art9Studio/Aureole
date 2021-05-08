@@ -1,13 +1,13 @@
 package postgresql
 
 import (
-	coll "aureole/internal/collections"
+	"aureole/internal/collections"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
 	"time"
 )
 
-func (s *Storage) CreateSessionColl(spec coll.Specification) error {
+func (s *Storage) CreateSessionColl(spec collections.Spec) error {
 	// TODO: check types of fields
 	sql := fmt.Sprintf(`create table %s
                        (%s int primary key not null,
@@ -20,7 +20,7 @@ func (s *Storage) CreateSessionColl(spec coll.Specification) error {
 	return s.RawExec(sql)
 }
 
-func (s *Storage) GetSession(spec coll.Specification, userId int) (types.JSONCollResult, error) {
+func (s *Storage) GetSession(spec collections.Spec, userId int) (types.JSONCollResult, error) {
 	sql := fmt.Sprintf(`SELECT %s, %s FROM %s WHERE %s=$1;`,
 		Sanitize(spec.FieldsMap["session_token"]),
 		Sanitize(spec.FieldsMap["expiration"]),
@@ -30,7 +30,7 @@ func (s *Storage) GetSession(spec coll.Specification, userId int) (types.JSONCol
 	return s.RawQuery(sql, userId)
 }
 
-func (s *Storage) InsertSession(spec coll.Specification, data types.InsertSessionData) (types.JSONCollResult, error) {
+func (s *Storage) InsertSession(spec collections.Spec, data types.InsertSessionData) (types.JSONCollResult, error) {
 	expires := data.Expiration.Unix()
 	sql := fmt.Sprintf("INSERT INTO %s (%s, %s, %s) VALUES ($1, $2, $3) ON CONFLICT (%s) DO UPDATE SET %s = $4, %s = $5 RETURNING $6",
 		Sanitize(spec.Name),
@@ -43,7 +43,7 @@ func (s *Storage) InsertSession(spec coll.Specification, data types.InsertSessio
 	return s.RawQuery(sql, data.UserId, data.SessionToken, expires, data.SessionToken, expires, spec.Pk)
 }
 
-func (s *Storage) DeleteSession(spec coll.Specification, userId int) (types.JSONCollResult, error) {
+func (s *Storage) DeleteSession(spec collections.Spec, userId int) (types.JSONCollResult, error) {
 	sql := fmt.Sprintf("DELETE FROM %s WHERE %s=$1",
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk))
@@ -54,12 +54,12 @@ func (s *Storage) SetCleanInterval(interval int) {
 	s.gcInterval = time.Duration(interval) * time.Second
 }
 
-func (s *Storage) StartCleaning(spec coll.Specification) {
+func (s *Storage) StartCleaning(spec collections.Spec) {
 	go s.cleanTicker(spec)
 }
 
 // cleanTicker starts the gc ticker
-func (s *Storage) cleanTicker(spec coll.Specification) {
+func (s *Storage) cleanTicker(spec collections.Spec) {
 	ticker := time.NewTicker(s.gcInterval)
 	defer ticker.Stop()
 	for {

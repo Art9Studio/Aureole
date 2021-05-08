@@ -6,8 +6,9 @@ import (
 
 type Application interface {
 	// IsCollExists checks whether the given collection exists
-	IsCollExists(collections.Specification) (bool, error)
+	IsCollExists(collections.Spec) (bool, error)
 	Identity
+	PwBased
 	Session
 }
 

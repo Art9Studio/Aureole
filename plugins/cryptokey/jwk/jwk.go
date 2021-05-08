@@ -1,7 +1,7 @@
 package jwk
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"context"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"

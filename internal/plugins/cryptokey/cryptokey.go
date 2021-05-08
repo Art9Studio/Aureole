@@ -1,7 +1,7 @@
 package cryptokey
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/cryptokey/types"
 	"fmt"
 )

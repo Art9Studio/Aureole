@@ -1,7 +1,7 @@
 package sender
 
 import (
-	"aureole/configs"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/sender/types"
 	"fmt"
 )

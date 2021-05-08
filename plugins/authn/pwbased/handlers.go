@@ -2,7 +2,9 @@ package pwbased
 
 import (
 	storageTypes "aureole/internal/plugins/storage/types"
-	"aureole/jsonpath"
+	"aureole/pkg/jsonpath"
+	"errors"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )
@@ -18,47 +20,42 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 			})
 		}
 
-		identityPath := context.conf.Login.FieldsMap["identity"]
-		IIdentity, err := jsonpath.GetJSONPath(identityPath, authInput)
+		usernamePath := context.conf.Login.FieldsMap["username"]
+		username, err := getJsonField(authInput, usernamePath)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": "identity didn't passed",
+				"message": fmt.Sprintf("username: %v", err),
 			})
-		}
-
-		identity, ok := IIdentity.(string)
-		if ok {
-			if strings.TrimSpace(identity) == "" {
-				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-					"success": false,
-					"message": "identity can't be blank",
-				})
-			}
 		}
 
 		passwordPath := context.conf.Login.FieldsMap["password"]
-		IPassword, err := jsonpath.GetJSONPath(passwordPath, authInput)
+		password, err := getJsonField(authInput, passwordPath)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": "password didn't passed",
+				"message": fmt.Sprintf("password: %v", err),
 			})
 		}
 
-		password, ok := IPassword.(string)
-		if ok {
-			if strings.TrimSpace(password) == "" {
-				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-					"success": false,
-					"message": "password can't be blank",
-				})
-			}
+		// TODO: add a user existence check
+		rawIdentity, err := context.storage.GetIdentity(context.identity, "username", username)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": err,
+			})
 		}
 
-		// TODO: add a user existence check
-		identityStorage := context.storage
-		pw, err := identityStorage.GetPasswordByIdentity(context.identityColl.Spec, identity)
+		identity, ok := rawIdentity.(map[string]interface{})
+		if !ok {
+			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+				"success": false,
+				"message": errors.New("unsupported identity type"),
+			})
+		}
+
+		pw, err := context.storage.GetPassword(context.coll, "username", username)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
@@ -76,7 +73,8 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 
 		if isMatch {
 			// todo: add getUserId method
-			return context.authorizer.Authorize(c, map[string]interface{}{"user_id": 0})
+			collSpec := context.identity.Collection.Spec
+			return context.authorizer.Authorize(c, map[string]interface{}{"user_id": identity[collSpec.FieldsMap["id"]]})
 		} else {
 			return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 				"success": false,
@@ -97,42 +95,22 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			})
 		}
 
-		identityPath := context.conf.Login.FieldsMap["identity"]
-		IIdentity, err := jsonpath.GetJSONPath(identityPath, authInput)
+		usernamePath := context.conf.Login.FieldsMap["username"]
+		username, err := getJsonField(authInput, usernamePath)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": "identity didn't passed",
+				"message": fmt.Sprintf("username: %v", err),
 			})
-		}
-
-		identity, ok := IIdentity.(string)
-		if ok {
-			if strings.TrimSpace(identity) == "" {
-				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-					"success": false,
-					"message": "identity can't be blank",
-				})
-			}
 		}
 
 		passwordPath := context.conf.Login.FieldsMap["password"]
-		IPassword, err := jsonpath.GetJSONPath(passwordPath, authInput)
+		password, err := getJsonField(authInput, passwordPath)
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": "password didn't passed",
+				"message": fmt.Sprintf("password: %v", err),
 			})
-		}
-
-		password, ok := IPassword.(string)
-		if ok {
-			if strings.TrimSpace(password) == "" {
-				return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-					"success": false,
-					"message": "password can't be blank",
-				})
-			}
 		}
 
 		pwHash, err := context.pwHasher.HashPw(password)
@@ -144,12 +122,9 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		// TODO: add a user existence check
-		identityStorage := context.storage
-		insertData := storageTypes.InsertIdentityData{
-			Identity:    identity,
-			UserConfirm: pwHash,
-		}
-		userId, err := identityStorage.InsertIdentity(context.identityColl.Spec, insertData)
+		identityData := &storageTypes.IdentityData{Username: username}
+		pwData := &storageTypes.PwBasedData{Password: pwHash}
+		userId, err := context.storage.InsertPwBased(context.identity, identityData, context.coll, pwData)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
@@ -163,4 +138,20 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			return c.JSON(&fiber.Map{"id": userId})
 		}
 	}
+}
+
+func getJsonField(json interface{}, fieldPath string) (string, error) {
+	rawData, err := jsonpath.GetJSONPath(fieldPath, json)
+	if err != nil {
+		return "", errors.New("field didn't passed")
+	}
+
+	data, ok := rawData.(string)
+	if ok {
+		if strings.TrimSpace(data) == "" {
+			return "", errors.New("field can't be blank")
+		}
+	}
+
+	return data, nil
 }

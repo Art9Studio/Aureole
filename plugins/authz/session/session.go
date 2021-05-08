@@ -1,8 +1,8 @@
 package session
 
 import (
-	"aureole/configs"
 	"aureole/internal/collections"
+	"aureole/internal/configs"
 	"aureole/internal/plugins/authz"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"fmt"
@@ -25,13 +25,13 @@ func (s *session) Init() (err error) {
 		return err
 	}
 
-	pluginsApi := authz.Repository.PluginsApi
-	s.collection, err = pluginsApi.GetCollection(s.conf.Collection)
+	pluginApi := authz.Repository.PluginApi
+	s.collection, err = pluginApi.Project.GetCollection(s.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", s.conf.Collection)
 	}
 
-	s.storage, err = pluginsApi.GetStorage(s.conf.Storage)
+	s.storage, err = pluginApi.Project.GetStorage(s.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", s.conf.Storage)
 	}
@@ -49,7 +49,13 @@ func (s *session) Init() (err error) {
 
 	s.storage.SetCleanInterval(s.conf.CleanInterval)
 	s.storage.StartCleaning(s.collection.Spec)
-	return s.storage.CheckFeaturesAvailable([]string{s.collection.Type})
+	if err := s.storage.CheckFeaturesAvailable([]string{s.collection.Type}); err != nil {
+		return err
+	}
+	if err := registerCollectionTypes(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
