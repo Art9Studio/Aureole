@@ -4,6 +4,7 @@ import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
 	"aureole/internal/plugins/authz"
+	"aureole/internal/plugins/authz/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -19,7 +20,7 @@ type session struct {
 	collection *collections.Collection
 }
 
-func (s *session) Init() (err error) {
+func (s *session) Init(appName string) (err error) {
 	s.conf, err = initConfig(&s.rawConf.Config)
 	if err != nil {
 		return err
@@ -52,9 +53,7 @@ func (s *session) Init() (err error) {
 	if err := s.storage.CheckFeaturesAvailable([]string{s.collection.Type}); err != nil {
 		return err
 	}
-	if err := registerCollectionTypes(); err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -68,8 +67,8 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func (s *session) Authorize(ctx *fiber.Ctx, fields map[string]interface{}) error {
-	userId := fields["user_id"]
+func (s *session) Authorize(ctx *fiber.Ctx, authzCtx *types.Context) error {
+	userId := authzCtx.UserId
 	expires := time.Now().Add(time.Duration(s.conf.MaxAge) * time.Second)
 
 	sessionToken, err := uuid.NewV4()

@@ -33,9 +33,6 @@ func Init(conf *configs.Project, ctx *ProjectCtx) error {
 		return err
 	}
 
-	if err := createCoreCollectionTypes(); err != nil {
-		return err
-	}
 	if err := createCollections(conf, ctx); err != nil {
 		return err
 	}
@@ -135,13 +132,6 @@ func cleanupStorages(conf *configs.Project, ctx *ProjectCtx) {
 			}
 		}
 	}
-}
-
-func createCoreCollectionTypes() error {
-	if err := identity.RegisterCollectionTypes(); err != nil {
-		return err
-	}
-	return nil
 }
 
 func createCollections(conf *configs.Project, ctx *ProjectCtx) error {
@@ -341,7 +331,7 @@ func initAppPlugins(ctx *ProjectCtx) error {
 		if err := initAuthenticators(appName, a); err != nil {
 			return err
 		}
-		if err := initAuthorizers(a); err != nil {
+		if err := initAuthorizers(appName, a); err != nil {
 			return err
 		}
 	}
@@ -359,9 +349,9 @@ func initAuthenticators(appName string, app *app.App) error {
 	return nil
 }
 
-func initAuthorizers(app *app.App) error {
+func initAuthorizers(appName string, app *app.App) error {
 	for _, authorizer := range app.Authorizers {
-		if err := authorizer.Init(); err != nil {
+		if err := authorizer.Init(appName); err != nil {
 			return err
 		}
 	}

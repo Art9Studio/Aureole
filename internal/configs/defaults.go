@@ -50,6 +50,10 @@ func (a *App) setDefaults() {
 	for i := range a.Authn {
 		a.Authn[i].setDefaults()
 	}
+
+	for i := range a.Authz {
+		a.Authz[i].setDefaults()
+	}
 }
 
 func (i *Identity) setDefaults() {
@@ -86,4 +90,8 @@ func (i *Identity) setDefaults() {
 
 func (authn *Authn) setDefaults() {
 	SetDefault(&authn.PathPrefix, "/")
+}
+
+func (authz *Authz) setDefaults() {
+	SetDefault(&authz.PathPrefix, "/")
 }

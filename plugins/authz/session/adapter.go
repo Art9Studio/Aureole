@@ -1,6 +1,7 @@
 package session
 
 import (
+	"aureole/internal/collections"
 	"aureole/internal/plugins/authz"
 )
 
@@ -10,6 +11,7 @@ const AdapterName = "session"
 // init initializes package by register adapter
 func init() {
 	authz.Repository.Register(AdapterName, sessionAdapter{})
+	collections.Repository.Register(sessionColType)
 }
 
 // sessionAdapter represents adapter for session authorization

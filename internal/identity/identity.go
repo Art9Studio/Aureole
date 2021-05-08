@@ -23,6 +23,10 @@ type (
 	}
 )
 
+func init() {
+	collections.Repository.Register(identColType)
+}
+
 func Create(conf *configs.Identity, collections map[string]*collections.Collection) (*Identity, error) {
 	coll, ok := collections[conf.Collection]
 	if !ok {

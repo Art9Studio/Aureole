@@ -63,10 +63,7 @@ func (p *pwBased) Init(appName string) (err error) {
 	}
 
 	createRoutes(p)
-	if err := registerCollectionTypes(); err != nil {
-		return err
-	}
-	return err
+	return nil
 }
 
 func initConfig(rawConf *configs.RawConfig) (*сonfig, error) {

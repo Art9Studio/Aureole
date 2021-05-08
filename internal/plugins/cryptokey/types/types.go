@@ -6,5 +6,6 @@ import (
 
 type CryptoKey interface {
 	Init() error
-	Get(string) (jwk.Set, error)
+	GetPrivateSet() jwk.Set
+	GetPublicSet() jwk.Set
 }
