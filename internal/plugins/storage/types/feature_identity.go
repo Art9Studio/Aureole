@@ -5,18 +5,18 @@ import (
 )
 
 type IdentityData struct {
-	Id       interface{}
-	Username interface{}
-	Phone    interface{}
-	Email    interface{}
+	Id         interface{}
+	Username   interface{}
+	Phone      interface{}
+	Email      interface{}
+	Additional map[string]interface{}
 }
 
 type Identity interface {
-	// CreateIdentityColl creates user collection with traits passed by UserCollectionConfig
-	CreateIdentityColl(*identity.Identity) error
-
 	// InsertIdentity inserts user entity in the user collection
 	InsertIdentity(*identity.Identity, *IdentityData) (JSONCollResult, error)
 
 	GetIdentity(*identity.Identity, string, interface{}) (JSONCollResult, error)
+
+	IsIdentityExist(*identity.Identity, string, interface{}) (bool, error)
 }

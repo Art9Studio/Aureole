@@ -68,7 +68,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func (s *session) Authorize(ctx *fiber.Ctx, authzCtx *types.Context) error {
-	userId := authzCtx.UserId
+	userId := authzCtx.Id
 	expires := time.Now().Add(time.Duration(s.conf.MaxAge) * time.Second)
 
 	sessionToken, err := uuid.NewV4()

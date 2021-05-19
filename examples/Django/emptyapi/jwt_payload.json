@@ -7,5 +7,5 @@
   "is_active": "{{index .Additional "is_active"}}",
   "is_superuser": "{{index .Additional "is_superuser"}}",
   "is_staff": "{{index .Additional "is_staff"}}",
-  "created": "{{index .Additional "date_joined"}}"
+  "date_joined": "{{index .Additional "date_joined"}}"
 }

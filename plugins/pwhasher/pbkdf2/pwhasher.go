@@ -2,7 +2,7 @@ package pbkdf2
 
 import (
 	"aureole/internal/configs"
-	"crypto/rand"
+	crand "crypto/rand"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -13,8 +13,44 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/pbkdf2"
 	"hash"
+	"math/big"
+	"math/rand"
 	"strings"
 )
+
+const (
+	allowedChars     = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	allowedCharsSize = len(allowedChars)
+	maxInt           = 1<<63 - 1
+)
+
+type source struct{}
+
+func (s *source) Int63() int64 {
+	return int64(s.Uint64() & ^uint64(1<<63))
+}
+
+func (s *source) Uint64() uint64 {
+	i, err := crand.Int(crand.Reader, big.NewInt(maxInt))
+	if err != nil {
+		panic(err)
+	}
+	return i.Uint64()
+}
+
+func (s *source) Seed(_ int64) {}
+
+func GetRandomString(length int) string {
+	b := make([]byte, length)
+	rnd := rand.New(&source{})
+
+	for i := range b {
+		c := rnd.Intn(allowedCharsSize)
+		b[i] = allowedChars[c]
+	}
+
+	return string(b)
+}
 
 // Pbkdf2 represents pbkdf2 hasher
 type Pbkdf2 struct {
@@ -51,18 +87,14 @@ func (p *Pbkdf2) Init() error {
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
 func (p *Pbkdf2) HashPw(pw string) (string, error) {
-	salt := make([]byte, p.conf.SaltLen)
-	if _, err := rand.Read(salt); err != nil {
-		return "", err
-	}
-
-	key := pbkdf2.Key([]byte(pw), salt, p.conf.Iterations, p.conf.KeyLen, p.function)
+	salt := GetRandomString(p.conf.SaltLen)
+	key := pbkdf2.Key([]byte(pw), []byte(salt), p.conf.Iterations, p.conf.KeyLen, p.function)
 
 	hashed := fmt.Sprintf("pbkdf2_%s$%d$%s$%s",
 		p.conf.FuncName,
 		p.conf.Iterations,
-		base64.RawStdEncoding.EncodeToString(salt),
-		base64.RawStdEncoding.EncodeToString(key),
+		salt,
+		base64.StdEncoding.EncodeToString(key),
 	)
 
 	return hashed, nil
@@ -102,7 +134,8 @@ func decodePwHash(hashed string) (*config, func() hash.Hash, []byte, []byte, err
 		return nil, nil, nil, nil, err
 	}
 	funcName = strings.TrimLeft(funcName, "pbkdf2_")
-	var function (func() hash.Hash)
+
+	var function func() hash.Hash
 	switch funcName {
 	case "sha1":
 		function = sha1.New
@@ -125,13 +158,10 @@ func decodePwHash(hashed string) (*config, func() hash.Hash, []byte, []byte, err
 		return nil, nil, nil, nil, err
 	}
 
-	salt, err := base64.RawStdEncoding.DecodeString(vals[2])
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
+	salt := []byte(vals[2])
 	conf.SaltLen = len(salt)
 
-	key, err := base64.RawStdEncoding.DecodeString(vals[3])
+	key, err := base64.StdEncoding.DecodeString(vals[3])
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

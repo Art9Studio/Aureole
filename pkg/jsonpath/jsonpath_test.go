@@ -13,15 +13,15 @@ func Test_GetJSONPath_Simple(t *testing.T) {
 	err := json.Unmarshal(pointsJSON, &pointsData)
 	assert.NoError(t, err)
 
-	x, err := GetJSONPath("{$.x}", pointsData)
+	x, err := GetJsonPath("{$.x}", pointsData)
 	assert.NoError(t, err)
 	assert.Equal(t, 4.0, x)
 
-	y, err := GetJSONPath("{$.y}", pointsData)
+	y, err := GetJsonPath("{$.y}", pointsData)
 	assert.NoError(t, err)
 	assert.Equal(t, -5.0, y)
 
-	arr, err := GetJSONPath("{$.x}{$.y}", pointsData)
+	arr, err := GetJsonPath("{$.x}{$.y}", pointsData)
 	assert.NoError(t, err)
 	assert.Len(t, arr, 2)
 }
@@ -67,25 +67,25 @@ func Test_GetJSONPath_Advanced(t *testing.T) {
 		},
 	}
 
-	out, err := GetJSONPath("{.store.bicycle.color}", in)
+	out, err := GetJsonPath("{.store.bicycle.color}", in)
 	assert.NoError(t, err)
 	assert.Equal(t, "red", out)
 
-	out, err = GetJSONPath("{.store.bicycle.price}", in)
+	out, err = GetJsonPath("{.store.bicycle.price}", in)
 	assert.NoError(t, err)
 	assert.Equal(t, 19.95, out)
 
-	_, err = GetJSONPath("{.store.bogus}", in)
+	_, err = GetJsonPath("{.store.bogus}", in)
 	assert.Error(t, err)
 
-	_, err = GetJSONPath("{.store.unclosed}", in)
+	_, err = GetJsonPath("{.store.unclosed}", in)
 	assert.Error(t, err)
 
-	out, err = GetJSONPath("{.store}", in)
+	out, err = GetJsonPath("{.store}", in)
 	assert.NoError(t, err)
 	assert.EqualValues(t, in["store"], out)
 
-	out, err = GetJSONPath("{$.store.book[*].author}", in)
+	out, err = GetJsonPath("{$.store.book[*].author}", in)
 	assert.NoError(t, err)
 	assert.Len(t, out, 4)
 	assert.Contains(t, out, "Nigel Rees")
@@ -93,7 +93,7 @@ func Test_GetJSONPath_Advanced(t *testing.T) {
 	assert.Contains(t, out, "Herman Melville")
 	assert.Contains(t, out, "J. R. R. Tolkien")
 
-	out, err = GetJSONPath("{$..book[?( @.price < 10.0 )]}", in)
+	out, err = GetJsonPath("{$..book[?( @.price < 10.0 )]}", in)
 	assert.NoError(t, err)
 	expected := ar{
 		m{
@@ -133,7 +133,7 @@ func Test_GetJSONPath_Advanced(t *testing.T) {
 			},
 		},
 	}
-	out, err = GetJSONPath("{..foo.*}", in)
+	out, err = GetJsonPath("{..foo.*}", in)
 	assert.NoError(t, err)
 	assert.Len(t, out, 3)
 	assert.Contains(t, out, m{"aaaa": m{"bar": 1234}})
@@ -155,13 +155,13 @@ func Test_GetJSONPath_Advanced(t *testing.T) {
 		safe: "hidden",
 	}
 
-	out, err = GetJSONPath("{.Bicycle.Color}", structIn)
+	out, err = GetJsonPath("{.Bicycle.Color}", structIn)
 	assert.NoError(t, err)
 	assert.Equal(t, "red", out)
 
-	_, err = GetJSONPath("{.safe}", structIn)
+	_, err = GetJsonPath("{.safe}", structIn)
 	assert.Error(t, err)
 
-	_, err = GetJSONPath("{.*}", structIn)
+	_, err = GetJsonPath("{.*}", structIn)
 	assert.Error(t, err)
 }

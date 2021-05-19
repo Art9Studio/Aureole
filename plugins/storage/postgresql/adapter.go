@@ -7,6 +7,9 @@ import (
 // AdapterName is the internal name of the adapter
 const AdapterName = "postgresql"
 
+// DefaultFieldType is the default type for the fields, where type is not specified
+const DefaultFieldType = "text"
+
 var AdapterFeatures = map[string]bool{"identity": true, "session": true, "pwbased": true}
 
 // init initializes package by register adapter

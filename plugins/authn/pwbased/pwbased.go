@@ -16,7 +16,7 @@ import (
 type pwBased struct {
 	appName    string
 	rawConf    *configs.Authn
-	conf       *сonfig
+	conf       *config
 	identity   *identity.Identity
 	pwHasher   types.PwHasher
 	storage    storageTypes.Storage
@@ -66,8 +66,8 @@ func (p *pwBased) Init(appName string) (err error) {
 	return nil
 }
 
-func initConfig(rawConf *configs.RawConfig) (*сonfig, error) {
-	adapterConf := &сonfig{}
+func initConfig(rawConf *configs.RawConfig) (*config, error) {
+	adapterConf := &config{}
 	if err := mapstructure.Decode(rawConf, adapterConf); err != nil {
 		return nil, err
 	}

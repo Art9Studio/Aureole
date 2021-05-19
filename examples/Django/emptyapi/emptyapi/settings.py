@@ -68,7 +68,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-AUTH_USER_MODEL = 'core.CustomUser'
+#AUTH_USER_MODEL = 'core.CustomUser'
 
 JWT_AUTH = {
     'JWT_DECODE_HANDLER':
