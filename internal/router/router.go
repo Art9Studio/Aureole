@@ -17,7 +17,6 @@ var Router TRouter
 // CreateServer initializes router and creates routes for each application
 func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 	r := fiber.New()
-	// todo: REMOVE DEBUG SETTING
 	r.Use(cors.New())
 	v := r.Group("")
 

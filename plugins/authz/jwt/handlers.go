@@ -75,21 +75,10 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (string, error) {
 	switch bearer {
 	case Header:
-		/*authHeader := c.Get("Authorization")
-		splitHeader := strings.Split(authHeader, "Bearer ")
-		if len(splitHeader) != 2 {
-			return "", c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-				"success": false,
-				"message": "bearer input not in proper format",
-			})
-		}
-		return strings.TrimSpace(splitHeader[1]), nil*/
 		var input map[string]string
-
 		if err := c.BodyParser(&input); err != nil {
 			return "", err
 		}
-
 		return input["refresh"], nil
 	case Both, Cookie:
 		rawToken := c.Cookies(names["cookie"])
