@@ -17,17 +17,20 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"path"
 	txtTmpl "text/template"
 	"time"
 )
 
 type jwtAuthz struct {
-	appName    string
-	rawConf    *configs.Authz
-	conf       *config
-	signKey    ckeyTypes.CryptoKey
-	verifyKeys map[string]ckeyTypes.CryptoKey
+	appName       string
+	rawConf       *configs.Authz
+	conf          *config
+	signKey       ckeyTypes.CryptoKey
+	verifyKeys    map[string]ckeyTypes.CryptoKey
+	nativeQueries map[string]string
 }
 
 type (
@@ -80,6 +83,10 @@ func (j *jwtAuthz) Init(appName string) (err error) {
 		}
 	}
 
+	if j.nativeQueries, err = readNativeQueries(j.conf.NativeQueries); err != nil {
+		return err
+	}
+
 	createRoutes(j)
 	return err
 }
@@ -94,6 +101,22 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
+func readNativeQueries(path string) (map[string]string, error) {
+	q := map[string]string{}
+
+	f, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(f, &q)
+	if err != nil {
+		return nil, err
+	}
+
+	return q, nil
+}
+
 func createRoutes(j *jwtAuthz) {
 	routes := []*_interface.Route{
 		{
@@ -103,6 +126,10 @@ func createRoutes(j *jwtAuthz) {
 		},
 	}
 	authn.Repository.PluginApi.Router.Add(j.appName, routes)
+}
+
+func (j *jwtAuthz) GetNativeQueries() map[string]string {
+	return j.nativeQueries
 }
 
 func (j *jwtAuthz) Authorize(fiberCtx *fiber.Ctx, authzCtx *authzTypes.Context) error {
@@ -214,7 +241,9 @@ func parsePayload(filePath string, authzCtx *authzTypes.Context) (map[string]int
 	rawPayload := &bytes.Buffer{}
 
 	if extension == ".json" {
-		tmpl := txtTmpl.Must(txtTmpl.New(baseName).ParseFiles(tmplFile))
+		tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
+			"NativeQ": authzCtx.NativeQ,
+		}).ParseFiles(tmplFile))
 		if err := tmpl.Execute(rawPayload, authzCtx); err != nil {
 			return nil, err
 		}

@@ -7,6 +7,7 @@ import (
 
 type Authorizer interface {
 	Init(string) error
+	GetNativeQueries() map[string]string
 	Authorize(*fiber.Ctx, *Context) error
 }
 
@@ -16,6 +17,7 @@ type Context struct {
 	Phone      interface{}
 	Email      interface{}
 	Additional map[string]interface{}
+	NativeQ    func(queryName string, args ...interface{}) string
 }
 
 func NewContext(identity map[string]interface{}, fieldsMap map[string]collections.FieldSpec) *Context {

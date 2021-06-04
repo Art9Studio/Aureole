@@ -1,11 +1,5 @@
 {
   "id": "{{.Id}}",
   "username": "{{.Username}}",
-  "email": "{{.Email}}",
-  "first_name": "{{index .Additional "first_name"}}",
-  "last_name": "{{index .Additional "last_name"}}",
-  "is_active": "{{index .Additional "is_active"}}",
-  "is_superuser": "{{index .Additional "is_superuser"}}",
-  "is_staff": "{{index .Additional "is_staff"}}",
-  "created": "{{index .Additional "date_joined"}}"
+  "posts": {{NativeQ "getUserPosts" .Id}}
 }

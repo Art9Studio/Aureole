@@ -88,15 +88,10 @@ apps:
       collection: identity
       id:
       username:
+        required: true
+        unique: true
       phone:
       email:
-      additional:
-        - is_superuser:
-            internal: true
-        - first_name:
-        - last_name:
-        - is_staff:
-            internal: true
 
     authN:
       - type: "password_based"
@@ -126,6 +121,7 @@ apps:
           refresh_exp: 7890000
           refresh_url: "/refresh"
           payload: "lab/templates/jwt_payload.json"
+          native_queries: "lab/native-queries/native.yaml"
 
 storages:
   - type: "postgresql"
@@ -156,8 +152,8 @@ collections:
         username: "username"
         phone: "phone"
         email: "email"
-        is_active: "is_active" # to disable use "no"
-        created: "date_joined" # by default "created"
+        is_active: "no" # to disable use "no"
+        created: "no" # by default "created"
         is_superuser:
           field: "is_superuser"
           type: boolean

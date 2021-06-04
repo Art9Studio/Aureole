@@ -22,6 +22,7 @@ type config struct {
 	RefreshExp    int                    `mapstructure:"refresh_exp"`
 	RefreshUrl    string                 `mapstructure:"refresh_url"`
 	Payload       string                 `mapstructure:"payload"`
+	NativeQueries string                 `mapstructure:"native_queries"`
 }
 
 func (j jwtAdapter) Create(conf *configs.Authz) types.Authorizer {

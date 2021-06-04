@@ -21,7 +21,7 @@ func (s *Storage) Ping() error {
 	return nil
 }
 
-// Exec executes the given sql query with no returning results
+// RawExec executes the given sql query with no returning results
 func (s *Storage) RawExec(sql string, args ...interface{}) error {
 	_, err := s.conn.Exec(context.Background(), sql, args...)
 	return err
