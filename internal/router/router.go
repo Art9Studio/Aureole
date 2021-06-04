@@ -4,6 +4,7 @@ import (
 	"aureole/internal/context/app"
 	"aureole/internal/router/interface"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"path"
 )
 
@@ -16,6 +17,7 @@ var Router TRouter
 // CreateServer initializes router and creates routes for each application
 func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 	r := fiber.New()
+	r.Use(cors.New())
 	v := r.Group("")
 
 	for appName, routes := range Router.Routes {

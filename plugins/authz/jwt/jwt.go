@@ -46,7 +46,7 @@ const (
 	Both   bearerType = "both"
 )
 
-var names = map[string]map[string]string{
+var keyMap = map[string]map[string]string{
 	"access": {
 		"header": "access",
 		"cookie": "access_token",
@@ -109,14 +109,14 @@ func (j *jwtAuthz) Authorize(fiberCtx *fiber.Ctx, authzCtx *authzTypes.Context) 
 	if err != nil {
 		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 	}
 	refreshT, err := newToken(RefreshToken, j.conf, authzCtx)
 	if err != nil {
 		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 	}
 
@@ -124,27 +124,29 @@ func (j *jwtAuthz) Authorize(fiberCtx *fiber.Ctx, authzCtx *authzTypes.Context) 
 	if err != nil {
 		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 	}
 	signedRefreshT, err := signToken(j.signKey, refreshT)
 	if err != nil {
 		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 	}
 
-	if err := sendToken(fiberCtx, j.conf.AccessBearer, names["access"], signedAccessT); err != nil {
-		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"success": false,
-			"message": err,
-		})
+	bearers := map[string]bearerType{
+		"access":  j.conf.AccessBearer,
+		"refresh": j.conf.RefreshBearer,
 	}
-	if err := sendToken(fiberCtx, j.conf.RefreshBearer, names["refresh"], signedRefreshT); err != nil {
+	tokens := map[string][]byte{
+		"access":  signedAccessT,
+		"refresh": signedRefreshT,
+	}
+	if err := attachTokens(fiberCtx, bearers, keyMap, tokens); err != nil {
 		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 	}
 
@@ -245,6 +247,7 @@ func parsePayload(filePath string, authzCtx *authzTypes.Context) (map[string]int
 func defaultPayload(authzCtx *authzTypes.Context) (map[string]interface{}, error) {
 	payload := make(map[string]interface{})
 	payload["user_id"] = authzCtx.UserId
+	payload["username"] = authzCtx.Username
 
 	return payload, nil
 }
@@ -269,29 +272,30 @@ func signToken(signKey ckeyTypes.CryptoKey, token jwt.Token) ([]byte, error) {
 	return []byte{}, errors.New("key set don't contain sig key")
 }
 
-func sendToken(fiberCtx *fiber.Ctx, bearer bearerType, names map[string]string, token []byte) error {
-	switch bearer {
-	case Header:
-		return fiberCtx.JSON(&fiber.Map{names["header"]: string(token)})
-	case Cookie:
-		cookie := &fiber.Cookie{
-			Name:  names["cookie"],
-			Value: string(token),
-		}
-		fiberCtx.Cookie(cookie)
-	case Both:
-		if err := fiberCtx.JSON(&fiber.Map{names["header"]: string(token)}); err != nil {
-			return err
-		}
+func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string]map[string]string, tokens map[string][]byte) error {
+	jsonBody := map[string]string{}
 
-		cookie := &fiber.Cookie{
-			Name:  names["cookie"],
-			Value: string(token),
+	for name, token := range tokens {
+		switch bearers[name] {
+		case Header:
+			jsonBody[keyMap[name]["header"]] = string(token)
+		case Cookie:
+			cookie := &fiber.Cookie{
+				Name:  keyMap[name]["cookie"],
+				Value: string(token),
+			}
+			c.Cookie(cookie)
+		case Both:
+			jsonBody[keyMap[name]["header"]] = string(token)
+
+			cookie := &fiber.Cookie{
+				Name:  keyMap[name]["cookie"],
+				Value: string(token),
+			}
+			c.Cookie(cookie)
+		default:
+			return fmt.Errorf("unexpected bearer name: %s", bearers[name])
 		}
-		fiberCtx.Cookie(cookie)
-	default:
-		return fmt.Errorf("unexpected bearer name: %s", bearer)
 	}
-
-	return nil
+	return c.JSON(jsonBody)
 }

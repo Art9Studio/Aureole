@@ -5,7 +5,6 @@ import (
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/pkg/jsonpath"
 	"errors"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )
@@ -17,7 +16,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if err := c.BodyParser(&authInput); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
@@ -26,7 +25,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": fmt.Sprintf("username: %v", err),
+				"message": err.Error(),
 			})
 		}
 
@@ -35,7 +34,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": fmt.Sprintf("password: %v", err),
+				"message": err.Error(),
 			})
 		}
 
@@ -44,7 +43,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
@@ -60,7 +59,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
@@ -68,19 +67,22 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
 		if isMatch {
 			// todo: add getUserId method
 			collSpec := context.identity.Collection.Spec
-			authzCtx := &authzTypes.Context{UserId: identity[collSpec.FieldsMap["id"]].(int)}
+			authzCtx := &authzTypes.Context{
+				Username: username,
+				UserId:   int(identity[collSpec.FieldsMap["id"]].(float64)),
+			}
 			return context.authorizer.Authorize(c, authzCtx)
 		} else {
 			return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": "wrong password or username",
 			})
 		}
 	}
@@ -93,7 +95,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		if err := c.BodyParser(&authInput); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
@@ -102,7 +104,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": fmt.Sprintf("username: %v", err),
+				"message": err.Error(),
 			})
 		}
 
@@ -111,7 +113,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 				"success": false,
-				"message": fmt.Sprintf("password: %v", err),
+				"message": err.Error(),
 			})
 		}
 
@@ -119,7 +121,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
@@ -130,12 +132,15 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"success": false,
-				"message": err,
+				"message": err.Error(),
 			})
 		}
 
 		if context.conf.Register.IsLoginAfter {
-			authzCtx := &authzTypes.Context{UserId: userId.(int)}
+			authzCtx := &authzTypes.Context{
+				Username: username,
+				UserId:   int(userId.(float64)),
+			}
 			return context.authorizer.Authorize(c, authzCtx)
 		} else {
 			return c.JSON(&fiber.Map{"id": userId})
