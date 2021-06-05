@@ -14,7 +14,6 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 	"hash"
 	"math/big"
-	"math/rand"
 	"strings"
 )
 
@@ -26,10 +25,6 @@ const (
 
 type source struct{}
 
-func (s *source) Int63() int64 {
-	return int64(s.Uint64() & ^uint64(1<<63))
-}
-
 func (s *source) Uint64() uint64 {
 	i, err := crand.Int(crand.Reader, big.NewInt(maxInt))
 	if err != nil {
@@ -40,16 +35,18 @@ func (s *source) Uint64() uint64 {
 
 func (s *source) Seed(_ int64) {}
 
-func GetRandomString(length int) string {
-	b := make([]byte, length)
-	rnd := rand.New(&source{})
-
-	for i := range b {
-		c := rnd.Intn(allowedCharsSize)
-		b[i] = allowedChars[c]
+func GetRandomString(length int) (string, error) {
+	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+	ret := make([]byte, length)
+	for i := 0; i < length; i++ {
+		num, err := crand.Int(crand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			return "", err
+		}
+		ret[i] = letters[num.Int64()]
 	}
 
-	return string(b)
+	return string(ret), nil
 }
 
 // Pbkdf2 represents pbkdf2 hasher
@@ -87,7 +84,11 @@ func (p *Pbkdf2) Init() error {
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
 func (p *Pbkdf2) HashPw(pw string) (string, error) {
-	salt := GetRandomString(p.conf.SaltLen)
+	salt, err := GetRandomString(p.conf.SaltLen)
+	if err != nil {
+		return "", err
+	}
+
 	key := pbkdf2.Key([]byte(pw), []byte(salt), p.conf.Iterations, p.conf.KeyLen, p.function)
 
 	hashed := fmt.Sprintf("pbkdf2_%s$%d$%s$%s",
