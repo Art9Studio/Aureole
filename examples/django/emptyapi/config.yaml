@@ -40,7 +40,7 @@ apps:
           alg: "RS256"
           sign_key: jwk_file
           verify_keys: [jwk_file]
-          payload: "./examples/Django/emptyapi/jwt_payload.json"
+          payload: "./examples/django/emptyapi/jwt_payload.json"
 
 storages:
   - type: "postgresql"
