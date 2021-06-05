@@ -2,7 +2,7 @@ name: Build Aureole
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build-docker-image:
