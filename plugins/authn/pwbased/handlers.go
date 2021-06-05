@@ -63,6 +63,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if isMatch {
 			collSpec := context.identity.Collection.Spec
 			authzCtx := authzT.NewContext(i, collSpec.FieldsMap)
+			// todo: refactor this
 			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
 				queries := context.authorizer.GetNativeQueries()
 
@@ -157,6 +158,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 				Email:      identityData.Email,
 				Additional: identityData.Additional,
 			}
+			// todo: refactor this
 			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
 				queries := context.authorizer.GetNativeQueries()
 
