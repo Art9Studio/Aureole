@@ -101,3 +101,7 @@ func (s *session) Authorize(ctx *fiber.Ctx, authzCtx *types.Context) error {
 
 	return nil
 }
+
+func (s *session) GetNativeQueries() map[string]string {
+	return nil
+}

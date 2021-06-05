@@ -6,6 +6,7 @@ import (
 	authzT "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/pkg/jsonpath"
+	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,7 +14,6 @@ import (
 func Login(context *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
-
 		if err := c.BodyParser(&authInput); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -63,6 +63,27 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		if isMatch {
 			collSpec := context.identity.Collection.Spec
 			authzCtx := authzT.NewContext(i, collSpec.FieldsMap)
+			// todo: refactor this
+			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
+				queries := context.authorizer.GetNativeQueries()
+
+				q, ok := queries[queryName]
+				if !ok {
+					return "--an error occurred during render--"
+				}
+
+				rawRes, err := context.storage.NativeQuery(q, args...)
+				if err != nil {
+					return "--an error occurred during render--"
+				}
+
+				res, err := json.Marshal(rawRes)
+				if err != nil {
+					return "--an error occurred during render--"
+				}
+
+				return string(res)
+			}
 			return context.authorizer.Authorize(c, authzCtx)
 		} else {
 			return sendError(c, fiber.StatusUnauthorized, fmt.Sprintf("wrong password or %s", credName))
@@ -90,7 +111,6 @@ func getLoginTraitData(trait *identity.Trait, json interface{}, fieldPath string
 func Register(context *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
-
 		if err := c.BodyParser(&authInput); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -131,7 +151,34 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		if context.conf.Register.IsLoginAfter {
-			authzCtx := authzT.Context(*identityData)
+			authzCtx := authzT.Context{
+				Id:         identityData.Id,
+				Username:   identityData.Username,
+				Phone:      identityData.Phone,
+				Email:      identityData.Email,
+				Additional: identityData.Additional,
+			}
+			// todo: refactor this
+			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
+				queries := context.authorizer.GetNativeQueries()
+
+				q, ok := queries[queryName]
+				if !ok {
+					return "--an error occurred during render--"
+				}
+
+				rawRes, err := context.storage.NativeQuery(q, args)
+				if err != nil {
+					return "--an error occurred during render--"
+				}
+
+				res, err := json.Marshal(rawRes)
+				if err != nil {
+					return "--an error occurred during render--"
+				}
+
+				return string(res)
+			}
 			return context.authorizer.Authorize(c, &authzCtx)
 		} else {
 			return c.JSON(&fiber.Map{"id": id})

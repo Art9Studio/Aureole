@@ -10,6 +10,7 @@ type Application interface {
 	Identity
 	PwBased
 	Session
+	NativeQueries
 }
 
 // Storage is an interface that defines methods for database session
