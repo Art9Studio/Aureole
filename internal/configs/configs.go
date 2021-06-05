@@ -26,18 +26,18 @@ type (
 	}
 
 	Identity struct {
-		Collection string `config:"collection"`
-		Id         trait  `config:"id"`
-		Username   trait  `config:"username"`
-		Phone      trait  `config:"phone"`
-		Email      trait  `config:"email"`
+		Collection string                `config:"collection"`
+		Id         map[string]bool       `config:"id"`
+		Username   map[string]bool       `config:"username"`
+		Phone      map[string]bool       `config:"phone"`
+		Email      map[string]bool       `config:"email"`
+		Additional map[string]extraTrait `config:"additional"`
 	}
 
-	trait struct {
-		Enabled  bool `config:"enabled"`
-		Unique   bool `config:"unique"`
-		Required bool `config:"required"`
-		Internal bool `config:"internal"`
+	extraTrait struct {
+		IsUnique   bool `config:"unique"`
+		IsRequired bool `config:"required"`
+		IsInternal bool `config:"internal"`
 	}
 
 	Authn struct {
@@ -61,17 +61,16 @@ type (
 	}
 
 	Collection struct {
-		Type        string   `config:"type"`
-		Name        string   `config:"name"`
-		Parent      string   `config:"parent"`
-		UseExistent bool     `config:"use_existent"`
-		Spec        collSpec `config:"config"`
+		Type   string   `config:"type"`
+		Name   string   `config:"name"`
+		Parent string   `config:"parent"`
+		Spec   collSpec `config:"config"`
 	}
 
 	collSpec struct {
-		Name      string            `config:"name"`
-		Pk        string            `config:"pk"`
-		FieldsMap map[string]string `config:"fields_map"`
+		Name      string                 `config:"name"`
+		Pk        string                 `config:"pk"`
+		FieldsMap map[string]interface{} `config:"fields_map"`
 	}
 
 	PwHasher struct {
@@ -112,3 +111,13 @@ func LoadMainConfig() (*Project, error) {
 
 	return &rawConf, nil
 }
+
+/*
+func validate() {
+	// todo: at least 1 trait should be enabled, required, unique and credential
+	// todo: trait can't be required if it internal
+	// todo: trait can't be unique if not required
+	// todo: check check if no non-existent keys (not in [enabled, unique, required, credential]) have been set in the config
+	// todo: check bearer names [cookie, body, header, both]
+}
+*/

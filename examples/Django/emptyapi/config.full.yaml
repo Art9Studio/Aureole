@@ -6,40 +6,85 @@ apps:
 
     identity:
       collection: identity
-      username:
+      id:
+        enabled: true
         unique: true
         required: true
+        credential: false
+      username:
+        enabled: true
+        unique: true
+        required: true
+        credential: true
+      phone:
+        enabled: false
       email:
         enabled: true
         unique: false
         required: false
+        credential: true
       additional:
         - is_superuser:
+            unique: false
+            required: false
             internal: true
         - first_name:
+            unique: false
+            required: false
+            internal: false
         - last_name:
+            unique: false
+            required: false
+            internal: false
         - is_staff:
+            unique: false
+            required: false
             internal: true
 
     authN:
       - type: "password_based"
+        path_prefix: "/"
         authZ: jwt
         config:
           main_hasher: django
+          compat_hashers: [ ]
           collection: pwbased
           storage: one_db
+          login:
+            path: "/login"
+            fields_map:
+              username: "{$.username}"
+              password: "{$.password}"
+          register:
+            path: "/register"
+            login_after: true
+            fields_map:
+              username: "{$.username}"
+              email: "{$.email}"
+              phone: "{$.phone}"
+              password: "{$.password}"
+              first_name: "{$.first_name}"
+              last_name: "{$.last_name}"
 
     authZ:
       - type: "jwt"
         name: jwt
+        path_prefix: "/"
         config:
+          iss: "Aureole Server"
           sub: true
           aud: ["emptyapi"]
+          nbf: 0
           iat: true
           jti: 0
+          access_bearer: "header"
+          refresh_bearer: "body"
           alg: "RS256"
           sign_key: jwk_file
-          verify_keys: [jwk_file]
+          verify_keys: [ jwk_file ]
+          access_exp: 900
+          refresh_exp: 7890000
+          refresh_url: "/refresh"
           payload: "./examples/Django/emptyapi/jwt_payload.json"
 
 storages:
@@ -79,6 +124,11 @@ collections:
 hashers:
   - type: "pbkdf2"
     name: django
+    config:
+      func: "sha256"
+      iterations: 26000
+      salt_length: 22
+      key_length: 32
 
 crypto_keys:
   - type: "jwk"

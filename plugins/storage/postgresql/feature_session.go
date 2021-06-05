@@ -15,15 +15,15 @@ func (s *Storage) CreateSessionColl(spec collections.Spec) error {
                        %s bigint not null default '0');`,
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk),
-		Sanitize(spec.FieldsMap["session_token"]),
-		Sanitize(spec.FieldsMap["expiration"]))
+		Sanitize(spec.FieldsMap["session_token"].Name),
+		Sanitize(spec.FieldsMap["expiration"].Name))
 	return s.RawExec(sql)
 }
 
 func (s *Storage) GetSession(spec collections.Spec, userId int) (types.JSONCollResult, error) {
 	sql := fmt.Sprintf(`SELECT %s, %s FROM %s WHERE %s=$1;`,
-		Sanitize(spec.FieldsMap["session_token"]),
-		Sanitize(spec.FieldsMap["expiration"]),
+		Sanitize(spec.FieldsMap["session_token"].Name),
+		Sanitize(spec.FieldsMap["expiration"].Name),
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk))
 
@@ -35,11 +35,11 @@ func (s *Storage) InsertSession(spec collections.Spec, data types.InsertSessionD
 	sql := fmt.Sprintf("INSERT INTO %s (%s, %s, %s) VALUES ($1, $2, $3) ON CONFLICT (%s) DO UPDATE SET %s = $4, %s = $5 RETURNING $6",
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk),
-		Sanitize(spec.FieldsMap["session_token"]),
-		Sanitize(spec.FieldsMap["expiration"]),
+		Sanitize(spec.FieldsMap["session_token"].Name),
+		Sanitize(spec.FieldsMap["expiration"].Name),
 		Sanitize(spec.Pk),
-		Sanitize(spec.FieldsMap["session_token"]),
-		Sanitize(spec.FieldsMap["expiration"]))
+		Sanitize(spec.FieldsMap["session_token"].Name),
+		Sanitize(spec.FieldsMap["expiration"].Name))
 	return s.RawQuery(sql, data.UserId, data.SessionToken, expires, data.SessionToken, expires, spec.Pk)
 }
 
@@ -69,8 +69,8 @@ func (s *Storage) cleanTicker(spec collections.Spec) {
 		case t := <-ticker.C:
 			sql := fmt.Sprintf("DELETE FROM %s WHERE %s <= $1 AND %s != 0",
 				Sanitize(spec.Name),
-				Sanitize(spec.FieldsMap["expiration"]),
-				Sanitize(spec.FieldsMap["expiration"]))
+				Sanitize(spec.FieldsMap["expiration"].Name),
+				Sanitize(spec.FieldsMap["expiration"].Name))
 			_ = s.RawExec(sql, t.Unix())
 		}
 	}

@@ -6,13 +6,12 @@ import (
 )
 
 type PwBasedData struct {
-	Password interface{}
+	Password     interface{}
+	PasswordHash string
 }
 
 type PwBased interface {
-	CreatePwBasedColl(*collections.Collection) error
-
-	InsertPwBased(*identity.Identity, *IdentityData, *collections.Collection, *PwBasedData) (JSONCollResult, error)
+	InsertPwBased(*identity.Identity, *collections.Collection, *IdentityData, *PwBasedData) (JSONCollResult, error)
 
 	GetPassword(*collections.Collection, string, interface{}) (JSONCollResult, error)
 }

@@ -8,15 +8,15 @@ import (
 	"reflect"
 )
 
-func GetJSONPath(p string, in interface{}) (interface{}, error) {
+func GetJsonPath(p string, in interface{}) (interface{}, error) {
 	jp, err := parsePath(p)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't parse GetJSONPath %s", p)
+		return nil, errors.Wrapf(err, "couldn't parse GetJsonPath %s", p)
 	}
 
 	results, err := jp.FindResults(in)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing GetJSONPath failed")
+		return nil, errors.Wrap(err, "executing GetJsonPath failed")
 	}
 
 	var out interface{}
@@ -60,5 +60,5 @@ func extractResult(v reflect.Value) (interface{}, error) {
 	if v.CanInterface() {
 		return v.Interface(), nil
 	}
-	return nil, errors.Errorf("GetJSONPath couldn't access field")
+	return nil, errors.Errorf("GetJsonPath couldn't access field")
 }

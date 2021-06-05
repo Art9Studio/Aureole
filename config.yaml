@@ -10,22 +10,39 @@ apps:
         enabled: true
         unique: true
         required: true
-        internal: true
+        credential: false
       username:
         enabled: true
         unique: false
-        required: false # todo: can't be unique if not required
-        internal: false
+        required: false
+        credential: true
       phone:
         enabled: false
         unique: true
         required: false
-        internal: false
+        credential: true
       email:
         enabled: false
         unique: true
         required: true
-        internal: false
+        credential: true
+      additional:
+        - is_superuser:
+            unique: false
+            required: false
+            internal: true
+        - first_name:
+            unique: false
+            required: false
+            internal: false
+        - last_name:
+            unique: false
+            required: false
+            internal: false
+        - is_staff:
+            unique: false
+            required: false
+            internal: true
 
     authN:
       - type: "password_based"
@@ -70,25 +87,16 @@ apps:
     identity:
       collection: identity
       id:
-        enabled: true
-        unique: true
-        required: true
-        internal: true
       username:
-        enabled: true
-        unique: false
-        required: false # todo: can't be unique if not required
-        internal: false
       phone:
-        enabled: false
-        unique: true
-        required: false
-        internal: false
       email:
-        enabled: false
-        unique: true
-        required: true
-        internal: false
+      additional:
+        - is_superuser:
+            internal: true
+        - first_name:
+        - last_name:
+        - is_staff:
+            internal: true
 
     authN:
       - type: "password_based"
@@ -105,16 +113,15 @@ apps:
         config:
           iss: "Aureole Server"
           sub: true
-          aud: ["app1", "app2"]
+          aud: [ "app1", "app2" ]
           nbf: 0
           iat: true
           jti: 0 # todo: implement jti
-          # todo: think about options [body, header, cookie] and split options for request and response
-          access_bearer: "cookie" # todo: add settings for cookie [cookie, header, both]
-          refresh_bearer: "header" # [cookie, body, both]
+          access_bearer: "cookie" # [cookie, header, both]
+          refresh_bearer: "cookie" # [cookie, body, both]
           alg: "RS256"
           sign_key: jwk_file
-          verify_keys: [jwk_file]
+          verify_keys: [ jwk_file ]
           access_exp: 900
           refresh_exp: 7890000
           refresh_url: "/refresh"
@@ -141,15 +148,24 @@ storages:
 collections:
   - type: "identity" # main coll
     name: identity
-    use_existent: true
     config:
       name: "users"
       pk: "id"
       fields_map:
-        id: "id"
+        id: "id" # todo: think about type of it
         username: "username"
         phone: "phone"
         email: "email"
+        is_active: "is_active" # to disable use "no"
+        created: "date_joined" # by default "created"
+        is_superuser:
+          field: "is_superuser"
+          type: boolean
+          default: false
+        is_staff:
+          name: "is_staff"
+          type: boolean
+          default: false
 
   - type: "pwbased" # appendix coll
     name: pwbased
@@ -160,7 +176,6 @@ collections:
 
   - type: "session" # main coll
     name: session
-    use_existent: false
     config:
       name: "sessions"
       pk: "user_id"

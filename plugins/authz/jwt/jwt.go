@@ -41,6 +41,7 @@ const (
 )
 
 const (
+	Body   bearerType = "body"
 	Header bearerType = "header"
 	Cookie bearerType = "cookie"
 	Both   bearerType = "both"
@@ -107,32 +108,20 @@ func createRoutes(j *jwtAuthz) {
 func (j *jwtAuthz) Authorize(fiberCtx *fiber.Ctx, authzCtx *authzTypes.Context) error {
 	accessT, err := newToken(AccessToken, j.conf, authzCtx)
 	if err != nil {
-		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"success": false,
-			"message": err.Error(),
-		})
+		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
 	}
 	refreshT, err := newToken(RefreshToken, j.conf, authzCtx)
 	if err != nil {
-		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"success": false,
-			"message": err.Error(),
-		})
+		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
 	}
 
 	signedAccessT, err := signToken(j.signKey, accessT)
 	if err != nil {
-		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"success": false,
-			"message": err.Error(),
-		})
+		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
 	}
 	signedRefreshT, err := signToken(j.signKey, refreshT)
 	if err != nil {
-		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"success": false,
-			"message": err.Error(),
-		})
+		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
 	}
 
 	bearers := map[string]bearerType{
@@ -144,16 +133,13 @@ func (j *jwtAuthz) Authorize(fiberCtx *fiber.Ctx, authzCtx *authzTypes.Context) 
 		"refresh": signedRefreshT,
 	}
 	if err := attachTokens(fiberCtx, bearers, keyMap, tokens); err != nil {
-		return fiberCtx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"success": false,
-			"message": err.Error(),
-		})
+		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return nil
 }
 
-func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (jwt.Token, error) {
+func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (t jwt.Token, err error) {
 	switch tokenType {
 	case AccessToken:
 		token := jwt.New()
@@ -164,7 +150,7 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 		token.Set(jwt.JwtIDKey, conf.Jti)
 
 		if conf.Sub {
-			token.Set(jwt.SubjectKey, string(authzCtx.UserId))
+			token.Set(jwt.SubjectKey, authzCtx.Id)
 		}
 
 		currTime := time.Now()
@@ -186,13 +172,13 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 			token.Set(k, v)
 		}
 
-		return token, nil
+		t = token
 	case RefreshToken:
 		token := jwt.New()
 		token.Set(jwt.IssuerKey, conf.Iss)
 
 		if conf.Sub {
-			token.Set(jwt.SubjectKey, string(authzCtx.UserId))
+			token.Set(jwt.SubjectKey, authzCtx.Id)
 		}
 
 		currTime := time.Now()
@@ -207,10 +193,10 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 			token.Set(k, v)
 		}
 
-		return token, nil
-	default:
-		return nil, fmt.Errorf("unexpected token type: %s", tokenType)
+		t = token
 	}
+
+	return t, err
 }
 
 func getPayload(filePath string, authzCtx *authzTypes.Context) (map[string]interface{}, error) {
@@ -246,8 +232,10 @@ func parsePayload(filePath string, authzCtx *authzTypes.Context) (map[string]int
 
 func defaultPayload(authzCtx *authzTypes.Context) (map[string]interface{}, error) {
 	payload := make(map[string]interface{})
-	payload["user_id"] = authzCtx.UserId
-	payload["username"] = authzCtx.Username
+
+	if authzCtx.Id != nil {
+		payload["id"] = authzCtx.Id
+	}
 
 	return payload, nil
 }
@@ -277,7 +265,7 @@ func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string
 
 	for name, token := range tokens {
 		switch bearers[name] {
-		case Header:
+		case Body, Header:
 			jsonBody[keyMap[name]["header"]] = string(token)
 		case Cookie:
 			cookie := &fiber.Cookie{
@@ -298,4 +286,11 @@ func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string
 		}
 	}
 	return c.JSON(jsonBody)
+}
+
+func sendError(c *fiber.Ctx, statusCode int, message string) error {
+	return c.Status(statusCode).JSON(&fiber.Map{
+		"success": false,
+		"message": message,
+	})
 }

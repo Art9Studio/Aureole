@@ -1,8 +1,11 @@
 package pwbased
 
-import "aureole/internal/configs"
+import (
+	"aureole/internal/configs"
+	"fmt"
+)
 
-func (c *сonfig) setDefaults() {
+func (c *config) setDefaults() {
 	configs.SetDefault(&c.CompatHashers, []string{})
 	c.Login.setDefaults()
 	c.Register.setDefaults()
@@ -10,38 +13,26 @@ func (c *сonfig) setDefaults() {
 
 func (l *login) setDefaults() {
 	configs.SetDefault(&l.Path, "/login")
-
-	if l.FieldsMap == nil {
-		l.FieldsMap = map[string]string{
-			"username": "{$.username}",
-			"password": "{$.password}",
-		}
-	} else {
-		if _, ok := l.FieldsMap["username"]; !ok {
-			l.FieldsMap["username"] = "{$.username}"
-		}
-
-		if _, ok := l.FieldsMap["password"]; !ok {
-			l.FieldsMap["password"] = "{$.password}"
-		}
-	}
+	l.FieldsMap = setDefaultMap(l.FieldsMap, []string{"username", "email", "phone", "password"})
 }
 
 func (r *register) setDefaults() {
 	configs.SetDefault(&r.Path, "/register")
+	r.FieldsMap = setDefaultMap(r.FieldsMap, []string{"username", "email", "phone", "password"})
+}
 
-	if r.FieldsMap == nil {
-		r.FieldsMap = map[string]string{
-			"username": "{$.username}",
-			"password": "{$.password}",
+func setDefaultMap(fieldsMap map[string]string, keys []string) map[string]string {
+	if fieldsMap == nil {
+		fieldsMap = map[string]string{}
+		for _, key := range keys {
+			fieldsMap[key] = fmt.Sprintf("{$.%s}", key)
 		}
 	} else {
-		if _, ok := r.FieldsMap["username"]; !ok {
-			r.FieldsMap["username"] = "{$.username}"
-		}
-
-		if _, ok := r.FieldsMap["password"]; !ok {
-			r.FieldsMap["password"] = "{$.password}"
+		for _, key := range keys {
+			if _, ok := fieldsMap[key]; !ok {
+				fieldsMap[key] = fmt.Sprintf("{$.%s}", key)
+			}
 		}
 	}
+	return fieldsMap
 }

@@ -22,47 +22,32 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 			jwt.WithKeySet(keySet),
 		)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-				"success": false,
-				"message": err.Error(),
-			})
+			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		userId, ok := refreshT.Get("user_id")
+		id, ok := refreshT.Get("id")
 		if !ok {
-			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-				"success": false,
-				"message": "can't access user_id from token",
-			})
+			return sendError(c, fiber.StatusBadRequest, "can't access user_id from token")
 		}
 
 		username, ok := refreshT.Get("username")
 		if !ok {
-			return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-				"success": false,
-				"message": "can't access username from token",
-			})
+			return sendError(c, fiber.StatusBadRequest, "can't access username from token")
 		}
 
 		authzCtx := &types.Context{
 			Username: username.(string),
-			UserId:   int(userId.(float64)),
+			Id:       int(id.(float64)),
 		}
 
 		accessT, err := newToken(AccessToken, j.conf, authzCtx)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-				"success": false,
-				"message": err.Error(),
-			})
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		signedAccessT, err := signToken(j.signKey, accessT)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-				"success": false,
-				"message": err.Error(),
-			})
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		return attachTokens(c,
@@ -72,27 +57,20 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 	}
 }
 
-func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (string, error) {
+func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (token string, err error) {
 	switch bearer {
-	case Header:
+	case Cookie:
+		rawToken := c.Cookies(names["cookie"])
+		if rawToken == "" {
+			return "", sendError(c, fiber.StatusBadRequest, fmt.Sprintf("cookie '%s' doesn't exist", names["cookie"]))
+		}
+		token = rawToken
+	case Both, Body:
 		var input map[string]string
 		if err := c.BodyParser(&input); err != nil {
 			return "", err
 		}
-		return input["refresh"], nil
-	case Both, Cookie:
-		rawToken := c.Cookies(names["cookie"])
-		if rawToken == "" {
-			return "", c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
-				"success": false,
-				"message": fmt.Sprintf("cookie '%s' doesn't exist", names["cookie"]),
-			})
-		}
-		return rawToken, nil
-	default:
-		return "", c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-			"success": false,
-			"message": fmt.Sprintf("unexpected bearer name: %s", bearer),
-		})
+		token = input["refresh"]
 	}
+	return token, err
 }

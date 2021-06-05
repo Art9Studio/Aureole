@@ -6,7 +6,7 @@ import (
 )
 
 type (
-	сonfig struct {
+	config struct {
 		MainHasher    string   `mapstructure:"main_hasher"`
 		CompatHashers []string `mapstructure:"compat_hashers"`
 		Collection    string   `mapstructure:"collection"`

@@ -54,38 +54,35 @@ func (a *App) setDefaults() {
 	for i := range a.Authz {
 		a.Authz[i].setDefaults()
 	}
+
+	a.Identity.setDefaults()
 }
 
 func (i *Identity) setDefaults() {
 	SetDefault(&i.Collection, "identity")
 
-	SetDefault(&i.Id, trait{
-		Enabled:  true,
-		Unique:   true,
-		Required: true,
-		Internal: true,
-	})
+	keys := []string{"enabled", "unique", "required", "credential"}
 
-	SetDefault(&i.Username, trait{
-		Enabled:  true,
-		Unique:   false,
-		Required: false,
-		Internal: false,
-	})
+	i.Id = setDefaultTrait(i.Id, keys, []bool{true, true, true, false})
+	i.Username = setDefaultTrait(i.Username, keys, []bool{true, false, false, true})
+	i.Email = setDefaultTrait(i.Email, keys, []bool{false, true, true, true})
+	i.Phone = setDefaultTrait(i.Phone, keys, []bool{false, true, false, true})
+}
 
-	SetDefault(&i.Phone, trait{
-		Enabled:  false,
-		Unique:   true,
-		Required: false,
-		Internal: false,
-	})
-
-	SetDefault(&i.Email, trait{
-		Enabled:  true,
-		Unique:   true,
-		Required: true,
-		Internal: false,
-	})
+func setDefaultTrait(trait map[string]bool, keys []string, vals []bool) map[string]bool {
+	if trait == nil {
+		trait = map[string]bool{}
+		for i, key := range keys {
+			trait[key] = vals[i]
+		}
+	} else {
+		for i, key := range keys {
+			if _, ok := trait[key]; !ok {
+				trait[key] = vals[i]
+			}
+		}
+	}
+	return trait
 }
 
 func (authn *Authn) setDefaults() {
