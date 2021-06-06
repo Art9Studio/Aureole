@@ -1,1 +1,7 @@
+.*
 Dockerfile
+lab
+examples
+docs
+scripts
+config.yml

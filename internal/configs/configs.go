@@ -3,6 +3,7 @@ package configs
 import (
 	"fmt"
 	"github.com/sherifabdlnaby/configuro"
+	"os"
 )
 
 type (
@@ -93,8 +94,14 @@ type (
 )
 
 func LoadMainConfig() (*Project, error) {
+	var confPath string
+	var ok bool
+	if confPath, ok = os.LookupEnv("AUREOLE_CONF_PATH"); !ok {
+		confPath = "./config.yaml"
+	}
+
 	confLoader, err := configuro.NewConfig(
-		configuro.WithLoadFromConfigFile("./config.yaml", true),
+		configuro.WithLoadFromConfigFile(confPath, true),
 		configuro.WithoutValidateByTags(),
 		configuro.WithLoadDotEnv(".env"),
 	)
