@@ -125,7 +125,7 @@ func createRoutes(j *jwtAuthz) {
 			Handler: Refresh(j),
 		},
 	}
-	authn.Repository.PluginApi.Router.Add(j.appName, routes)
+	authn.Repository.PluginApi.Router.AddAppRoutes(j.appName, routes)
 }
 
 func (j *jwtAuthz) GetNativeQueries() map[string]string {

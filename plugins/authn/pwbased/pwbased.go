@@ -89,5 +89,5 @@ func createRoutes(p *pwBased) {
 			Handler: Register(p),
 		},
 	}
-	authn.Repository.PluginApi.Router.Add(p.appName, routes)
+	authn.Repository.PluginApi.Router.AddAppRoutes(p.appName, routes)
 }

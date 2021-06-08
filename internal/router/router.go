@@ -9,10 +9,11 @@ import (
 )
 
 type TRouter struct {
-	Routes map[string][]*_interface.Route
+	AppRoutes     map[string][]*_interface.Route
+	ProjectRoutes []*_interface.Route
 }
 
-var Router TRouter
+var Router *TRouter
 
 // CreateServer initializes router and creates routes for each application
 func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
@@ -20,7 +21,7 @@ func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 	r.Use(cors.New())
 	v := r.Group("")
 
-	for appName, routes := range Router.Routes {
+	for appName, routes := range Router.AppRoutes {
 		pathPrefix := apps[appName].PathPrefix
 		appR := v.Group(pathPrefix)
 
@@ -29,24 +30,37 @@ func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 		}
 	}
 
+	for _, route := range Router.ProjectRoutes {
+		v.Add(route.Method, route.Path, route.Handler)
+	}
+
 	return r, nil
 }
 
-func Init() TRouter {
-	Router = TRouter{
-		Routes: make(map[string][]*_interface.Route),
+func Init() *TRouter {
+	Router = &TRouter{
+		AppRoutes:     make(map[string][]*_interface.Route),
+		ProjectRoutes: []*_interface.Route{},
 	}
 	return Router
 }
 
-func (r TRouter) Add(appName string, routes []*_interface.Route) {
+func (r *TRouter) AddAppRoutes(appName string, routes []*_interface.Route) {
 	for i := range routes {
 		routes[i].Path = path.Clean(routes[i].Path)
 	}
 
-	if existRoutes, ok := r.Routes[appName]; ok {
-		r.Routes[appName] = append(existRoutes, routes...)
+	if existRoutes, ok := r.AppRoutes[appName]; ok {
+		r.AppRoutes[appName] = append(existRoutes, routes...)
 	} else {
-		r.Routes[appName] = routes
+		r.AppRoutes[appName] = routes
 	}
+}
+
+func (r *TRouter) AddProjectRoutes(routes []*_interface.Route) {
+	for i := range routes {
+		routes[i].Path = path.Clean(routes[i].Path)
+	}
+
+	r.ProjectRoutes = append(r.ProjectRoutes, routes...)
 }
