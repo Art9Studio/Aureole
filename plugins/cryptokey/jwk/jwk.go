@@ -62,12 +62,12 @@ func createRoutes(j *Jwk) {
 	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    j.rawConf.PathPrefix + "/jwk/aureole.cloud",
+			Path:    j.rawConf.PathPrefix + "/jwk",
 			Handler: GetJwkKeys(j),
 		},
 		{
 			Method:  "GET",
-			Path:    j.rawConf.PathPrefix + "/pem/aureole.cloud",
+			Path:    j.rawConf.PathPrefix + "/pem",
 			Handler: GetPemKeys(j),
 		},
 	}
