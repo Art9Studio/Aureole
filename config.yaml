@@ -201,14 +201,17 @@ hashers:
 
 crypto_keys:
   - type: "jwk"
+    path_prefix: "/keys"
     name: jwk_file
     config:
       path: "lab/keys/keys.json"
 
   - type: "jwk"
     name: jwk_url
+    path_prefix: "/google-keys"
     config:
       path: "https://www.googleapis.com/oauth2/v3/certs"
+
   #- type: "file"
   #  name: file
   #  config:

@@ -2,6 +2,8 @@ package jwk
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/cryptokey"
+	_interface "aureole/internal/router/interface"
 	"context"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
@@ -23,10 +25,11 @@ func (j *Jwk) Init() (err error) {
 	if j.privateSet, err = createPrivateSet(j.conf.Path); err != nil {
 		return err
 	}
-	if j.publicSet, err = createPublicSet(j.privateSet); err != nil {
+	if j.publicSet, err = jwk.PublicSetOf(j.privateSet); err != nil {
 		return err
 	}
 
+	createRoutes(j)
 	return nil
 }
 
@@ -55,21 +58,20 @@ func createPrivateSet(path string) (privateSet jwk.Set, err error) {
 	return privateSet, nil
 }
 
-func createPublicSet(privateSet jwk.Set) (publicSet jwk.Set, err error) {
-	publicSet = jwk.NewSet()
-
-	for it := privateSet.Iterate(context.Background()); it.Next(context.Background()); {
-		pair := it.Pair()
-		key := pair.Value.(jwk.Key)
-
-		publicKey, err := jwk.PublicKeyOf(key)
-		if err != nil {
-			return nil, err
-		}
-		publicSet.Add(publicKey)
+func createRoutes(j *Jwk) {
+	routes := []*_interface.Route{
+		{
+			Method:  "GET",
+			Path:    j.rawConf.PathPrefix + "/jwk",
+			Handler: GetJwkKeys(j),
+		},
+		{
+			Method:  "GET",
+			Path:    j.rawConf.PathPrefix + "/pem",
+			Handler: GetPemKeys(j),
+		},
 	}
-
-	return publicSet, nil
+	cryptokey.Repository.PluginApi.Router.AddProjectRoutes(routes)
 }
 
 func (j *Jwk) GetPrivateSet() jwk.Set {

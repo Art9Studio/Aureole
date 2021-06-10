@@ -5,7 +5,8 @@ import (
 )
 
 type IRouter interface {
-	Add(appName string, routes []*Route)
+	AddAppRoutes(appName string, routes []*Route)
+	AddProjectRoutes(routes []*Route)
 }
 
 type Route struct {

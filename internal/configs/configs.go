@@ -81,9 +81,10 @@ type (
 	}
 
 	CryptoKey struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
+		Type       string    `config:"type"`
+		Name       string    `config:"name"`
+		PathPrefix string    `config:"path_prefix"`
+		Config     RawConfig `config:"config"`
 	}
 
 	Sender struct {
