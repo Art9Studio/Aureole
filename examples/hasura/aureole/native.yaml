@@ -1,0 +1,1 @@
+getRoles: "SELECT json_agg(t.role) FROM (SELECT role FROM roles) t"

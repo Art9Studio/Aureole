@@ -8,7 +8,10 @@ services:
     depends_on:
       - "postgres"
     volumes:
-      - ./aureole/config.yml:/config.yml
+      - ./aureole/config.yml:/config.yaml
+      - ./aureole/keys.json:/keys.json
+      - ./aureole/jwt_payload.json:/jwt_payload.json
+      - ./aureole/native.yaml:/native.yaml
 
   graphql-engine:
     image: hasura/graphql-engine:v1.3.3
@@ -16,11 +19,15 @@ services:
       - "8080:8080"
     depends_on:
       - "postgres"
+      - "aureole"
     environment:
       HASURA_GRAPHQL_DATABASE_URL: postgres://root:password@postgres:5432/aureole
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_DEV_MODE: "true"
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+      HASURA_GRAPHQL_JWT_SECRET: "{\"jwk_url\": \"http://aureole:3000/keys/jwk\"}"
+      #HASURA_GRAPHQL_JWT_SECRET: "{\"type\": \"RS256\", \"key\": \"-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtAh2/CxG/iycWUseWCku\ntRo3bFvL7ZFWkvE29Mcn5ZaIwh2fEngii4PGCk2lLijJypO9L/vJSYCve0yk/nVB\nTiqpdd4BXBmi96cpjf7rOfDNf3OKn5Fd3UPB179lPo4jaVjckXOSPxmh6HOBrHCr\nGonpTlLGB1JqIy787075fF9HNWGursaux46H2yHmideNNaHIAEvJEQoa06qoBmeL\nBufrRoDaL0/Soz4X9Ds8ZDruZPdaA/Mv3h8ryG83U4s5Iz8LvlQGp/p1QMEIpTsP\ns9gcsc4pcc18nIOLz5mtIMSX6Olju8uhXjUG0S8EJ8F+IEUt0zBSovD2BbOksBU7\nZQIDAQAB\n-----END PUBLIC KEY-----\n\"}"
 
   postgres:
     image: postgres:${POSTGRES_VERSION:-13}

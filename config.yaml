@@ -201,8 +201,8 @@ hashers:
 
 crypto_keys:
   - type: "jwk"
-    path_prefix: "/keys"
     name: jwk_file
+    path_prefix: "/keys"
     config:
       path: "lab/keys/keys.json"
 

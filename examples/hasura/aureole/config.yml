@@ -1,25 +1,14 @@
 api_version: "0.1"
 
 apps:
-  emptyapi:
-    path_prefix: "/emptyapi"
+  hasura-api:
+    path_prefix: "/hasura-api"
 
     identity:
       collection: identity
       username:
         unique: true
         required: true
-      email:
-        enabled: true
-        unique: false
-        required: false
-      additional:
-        - is_superuser:
-            internal: true
-        - first_name:
-        - last_name:
-        - is_staff:
-            internal: true
 
     authN:
       - type: "password_based"
@@ -34,40 +23,34 @@ apps:
         name: jwt
         config:
           sub: true
-          aud: ["emptyapi"]
+          aud: ["hasura-api"]
           iat: true
           jti: 0
           alg: "RS256"
           sign_key: jwk_file
           verify_keys: [jwk_file]
-          payload: "./examples/django/emptyapi/jwt_payload.json"
+          payload: "/jwt_payload.json"
+          native_queries: "/native.yaml"
 
 storages:
   - type: "postgresql"
     name: one_db
     config:
-      url: "postgresql://root:password@localhost:5432/aureole"
+      url: "postgresql://root:password@postgres:5432/aureole"
 
 collections:
   - type: "identity"
     name: identity
     config:
-      name: "auth_user"
+      name: "users"
       pk: "id"
       fields_map:
         id: "id"
         username: "username"
         email: "email"
-        last_name: "last_name"
-        first_name: "first_name"
-        is_active: "is_active"
-        created: "date_joined"
-        is_superuser:
-          name: "is_superuser"
-          default: false
-        is_staff:
-          name: "is_staff"
-          default: false
+        phone: "phone"
+        is_active: "no"
+        created: "no"
 
   - type: "pwbased"
     name: pwbased
@@ -83,5 +66,6 @@ hashers:
 crypto_keys:
   - type: "jwk"
     name: jwk_file
+    path_prefix: "/keys"
     config:
-      path: "lab/keys/keys.json"
+      path: "/keys.json"

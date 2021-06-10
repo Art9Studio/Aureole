@@ -9,6 +9,7 @@ require (
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/huandu/go-sqlbuilder v1.12.1
 	github.com/jackc/pgx/v4 v4.10.1
+	github.com/joho/godotenv v1.3.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/jwx v1.1.7

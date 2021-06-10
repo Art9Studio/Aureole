@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
-	"net/url"
 )
 
 type Jwk struct {
@@ -43,13 +42,9 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func createPrivateSet(path string) (privateSet jwk.Set, err error) {
-	if _, err = url.ParseRequestURI(path); err != nil {
+	privateSet, err = jwk.Fetch(context.Background(), path)
+	if err != nil {
 		privateSet, err = jwk.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		privateSet, err = jwk.Fetch(context.Background(), path)
 		if err != nil {
 			return nil, err
 		}
