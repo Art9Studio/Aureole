@@ -7,19 +7,6 @@ import (
 	"time"
 )
 
-func (s *Storage) CreateSessionColl(spec collections.Spec) error {
-	// TODO: check types of fields
-	sql := fmt.Sprintf(`create table %s
-                       (%s int primary key not null,
-                       %s text not null unique,
-                       %s bigint not null default '0');`,
-		Sanitize(spec.Name),
-		Sanitize(spec.Pk),
-		Sanitize(spec.FieldsMap["session_token"].Name),
-		Sanitize(spec.FieldsMap["expiration"].Name))
-	return s.RawExec(sql)
-}
-
 func (s *Storage) GetSession(spec collections.Spec, userId int) (types.JSONCollResult, error) {
 	sql := fmt.Sprintf(`SELECT %s, %s FROM %s WHERE %s=$1;`,
 		Sanitize(spec.FieldsMap["session_token"].Name),
@@ -75,3 +62,19 @@ func (s *Storage) cleanTicker(spec collections.Spec) {
 		}
 	}
 }
+
+/* Func for creating table from scratch
+
+func (s *Storage) CreateSessionColl(spec collections.Spec) error {
+	// TODO: check types of fields
+	sql := fmt.Sprintf(`create table %s
+                       (%s int primary key not null,
+                       %s text not null unique,
+                       %s bigint not null default '0');`,
+		Sanitize(spec.Name),
+		Sanitize(spec.Pk),
+		Sanitize(spec.FieldsMap["session_token"].Name),
+		Sanitize(spec.FieldsMap["expiration"].Name))
+	return s.RawExec(sql)
+}
+*/

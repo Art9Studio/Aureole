@@ -11,6 +11,7 @@ type Application interface {
 	PwBased
 	Session
 	NativeQueries
+	PhoneVerification
 }
 
 // Storage is an interface that defines methods for database session

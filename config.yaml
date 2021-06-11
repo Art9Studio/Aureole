@@ -123,6 +123,73 @@ apps:
           payload: "lab/templates/jwt_payload.json"
           native_queries: "lab/native-queries/native.yaml"
 
+  three:
+    path_prefix: "/three"
+
+    identity:
+      collection: identity
+      id:
+      username:
+      phone:
+        enabled: true
+        required: true
+      email:
+
+    authN:
+      - type: "phone_based"
+        path_prefix: "/"
+        authZ: jwt
+        config:
+          hasher: django
+          collection: identity
+          verification_collection: verification
+          storage: one_db
+          sender: twilio
+          template: verification
+          resend_url: "login/resend"
+          login:
+            path: "/login"
+            fields_map:
+              phone: "{$.phone}"
+          register:
+            path: "/register"
+            login_after: false
+            fields_map:
+              username: "{$.username}"
+              phone: "{$.phone}"
+          verification:
+            path: "/login/verify"
+            max_attempts: 3
+            code:
+              length: 6
+              alphabet: "1234567890"
+              prefix: "A-"
+              exp: 300
+            fields_map:
+              id: "{$.verification_id}"
+              code: "{$.verification_code}"
+
+    authZ:
+      - type: "jwt"
+        name: jwt
+        path_prefix: "/"
+        config:
+          iss: "Aureole Server"
+          sub: true
+          aud: [ "app1", "app2" ]
+          nbf: 0
+          iat: true
+          jti: 0 # todo: implement jti
+          access_bearer: "cookie" # [cookie, header, both]
+          refresh_bearer: "cookie" # [cookie, body, both]
+          alg: "RS256"
+          sign_key: jwk_file
+          verify_keys: [ jwk_file ]
+          access_exp: 900
+          refresh_exp: 7890000
+          refresh_url: "/refresh"
+          payload: "lab/templates/jwt_payload.json"
+
 storages:
   - type: "postgresql"
     name: one_db
@@ -180,6 +247,18 @@ collections:
         session_token: "session_id"
         expiration: "expiration"
 
+  - type: "phone_verification"
+    name: verification
+    config:
+      name: "phone_verifications"
+      pk: "id"
+      fields_map:
+        id: "id"
+        phone: "phone"
+        code: "code"
+        attempts: "attempts"
+        expires: "expires"
+
 hashers:
   - type: "argon2"
     name: argon2
@@ -194,10 +273,10 @@ hashers:
   - type: "pbkdf2"
     name: django
     config:
-      func: "sha1"
-      iterations: 1
-      salt_length: 16
-      key_length: 16
+      func: "sha256"
+      iterations: 260000
+      salt_length: 22
+      key_length: 32
 
 crypto_keys:
   - type: "jwk"

@@ -1,22 +1,31 @@
 CREATE TABLE orgs
 (
     id   SERIAL PRIMARY KEY,
-    name text
+    name TEXT
 );
 
 CREATE TABLE users
 (
     id       SERIAL PRIMARY KEY,
     username TEXT,
-    phone text,
-    email text,
-    password text,
-    org_id   int REFERENCES orgs
+    phone    TEXT,
+    email    TEXT,
+    password TEXT,
+    org_id   INT REFERENCES orgs
 );
 
 CREATE TABLE posts
 (
-    id       SERIAL PRIMARY KEY,
+    id      SERIAL PRIMARY KEY,
     content TEXT,
-    user_id   int REFERENCES users
+    user_id INT REFERENCES users
+);
+
+CREATE TABLE phone_verifications
+(
+    id       SERIAL PRIMARY KEY,
+    phone    TEXT,
+    code     TEXT,
+    attempts INT,
+    expires  timestamptz
 );

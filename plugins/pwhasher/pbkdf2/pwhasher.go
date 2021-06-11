@@ -17,24 +17,6 @@ import (
 	"strings"
 )
 
-const (
-	allowedChars     = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	allowedCharsSize = len(allowedChars)
-	maxInt           = 1<<63 - 1
-)
-
-type source struct{}
-
-func (s *source) Uint64() uint64 {
-	i, err := crand.Int(crand.Reader, big.NewInt(maxInt))
-	if err != nil {
-		panic(err)
-	}
-	return i.Uint64()
-}
-
-func (s *source) Seed(_ int64) {}
-
 func GetRandomString(length int) (string, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 	ret := make([]byte, length)
