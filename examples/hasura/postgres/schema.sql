@@ -17,8 +17,14 @@ CREATE TABLE users
     phone TEXT,
     email TEXT,
     password TEXT,
-    org_id   INT REFERENCES orgs,
-    role_id   INT REFERENCES roles
+    org_id   INT REFERENCES orgs
+);
+
+CREATE TABLE user_role
+(
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users,
+    role_id INT REFERENCES roles
 );
 
 CREATE TABLE posts
