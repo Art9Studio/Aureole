@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/goccy/go-json v0.5.1 // indirect
-	github.com/gofiber/fiber/v2 v2.5.0
+	github.com/gofiber/fiber/v2 v2.12.0
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/huandu/go-sqlbuilder v1.12.1
 	github.com/jackc/pgx/v4 v4.10.1
@@ -24,9 +24,7 @@ require (
 	github.com/spf13/viper v1.7.1 // indirect
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20210314154223-e6e6c4f2bb5b
-	golang.org/x/sys v0.0.0-20210315160823-c6e025ad8005 // indirect
-	golang.org/x/text v0.3.5 // indirect
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
