@@ -83,8 +83,10 @@ func (j *jwtAuthz) Init(appName string) (err error) {
 		}
 	}
 
-	if j.nativeQueries, err = readNativeQueries(j.conf.NativeQueries); err != nil {
-		return err
+	if j.conf.NativeQueries != "" {
+		if j.nativeQueries, err = readNativeQueries(j.conf.NativeQueries); err != nil {
+			return err
+		}
 	}
 
 	createRoutes(j)

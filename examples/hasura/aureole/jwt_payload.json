@@ -1,0 +1,9 @@
+{
+  "id": "{{.Id}}",
+  "username": "{{.Username}}",
+  "https://hasura.io/jwt/claims": {
+    "x-hasura-allowed-roles": ["admin", "user"],
+    "x-hasura-default-role": "user",
+    "x-hasura-user-id": "{{.Id}}"
+  }
+}

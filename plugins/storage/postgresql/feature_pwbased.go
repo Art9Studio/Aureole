@@ -37,12 +37,12 @@ func (s *Storage) InsertPwBased(i *identity.Identity, pwColl *collections.Collec
 		values = append(values, iData.Additional[fieldName])
 	}
 
-	if created := spec.FieldsMap["created"]; created.Name != "no" {
+	if created := spec.FieldsMap["created"]; created.Name != "" {
 		cols = append(cols, Sanitize(created.Name))
 		values = append(values, time.Now())
 	}
 
-	if isActive := spec.FieldsMap["is_active"]; isActive.Name != "no" {
+	if isActive := spec.FieldsMap["is_active"]; isActive.Name != "" {
 		cols = append(cols, Sanitize(isActive.Name))
 		values = append(values, true)
 	}

@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/sherifabdlnaby/configuro"
 	"os"
 )
@@ -95,8 +96,12 @@ type (
 )
 
 func LoadMainConfig() (*Project, error) {
-	var confPath string
-	var ok bool
+	var (
+		confPath string
+		ok       bool
+	)
+
+	_ = godotenv.Load("./.env")
 	if confPath, ok = os.LookupEnv("AUREOLE_CONF_PATH"); !ok {
 		confPath = "./config.yaml"
 	}
