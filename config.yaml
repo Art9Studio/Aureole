@@ -232,3 +232,12 @@ senders:
       templates:
         default_text: "lab/templates/default.txt"
         default_html: "lab/templates/default.html" # if extension is 'html' we send it as html
+
+  - type: "twilio"
+    name: twilio
+    config:
+      account_sid: "${TEST_TWILIO_ACCOUNT_SID}"
+      auth_token: "${TEST_TWILIO_AUTH_TOKEN}"
+      from: "${TEST_TWILIO_PHONE_NUMBER}"
+      templates:
+        verification: "lab/templates/verification.txt"
