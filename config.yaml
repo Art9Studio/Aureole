@@ -152,8 +152,8 @@ collections:
         username: "username"
         phone: "phone"
         email: "email"
-        is_active: "no" # to disable use "no"
-        created: "no" # by default "created"
+        is_active: no # to disable use "no"
+        created: no # by default "created"
         is_superuser:
           field: "is_superuser"
           type: boolean

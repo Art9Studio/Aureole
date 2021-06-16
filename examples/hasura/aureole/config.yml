@@ -49,8 +49,8 @@ collections:
         username: "username"
         email: "email"
         phone: "phone"
-        is_active: "no"
-        created: "no"
+        is_active: no
+        created: no
 
   - type: "pwbased"
     name: pwbased

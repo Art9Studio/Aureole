@@ -78,7 +78,7 @@ func (p *Pbkdf2) Init() error {
 
 // HashPw returns a Pbkdf2 pwhasher of a plain-text password using the provided
 // algorithm parameters. The returned pwhasher follows the format used by the
-// django and contains the base64-encoded Pbkdf2 derived key prefixed by the
+// Django and contains the base64-encoded Pbkdf2 derived key prefixed by the
 // salt and parameters. It looks like this:
 //
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
