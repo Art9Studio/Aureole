@@ -1,4 +1,4 @@
-package phonebased
+package phone
 
 import (
 	"aureole/internal/collections"
@@ -14,19 +14,19 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type phoneBased struct {
-	appName           string
-	rawConf           *configs.Authn
-	conf              *config
-	identity          *identity.Identity
-	storage           storageTypes.Storage
-	hasher            types.PwHasher
-	coll, confirmColl *collections.Collection
-	authorizer        authzTypes.Authorizer
-	sender            senderTypes.Sender
+type phone struct {
+	appName                string
+	rawConf                *configs.Authn
+	conf                   *config
+	identity               *identity.Identity
+	storage                storageTypes.Storage
+	hasher                 types.PwHasher
+	coll, verificationColl *collections.Collection
+	authorizer             authzTypes.Authorizer
+	sender                 senderTypes.Sender
 }
 
-func (p *phoneBased) Init(appName string) (err error) {
+func (p *phone) Init(appName string) (err error) {
 	p.appName = appName
 
 	p.conf, err = initConfig(&p.rawConf.Config)
@@ -45,7 +45,7 @@ func (p *phoneBased) Init(appName string) (err error) {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
 	}
 
-	p.confirmColl, err = pluginApi.Project.GetCollection(p.conf.VerificationColl)
+	p.verificationColl, err = pluginApi.Project.GetCollection(p.conf.VerificationColl)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.VerificationColl)
 	}
@@ -87,7 +87,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func createRoutes(p *phoneBased) {
+func createRoutes(p *phone) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",

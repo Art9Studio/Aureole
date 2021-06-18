@@ -1,4 +1,4 @@
-package phonebased
+package phone
 
 import (
 	coll "aureole/internal/collections"
@@ -19,7 +19,7 @@ func sendError(c *fiber.Ctx, statusCode int, message string) error {
 	})
 }
 
-func getConfirmData(json interface{}, fieldPath string, confirmData *interface{}) (int, error) {
+func getJsonData(json interface{}, fieldPath string, confirmData *interface{}) (int, error) {
 	jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
 	if err != nil {
 		return fiber.StatusBadRequest, err
@@ -33,7 +33,7 @@ func isCredential(trait *identity.Trait) bool {
 	return trait.IsCredential && trait.IsRequired && trait.IsUnique
 }
 
-func getRegisterData(context *phoneBased, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
+func getRegisterData(context *phone, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
 	collMap := context.coll.Spec.FieldsMap
 	i := context.identity
 

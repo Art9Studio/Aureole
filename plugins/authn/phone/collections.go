@@ -1,4 +1,4 @@
-package phonebased
+package phone
 
 import (
 	"aureole/internal/collections"

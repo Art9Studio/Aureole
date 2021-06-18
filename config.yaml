@@ -136,7 +136,7 @@ apps:
       email:
 
     authN:
-      - type: "phone_based"
+      - type: "phone"
         path_prefix: "/"
         authZ: jwt
         config:

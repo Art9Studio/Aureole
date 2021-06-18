@@ -1,18 +1,18 @@
-package phonebased
+package phone
 
 import (
 	"aureole/internal/plugins/authn"
 )
 
 // AdapterName is the internal name of the adapter
-const AdapterName = "phone_based"
+const AdapterName = "phone"
 
 // init initializes package by register adapter
 func init() {
-	authn.Repository.Register(AdapterName, phoneBasedAdapter{})
+	authn.Repository.Register(AdapterName, phoneAdapter{})
 	authn.Repository.PluginApi.RegisterCollectionType(phoneVerifyCollType)
 }
 
-// phoneBasedAdapter represents adapter for password based authentication
-type phoneBasedAdapter struct {
+// phoneAdapter represents adapter for password based authentication
+type phoneAdapter struct {
 }

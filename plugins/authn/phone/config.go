@@ -1,4 +1,4 @@
-package phonebased
+package phone
 
 import (
 	"aureole/internal/configs"
@@ -45,6 +45,6 @@ type (
 	}
 )
 
-func (p phoneBasedAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
-	return &phoneBased{rawConf: conf}
+func (p phoneAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+	return &phone{rawConf: conf}
 }

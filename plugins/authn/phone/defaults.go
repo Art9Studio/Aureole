@@ -1,4 +1,4 @@
-package phonebased
+package phone
 
 import (
 	"aureole/internal/configs"
@@ -24,9 +24,9 @@ func (r *register) setDefaults() {
 
 func (c *verification) setDefaults() {
 	configs.SetDefault(&c.MaxAttempts, 3)
-	configs.SetDefault(&c.Path, "/login/verification")
+	configs.SetDefault(&c.Path, "/login/verify")
 	c.Code.setDefaults()
-	c.FieldsMap = setDefaultMap(c.FieldsMap, []string{"confirm_id", "confirm_code"})
+	c.FieldsMap = setDefaultMap(c.FieldsMap, []string{"id", "code"})
 }
 func (c *verificationCode) setDefaults() {
 	configs.SetDefault(&c.Length, 6)

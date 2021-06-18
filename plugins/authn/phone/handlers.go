@@ -1,4 +1,4 @@
-package phonebased
+package phone
 
 import (
 	authzT "aureole/internal/plugins/authz/types"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func Login(context *phoneBased) func(*fiber.Ctx) error {
+func Login(context *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -23,7 +23,7 @@ func Login(context *phoneBased) func(*fiber.Ctx) error {
 		}
 
 		identityData := &storageT.IdentityData{}
-		if statusCode, err := getConfirmData(authInput, loginMap["phone"], &identityData.Phone); err != nil {
+		if statusCode, err := getJsonData(authInput, loginMap["phone"], &identityData.Phone); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
@@ -52,7 +52,7 @@ func Login(context *phoneBased) func(*fiber.Ctx) error {
 			Attempts: 0,
 			Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
 		}
-		verificationId, err := context.storage.InsertVerification(&context.confirmColl.Spec, verificationData)
+		verificationId, err := context.storage.InsertVerification(&context.verificationColl.Spec, verificationData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -69,7 +69,7 @@ func Login(context *phoneBased) func(*fiber.Ctx) error {
 	}
 }
 
-func Register(context *phoneBased) func(*fiber.Ctx) error {
+func Register(context *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -113,7 +113,7 @@ func Register(context *phoneBased) func(*fiber.Ctx) error {
 				Attempts: 0,
 				Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
 			}
-			verificationId, err := context.storage.InsertVerification(&context.confirmColl.Spec, verificationData)
+			verificationId, err := context.storage.InsertVerification(&context.verificationColl.Spec, verificationData)
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -133,7 +133,7 @@ func Register(context *phoneBased) func(*fiber.Ctx) error {
 	}
 }
 
-func Confirm(context *phoneBased) func(*fiber.Ctx) error {
+func Confirm(context *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -143,16 +143,16 @@ func Confirm(context *phoneBased) func(*fiber.Ctx) error {
 		v := context.conf.Verification
 		requestData := &storageT.PhoneVerificationData{}
 
-		if statusCode, err := getConfirmData(authInput, v.FieldsMap["id"], &requestData.Id); err != nil {
+		if statusCode, err := getJsonData(authInput, v.FieldsMap["id"], &requestData.Id); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		if statusCode, err := getConfirmData(authInput, v.FieldsMap["code"], &requestData.Code); err != nil {
+		if statusCode, err := getJsonData(authInput, v.FieldsMap["code"], &requestData.Code); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
 		storage := context.storage
-		collSpec := context.confirmColl.Spec
+		collSpec := context.verificationColl.Spec
 
 		rawVerificationData, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
 		if err != nil {
@@ -232,7 +232,7 @@ func Confirm(context *phoneBased) func(*fiber.Ctx) error {
 	}
 }
 
-func Resend(context *phoneBased) func(*fiber.Ctx) error {
+func Resend(context *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -242,13 +242,13 @@ func Resend(context *phoneBased) func(*fiber.Ctx) error {
 		v := context.conf.Verification
 		requestData := &storageT.PhoneVerificationData{}
 
-		statusCode, err := getConfirmData(authInput, v.FieldsMap["confirm_id"], &requestData.Id)
+		statusCode, err := getJsonData(authInput, v.FieldsMap["confirm_id"], &requestData.Id)
 		if err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
 		storage := context.storage
-		collSpec := context.confirmColl.Spec
+		collSpec := context.verificationColl.Spec
 
 		rawVerificationData, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
 		if err != nil {
@@ -276,7 +276,7 @@ func Resend(context *phoneBased) func(*fiber.Ctx) error {
 			Attempts: 0,
 			Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
 		}
-		verificationId, err := context.storage.InsertVerification(&context.confirmColl.Spec, verificationData)
+		verificationId, err := context.storage.InsertVerification(&context.verificationColl.Spec, verificationData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
