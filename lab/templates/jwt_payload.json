@@ -1,5 +1,4 @@
 {
   "id": "{{.Id}}",
-  "username": "{{.Username}}",
-  "posts": {{NativeQ "getUserPosts" .Id}}
+  "username": "{{.Username}}"
 }

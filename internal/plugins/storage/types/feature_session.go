@@ -13,8 +13,6 @@ type InsertSessionData struct {
 }
 
 type Session interface {
-	CreateSessionColl(collections.Spec) error
-
 	GetSession(collections.Spec, int) (JSONCollResult, error)
 
 	InsertSession(collections.Spec, InsertSessionData) (JSONCollResult, error)

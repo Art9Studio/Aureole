@@ -2,6 +2,6 @@ package types
 
 type Sender interface {
 	Init() error
-	Send(string, string, string, map[string]interface{}) error
-	SendRaw(string, string, string) error
+	Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error
+	SendRaw(recipient, subject, message string) error
 }

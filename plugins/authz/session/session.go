@@ -37,7 +37,7 @@ func (s *session) Init(appName string) (err error) {
 		return fmt.Errorf("storage named '%s' is not declared", s.conf.Storage)
 	}
 
-	isCollExist, err := s.storage.IsCollExists(s.collection.Spec)
+	/*isCollExist, err := s.storage.IsCollExists(s.collection.Spec)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (s *session) Init(appName string) (err error) {
 		if err != nil {
 			return err
 		}
-	}
+	}*/
 
 	s.storage.SetCleanInterval(s.conf.CleanInterval)
 	s.storage.StartCleaning(s.collection.Spec)
