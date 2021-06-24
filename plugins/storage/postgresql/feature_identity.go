@@ -58,6 +58,8 @@ func (s *Storage) InsertIdentity(i *identity.Identity, iData *types.IdentityData
 		values = append(values, false)
 	}
 
+	// todo: fix empty row inserting
+
 	b := sqlbuilder.PostgreSQL.NewInsertBuilder()
 	b.InsertInto(Sanitize(spec.Name))
 	b.Cols(cols...).Values(values...).SQL(fmt.Sprintf(" returning %s", Sanitize(spec.Pk)))

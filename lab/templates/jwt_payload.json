@@ -1,4 +1,5 @@
 {
-  "id": "{{.Id}}",
-  "username": "{{.Username}}"
+  "id": "{{.SocialId}}",
+  "email": "{{.Email}}",
+  "user_data": {{.UserData}}
 }

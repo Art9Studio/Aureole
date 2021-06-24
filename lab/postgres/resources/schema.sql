@@ -6,12 +6,12 @@ CREATE TABLE orgs
 
 CREATE TABLE users
 (
-    id       SERIAL PRIMARY KEY,
-    username TEXT,
-    phone    TEXT,
-    email    TEXT,
-    password TEXT,
-    org_id   INT REFERENCES orgs,
+    id             SERIAL PRIMARY KEY,
+    username       TEXT,
+    phone          TEXT,
+    email          TEXT,
+    password       TEXT,
+    org_id         INT REFERENCES orgs,
     email_verified BOOLEAN,
     phone_verified BOOLEAN
 );
@@ -58,4 +58,14 @@ CREATE TABLE email_verifications
     token   TEXT,
     expires timestamptz,
     invalid BOOLEAN
+);
+
+CREATE TABLE social_logins
+(
+    id         SERIAL PRIMARY KEY,
+    social_id  TEXT,
+    email      TEXT,
+    provider   TEXT,
+    user_data  jsonb,
+    user_id INT REFERENCES users
 );

@@ -165,11 +165,9 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 
 		v := context.conf.Verification
 		requestData := &storageT.PhoneVerificationData{}
-
 		if statusCode, err := getJsonData(authInput, v.FieldsMap["id"], &requestData.Id); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
-
 		if statusCode, err := getJsonData(authInput, v.FieldsMap["otp"], &requestData.Otp); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}

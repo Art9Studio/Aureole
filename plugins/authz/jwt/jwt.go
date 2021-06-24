@@ -192,7 +192,7 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 		}
 
 		if conf.Sub {
-			err := token.Set(jwt.SubjectKey, authzCtx.Id)
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", authzCtx.Id))
 			if err != nil {
 				return nil, err
 			}
@@ -238,7 +238,7 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 		}
 
 		if conf.Sub {
-			err := token.Set(jwt.SubjectKey, authzCtx.Id)
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", authzCtx.Id))
 			if err != nil {
 				return nil, err
 			}
@@ -332,7 +332,12 @@ func signToken(signKey ckeyTypes.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string]map[string]string, tokens map[string][]byte) error {
-	jsonBody := map[string]string{}
+	jsonBody := make(map[string]interface{})
+	if respBody := c.Response().Body(); respBody != nil {
+		if err := json.Unmarshal(respBody, &jsonBody); err != nil {
+			return err
+		}
+	}
 
 	for name, token := range tokens {
 		switch bearers[name] {
