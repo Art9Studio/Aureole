@@ -7,13 +7,13 @@ import (
 	"github.com/huandu/go-sqlbuilder"
 )
 
-func (s *Storage) InsertVerification(spec *collections.Spec, confirmData *types.PhoneVerificationData) (types.JSONCollResult, error) {
+func (s *Storage) InsertVerification(spec *collections.Spec, data *types.PhoneVerificationData) (types.JSONCollResult, error) {
 	b := sqlbuilder.PostgreSQL.NewInsertBuilder()
 
 	b.InsertInto(Sanitize(spec.Name))
 	b.Cols(Sanitize(spec.FieldsMap["phone"].Name), Sanitize(spec.FieldsMap["code"].Name),
 		Sanitize(spec.FieldsMap["attempts"].Name), Sanitize(spec.FieldsMap["expires"].Name))
-	b.Values(confirmData.Phone, confirmData.Code, confirmData.Attempts, confirmData.Expires)
+	b.Values(data.Phone, data.Code, data.Attempts, data.Expires)
 	b.SQL(fmt.Sprintf(" returning %s", Sanitize(spec.Pk)))
 
 	sql, args := b.Build()

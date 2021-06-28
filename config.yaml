@@ -100,6 +100,18 @@ apps:
           main_hasher: argon2
           collection: pwbased
           storage: one_db
+          password_reset:
+            path: "/password/reset"
+            confirm_url: "/password/reset/confirm"
+            collection: reset
+            sender: email
+            template: reset
+            token_exp: 3600
+            fields_map:
+              username: "{$.username}"
+              email: "{$.email}"
+              phone: "{$.phone}"
+              password: "{$.password}"
 
     authZ:
       - type: "jwt"
@@ -259,6 +271,17 @@ collections:
         attempts: "attempts"
         expires: "expires"
 
+  - type: "password_reset"
+      name: reset
+      config:
+        name: "password_resets"
+        pk: "id"
+        fields_map:
+          id: "id"
+          email: "email"
+          token: "token"
+          expires: "expires"
+
 hashers:
   - type: "argon2"
     name: argon2
@@ -311,6 +334,7 @@ senders:
       templates:
         default_text: "lab/templates/default.txt"
         default_html: "lab/templates/default.html" # if extension is 'html' we send it as html
+        reset: "lab/templates/password_reset.txt"
 
   - type: "twilio"
     name: twilio

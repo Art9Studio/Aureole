@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofrs/uuid"
+	"time"
 )
 
 func Login(context *pwBased) func(*fiber.Ctx) error {
@@ -163,5 +165,65 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		} else {
 			return c.JSON(&fiber.Map{"id": id})
 		}
+	}
+}
+
+func Reset(context *pwBased) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		var authInput interface{}
+		if err := c.BodyParser(&authInput); err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
+		}
+
+		identityData := &storageT.IdentityData{}
+		collMap := context.coll.Parent.Spec.FieldsMap
+		i := context.identity
+		getLoginTraitData(&i.Email, authInput, context.conf.Login.FieldsMap["email"], collMap["email"].Default, &identityData.Email)
+
+		exist, err := context.storage.IsIdentityExist(context.identity, collMap["email"].Name, identityData.Email)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		if !exist {
+			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
+		}
+
+		token, err := uuid.NewV4()
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		tokenHash, err := context.pwHasher.HashPw(token.String())
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		resetData := &storageT.PwResetData{
+			Email:   identityData.Email,
+			Token:   tokenHash,
+			Expires: time.Now().Add(time.Duration(context.conf.Reset.TokenExp) * time.Second).Format(time.RFC3339),
+		}
+		_, err = context.storage.InsertReset(&context.reset.coll.Spec, resetData)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		link := fmt.Sprintf("http://localhost:3000/two/password/reset/confirm?token=%s", token.String())
+		err = context.reset.sender.Send(resetData.Email.(string),
+			"Reset your password",
+			context.conf.Reset.Template,
+			map[string]interface{}{"link": link})
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(&fiber.Map{"status": "success"})
+	}
+}
+
+func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		panic("implement me")
 	}
 }

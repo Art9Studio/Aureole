@@ -7,22 +7,31 @@ import (
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/pwhasher/types"
+	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 )
 
-type pwBased struct {
-	appName    string
-	rawConf    *configs.Authn
-	conf       *config
-	identity   *identity.Identity
-	pwHasher   types.PwHasher
-	storage    storageTypes.Storage
-	coll       *collections.Collection
-	authorizer authzTypes.Authorizer
-}
+type (
+	pwBased struct {
+		appName    string
+		rawConf    *configs.Authn
+		conf       *config
+		identity   *identity.Identity
+		pwHasher   types.PwHasher
+		storage    storageTypes.Storage
+		coll       *collections.Collection
+		authorizer authzTypes.Authorizer
+		reset      *reset
+	}
+
+	reset struct {
+		coll   *collections.Collection
+		sender senderTypes.Sender
+	}
+)
 
 func (p *pwBased) Init(appName string) (err error) {
 	p.appName = appName
@@ -58,6 +67,16 @@ func (p *pwBased) Init(appName string) (err error) {
 		return fmt.Errorf("identity in app '%s' is not declared", appName)
 	}
 
+	p.reset.coll, err = pluginApi.Project.GetCollection(p.conf.Reset.Collection)
+	if err != nil {
+		return fmt.Errorf("collection named '%s' is not declared", p.conf.Reset.Collection)
+	}
+
+	p.reset.sender, err = pluginApi.Project.GetSender(p.conf.Reset.Sender)
+	if err != nil {
+		return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
+	}
+
 	if err = p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
 		return err
 	}
@@ -86,6 +105,16 @@ func createRoutes(p *pwBased) {
 		{
 			Method:  "POST",
 			Path:    p.rawConf.PathPrefix + p.conf.Register.Path,
+			Handler: Register(p),
+		},
+		{
+			Method:  "POST",
+			Path:    p.rawConf.PathPrefix + p.conf.Reset.Path,
+			Handler: Reset(p),
+		},
+		{
+			Method:  "POST",
+			Path:    p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl,
 			Handler: Register(p),
 		},
 	}
