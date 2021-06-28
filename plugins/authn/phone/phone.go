@@ -14,17 +14,24 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type phone struct {
-	appName                string
-	rawConf                *configs.Authn
-	conf                   *config
-	identity               *identity.Identity
-	storage                storageTypes.Storage
-	hasher                 types.PwHasher
-	coll, verificationColl *collections.Collection
-	authorizer             authzTypes.Authorizer
-	sender                 senderTypes.Sender
-}
+type (
+	phone struct {
+		appName      string
+		rawConf      *configs.Authn
+		conf         *config
+		identity     *identity.Identity
+		storage      storageTypes.Storage
+		hasher       types.PwHasher
+		coll         *collections.Collection
+		authorizer   authzTypes.Authorizer
+		verification verif
+	}
+
+	verif struct {
+		coll   *collections.Collection
+		sender senderTypes.Sender
+	}
+)
 
 func (p *phone) Init(appName string) (err error) {
 	p.appName = appName
@@ -45,18 +52,18 @@ func (p *phone) Init(appName string) (err error) {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
 	}
 
-	p.verificationColl, err = pluginApi.Project.GetCollection(p.conf.VerificationColl)
+	p.verification.coll, err = pluginApi.Project.GetCollection(p.conf.Verification.Collection)
 	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", p.conf.VerificationColl)
+		return fmt.Errorf("collection named '%s' is not declared", p.conf.Verification.Collection)
 	}
 
 	p.storage, err = pluginApi.Project.GetStorage(p.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
 	}
-	p.sender, err = pluginApi.Project.GetSender(p.conf.Sender)
+	p.verification.sender, err = pluginApi.Project.GetSender(p.conf.Verification.Sender)
 	if err != nil {
-		return fmt.Errorf("sender named '%s' is not declared", p.conf.Sender)
+		return fmt.Errorf("sender named '%s' is not declared", p.conf.Verification.Sender)
 	}
 
 	p.authorizer, err = pluginApi.Project.GetAuthorizer(p.rawConf.AuthzName, appName)
@@ -102,11 +109,11 @@ func createRoutes(p *phone) {
 		{
 			Method:  "POST",
 			Path:    p.rawConf.PathPrefix + p.conf.Verification.Path,
-			Handler: Confirm(p),
+			Handler: Verify(p),
 		},
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.ResendUrl,
+			Path:    p.rawConf.PathPrefix + p.conf.Verification.ResendUrl,
 			Handler: Resend(p),
 		},
 	}

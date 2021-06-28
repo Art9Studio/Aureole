@@ -7,16 +7,12 @@ import (
 
 type (
 	config struct {
-		Hasher           string       `mapstructure:"hasher"`
-		Collection       string       `mapstructure:"collection"`
-		VerificationColl string       `mapstructure:"verification_collection"`
-		Storage          string       `mapstructure:"storage"`
-		Sender           string       `mapstructure:"sender"`
-		Template         string       `mapstructure:"template"`
-		ResendUrl        string       `mapstructure:"resend_url"`
-		Login            login        `mapstructure:"login"`
-		Register         register     `mapstructure:"register"`
-		Verification     verification `mapstructure:"verification"`
+		Hasher       string    `mapstructure:"hasher"`
+		Collection   string    `mapstructure:"collection"`
+		Storage      string    `mapstructure:"storage"`
+		Login        login     `mapstructure:"login"`
+		Register     register  `mapstructure:"register"`
+		Verification verifConf `mapstructure:"verification"`
 	}
 
 	login struct {
@@ -30,9 +26,13 @@ type (
 		FieldsMap    map[string]string `mapstructure:"fields_map"`
 	}
 
-	verification struct {
+	verifConf struct {
 		Path        string            `mapstructure:"path"`
+		ResendUrl   string            `mapstructure:"resend_url"`
+		Collection  string            `mapstructure:"collection"`
 		MaxAttempts int               `mapstructure:"max_attempts"`
+		Sender      string            `mapstructure:"sender"`
+		Template    string            `mapstructure:"template"`
 		Code        verificationCode  `mapstructure:"code"`
 		FieldsMap   map[string]string `mapstructure:"fields_map"`
 	}

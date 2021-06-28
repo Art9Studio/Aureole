@@ -142,11 +142,7 @@ apps:
         config:
           hasher: django
           collection: identity
-          verification_collection: verification
           storage: one_db
-          sender: twilio
-          template: verification
-          resend_url: "login/resend"
           login:
             path: "/login"
             fields_map:
@@ -159,7 +155,11 @@ apps:
               phone: "{$.phone}"
           verification:
             path: "/login/verify"
+            resend_url: "login/resend"
+            collection: verification
             max_attempts: 3
+            sender: twilio
+            template: verification
             code:
               length: 6
               alphabet: "1234567890"
