@@ -198,7 +198,7 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 		tokenHash := context.reset.hasher().Sum([]byte(token.String()))
 		resetData := &storageT.PwResetData{
 			Email:   identityData.Email,
-			Token:   base64.StdEncoding.EncodeToString(tokenHash[:]),
+			Token:   base64.StdEncoding.EncodeToString(tokenHash),
 			Expires: time.Now().Add(time.Duration(context.conf.Reset.Token.Exp) * time.Second).Format(time.RFC3339),
 			Invalid: false,
 		}
@@ -231,7 +231,7 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 		tokenName := context.reset.coll.Spec.FieldsMap["token"].Name
 
 		tokenHash := context.reset.hasher().Sum([]byte(token))
-		rawReset, err := context.storage.GetReset(collSpec, tokenName, base64.StdEncoding.EncodeToString(tokenHash[:]))
+		rawReset, err := context.storage.GetReset(collSpec, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -277,7 +277,7 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		_, err = context.storage.InvalidateReset(collSpec, tokenName, base64.StdEncoding.EncodeToString(tokenHash[:]))
+		_, err = context.storage.InvalidateReset(collSpec, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

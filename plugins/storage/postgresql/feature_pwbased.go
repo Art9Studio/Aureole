@@ -73,7 +73,7 @@ func (s *Storage) GetPassword(coll *collections.Collection, filterField string, 
 	return s.RawQuery(sql, args...)
 }
 
-func (s *Storage) UpdatePassword(coll *collections.Collection, filterField string, filterVal interface{}, updateVal interface{}) (types.JSONCollResult, error) {
+func (s *Storage) UpdatePassword(coll *collections.Collection, filterField string, filterVal, updateVal interface{}) (types.JSONCollResult, error) {
 	pluginApi := authn.Repository.PluginApi
 	identityColl, err := pluginApi.Project.GetCollection(coll.ParentName)
 	if err != nil {
