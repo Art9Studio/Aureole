@@ -10,8 +10,12 @@ import (
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
+	"hash"
 )
 
 type (
@@ -30,6 +34,7 @@ type (
 	reset struct {
 		coll   *collections.Collection
 		sender senderTypes.Sender
+		hasher func() hash.Hash
 	}
 )
 
@@ -67,14 +72,22 @@ func (p *pwBased) Init(appName string) (err error) {
 		return fmt.Errorf("identity in app '%s' is not declared", appName)
 	}
 
-	p.reset.coll, err = pluginApi.Project.GetCollection(p.conf.Reset.Collection)
-	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", p.conf.Reset.Collection)
-	}
+	if pwResetEnable(p) {
+		p.reset = &reset{}
+		p.reset.coll, err = pluginApi.Project.GetCollection(p.conf.Reset.Collection)
+		if err != nil {
+			return fmt.Errorf("collection named '%s' is not declared", p.conf.Reset.Collection)
+		}
 
-	p.reset.sender, err = pluginApi.Project.GetSender(p.conf.Reset.Sender)
-	if err != nil {
-		return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
+		p.reset.sender, err = pluginApi.Project.GetSender(p.conf.Reset.Sender)
+		if err != nil {
+			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
+		}
+
+		p.reset.hasher, err = hasher(p.conf.Reset.Token.HashFunc)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err = p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
@@ -95,6 +108,29 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
+func pwResetEnable(p *pwBased) bool {
+	return p.conf.Reset.Collection != "" && p.conf.Reset.Sender != "" && p.conf.Reset.Template != ""
+}
+
+func hasher(hasherName string) (func() hash.Hash, error) {
+	var h func() hash.Hash
+	switch hasherName {
+	case "sha1":
+		h = sha1.New
+	case "sha224":
+		h = sha256.New224
+	case "sha256":
+		h = sha256.New
+	case "sha384":
+		h = sha512.New384
+	case "sha512":
+		h = sha512.New
+	default:
+		return nil, fmt.Errorf("password reset: hasher '%s' doesn't supported", hasherName)
+	}
+	return h, nil
+}
+
 func createRoutes(p *pwBased) {
 	routes := []*_interface.Route{
 		{
@@ -107,16 +143,23 @@ func createRoutes(p *pwBased) {
 			Path:    p.rawConf.PathPrefix + p.conf.Register.Path,
 			Handler: Register(p),
 		},
-		{
-			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Reset.Path,
-			Handler: Reset(p),
-		},
-		{
-			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl,
-			Handler: Register(p),
-		},
 	}
+
+	if pwResetEnable(p) {
+		resetRoutes := []*_interface.Route{
+			{
+				Method:  "POST",
+				Path:    p.rawConf.PathPrefix + p.conf.Reset.Path,
+				Handler: Reset(p),
+			},
+			{
+				Method:  "POST",
+				Path:    p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl,
+				Handler: ResetConfirm(p),
+			},
+		}
+		routes = append(routes, resetRoutes...)
+	}
+
 	authn.Repository.PluginApi.Router.AddAppRoutes(p.appName, routes)
 }

@@ -33,8 +33,13 @@ type (
 		Collection string            `mapstructure:"collection"`
 		Sender     string            `mapstructure:"sender"`
 		Template   string            `mapstructure:"template"`
-		TokenExp   int               `mapstructure:"token_exp"`
+		Token      token             `mapstructure:"token"`
 		FieldsMap  map[string]string `mapstructure:"fields_map"`
+	}
+
+	token struct {
+		Exp      int    `mapstructure:"exp"`
+		HashFunc string `mapstructure:"hash_func"`
 	}
 )
 

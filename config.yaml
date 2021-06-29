@@ -88,10 +88,10 @@ apps:
       collection: identity
       id:
       username:
-        required: true
-        unique: true
       phone:
       email:
+        enabled: true
+
 
     authN:
       - type: "password_based"
@@ -106,7 +106,9 @@ apps:
             collection: reset
             sender: email
             template: reset
-            token_exp: 3600
+            token:
+              exp: 3600
+              hash_func: "sha256"
             fields_map:
               username: "{$.username}"
               email: "{$.email}"
@@ -272,15 +274,16 @@ collections:
         expires: "expires"
 
   - type: "password_reset"
-      name: reset
-      config:
-        name: "password_resets"
-        pk: "id"
-        fields_map:
-          id: "id"
-          email: "email"
-          token: "token"
-          expires: "expires"
+    name: reset
+    config:
+      name: "password_resets"
+      pk: "id"
+      fields_map:
+        id: "id"
+        email: "email"
+        token: "token"
+        expires: "expires"
+        invalid: "invalid"
 
 hashers:
   - type: "argon2"

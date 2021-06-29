@@ -68,9 +68,25 @@ func (s *Storage) GetPassword(coll *collections.Collection, filterField string, 
 	b := sqlbuilder.PostgreSQL.NewSelectBuilder()
 	b.Select(Sanitize(coll.Spec.FieldsMap["password"].Name)).From(Sanitize(identityColl.Spec.Name))
 	b.Where(b.Equal(Sanitize(identityColl.Spec.FieldsMap[filterField].Name), filterValue))
-	sql, _ := b.Build()
+	sql, args := b.Build()
 
-	return s.RawQuery(sql, filterValue)
+	return s.RawQuery(sql, args...)
+}
+
+func (s *Storage) UpdatePassword(coll *collections.Collection, filterField string, filterVal interface{}, updateVal interface{}) (types.JSONCollResult, error) {
+	pluginApi := authn.Repository.PluginApi
+	identityColl, err := pluginApi.Project.GetCollection(coll.ParentName)
+	if err != nil {
+		return nil, err
+	}
+
+	b := sqlbuilder.PostgreSQL.NewUpdateBuilder()
+	b.Update(Sanitize(identityColl.Spec.Name)).Set(b.Assign(Sanitize(coll.Spec.FieldsMap["password"].Name), updateVal))
+	b.Where(b.Equal(Sanitize(identityColl.Spec.FieldsMap[filterField].Name), filterVal))
+	b.SQL(fmt.Sprintf(" returning %s", Sanitize(identityColl.Spec.Pk)))
+	sql, args := b.Build()
+
+	return s.RawQuery(sql, args...)
 }
 
 /* Funcs for creating table from scratch. Enables by py passing "use_existent: false" flag

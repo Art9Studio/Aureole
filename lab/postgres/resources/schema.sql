@@ -29,3 +29,12 @@ CREATE TABLE phone_verifications
     attempts INT,
     expires  timestamptz
 );
+
+CREATE TABLE password_resets
+(
+    id      SERIAL PRIMARY KEY,
+    email   TEXT,
+    token   TEXT,
+    expires timestamptz,
+    invalid BOOLEAN
+);
