@@ -38,12 +38,12 @@ func (s *Storage) GetReset(spec *collections.Spec, filterField string, filterVal
 	return s.RawQuery(sql, args...)
 }
 
-func (s *Storage) InvalidateReset(spec *collections.Spec, filterField string, filterVal interface{}) (types.JSONCollResult, error) {
+func (s *Storage) InvalidateReset(spec *collections.Spec, filterField string, filterVal interface{}) error {
 	b := sqlbuilder.PostgreSQL.NewUpdateBuilder()
 	b.Update(Sanitize(spec.Name)).Set(b.Assign(Sanitize(spec.FieldsMap["invalid"].Name), true))
 	b.Where(b.Equal(Sanitize(spec.FieldsMap[filterField].Name), filterVal))
 	b.SQL(fmt.Sprintf(" returning %s", Sanitize(spec.Pk)))
 	sql, args := b.Build()
 
-	return s.RawQuery(sql, args...)
+	return s.RawExec(sql, args...)
 }

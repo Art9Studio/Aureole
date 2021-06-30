@@ -202,6 +202,13 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 			Expires: time.Now().Add(time.Duration(context.conf.Reset.Token.Exp) * time.Second).Format(time.RFC3339),
 			Invalid: false,
 		}
+
+		collSpec := &context.reset.coll.Spec
+		err = context.storage.InvalidateReset(collSpec, collSpec.FieldsMap["email"].Name, identityData.Email)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
 		_, err = context.storage.InsertReset(&context.reset.coll.Spec, resetData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -227,11 +234,11 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusNotFound, "page not found")
 		}
 
-		collSpec := &context.reset.coll.Spec
+		resetSpecs := &context.reset.coll.Spec
 		tokenName := context.reset.coll.Spec.FieldsMap["token"].Name
 
 		tokenHash := context.reset.hasher().Sum([]byte(token))
-		rawReset, err := context.storage.GetReset(collSpec, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
+		rawReset, err := context.storage.GetReset(resetSpecs, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -241,11 +248,11 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, "cannot get reset data from database")
 		}
 
-		if reset[collSpec.FieldsMap["invalid"].Name].(bool) {
+		if reset[resetSpecs.FieldsMap["invalid"].Name].(bool) {
 			return sendError(c, fiber.StatusUnauthorized, "invalid token")
 		}
 
-		expires, err := time.Parse(time.RFC3339, reset[collSpec.FieldsMap["expires"].Name].(string))
+		expires, err := time.Parse(time.RFC3339, reset[resetSpecs.FieldsMap["expires"].Name].(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -270,19 +277,19 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 		}
 		pw.PasswordHash = pwHash
 
-		iCollSpec := context.coll.Parent.Spec
-		email := reset[collSpec.FieldsMap["email"].Name].(string)
-		_, err = context.storage.UpdatePassword(context.coll, iCollSpec.FieldsMap["email"].Name, email, pw.PasswordHash)
+		identitySpecs := context.coll.Parent.Spec
+		email := reset[resetSpecs.FieldsMap["email"].Name].(string)
+		_, err = context.storage.UpdatePassword(context.coll, identitySpecs.FieldsMap["email"].Name, email, pw.PasswordHash)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		_, err = context.storage.InvalidateReset(collSpec, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
+		err = context.storage.InvalidateReset(resetSpecs, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.reset.sender.SendRaw(reset[collSpec.FieldsMap["email"].Name].(string),
+		err = context.reset.sender.SendRaw(reset[resetSpecs.FieldsMap["email"].Name].(string),
 			"Reset your password",
 			"Your password has been successfully changed")
 		if err != nil {

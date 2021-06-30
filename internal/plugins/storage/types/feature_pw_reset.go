@@ -16,5 +16,5 @@ type PwReset interface {
 
 	GetReset(*collections.Spec, string, interface{}) (JSONCollResult, error)
 
-	InvalidateReset(*collections.Spec, string, interface{}) (JSONCollResult, error)
+	InvalidateReset(*collections.Spec, string, interface{}) error
 }
