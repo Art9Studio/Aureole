@@ -36,23 +36,31 @@ func Login(context *phone) func(*fiber.Ctx) error {
 		}
 
 		v := context.conf.Verification
-		code, err := getRandomString(v.Code.Length, v.Code.Alphabet)
+		otp, err := getRandomString(v.Otp.Length, v.Otp.Alphabet)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		codeHash, err := context.hasher.HashPw(v.Code.Prefix + code)
+		otpHash, err := context.hasher.HashPw(v.Otp.Prefix + otp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		verificationData := &storageT.PhoneVerificationData{
 			Phone:    identityData.Phone,
-			Code:     codeHash,
+			Otp:      otpHash,
 			Attempts: 0,
-			Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
+			Expires:  time.Now().Add(time.Duration(v.Otp.Exp) * time.Second).Format(time.RFC3339),
+			Invalid:  false,
 		}
-		verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
+
+		vSpecs := &context.verification.coll.Spec
+		err = context.storage.InvalidateVerification(vSpecs, vSpecs.FieldsMap["phone"].Name, identityData.Phone)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		verificationId, err := context.storage.InsertVerification(vSpecs, verificationData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -60,7 +68,7 @@ func Login(context *phone) func(*fiber.Ctx) error {
 		err = context.verification.sender.Send(verificationData.Phone.(string),
 			"",
 			context.conf.Verification.Template,
-			map[string]interface{}{"code": code})
+			map[string]interface{}{"otp": otp})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -90,46 +98,50 @@ func Register(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, "user already exist")
 		}
 
-		userId, err := context.storage.InsertIdentity(context.identity, identityData)
+		_, err = context.storage.InsertIdentity(context.identity, identityData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		if context.conf.Register.IsLoginAfter {
-			v := context.conf.Verification
-			code, err := getRandomString(v.Code.Length, v.Code.Alphabet)
-			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-
-			codeHash, err := context.hasher.HashPw(v.Code.Prefix + code)
-			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-
-			verificationData := &storageT.PhoneVerificationData{
-				Phone:    identityData.Phone,
-				Code:     codeHash,
-				Attempts: 0,
-				Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
-			}
-			verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
-			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-
-			err = context.verification.sender.Send(verificationData.Phone.(string),
-				"",
-				context.conf.Verification.Template,
-				map[string]interface{}{"code": code})
-			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-
-			return c.JSON(&fiber.Map{"verification_id": verificationId})
-		} else {
-			return c.JSON(&fiber.Map{"id": userId})
+		v := context.conf.Verification
+		otp, err := getRandomString(v.Otp.Length, v.Otp.Alphabet)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
+
+		otpHash, err := context.hasher.HashPw(v.Otp.Prefix + otp)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		verificationData := &storageT.PhoneVerificationData{
+			Phone:    identityData.Phone,
+			Otp:      otpHash,
+			Attempts: 0,
+			Expires:  time.Now().Add(time.Duration(v.Otp.Exp) * time.Second).Format(time.RFC3339),
+			Invalid:  false,
+		}
+
+		vSpecs := &context.verification.coll.Spec
+		err = context.storage.InvalidateVerification(vSpecs, vSpecs.FieldsMap["phone"].Name, identityData.Phone)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		err = context.verification.sender.Send(verificationData.Phone.(string),
+			"",
+			context.conf.Verification.Template,
+			map[string]interface{}{"otp": otp})
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(&fiber.Map{"verification_id": verificationId})
 	}
 }
 
@@ -147,38 +159,42 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		if statusCode, err := getJsonData(authInput, v.FieldsMap["code"], &requestData.Code); err != nil {
+		if statusCode, err := getJsonData(authInput, v.FieldsMap["otp"], &requestData.Otp); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
 		storage := context.storage
-		collSpec := context.verification.coll.Spec
+		vSpecs := context.verification.coll.Spec
 
-		rawVerificationData, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
+		rawVerification, err := storage.GetVerification(&vSpecs, vSpecs.FieldsMap["id"].Name, requestData.Id)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationData, ok := rawVerificationData.(map[string]interface{})
+		verification, ok := rawVerification.(map[string]interface{})
 		if !ok {
 			return sendError(c, fiber.StatusInternalServerError, "cannot get verification data from database")
 		}
 
-		expires, err := time.Parse(time.RFC3339, verificationData[collSpec.FieldsMap["expires"].Name].(string))
+		if verification[vSpecs.FieldsMap["invalid"].Name].(bool) {
+			return sendError(c, fiber.StatusUnauthorized, "invalid verification")
+		}
+
+		expires, err := time.Parse(time.RFC3339, verification[vSpecs.FieldsMap["expires"].Name].(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		if time.Now().After(expires) {
-			return sendError(c, fiber.StatusUnauthorized, "verification code expire")
+			return sendError(c, fiber.StatusUnauthorized, "verification otp expire")
 		}
 
 		// todo: fix type conversion
-		if int(verificationData[collSpec.FieldsMap["attempts"].Name].(float64)) >= context.conf.Verification.MaxAttempts {
+		if int(verification[vSpecs.FieldsMap["attempts"].Name].(float64)) >= context.conf.Verification.MaxAttempts {
 			return sendError(c, fiber.StatusUnauthorized, "too much attempts")
 		}
 
-		code := v.Code.Prefix + requestData.Code.(string)
-		isMatch, err := context.hasher.ComparePw(code, verificationData[collSpec.FieldsMap["code"].Name].(string))
+		otp := v.Otp.Prefix + requestData.Otp.(string)
+		isMatch, err := context.hasher.ComparePw(otp, verification[vSpecs.FieldsMap["otp"].Name].(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -188,7 +204,7 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 
 			rawIdentity, err := context.storage.GetIdentity(context.identity,
 				iCollSpec.FieldsMap["phone"].Name,
-				verificationData[collSpec.FieldsMap["phone"].Name],
+				verification[vSpecs.FieldsMap["phone"].Name],
 			)
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -223,10 +239,10 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			}
 			return context.authorizer.Authorize(c, authzCtx)
 		} else {
-			if err := context.storage.IncrAttempts(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id); err != nil {
+			if err := context.storage.IncrAttempts(&vSpecs, vSpecs.FieldsMap["id"].Name, requestData.Id); err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-			return sendError(c, fiber.StatusUnauthorized, "wrong verification code")
+			return sendError(c, fiber.StatusUnauthorized, "wrong verification otp")
 		}
 
 	}
@@ -250,41 +266,49 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 		storage := context.storage
 		collSpec := context.verification.coll.Spec
 
-		rawVerificationData, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
+		rawVerification, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		oldVerificationData, ok := rawVerificationData.(map[string]interface{})
+		oldVerification, ok := rawVerification.(map[string]interface{})
 		if !ok {
 			return sendError(c, fiber.StatusInternalServerError, "cannot get verification data from database")
 		}
 
-		code, err := getRandomString(v.Code.Length, v.Code.Alphabet)
+		otp, err := getRandomString(v.Otp.Length, v.Otp.Alphabet)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		codeHash, err := context.hasher.HashPw(v.Code.Prefix + code)
+		otpHash, err := context.hasher.HashPw(v.Otp.Prefix + otp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationData := &storageT.PhoneVerificationData{
-			Phone:    oldVerificationData[collSpec.FieldsMap["phone"].Name],
-			Code:     codeHash,
+		verification := &storageT.PhoneVerificationData{
+			Phone:    oldVerification[collSpec.FieldsMap["phone"].Name],
+			Otp:      otpHash,
 			Attempts: 0,
-			Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
+			Expires:  time.Now().Add(time.Duration(v.Otp.Exp) * time.Second).Format(time.RFC3339),
+			Invalid:  false,
 		}
-		verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
+
+		vSpecs := &context.verification.coll.Spec
+		err = context.storage.InvalidateVerification(vSpecs, vSpecs.FieldsMap["phone"].Name, verification.Phone)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.verification.sender.Send(verificationData.Phone.(string),
+		verificationId, err := context.storage.InsertVerification(vSpecs, verification)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		err = context.verification.sender.Send(verification.Phone.(string),
 			"",
 			context.conf.Verification.Template,
-			map[string]interface{}{"code": code})
+			map[string]interface{}{"otp": otp})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

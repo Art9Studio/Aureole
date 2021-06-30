@@ -163,25 +163,24 @@ apps:
               phone: "{$.phone}"
           register:
             path: "/register"
-            login_after: false
             fields_map:
               username: "{$.username}"
               phone: "{$.phone}"
           verification:
             path: "/login/verify"
             resend_url: "login/resend"
-            collection: verification
+            collection: phone_otp
             max_attempts: 3
             sender: twilio
-            template: verification
-            code:
+            template: phone_otp
+            otp:
               length: 6
               alphabet: "1234567890"
               prefix: "A-"
               exp: 300
             fields_map:
-              id: "{$.verification_id}"
-              code: "{$.verification_code}"
+              id: "{$.otp_id}"
+              otp: "{$.otp}"
 
     authZ:
       - type: "jwt"
@@ -261,17 +260,18 @@ collections:
         session_token: "session_id"
         expiration: "expiration"
 
-  - type: "phone_verification"
-    name: verification
+  - type: "phone_otp"
+    name: phone_otp
     config:
       name: "phone_verifications"
       pk: "id"
       fields_map:
         id: "id"
         phone: "phone"
-        code: "code"
+        otp: "otp"
         attempts: "attempts"
         expires: "expires"
+        invalid: "invalid"
 
   - type: "password_reset"
     name: reset
@@ -346,4 +346,4 @@ senders:
       auth_token: "${TEST_TWILIO_AUTH_TOKEN}"
       from: "${TEST_TWILIO_PHONE_NUMBER}"
       templates:
-        verification: "lab/templates/verification.txt"
+        phone_otp: "lab/templates/phone_otp.txt"

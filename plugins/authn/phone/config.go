@@ -21,9 +21,8 @@ type (
 	}
 
 	register struct {
-		Path         string            `mapstructure:"path"`
-		IsLoginAfter bool              `mapstructure:"login_after"`
-		FieldsMap    map[string]string `mapstructure:"fields_map"`
+		Path      string            `mapstructure:"path"`
+		FieldsMap map[string]string `mapstructure:"fields_map"`
 	}
 
 	verifConf struct {
@@ -33,11 +32,11 @@ type (
 		MaxAttempts int               `mapstructure:"max_attempts"`
 		Sender      string            `mapstructure:"sender"`
 		Template    string            `mapstructure:"template"`
-		Code        verificationCode  `mapstructure:"code"`
+		Otp         otp               `mapstructure:"otp"`
 		FieldsMap   map[string]string `mapstructure:"fields_map"`
 	}
 
-	verificationCode struct {
+	otp struct {
 		Length   int    `mapstructure:"length"`
 		Alphabet string `mapstructure:"alphabet"`
 		Prefix   string `mapstructure:"prefix"`
