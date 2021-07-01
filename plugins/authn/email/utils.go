@@ -5,10 +5,8 @@ import (
 	"aureole/internal/identity"
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/pkg/jsonpath"
-	crand "crypto/rand"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"math/big"
 	"reflect"
 )
 
@@ -110,17 +108,4 @@ func getValueOrDefault(value, defaultValue interface{}) interface{} {
 
 func isZeroVal(x interface{}) bool {
 	return x == nil || reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
-}
-
-func getRandomString(length int, alphabet string) (string, error) {
-	ret := make([]byte, length)
-	for i := 0; i < length; i++ {
-		num, err := crand.Int(crand.Reader, big.NewInt(int64(len(alphabet))))
-		if err != nil {
-			return "", err
-		}
-		ret[i] = alphabet[num.Int64()]
-	}
-
-	return string(ret), nil
 }
