@@ -13,6 +13,7 @@ type Application interface {
 	NativeQueries
 	PhoneVerification
 	PwReset
+	EmailLink
 }
 
 // Storage is an interface that defines methods for database session

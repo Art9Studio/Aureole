@@ -39,3 +39,12 @@ CREATE TABLE password_resets
     expires timestamptz,
     invalid BOOLEAN
 );
+
+CREATE TABLE email_links
+(
+    id      SERIAL PRIMARY KEY,
+    email   TEXT,
+    token   TEXT,
+    expires timestamptz,
+    invalid BOOLEAN
+);

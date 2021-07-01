@@ -1,4 +1,4 @@
-package pwbased
+package email
 
 import (
 	"aureole/internal/collections"
@@ -6,7 +6,6 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
@@ -19,26 +18,25 @@ import (
 )
 
 type (
-	pwBased struct {
+	email struct {
 		appName    string
 		rawConf    *configs.Authn
 		conf       *config
 		identity   *identity.Identity
-		pwHasher   types.PwHasher
 		storage    storageTypes.Storage
 		coll       *collections.Collection
 		authorizer authzTypes.Authorizer
-		reset      *reset
+		link       magicLink
 	}
 
-	reset struct {
+	magicLink struct {
 		coll   *collections.Collection
 		sender senderTypes.Sender
 		hasher func() hash.Hash
 	}
 )
 
-func (p *pwBased) Init(appName string) (err error) {
+func (p *email) Init(appName string) (err error) {
 	p.appName = appName
 
 	p.conf, err = initConfig(&p.rawConf.Config)
@@ -47,19 +45,24 @@ func (p *pwBased) Init(appName string) (err error) {
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	p.pwHasher, err = pluginApi.Project.GetHasher(p.conf.MainHasher)
-	if err != nil {
-		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
-	}
 
 	p.coll, err = pluginApi.Project.GetCollection(p.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
 	}
 
+	p.link.coll, err = pluginApi.Project.GetCollection(p.conf.Link.Collection)
+	if err != nil {
+		return fmt.Errorf("collection named '%s' is not declared", p.conf.Link.Collection)
+	}
+
 	p.storage, err = pluginApi.Project.GetStorage(p.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
+	}
+	p.link.sender, err = pluginApi.Project.GetSender(p.conf.Link.Sender)
+	if err != nil {
+		return fmt.Errorf("sender named '%s' is not declared", p.conf.Link.Sender)
 	}
 
 	p.authorizer, err = pluginApi.Project.GetAuthorizer(p.rawConf.AuthzName, appName)
@@ -72,22 +75,9 @@ func (p *pwBased) Init(appName string) (err error) {
 		return fmt.Errorf("identity in app '%s' is not declared", appName)
 	}
 
-	if pwResetEnable(p) {
-		p.reset = &reset{}
-		p.reset.coll, err = pluginApi.Project.GetCollection(p.conf.Reset.Collection)
-		if err != nil {
-			return fmt.Errorf("collection named '%s' is not declared", p.conf.Reset.Collection)
-		}
-
-		p.reset.sender, err = pluginApi.Project.GetSender(p.conf.Reset.Sender)
-		if err != nil {
-			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
-		}
-
-		p.reset.hasher, err = initHasher(p.conf.Reset.Token.HashFunc)
-		if err != nil {
-			return err
-		}
+	p.link.hasher, err = initHasher(p.conf.Link.Token.HashFunc)
+	if err != nil {
+		return err
 	}
 
 	if err = p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
@@ -108,10 +98,6 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func pwResetEnable(p *pwBased) bool {
-	return p.conf.Reset.Collection != "" && p.conf.Reset.Sender != "" && p.conf.Reset.Template != ""
-}
-
 func initHasher(hasherName string) (func() hash.Hash, error) {
 	var h func() hash.Hash
 	switch hasherName {
@@ -126,40 +112,28 @@ func initHasher(hasherName string) (func() hash.Hash, error) {
 	case "sha512":
 		h = sha512.New
 	default:
-		return nil, fmt.Errorf("password reset: hasher '%s' doesn't supported", hasherName)
+		return nil, fmt.Errorf("email auth: hasher '%s' doesn't supported", hasherName)
 	}
 	return h, nil
 }
 
-func createRoutes(p *pwBased) {
+func createRoutes(p *email) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
 			Path:    p.rawConf.PathPrefix + p.conf.Login.Path,
-			Handler: Login(p),
+			Handler: GetMagicLink(p),
 		},
 		{
 			Method:  "POST",
 			Path:    p.rawConf.PathPrefix + p.conf.Register.Path,
 			Handler: Register(p),
 		},
+		{
+			Method:  "GET",
+			Path:    p.rawConf.PathPrefix + p.conf.Link.Path,
+			Handler: Login(p),
+		},
 	}
-
-	if pwResetEnable(p) {
-		resetRoutes := []*_interface.Route{
-			{
-				Method:  "POST",
-				Path:    p.rawConf.PathPrefix + p.conf.Reset.Path,
-				Handler: Reset(p),
-			},
-			{
-				Method:  "POST",
-				Path:    p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl,
-				Handler: ResetConfirm(p),
-			},
-		}
-		routes = append(routes, resetRoutes...)
-	}
-
 	authn.Repository.PluginApi.Router.AddAppRoutes(p.appName, routes)
 }

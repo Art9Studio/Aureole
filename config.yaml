@@ -146,10 +146,34 @@ apps:
       username:
       phone:
         enabled: true
-        required: true
       email:
+        enabled: true
 
     authN:
+      - type: "email"
+        path_prefix: "/email"
+        authz: jwt
+        config:
+          collection: identity
+          storage: one_db
+          login:
+            path: "/login"
+            fields_map:
+              email: "{$.email}"
+          register:
+            path: "/register"
+            fields_map:
+              username: "{$.username}"
+              email: "{$.email}"
+          magic_link:
+            path: "/email-confirm"
+            collection: magic_link
+            sender: email
+            template: magic_link
+            token:
+              exp: 3600
+              hash_func: "sha256"
+
       - type: "phone"
         path_prefix: "/"
         authZ: jwt
@@ -285,6 +309,18 @@ collections:
         expires: "expires"
         invalid: "invalid"
 
+  - type: "email_link"
+    name: magic_link
+    config:
+      name: "email_links"
+      pk: "id"
+      fields_map:
+        id: "id"
+        email: "email"
+        token: "token"
+        expires: "expires"
+        invalid: "invalid"
+
 hashers:
   - type: "argon2"
     name: argon2
@@ -338,6 +374,7 @@ senders:
         default_text: "lab/templates/default.txt"
         default_html: "lab/templates/default.html" # if extension is 'html' we send it as html
         reset: "lab/templates/password_reset.txt"
+        magic_link: "lab/templates/magic_link.txt"
 
   - type: "twilio"
     name: twilio

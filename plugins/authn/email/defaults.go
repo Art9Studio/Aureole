@@ -1,4 +1,4 @@
-package phone
+package email
 
 import (
 	"aureole/internal/configs"
@@ -8,12 +8,12 @@ import (
 func (c *config) setDefaults() {
 	c.Login.setDefaults()
 	c.Register.setDefaults()
-	c.Verification.setDefaults()
+	c.Link.Token.setDefaults()
 }
 
 func (l *login) setDefaults() {
 	configs.SetDefault(&l.Path, "/login")
-	l.FieldsMap = setDefaultMap(l.FieldsMap, []string{"phone"})
+	l.FieldsMap = setDefaultMap(l.FieldsMap, []string{"email"})
 }
 
 func (r *register) setDefaults() {
@@ -21,18 +21,9 @@ func (r *register) setDefaults() {
 	r.FieldsMap = setDefaultMap(r.FieldsMap, []string{"username", "email", "phone"})
 }
 
-func (v *verifConf) setDefaults() {
-	configs.SetDefault(&v.MaxAttempts, 3)
-	configs.SetDefault(&v.Path, "/login/verify")
-	configs.SetDefault(&v.ResendUrl, "/login/resend")
-	v.Otp.setDefaults()
-	v.FieldsMap = setDefaultMap(v.FieldsMap, []string{"id", "otp"})
-}
-func (c *otp) setDefaults() {
-	configs.SetDefault(&c.Length, 6)
-	configs.SetDefault(&c.Alphabet, "1234567890")
-	configs.SetDefault(&c.Prefix, "A-")
-	configs.SetDefault(&c.Exp, 300)
+func (t *token) setDefaults() {
+	configs.SetDefault(&t.Exp, 600)
+	configs.SetDefault(&t.HashFunc, "sha256")
 }
 
 func setDefaultMap(fieldsMap map[string]string, keys []string) map[string]string {
