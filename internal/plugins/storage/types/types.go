@@ -14,6 +14,7 @@ type Application interface {
 	PhoneVerification
 	PwReset
 	EmailLink
+	EmailVerification
 }
 
 // Storage is an interface that defines methods for database session

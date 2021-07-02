@@ -1,6 +1,7 @@
 package types
 
 import (
+	"aureole/internal/collections"
 	"aureole/internal/identity"
 )
 
@@ -19,4 +20,8 @@ type Identity interface {
 	GetIdentity(*identity.Identity, string, interface{}) (JSONCollResult, error)
 
 	IsIdentityExist(*identity.Identity, string, interface{}) (bool, error)
+
+	SetEmailVerified(*collections.Spec, string, interface{}) error
+
+	SetPhoneVerified(*collections.Spec, string, interface{}) error
 }

@@ -1,0 +1,1 @@
+Click and verify you email: {{.link}}

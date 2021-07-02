@@ -29,9 +29,16 @@ type (
 		coll       *collections.Collection
 		authorizer authzTypes.Authorizer
 		reset      *reset
+		verif      *verification
 	}
 
 	reset struct {
+		coll   *collections.Collection
+		sender senderTypes.Sender
+		hasher func() hash.Hash
+	}
+
+	verification struct {
 		coll   *collections.Collection
 		sender senderTypes.Sender
 		hasher func() hash.Hash
@@ -90,6 +97,24 @@ func (p *pwBased) Init(appName string) (err error) {
 		}
 	}
 
+	if verifEnable(p) {
+		p.verif = &verification{}
+		p.verif.coll, err = pluginApi.Project.GetCollection(p.conf.Verif.Collection)
+		if err != nil {
+			return fmt.Errorf("collection named '%s' is not declared", p.conf.Verif.Collection)
+		}
+
+		p.verif.sender, err = pluginApi.Project.GetSender(p.conf.Verif.Sender)
+		if err != nil {
+			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verif.Sender)
+		}
+
+		p.verif.hasher, err = initHasher(p.conf.Verif.Token.HashFunc)
+		if err != nil {
+			return err
+		}
+	}
+
 	if err = p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
 		return err
 	}
@@ -112,6 +137,10 @@ func pwResetEnable(p *pwBased) bool {
 	return p.conf.Reset.Collection != "" && p.conf.Reset.Sender != "" && p.conf.Reset.Template != ""
 }
 
+func verifEnable(p *pwBased) bool {
+	return p.conf.Verif.Collection != "" && p.conf.Verif.Sender != "" && p.conf.Verif.Template != ""
+}
+
 func initHasher(hasherName string) (func() hash.Hash, error) {
 	var h func() hash.Hash
 	switch hasherName {
@@ -126,7 +155,7 @@ func initHasher(hasherName string) (func() hash.Hash, error) {
 	case "sha512":
 		h = sha512.New
 	default:
-		return nil, fmt.Errorf("password reset: hasher '%s' doesn't supported", hasherName)
+		return nil, fmt.Errorf("hasher '%s' doesn't supported", hasherName)
 	}
 	return h, nil
 }
@@ -159,6 +188,22 @@ func createRoutes(p *pwBased) {
 			},
 		}
 		routes = append(routes, resetRoutes...)
+	}
+
+	if verifEnable(p) {
+		verifRoutes := []*_interface.Route{
+			{
+				Method:  "POST",
+				Path:    p.rawConf.PathPrefix + p.conf.Verif.Path,
+				Handler: Verify(p),
+			},
+			{
+				Method:  "GET",
+				Path:    p.rawConf.PathPrefix + p.conf.Verif.ConfirmUrl,
+				Handler: VerifyConfirm(p),
+			},
+		}
+		routes = append(routes, verifRoutes...)
 	}
 
 	authn.Repository.PluginApi.Router.AddAppRoutes(p.appName, routes)

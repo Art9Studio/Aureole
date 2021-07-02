@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
+	"net/url"
+	"path"
 	"time"
 )
 
@@ -26,18 +28,17 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		pwData := &storageT.PwBasedData{}
-		if statusCode, err := getPwData(authInput, context.conf.Login.FieldsMap, pwData); err != nil {
-			return sendError(c, statusCode, err.Error())
-		}
-
 		exist, err := context.storage.IsIdentityExist(context.identity, credName, credVal)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-
 		if !exist {
 			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
+		}
+
+		pwData := &storageT.PwBasedData{}
+		if statusCode, err := getPwData(authInput, context.conf.Login.FieldsMap, pwData); err != nil {
+			return sendError(c, statusCode, err.Error())
 		}
 
 		rawIdentity, err := context.storage.GetIdentity(context.identity, credName, credVal)
@@ -98,8 +99,8 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		identityData := &storageT.IdentityData{Additional: map[string]interface{}{}}
-		if statusCode, err := getRegisterData(context, authInput, context.conf.Register.FieldsMap, identityData); err != nil {
+		identity := &storageT.IdentityData{Additional: map[string]interface{}{}}
+		if statusCode, err := getRegisterData(context, authInput, context.conf.Register.FieldsMap, identity); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
@@ -114,7 +115,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		}
 		pwData.PasswordHash = pwHash
 
-		credName, credVal, statusCode, err := getCredField(context, identityData)
+		credName, credVal, statusCode, err := getCredField(context, identity)
 		if err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
@@ -128,18 +129,64 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, "user already exist")
 		}
 
-		id, err := context.storage.InsertPwBased(context.identity, context.coll, identityData, pwData)
+		userId, err := context.storage.InsertPwBased(context.identity, context.coll, identity, pwData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
+		if context.conf.Register.IsVerifyAfter {
+			token, err := uuid.NewV4()
+			if err != nil {
+				return sendError(c, fiber.StatusInternalServerError, err.Error())
+			}
+
+			tokenHash := context.verif.hasher().Sum([]byte(token.String()))
+			verifData := &storageT.EmailVerifData{
+				Email:   identity.Email,
+				Token:   base64.StdEncoding.EncodeToString(tokenHash),
+				Expires: time.Now().Add(time.Duration(context.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
+				Invalid: false,
+			}
+
+			verifSpecs := &context.verif.coll.Spec
+			err = context.storage.InvalidateEmailVerif(verifSpecs, verifSpecs.FieldsMap["email"].Name, identity.Email)
+			if err != nil {
+				return sendError(c, fiber.StatusInternalServerError, err.Error())
+			}
+
+			_, err = context.storage.InsertEmailVerif(verifSpecs, verifData)
+			if err != nil {
+				return sendError(c, fiber.StatusInternalServerError, err.Error())
+			}
+
+			// todo: think how to generate link
+			link := url.URL{
+				Scheme: "http",
+				Host:   "localhost:3000",
+				Path:   path.Clean(context.appName + context.rawConf.PathPrefix + context.conf.Verif.ConfirmUrl),
+			}
+			q := link.Query()
+			q.Set("token", token.String())
+			link.RawQuery = q.Encode()
+
+			err = context.verif.sender.Send(verifData.Email.(string),
+				"Verify your email",
+				context.conf.Verif.Template,
+				map[string]interface{}{"link": link.String()})
+			if err != nil {
+				return sendError(c, fiber.StatusInternalServerError, err.Error())
+			}
+
+			return c.JSON(&fiber.Map{"status": "success"})
+		}
+
 		if context.conf.Register.IsLoginAfter {
 			authzCtx := authzT.Context{
-				Id:         identityData.Id,
-				Username:   identityData.Username,
-				Phone:      identityData.Phone,
-				Email:      identityData.Email,
-				Additional: identityData.Additional,
+				Id:         identity.Id,
+				Username:   identity.Username,
+				Phone:      identity.Phone,
+				Email:      identity.Email,
+				Additional: identity.Additional,
 			}
 			// todo: refactor this
 			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
@@ -164,7 +211,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			}
 			return context.authorizer.Authorize(c, &authzCtx)
 		} else {
-			return c.JSON(&fiber.Map{"id": id})
+			return c.JSON(&fiber.Map{"user_id": userId})
 		}
 	}
 }
@@ -297,6 +344,137 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		// todo: add expiring any current user session
+
+		redirectUrl := c.Query("redirect_url")
+		if redirectUrl != "" {
+			return c.Redirect(redirectUrl)
+		}
+
+		return c.JSON(&fiber.Map{"status": "success"})
+	}
+}
+
+func Verify(context *pwBased) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		var authInput interface{}
+		if err := c.BodyParser(&authInput); err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
+		}
+
+		i := context.identity
+		loginMap := context.conf.Login.FieldsMap
+		if !i.Email.IsEnabled || !isCredential(i.Email) {
+			return sendError(c, fiber.StatusInternalServerError, "expects 1 credential, 0 got")
+		}
+
+		identity := &storageT.IdentityData{}
+		if statusCode, err := getJsonData(authInput, loginMap["email"], &identity.Email); err != nil {
+			return sendError(c, statusCode, err.Error())
+		}
+
+		fieldName := context.coll.Parent.Spec.FieldsMap["email"].Name
+		exist, err := context.storage.IsIdentityExist(context.identity, fieldName, identity.Email)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+		if !exist {
+			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
+		}
+
+		token, err := uuid.NewV4()
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		tokenHash := context.verif.hasher().Sum([]byte(token.String()))
+		verifData := &storageT.EmailVerifData{
+			Email:   identity.Email,
+			Token:   base64.StdEncoding.EncodeToString(tokenHash),
+			Expires: time.Now().Add(time.Duration(context.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
+			Invalid: false,
+		}
+
+		verifSpecs := &context.verif.coll.Spec
+		err = context.storage.InvalidateEmailVerif(verifSpecs, verifSpecs.FieldsMap["email"].Name, identity.Email)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		_, err = context.storage.InsertEmailVerif(verifSpecs, verifData)
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		// todo: think how to generate link
+		link := url.URL{
+			Scheme: "http",
+			Host:   "localhost:3000",
+			Path:   path.Clean(context.appName + context.rawConf.PathPrefix + context.conf.Verif.ConfirmUrl),
+		}
+		q := link.Query()
+		q.Set("token", token.String())
+		link.RawQuery = q.Encode()
+
+		err = context.verif.sender.Send(verifData.Email.(string),
+			"Verify your email",
+			context.conf.Verif.Template,
+			map[string]interface{}{"link": link.String()})
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(&fiber.Map{"status": "success"})
+	}
+}
+
+func VerifyConfirm(context *pwBased) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		token := c.Query("token")
+		if token == "" {
+			return sendError(c, fiber.StatusNotFound, "page not found")
+		}
+
+		verifSpecs := &context.verif.coll.Spec
+		tokenName := context.verif.coll.Spec.FieldsMap["token"].Name
+
+		tokenHash := context.verif.hasher().Sum([]byte(token))
+		rawVerif, err := context.storage.GetEmailVerif(verifSpecs, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		verif, ok := rawVerif.(map[string]interface{})
+		if !ok {
+			return sendError(c, fiber.StatusInternalServerError, "cannot get magic link data from database")
+		}
+
+		if verif[verifSpecs.FieldsMap["invalid"].Name].(bool) {
+			return sendError(c, fiber.StatusUnauthorized, "invalid token")
+		}
+
+		expires, err := time.Parse(time.RFC3339, verif[verifSpecs.FieldsMap["expires"].Name].(string))
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+		if time.Now().After(expires) {
+			return sendError(c, fiber.StatusUnauthorized, "link expire")
+		}
+
+		err = context.storage.InvalidateEmailVerif(verifSpecs, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		iCollSpec := &context.identity.Collection.Spec
+		err = context.storage.SetEmailVerified(iCollSpec, iCollSpec.FieldsMap["email"].Name, verif[verifSpecs.FieldsMap["email"].Name])
+		if err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+
+		redirectUrl := c.Query("redirect_url")
+		if redirectUrl != "" {
+			return c.Redirect(redirectUrl)
+		}
 
 		return c.JSON(&fiber.Map{"status": "success"})
 	}
