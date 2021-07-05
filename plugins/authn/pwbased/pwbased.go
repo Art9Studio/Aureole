@@ -16,11 +16,13 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"hash"
+	"net/url"
 )
 
 type (
 	pwBased struct {
 		appName    string
+		appUrl     *url.URL
 		rawConf    *configs.Authn
 		conf       *config
 		identity   *identity.Identity
@@ -43,10 +45,18 @@ type (
 		sender senderTypes.Sender
 		hasher func() hash.Hash
 	}
+
+	linkType string
 )
 
-func (p *pwBased) Init(appName string) (err error) {
+const (
+	ResetLink  linkType = "reset"
+	VerifyLink linkType = "verify"
+)
+
+func (p *pwBased) Init(appName string, appUrl *url.URL) (err error) {
 	p.appName = appName
+	p.appUrl = appUrl
 
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
@@ -79,6 +89,8 @@ func (p *pwBased) Init(appName string) (err error) {
 		return fmt.Errorf("identity in app '%s' is not declared", appName)
 	}
 
+	storageFeatures := []string{p.coll.Type}
+
 	if pwResetEnable(p) {
 		p.reset = &reset{}
 		p.reset.coll, err = pluginApi.Project.GetCollection(p.conf.Reset.Collection)
@@ -95,6 +107,8 @@ func (p *pwBased) Init(appName string) (err error) {
 		if err != nil {
 			return err
 		}
+
+		storageFeatures = append(storageFeatures, p.reset.coll.Type)
 	}
 
 	if verifEnable(p) {
@@ -113,9 +127,11 @@ func (p *pwBased) Init(appName string) (err error) {
 		if err != nil {
 			return err
 		}
+
+		storageFeatures = append(storageFeatures, p.verif.coll.Type)
 	}
 
-	if err = p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
+	if err = p.storage.CheckFeaturesAvailable(storageFeatures); err != nil {
 		return err
 	}
 

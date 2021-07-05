@@ -2,6 +2,7 @@ api_version: "0.1"
 
 apps:
   one:
+    host: "http://localhost:3000"
     path_prefix: "/one"
 
     identity:
@@ -273,6 +274,7 @@ collections:
         is_active: no # to disable use "no"
         created: no # by default "created"
         email_verified: "email_verified"
+        phone_verified: "phone_verified"
         is_superuser:
           field: "is_superuser"
           type: boolean

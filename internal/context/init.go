@@ -18,6 +18,7 @@ import (
 	"aureole/internal/plugins/storage"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
+	"net/url"
 )
 
 func Init(conf *configs.Project, ctx *ProjectCtx) error {
@@ -203,6 +204,7 @@ func createApps(conf *configs.Project, ctx *ProjectCtx) error {
 		appConf := conf.Apps[n]
 
 		ctx.Apps[n] = &app.App{
+			Host:       appConf.Host,
 			PathPrefix: appConf.PathPrefix,
 		}
 	}
@@ -341,12 +343,30 @@ func initAppPlugins(ctx *ProjectCtx) error {
 
 func initAuthenticators(appName string, app *app.App) error {
 	for _, authenticator := range app.Authenticators {
-		if err := authenticator.Init(appName); err != nil {
+		appUrl, err := getAppUrl(app)
+		if err != nil {
+			return err
+		}
+
+		if err := authenticator.Init(appName, appUrl); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func getAppUrl(app *app.App) (*url.URL, error) {
+	appUrl, err := url.Parse(app.Host + app.PathPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	if appUrl.Scheme == "" {
+		appUrl.Scheme = "https"
+	}
+
+	return appUrl, nil
 }
 
 func initAuthorizers(appName string, app *app.App) error {

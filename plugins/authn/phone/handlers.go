@@ -215,6 +215,11 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 				return sendError(c, fiber.StatusInternalServerError, "cannot get identity from database")
 			}
 
+			err = context.storage.SetPhoneVerified(&iCollSpec, iCollSpec.FieldsMap["phone"].Name, i[iCollSpec.FieldsMap["phone"].Name])
+			if err != nil {
+				return sendError(c, fiber.StatusInternalServerError, err.Error())
+			}
+
 			authzCtx := authzT.NewContext(i, iCollSpec.FieldsMap)
 			// todo: refactor this
 			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
@@ -242,7 +247,7 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			if err := context.storage.IncrAttempts(&vSpecs, vSpecs.FieldsMap["id"].Name, requestData.Id); err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-			return sendError(c, fiber.StatusUnauthorized, "wrong verification otp")
+			return sendError(c, fiber.StatusUnauthorized, "wrong otp")
 		}
 
 	}
