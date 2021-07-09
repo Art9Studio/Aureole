@@ -6,7 +6,6 @@ import (
 )
 
 func (c *config) setDefaults() {
-	configs.SetDefault(&c.ResendUrl, "/login/resend")
 	c.Login.setDefaults()
 	c.Register.setDefaults()
 	c.Verification.setDefaults()
@@ -22,11 +21,12 @@ func (r *register) setDefaults() {
 	r.FieldsMap = setDefaultMap(r.FieldsMap, []string{"username", "email", "phone"})
 }
 
-func (c *verification) setDefaults() {
-	configs.SetDefault(&c.MaxAttempts, 3)
-	configs.SetDefault(&c.Path, "/login/verify")
-	c.Code.setDefaults()
-	c.FieldsMap = setDefaultMap(c.FieldsMap, []string{"id", "code"})
+func (v *verifConf) setDefaults() {
+	configs.SetDefault(&v.MaxAttempts, 3)
+	configs.SetDefault(&v.Path, "/login/verify")
+	configs.SetDefault(&v.ResendUrl, "/login/resend")
+	v.Code.setDefaults()
+	v.FieldsMap = setDefaultMap(v.FieldsMap, []string{"id", "code"})
 }
 func (c *verificationCode) setDefaults() {
 	configs.SetDefault(&c.Length, 6)

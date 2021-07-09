@@ -11,6 +11,7 @@ const AdapterName = "password_based"
 func init() {
 	authn.Repository.Register(AdapterName, pwBasedAdapter{})
 	authn.Repository.PluginApi.RegisterCollectionType(passwordColType)
+	authn.Repository.PluginApi.RegisterCollectionType(resetColType)
 }
 
 // pwBasedAdapter represents adapter for password based authentication

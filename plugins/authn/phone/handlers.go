@@ -52,14 +52,14 @@ func Login(context *phone) func(*fiber.Ctx) error {
 			Attempts: 0,
 			Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
 		}
-		verificationId, err := context.storage.InsertVerification(&context.verificationColl.Spec, verificationData)
+		verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.sender.Send(verificationData.Phone.(string),
+		err = context.verification.sender.Send(verificationData.Phone.(string),
 			"",
-			context.conf.Template,
+			context.conf.Verification.Template,
 			map[string]interface{}{"code": code})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -113,14 +113,14 @@ func Register(context *phone) func(*fiber.Ctx) error {
 				Attempts: 0,
 				Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
 			}
-			verificationId, err := context.storage.InsertVerification(&context.verificationColl.Spec, verificationData)
+			verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			err = context.sender.Send(verificationData.Phone.(string),
+			err = context.verification.sender.Send(verificationData.Phone.(string),
 				"",
-				context.conf.Template,
+				context.conf.Verification.Template,
 				map[string]interface{}{"code": code})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -133,7 +133,7 @@ func Register(context *phone) func(*fiber.Ctx) error {
 	}
 }
 
-func Confirm(context *phone) func(*fiber.Ctx) error {
+func Verify(context *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -152,7 +152,7 @@ func Confirm(context *phone) func(*fiber.Ctx) error {
 		}
 
 		storage := context.storage
-		collSpec := context.verificationColl.Spec
+		collSpec := context.verification.coll.Spec
 
 		rawVerificationData, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
 		if err != nil {
@@ -226,7 +226,7 @@ func Confirm(context *phone) func(*fiber.Ctx) error {
 			if err := context.storage.IncrAttempts(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id); err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-			return sendError(c, fiber.StatusUnauthorized, "wrong confirmation code")
+			return sendError(c, fiber.StatusUnauthorized, "wrong verification code")
 		}
 
 	}
@@ -242,13 +242,13 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 		v := context.conf.Verification
 		requestData := &storageT.PhoneVerificationData{}
 
-		statusCode, err := getJsonData(authInput, v.FieldsMap["confirm_id"], &requestData.Id)
+		statusCode, err := getJsonData(authInput, v.FieldsMap["id"], &requestData.Id)
 		if err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
 		storage := context.storage
-		collSpec := context.verificationColl.Spec
+		collSpec := context.verification.coll.Spec
 
 		rawVerificationData, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
 		if err != nil {
@@ -276,14 +276,14 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 			Attempts: 0,
 			Expires:  time.Now().Add(time.Duration(v.Code.Exp) * time.Second).Format(time.RFC3339),
 		}
-		verificationId, err := context.storage.InsertVerification(&context.verificationColl.Spec, verificationData)
+		verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.sender.Send(verificationData.Phone.(string),
+		err = context.verification.sender.Send(verificationData.Phone.(string),
 			"",
-			context.conf.Template,
+			context.conf.Verification.Template,
 			map[string]interface{}{"code": code})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())

@@ -14,4 +14,6 @@ type PwBased interface {
 	InsertPwBased(*identity.Identity, *collections.Collection, *IdentityData, *PwBasedData) (JSONCollResult, error)
 
 	GetPassword(*collections.Collection, string, interface{}) (JSONCollResult, error)
+
+	UpdatePassword(*collections.Collection, string, interface{}, interface{}) (JSONCollResult, error)
 }

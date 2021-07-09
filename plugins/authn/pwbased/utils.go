@@ -17,6 +17,16 @@ func sendError(c *fiber.Ctx, statusCode int, message string) error {
 	})
 }
 
+func getJsonData(json interface{}, fieldPath string, data *interface{}) (int, error) {
+	jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
+	if err != nil {
+		return fiber.StatusBadRequest, err
+	}
+
+	*data = jsonVal
+	return 0, nil
+}
+
 // todo: refactor getLoginData and getRegisterData methods, maybe create parser struct for this stuff?
 func getLoginData(context *pwBased, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) {
 	collMap := context.coll.Parent.Spec.FieldsMap
