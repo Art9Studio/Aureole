@@ -25,10 +25,10 @@ func (v *verifConf) setDefaults() {
 	configs.SetDefault(&v.MaxAttempts, 3)
 	configs.SetDefault(&v.Path, "/login/verify")
 	configs.SetDefault(&v.ResendUrl, "/login/resend")
-	v.Code.setDefaults()
+	v.Otp.setDefaults()
 	v.FieldsMap = setDefaultMap(v.FieldsMap, []string{"id", "code"})
 }
-func (c *verificationCode) setDefaults() {
+func (c *otp) setDefaults() {
 	configs.SetDefault(&c.Length, 6)
 	configs.SetDefault(&c.Alphabet, "1234567890")
 	configs.SetDefault(&c.Prefix, "A-")

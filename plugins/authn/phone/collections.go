@@ -5,6 +5,6 @@ import (
 )
 
 var phoneVerifyCollType = &collections.CollectionType{
-	Name:       "phone_verification",
+	Name:       "phone_otp",
 	IsAppendix: false,
 }

@@ -25,9 +25,10 @@ CREATE TABLE phone_verifications
 (
     id       SERIAL PRIMARY KEY,
     phone    TEXT,
-    code     TEXT,
+    otp      TEXT,
     attempts INT,
-    expires  timestamptz
+    expires  timestamptz,
+    invalid  BOOLEAN
 );
 
 CREATE TABLE password_resets

@@ -8,9 +8,10 @@ type PhoneVerificationData struct {
 	// todo: try to use types
 	Id       interface{}
 	Phone    interface{}
-	Code     interface{}
+	Otp      interface{}
 	Attempts interface{}
 	Expires  interface{}
+	Invalid  interface{}
 }
 
 type PhoneVerification interface {
@@ -19,4 +20,6 @@ type PhoneVerification interface {
 	GetVerification(*collections.Spec, string, interface{}) (JSONCollResult, error)
 
 	IncrAttempts(*collections.Spec, string, interface{}) error
+
+	InvalidateVerification(*collections.Spec, string, interface{}) error
 }
