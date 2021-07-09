@@ -12,11 +12,13 @@ import (
 	"aureole/internal/router/interface"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
+	"net/url"
 )
 
 type (
 	phone struct {
 		appName      string
+		appUrl       *url.URL
 		rawConf      *configs.Authn
 		conf         *config
 		identity     *identity.Identity
@@ -33,8 +35,9 @@ type (
 	}
 )
 
-func (p *phone) Init(appName string) (err error) {
+func (p *phone) Init(appName string, appUrl *url.URL) (err error) {
 	p.appName = appName
+	p.appUrl = appUrl
 
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {

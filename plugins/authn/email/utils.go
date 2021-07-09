@@ -7,6 +7,7 @@ import (
 	"aureole/pkg/jsonpath"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"path"
 	"reflect"
 )
 
@@ -108,4 +109,15 @@ func getValueOrDefault(value, defaultValue interface{}) interface{} {
 
 func isZeroVal(x interface{}) bool {
 	return x == nil || reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
+}
+
+func getMagicLink(e *email, token string) string {
+	u := e.appUrl
+
+	u.Path = path.Clean(u.Path + e.rawConf.PathPrefix + e.conf.Link.Path)
+	q := u.Query()
+	q.Set("token", token)
+	u.RawQuery = q.Encode()
+
+	return u.String()
 }

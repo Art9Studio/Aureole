@@ -7,6 +7,7 @@ import (
 )
 
 type App struct {
+	Host           string
 	PathPrefix     string
 	Identity       *identity.Identity
 	Authenticators []authnTypes.Authenticator

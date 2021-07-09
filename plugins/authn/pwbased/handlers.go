@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
-	"net/url"
-	"path"
 	"time"
 )
 
@@ -159,25 +157,14 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			// todo: think how to generate link
-			link := url.URL{
-				Scheme: "http",
-				Host:   "localhost:3000",
-				Path:   path.Clean(context.appName + context.rawConf.PathPrefix + context.conf.Verif.ConfirmUrl),
-			}
-			q := link.Query()
-			q.Set("token", token.String())
-			link.RawQuery = q.Encode()
-
+			link := getConfirmLink(VerifyLink, context, token.String())
 			err = context.verif.sender.Send(verifData.Email.(string),
 				"Verify your email",
 				context.conf.Verif.Template,
-				map[string]interface{}{"link": link.String()})
+				map[string]interface{}{"link": link})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-
-			return c.JSON(&fiber.Map{"status": "success"})
 		}
 
 		if context.conf.Register.IsLoginAfter {
@@ -261,7 +248,7 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := fmt.Sprintf("http://localhost:3000/two/password/reset/confirm?token=%s", token.String())
+		link := getConfirmLink(ResetLink, context, token.String())
 		err = context.reset.sender.Send(resetData.Email.(string),
 			"Reset your password",
 			context.conf.Reset.Template,
@@ -405,20 +392,11 @@ func Verify(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		// todo: think how to generate link
-		link := url.URL{
-			Scheme: "http",
-			Host:   "localhost:3000",
-			Path:   path.Clean(context.appName + context.rawConf.PathPrefix + context.conf.Verif.ConfirmUrl),
-		}
-		q := link.Query()
-		q.Set("token", token.String())
-		link.RawQuery = q.Encode()
-
+		link := getConfirmLink(VerifyLink, context, token.String())
 		err = context.verif.sender.Send(verifData.Email.(string),
 			"Verify your email",
 			context.conf.Verif.Template,
-			map[string]interface{}{"link": link.String()})
+			map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

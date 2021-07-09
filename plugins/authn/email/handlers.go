@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
-	"net/url"
-	"path"
 	"time"
 )
 
@@ -63,20 +61,11 @@ func GetMagicLink(context *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		// todo: think how to generate link
-		link := url.URL{
-			Scheme: "http",
-			Host:   "localhost:3000",
-			Path:   path.Clean(context.appName + context.rawConf.PathPrefix + context.conf.Link.Path),
-		}
-		q := link.Query()
-		q.Set("token", token.String())
-		link.RawQuery = q.Encode()
-
+		link := getMagicLink(context, token.String())
 		err = context.link.sender.Send(linkData.Email.(string),
 			"",
 			context.conf.Link.Template,
-			map[string]interface{}{"link": link.String()})
+			map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -135,19 +124,11 @@ func Register(context *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := url.URL{
-			Scheme: "http",
-			Host:   "localhost:3000",
-			Path:   path.Clean(context.appName + context.rawConf.PathPrefix + context.conf.Link.Path),
-		}
-		q := link.Query()
-		q.Set("token", token.String())
-		link.RawQuery = q.Encode()
-
+		link := getMagicLink(context, token.String())
 		err = context.link.sender.Send(linkData.Email.(string),
 			"",
 			context.conf.Link.Template,
-			map[string]interface{}{"link": link.String()})
+			map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

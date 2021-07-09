@@ -21,6 +21,7 @@ type (
 	}
 
 	App struct {
+		Host       string   `config:"host"`
 		PathPrefix string   `config:"path_prefix"`
 		Identity   Identity `config:"identity"`
 		Authn      []Authn  `config:"authN"`

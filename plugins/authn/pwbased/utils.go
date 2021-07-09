@@ -7,6 +7,7 @@ import (
 	"aureole/pkg/jsonpath"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"path"
 	"reflect"
 )
 
@@ -162,4 +163,21 @@ func getCredField(context *pwBased, iData *storageT.IdentityData) (string, inter
 
 func isCredential(trait identity.Trait) bool {
 	return trait.IsCredential && trait.IsRequired && trait.IsUnique
+}
+
+func getConfirmLink(linkType linkType, p *pwBased, token string) string {
+	u := p.appUrl
+
+	switch linkType {
+	case ResetLink:
+		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl)
+	case VerifyLink:
+		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Verif.ConfirmUrl)
+	}
+
+	q := u.Query()
+	q.Set("token", token)
+	u.RawQuery = q.Encode()
+
+	return u.String()
 }
