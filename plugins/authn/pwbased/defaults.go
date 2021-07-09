@@ -10,6 +10,7 @@ func (c *config) setDefaults() {
 	c.Login.setDefaults()
 	c.Register.setDefaults()
 	c.Reset.setDefaults()
+	c.Verif.setDefaults()
 }
 
 func (l *login) setDefaults() {
@@ -26,12 +27,16 @@ func (c *resetConf) setDefaults() {
 	configs.SetDefault(&c.Path, "/password/reset")
 	configs.SetDefault(&c.ConfirmUrl, "/password/reset/confirm")
 	c.FieldsMap = setDefaultMap(c.FieldsMap, []string{"username", "email", "phone", "password"})
-	c.Token.setDefaults()
+	configs.SetDefault(&c.Token.Exp, 3600)
+	configs.SetDefault(&c.Token.HashFunc, "sha256")
 }
 
-func (t *token) setDefaults() {
-	configs.SetDefault(&t.Exp, 3600)
-	configs.SetDefault(&t.HashFunc, "sha256")
+func (c *verifConf) setDefaults() {
+	configs.SetDefault(&c.Path, "/email-verify")
+	configs.SetDefault(&c.ConfirmUrl, "/email-verify/confirm")
+	c.FieldsMap = setDefaultMap(c.FieldsMap, []string{"email"})
+	configs.SetDefault(&c.Token.Exp, 3600)
+	configs.SetDefault(&c.Token.HashFunc, "sha256")
 }
 
 func setDefaultMap(fieldsMap map[string]string, keys []string) map[string]string {

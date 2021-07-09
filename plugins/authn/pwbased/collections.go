@@ -15,4 +15,9 @@ var (
 		Name:       "password_reset",
 		IsAppendix: false,
 	}
+
+	verifColType = &collections.CollectionType{
+		Name:       "email_verification",
+		IsAppendix: false,
+	}
 )

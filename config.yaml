@@ -82,6 +82,7 @@ apps:
           clean_interval: 60
 
   two:
+    host: "http://localhost:3000"
     path_prefix: "/two"
 
     identity:
@@ -92,7 +93,6 @@ apps:
       email:
         enabled: true
 
-
     authN:
       - type: "password_based"
         authZ: jwt
@@ -100,6 +100,8 @@ apps:
           main_hasher: argon2
           collection: pwbased
           storage: one_db
+          register:
+            verify_after: true
           password_reset:
             path: "/password/reset"
             confirm_url: "/password/reset/confirm"
@@ -114,6 +116,17 @@ apps:
               email: "{$.email}"
               phone: "{$.phone}"
               password: "{$.password}"
+          verification:
+            path: "/email-verify"
+            confirm_url: "/email-verify/confirm"
+            collection: email_verification
+            sender: email
+            template: email_verification
+            token:
+              exp: 3600
+              hash_func: "sha256"
+            fields_map:
+              email: "{$.email}"
 
     authZ:
       - type: "jwt"
@@ -138,6 +151,7 @@ apps:
           native_queries: "lab/native-queries/native.yaml"
 
   three:
+    host: "localhost:3000"
     path_prefix: "/three"
 
     identity:
@@ -258,6 +272,7 @@ collections:
         email: "email"
         is_active: no # to disable use "no"
         created: no # by default "created"
+        email_verified: "email_verified"
         is_superuser:
           field: "is_superuser"
           type: boolean
@@ -321,6 +336,18 @@ collections:
         expires: "expires"
         invalid: "invalid"
 
+  - type: "email_verification"
+    name: email_verification
+    config:
+      name: "email_verifications"
+      pk: "id"
+      fields_map:
+        id: "id"
+        email: "email"
+        token: "token"
+        expires: "expires"
+        invalid: "invalid"
+
 hashers:
   - type: "argon2"
     name: argon2
@@ -375,6 +402,7 @@ senders:
         default_html: "lab/templates/default.html" # if extension is 'html' we send it as html
         reset: "lab/templates/password_reset.txt"
         magic_link: "lab/templates/magic_link.txt"
+        email_verification: "lab/templates/email_verification.txt"
 
   - type: "twilio"
     name: twilio

@@ -47,6 +47,16 @@ func (s *Storage) InsertPwBased(i *identity.Identity, pwColl *collections.Collec
 		values = append(values, true)
 	}
 
+	if emailVerif := spec.FieldsMap["email_verified"]; emailVerif.Name != "" {
+		cols = append(cols, Sanitize(emailVerif.Name))
+		values = append(values, false)
+	}
+
+	if phoneVerif := spec.FieldsMap["phone_verified"]; phoneVerif.Name != "" {
+		cols = append(cols, Sanitize(phoneVerif.Name))
+		values = append(values, false)
+	}
+
 	cols = append(cols, pwColl.Spec.FieldsMap["password"].Name)
 	values = append(values, pwData.PasswordHash)
 

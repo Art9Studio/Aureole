@@ -1,6 +1,7 @@
 package postgresql
 
 import (
+	"aureole/internal/collections"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
@@ -46,6 +47,16 @@ func (s *Storage) InsertIdentity(i *identity.Identity, iData *types.IdentityData
 		values = append(values, iData.Additional["is_active"])
 	}
 
+	if emailVerif := spec.FieldsMap["email_verified"]; emailVerif.Name != "" {
+		cols = append(cols, Sanitize(emailVerif.Name))
+		values = append(values, false)
+	}
+
+	if phoneVerif := spec.FieldsMap["phone_verified"]; phoneVerif.Name != "" {
+		cols = append(cols, Sanitize(phoneVerif.Name))
+		values = append(values, false)
+	}
+
 	b := sqlbuilder.PostgreSQL.NewInsertBuilder()
 	b.InsertInto(Sanitize(spec.Name))
 	b.Cols(cols...).Values(values...).SQL(fmt.Sprintf(" returning %s", Sanitize(spec.Pk)))
@@ -86,6 +97,14 @@ func (s *Storage) GetIdentity(i *identity.Identity, filterField string, filterVa
 		cols = append(cols, Sanitize(isActive.Name))
 	}
 
+	if emailVerif := spec.FieldsMap["email_verified"]; emailVerif.Name != "" {
+		cols = append(cols, Sanitize(emailVerif.Name))
+	}
+
+	if phoneVerif := spec.FieldsMap["phone_verified"]; phoneVerif.Name != "" {
+		cols = append(cols, Sanitize(phoneVerif.Name))
+	}
+
 	from := sqlbuilder.PostgreSQL.NewSelectBuilder()
 	from.Select(cols...).From(Sanitize(spec.Name)).Where(from.Equal(Sanitize(filterField), filterValue))
 
@@ -107,6 +126,24 @@ func (s *Storage) IsIdentityExist(i *identity.Identity, filterField string, filt
 	}
 
 	return res.(bool), nil
+}
+
+func (s *Storage) SetEmailVerified(spec *collections.Spec, filterField string, filterVal interface{}) error {
+	b := sqlbuilder.PostgreSQL.NewUpdateBuilder()
+	b.Update(Sanitize(spec.Name)).Set(b.Assign(Sanitize(spec.FieldsMap["email_verified"].Name), true))
+	b.Where(b.Equal(Sanitize(spec.FieldsMap[filterField].Name), filterVal))
+	sql, args := b.Build()
+
+	return s.RawExec(sql, args...)
+}
+
+func (s *Storage) SetPhoneVerified(spec *collections.Spec, filterField string, filterVal interface{}) error {
+	b := sqlbuilder.PostgreSQL.NewUpdateBuilder()
+	b.Update(Sanitize(spec.Name)).Set(b.Assign(Sanitize(spec.FieldsMap["phone_verified"].Name), true))
+	b.Where(b.Equal(Sanitize(spec.FieldsMap[filterField].Name), filterVal))
+	sql, args := b.Build()
+
+	return s.RawExec(sql, args...)
 }
 
 /* Funcs for creating table from scratch. Enables by py passing "use_existent: false" flag

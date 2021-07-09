@@ -11,7 +11,9 @@ CREATE TABLE users
     phone    TEXT,
     email    TEXT,
     password TEXT,
-    org_id   INT REFERENCES orgs
+    org_id   INT REFERENCES orgs,
+    email_verified BOOLEAN,
+    phone_verified BOOLEAN
 );
 
 CREATE TABLE posts
@@ -41,6 +43,15 @@ CREATE TABLE password_resets
 );
 
 CREATE TABLE email_links
+(
+    id      SERIAL PRIMARY KEY,
+    email   TEXT,
+    token   TEXT,
+    expires timestamptz,
+    invalid BOOLEAN
+);
+
+CREATE TABLE email_verifications
 (
     id      SERIAL PRIMARY KEY,
     email   TEXT,
