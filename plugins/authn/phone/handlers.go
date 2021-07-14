@@ -27,7 +27,10 @@ func Login(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		exist, err := context.storage.IsIdentityExist(context.identity, "phone", identityData.Phone)
+		specs := i.Collection.Spec
+		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
+			{specs.FieldsMap["phone"].Name, identityData.Phone},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -55,7 +58,9 @@ func Login(context *phone) func(*fiber.Ctx) error {
 		}
 
 		vSpecs := &context.verification.coll.Spec
-		err = context.storage.InvalidateVerification(vSpecs, vSpecs.FieldsMap["phone"].Name, identityData.Phone)
+		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
+			{vSpecs.FieldsMap["phone"].Name, identityData.Phone},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -89,7 +94,10 @@ func Register(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		exist, err := context.storage.IsIdentityExist(context.identity, "phone", identityData.Phone)
+		specs := context.identity.Collection.Spec
+		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
+			{specs.FieldsMap["phone"].Name, identityData.Phone},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -123,7 +131,9 @@ func Register(context *phone) func(*fiber.Ctx) error {
 		}
 
 		vSpecs := &context.verification.coll.Spec
-		err = context.storage.InvalidateVerification(vSpecs, vSpecs.FieldsMap["phone"].Name, identityData.Phone)
+		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
+			{vSpecs.FieldsMap["phone"].Name, identityData.Phone},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -166,7 +176,9 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 		storage := context.storage
 		vSpecs := context.verification.coll.Spec
 
-		rawVerification, err := storage.GetVerification(&vSpecs, vSpecs.FieldsMap["id"].Name, requestData.Id)
+		rawVerification, err := storage.GetVerification(&vSpecs, []storageT.Filter{
+			{vSpecs.FieldsMap["id"].Name, requestData.Id},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -202,10 +214,9 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 		if isMatch {
 			iCollSpec := context.identity.Collection.Spec
 
-			rawIdentity, err := context.storage.GetIdentity(context.identity,
-				iCollSpec.FieldsMap["phone"].Name,
-				verification[vSpecs.FieldsMap["phone"].Name],
-			)
+			rawIdentity, err := context.storage.GetIdentity(context.identity, []storageT.Filter{
+				{iCollSpec.FieldsMap["phone"].Name, verification[vSpecs.FieldsMap["phone"].Name]},
+			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -215,7 +226,9 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 				return sendError(c, fiber.StatusInternalServerError, "cannot get identity from database")
 			}
 
-			err = context.storage.SetPhoneVerified(&iCollSpec, iCollSpec.FieldsMap["phone"].Name, i[iCollSpec.FieldsMap["phone"].Name])
+			err = context.storage.SetPhoneVerified(&iCollSpec, []storageT.Filter{
+				{iCollSpec.FieldsMap["phone"].Name, i[iCollSpec.FieldsMap["phone"].Name]},
+			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -244,7 +257,9 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			}
 			return context.authorizer.Authorize(c, authzCtx)
 		} else {
-			if err := context.storage.IncrAttempts(&vSpecs, vSpecs.FieldsMap["id"].Name, requestData.Id); err != nil {
+			if err := context.storage.IncrAttempts(&vSpecs, []storageT.Filter{
+				{vSpecs.FieldsMap["id"].Name, requestData.Id},
+			}); err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 			return sendError(c, fiber.StatusUnauthorized, "wrong otp")
@@ -271,7 +286,9 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 		storage := context.storage
 		collSpec := context.verification.coll.Spec
 
-		rawVerification, err := storage.GetVerification(&collSpec, collSpec.FieldsMap["id"].Name, requestData.Id)
+		rawVerification, err := storage.GetVerification(&collSpec, []storageT.Filter{
+			{collSpec.FieldsMap["id"].Name, requestData.Id},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -300,7 +317,9 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 		}
 
 		vSpecs := &context.verification.coll.Spec
-		err = context.storage.InvalidateVerification(vSpecs, vSpecs.FieldsMap["phone"].Name, verification.Phone)
+		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
+			{vSpecs.FieldsMap["phone"].Name, verification.Phone},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

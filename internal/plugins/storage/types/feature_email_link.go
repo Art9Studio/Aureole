@@ -13,7 +13,7 @@ type EmailLinkData struct {
 type EmailLink interface {
 	InsertEmailLink(*collections.Spec, *EmailLinkData) (JSONCollResult, error)
 
-	GetEmailLink(*collections.Spec, string, interface{}) (JSONCollResult, error)
+	GetEmailLink(*collections.Spec, []Filter) (JSONCollResult, error)
 
-	InvalidateEmailLink(*collections.Spec, string, interface{}) error
+	InvalidateEmailLink(*collections.Spec, []Filter) error
 }

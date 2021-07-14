@@ -14,7 +14,7 @@ type PwResetData struct {
 type PwReset interface {
 	InsertReset(*collections.Spec, *PwResetData) (JSONCollResult, error)
 
-	GetReset(*collections.Spec, string, interface{}) (JSONCollResult, error)
+	GetReset(*collections.Spec, []Filter) (JSONCollResult, error)
 
-	InvalidateReset(*collections.Spec, string, interface{}) error
+	InvalidateReset(*collections.Spec, []Filter) error
 }

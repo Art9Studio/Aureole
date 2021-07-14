@@ -13,7 +13,7 @@ type PwBasedData struct {
 type PwBased interface {
 	InsertPwBased(*identity.Identity, *collections.Collection, *IdentityData, *PwBasedData) (JSONCollResult, error)
 
-	GetPassword(*collections.Collection, string, interface{}) (JSONCollResult, error)
+	GetPassword(*collections.Collection, []Filter) (JSONCollResult, error)
 
-	UpdatePassword(*collections.Collection, string, interface{}, interface{}) (JSONCollResult, error)
+	UpdatePassword(*collections.Collection, []Filter, interface{}) (JSONCollResult, error)
 }

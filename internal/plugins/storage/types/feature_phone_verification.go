@@ -17,9 +17,9 @@ type PhoneVerificationData struct {
 type PhoneVerification interface {
 	InsertVerification(*collections.Spec, *PhoneVerificationData) (JSONCollResult, error)
 
-	GetVerification(*collections.Spec, string, interface{}) (JSONCollResult, error)
+	GetVerification(*collections.Spec, []Filter) (JSONCollResult, error)
 
-	IncrAttempts(*collections.Spec, string, interface{}) error
+	IncrAttempts(*collections.Spec, []Filter) error
 
-	InvalidateVerification(*collections.Spec, string, interface{}) error
+	InvalidateVerification(*collections.Spec, []Filter) error
 }

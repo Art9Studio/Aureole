@@ -65,7 +65,7 @@ func (s *Storage) InsertIdentity(i *identity.Identity, iData *types.IdentityData
 	return s.RawQuery(sql, args...)
 }
 
-func (s *Storage) GetIdentity(i *identity.Identity, filterField string, filterValue interface{}) (types.JSONCollResult, error) {
+func (s *Storage) GetIdentity(i *identity.Identity, filters []types.Filter) (types.JSONCollResult, error) {
 	var cols []string
 
 	spec := i.Collection.Spec
@@ -106,21 +106,34 @@ func (s *Storage) GetIdentity(i *identity.Identity, filterField string, filterVa
 	}
 
 	from := sqlbuilder.PostgreSQL.NewSelectBuilder()
-	from.Select(cols...).From(Sanitize(spec.Name)).Where(from.Equal(Sanitize(filterField), filterValue))
+	from.Select(cols...).From(Sanitize(spec.Name))
+
+	for _, f := range filters {
+		from.Where(from.Equal(Sanitize(f.Name), f.Value))
+	}
 
 	b := sqlbuilder.PostgreSQL.NewSelectBuilder()
 	b.Select("row_to_json(t)")
 	b.From(b.BuilderAs(from, "t"))
-	sql, _ := b.Build()
+	sql, args := b.Build()
 
-	return s.RawQuery(sql, filterValue)
+	return s.RawQuery(sql, args...)
 }
 
-func (s *Storage) IsIdentityExist(i *identity.Identity, filterField string, filterValue interface{}) (bool, error) {
+func (s *Storage) IsIdentityExist(i *identity.Identity, filters []types.Filter) (bool, error) {
 	spec := i.Collection.Spec
-	sql := fmt.Sprintf("select exists (select 1 from %s where %s=$1)", Sanitize(spec.Name), Sanitize(filterField))
+	q := sqlbuilder.PostgreSQL.NewSelectBuilder()
+	q.Select("1").From(Sanitize(spec.Name))
 
-	res, err := s.RawQuery(sql, filterValue)
+	for _, f := range filters {
+		q.Where(q.Equal(Sanitize(f.Name), f.Value))
+	}
+
+	sql, args := q.Build()
+	b := sqlbuilder.WithFlavor(sqlbuilder.Buildf("SELECT exists (%v)", q), sqlbuilder.PostgreSQL)
+	sql, args = b.Build()
+
+	res, err := s.RawQuery(sql, args...)
 	if err != nil {
 		return false, err
 	}
@@ -128,19 +141,27 @@ func (s *Storage) IsIdentityExist(i *identity.Identity, filterField string, filt
 	return res.(bool), nil
 }
 
-func (s *Storage) SetEmailVerified(spec *collections.Spec, filterField string, filterVal interface{}) error {
+func (s *Storage) SetEmailVerified(spec *collections.Spec, filters []types.Filter) error {
 	b := sqlbuilder.PostgreSQL.NewUpdateBuilder()
 	b.Update(Sanitize(spec.Name)).Set(b.Assign(Sanitize(spec.FieldsMap["email_verified"].Name), true))
-	b.Where(b.Equal(Sanitize(spec.FieldsMap[filterField].Name), filterVal))
+
+	for _, f := range filters {
+		b.Where(b.Equal(Sanitize(f.Name), f.Value))
+	}
+
 	sql, args := b.Build()
 
 	return s.RawExec(sql, args...)
 }
 
-func (s *Storage) SetPhoneVerified(spec *collections.Spec, filterField string, filterVal interface{}) error {
+func (s *Storage) SetPhoneVerified(spec *collections.Spec, filters []types.Filter) error {
 	b := sqlbuilder.PostgreSQL.NewUpdateBuilder()
 	b.Update(Sanitize(spec.Name)).Set(b.Assign(Sanitize(spec.FieldsMap["phone_verified"].Name), true))
-	b.Where(b.Equal(Sanitize(spec.FieldsMap[filterField].Name), filterVal))
+
+	for _, f := range filters {
+		b.Where(b.Equal(Sanitize(f.Name), f.Value))
+	}
+
 	sql, args := b.Build()
 
 	return s.RawExec(sql, args...)
