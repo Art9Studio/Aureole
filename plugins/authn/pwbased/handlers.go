@@ -26,7 +26,7 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		f := []storageT.Filter{{credName, credVal}}
+		f := []storageT.Filter{{Name: credName, Value: credVal}}
 		exist, err := context.storage.IsIdentityExist(context.identity, f)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -119,7 +119,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{{credName, credVal}})
+		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{{Name: credName, Value: credVal}})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -149,7 +149,7 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 
 			verifSpecs := &context.verif.coll.Spec
 			err = context.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
-				{verifSpecs.FieldsMap["email"].Name, identity.Email},
+				{Name: verifSpecs.FieldsMap["email"].Name, Value: identity.Email},
 			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -219,7 +219,7 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 		getLoginTraitData(&i.Email, authInput, context.conf.Login.FieldsMap["email"], collMap["email"].Default, &identityData.Email)
 
 		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{{
-			collMap["email"].Name, identityData.Email},
+			Name: collMap["email"].Name, Value: identityData.Email},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -244,7 +244,7 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 
 		collSpec := &context.reset.coll.Spec
 		err = context.storage.InvalidateReset(collSpec, []storageT.Filter{
-			{collSpec.FieldsMap["email"].Name, identityData.Email},
+			{Name: collSpec.FieldsMap["email"].Name, Value: identityData.Email},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -280,7 +280,7 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 
 		tokenHash := context.reset.hasher().Sum([]byte(token))
 		rawReset, err := context.storage.GetReset(resetSpecs, []storageT.Filter{
-			{tokenName, base64.StdEncoding.EncodeToString(tokenHash)},
+			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -323,14 +323,14 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 		identitySpecs := context.coll.Parent.Spec
 		email := reset[resetSpecs.FieldsMap["email"].Name].(string)
 		_, err = context.storage.UpdatePassword(context.coll,
-			[]storageT.Filter{{identitySpecs.FieldsMap["email"].Name, email}},
+			[]storageT.Filter{{Name: identitySpecs.FieldsMap["email"].Name, Value: email}},
 			pw.PasswordHash)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		err = context.storage.InvalidateReset(resetSpecs, []storageT.Filter{
-			{tokenName, base64.StdEncoding.EncodeToString(tokenHash)},
+			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -374,7 +374,7 @@ func Verify(context *pwBased) func(*fiber.Ctx) error {
 
 		fieldName := context.coll.Parent.Spec.FieldsMap["email"].Name
 		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
-			{fieldName, identity.Email},
+			{Name: fieldName, Value: identity.Email},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -398,7 +398,7 @@ func Verify(context *pwBased) func(*fiber.Ctx) error {
 
 		verifSpecs := &context.verif.coll.Spec
 		err = context.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
-			{verifSpecs.FieldsMap["email"].Name, identity.Email},
+			{Name: verifSpecs.FieldsMap["email"].Name, Value: identity.Email},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -434,7 +434,7 @@ func VerifyConfirm(context *pwBased) func(*fiber.Ctx) error {
 
 		tokenHash := context.verif.hasher().Sum([]byte(token))
 		rawVerif, err := context.storage.GetEmailVerif(verifSpecs, []storageT.Filter{
-			{tokenName, base64.StdEncoding.EncodeToString(tokenHash)},
+			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -458,7 +458,7 @@ func VerifyConfirm(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		err = context.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
-			{tokenName, base64.StdEncoding.EncodeToString(tokenHash)},
+			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -466,7 +466,7 @@ func VerifyConfirm(context *pwBased) func(*fiber.Ctx) error {
 
 		iCollSpec := &context.identity.Collection.Spec
 		err = context.storage.SetEmailVerified(iCollSpec, []storageT.Filter{
-			{iCollSpec.FieldsMap["email"].Name, verif[verifSpecs.FieldsMap["email"].Name]},
+			{Name: iCollSpec.FieldsMap["email"].Name, Value: verif[verifSpecs.FieldsMap["email"].Name]},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())

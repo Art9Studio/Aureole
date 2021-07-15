@@ -29,7 +29,7 @@ func Login(context *phone) func(*fiber.Ctx) error {
 
 		specs := i.Collection.Spec
 		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
-			{specs.FieldsMap["phone"].Name, identityData.Phone},
+			{Name: specs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -59,7 +59,7 @@ func Login(context *phone) func(*fiber.Ctx) error {
 
 		vSpecs := &context.verification.coll.Spec
 		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
-			{vSpecs.FieldsMap["phone"].Name, identityData.Phone},
+			{Name: vSpecs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -96,7 +96,7 @@ func Register(context *phone) func(*fiber.Ctx) error {
 
 		specs := context.identity.Collection.Spec
 		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
-			{specs.FieldsMap["phone"].Name, identityData.Phone},
+			{Name: specs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -132,7 +132,7 @@ func Register(context *phone) func(*fiber.Ctx) error {
 
 		vSpecs := &context.verification.coll.Spec
 		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
-			{vSpecs.FieldsMap["phone"].Name, identityData.Phone},
+			{Name: vSpecs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -177,7 +177,7 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 		vSpecs := context.verification.coll.Spec
 
 		rawVerification, err := storage.GetVerification(&vSpecs, []storageT.Filter{
-			{vSpecs.FieldsMap["id"].Name, requestData.Id},
+			{Name: vSpecs.FieldsMap["id"].Name, Value: requestData.Id},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -215,7 +215,7 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			iCollSpec := context.identity.Collection.Spec
 
 			rawIdentity, err := context.storage.GetIdentity(context.identity, []storageT.Filter{
-				{iCollSpec.FieldsMap["phone"].Name, verification[vSpecs.FieldsMap["phone"].Name]},
+				{Name: iCollSpec.FieldsMap["phone"].Name, Value: verification[vSpecs.FieldsMap["phone"].Name]},
 			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -227,7 +227,7 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			}
 
 			err = context.storage.SetPhoneVerified(&iCollSpec, []storageT.Filter{
-				{iCollSpec.FieldsMap["phone"].Name, i[iCollSpec.FieldsMap["phone"].Name]},
+				{Name: iCollSpec.FieldsMap["phone"].Name, Value: i[iCollSpec.FieldsMap["phone"].Name]},
 			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -258,7 +258,7 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			return context.authorizer.Authorize(c, authzCtx)
 		} else {
 			if err := context.storage.IncrAttempts(&vSpecs, []storageT.Filter{
-				{vSpecs.FieldsMap["id"].Name, requestData.Id},
+				{Name: vSpecs.FieldsMap["id"].Name, Value: requestData.Id},
 			}); err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -287,7 +287,7 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 		collSpec := context.verification.coll.Spec
 
 		rawVerification, err := storage.GetVerification(&collSpec, []storageT.Filter{
-			{collSpec.FieldsMap["id"].Name, requestData.Id},
+			{Name: collSpec.FieldsMap["id"].Name, Value: requestData.Id},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -318,7 +318,7 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 
 		vSpecs := &context.verification.coll.Spec
 		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
-			{vSpecs.FieldsMap["phone"].Name, verification.Phone},
+			{Name: vSpecs.FieldsMap["phone"].Name, Value: verification.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())

@@ -129,9 +129,8 @@ func (s *Storage) IsIdentityExist(i *identity.Identity, filters []types.Filter) 
 		q.Where(q.Equal(Sanitize(f.Name), f.Value))
 	}
 
-	sql, args := q.Build()
 	b := sqlbuilder.WithFlavor(sqlbuilder.Buildf("SELECT exists (%v)", q), sqlbuilder.PostgreSQL)
-	sql, args = b.Build()
+	sql, args := b.Build()
 
 	res, err := s.RawQuery(sql, args...)
 	if err != nil {
