@@ -3,6 +3,7 @@ package collections
 import (
 	"aureole/internal/configs"
 	"fmt"
+
 	"github.com/mitchellh/mapstructure"
 )
 

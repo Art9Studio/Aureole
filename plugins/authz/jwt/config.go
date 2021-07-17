@@ -3,6 +3,7 @@ package jwt
 import (
 	"aureole/internal/configs"
 	"aureole/internal/plugins/authz/types"
+
 	"github.com/lestrrat-go/jwx/jwa"
 )
 

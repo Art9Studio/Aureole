@@ -2,9 +2,10 @@ package configs
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/joho/godotenv"
 	"github.com/sherifabdlnaby/configuro"
-	"os"
 )
 
 type (

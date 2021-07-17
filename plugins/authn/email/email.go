@@ -8,14 +8,15 @@ import (
 	authzTypes "aureole/internal/plugins/authz/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
-	"aureole/internal/router/interface"
+	_interface "aureole/internal/router/interface"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"hash"
 	"net/url"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type (
@@ -83,7 +84,7 @@ func (p *email) Init(appName string, appUrl *url.URL) (err error) {
 		return err
 	}
 
-	if err = p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
+	if err := p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
 		return err
 	}
 

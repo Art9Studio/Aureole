@@ -2,8 +2,9 @@ package core
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"sync"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Adapter interface {

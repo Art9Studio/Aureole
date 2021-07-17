@@ -9,14 +9,15 @@ import (
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
-	"aureole/internal/router/interface"
+	_interface "aureole/internal/router/interface"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"hash"
 	"net/url"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type (
@@ -131,7 +132,7 @@ func (p *pwBased) Init(appName string, appUrl *url.URL) (err error) {
 		storageFeatures = append(storageFeatures, p.verif.coll.Type)
 	}
 
-	if err = p.storage.CheckFeaturesAvailable(storageFeatures); err != nil {
+	if err := p.storage.CheckFeaturesAvailable(storageFeatures); err != nil {
 		return err
 	}
 

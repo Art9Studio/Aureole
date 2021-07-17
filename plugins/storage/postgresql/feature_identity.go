@@ -5,8 +5,9 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
-	"github.com/huandu/go-sqlbuilder"
 	"time"
+
+	"github.com/huandu/go-sqlbuilder"
 )
 
 // InsertIdentity inserts user entity in the user collection

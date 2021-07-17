@@ -7,9 +7,10 @@ import (
 	"aureole/pkg/jsonpath"
 	crand "crypto/rand"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"math/big"
 	"reflect"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func sendError(c *fiber.Ctx, statusCode int, message string) error {
@@ -20,7 +21,7 @@ func sendError(c *fiber.Ctx, statusCode int, message string) error {
 }
 
 func getJsonData(json interface{}, fieldPath string, confirmData *interface{}) (int, error) {
-	jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
+	jsonVal, err := jsonpath.GetJSONPath(fieldPath, json)
 	if err != nil {
 		return fiber.StatusBadRequest, err
 	}
@@ -61,7 +62,7 @@ func getRegisterData(context *phone, json interface{}, jsonMap map[string]string
 
 func getRegisterTraitData(trait *identity.Trait, json interface{}, fieldPath string, defaultVal interface{}, iDataField *interface{}) (int, error) {
 	if trait.IsEnabled {
-		jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
+		jsonVal, err := jsonpath.GetJSONPath(fieldPath, json)
 		val := getValueOrDefault(jsonVal, defaultVal)
 
 		if val == nil && trait.IsRequired {
@@ -86,7 +87,7 @@ func getExtraTraitsData(traits map[string]identity.ExtraTrait, json interface{},
 				fieldPath = fmt.Sprintf("{$.%s}", traitName)
 			}
 
-			jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
+			jsonVal, err := jsonpath.GetJSONPath(fieldPath, json)
 			value := getValueOrDefault(jsonVal, collFieldsMap[traitName].Default)
 			if value == nil && traits[traitName].IsRequired {
 				return fiber.StatusBadRequest, err

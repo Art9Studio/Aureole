@@ -6,8 +6,9 @@ import (
 	"aureole/internal/plugins/authn"
 	"aureole/internal/plugins/storage/types"
 	"fmt"
-	"github.com/huandu/go-sqlbuilder"
 	"time"
+
+	"github.com/huandu/go-sqlbuilder"
 )
 
 func (s *Storage) InsertPwBased(i *identity.Identity, pwColl *collections.Collection, iData *types.IdentityData, pwData *types.PwBasedData) (types.JSONCollResult, error) {

@@ -4,6 +4,7 @@ import (
 	"aureole/internal/plugins/storage/types"
 	"context"
 	"errors"
+
 	"github.com/jackc/pgx/v4"
 )
 
@@ -40,5 +41,5 @@ func (s *Storage) RawQuery(sql string, args ...interface{}) (types.JSONCollResul
 }
 
 func Sanitize(ident string) string {
-	return pgx.Identifier.Sanitize([]string{ident})
+	return pgx.Identifier.Sanitize([]string{ident}) //nolint
 }

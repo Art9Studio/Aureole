@@ -7,9 +7,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/argon2"
-	"strings"
 )
 
 // Argon2 represents argon2 hasher
@@ -49,7 +50,7 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 
 	var key []byte
 
-	// todo: save chosen function in context when init and use it here.
+	// todo: save chosen function in context when init and use it here
 	switch a.conf.Kind {
 	case "argon2i":
 		key = argon2.Key([]byte(pw), salt, a.conf.Iterations, a.conf.Memory, a.conf.Parallelism, a.conf.KeyLen)
@@ -71,8 +72,8 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 }
 
 // ComparePw performs a constant-time comparison between a plain-text password and
-// Argon2 pwhasher, using the parameters and salt contained in the pwhasher.
-// It returns true if they match, otherwise it returns false.
+// Argon2 pwhasher, using the parameters and salt contained in the pwhasher
+// It returns true if they match, otherwise it returns false
 func (a *Argon2) ComparePw(pw, hash string) (bool, error) {
 	conf, salt, key, err := decodePwHash(hash)
 	if err != nil {

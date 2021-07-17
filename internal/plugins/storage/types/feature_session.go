@@ -2,8 +2,9 @@ package types
 
 import (
 	"aureole/internal/collections"
-	"github.com/gofrs/uuid"
 	"time"
+
+	"github.com/gofrs/uuid"
 )
 
 type InsertSessionData struct {

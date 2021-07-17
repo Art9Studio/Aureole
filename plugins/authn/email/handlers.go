@@ -5,9 +5,10 @@ import (
 	storageT "aureole/internal/plugins/storage/types"
 	"encoding/base64"
 	"encoding/json"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
-	"time"
 )
 
 func GetMagicLink(context *email) func(*fiber.Ctx) error {

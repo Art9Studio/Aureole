@@ -2,10 +2,11 @@ package router
 
 import (
 	"aureole/internal/context/app"
-	"aureole/internal/router/interface"
+	_interface "aureole/internal/router/interface"
+	"path"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"path"
 )
 
 type TRouter struct {

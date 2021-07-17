@@ -9,10 +9,11 @@ import (
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
-	"aureole/internal/router/interface"
+	_interface "aureole/internal/router/interface"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"net/url"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type (
@@ -79,7 +80,7 @@ func (p *phone) Init(appName string, appUrl *url.URL) (err error) {
 		return fmt.Errorf("identity in app '%s' is not declared", appName)
 	}
 
-	if err = p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
+	if err := p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
 		return err
 	}
 

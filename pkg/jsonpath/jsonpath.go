@@ -3,20 +3,21 @@ package jsonpath
 // from https://github.com/hairyhenderson/gomplate/blob/master/coll/jsonpath.go
 
 import (
+	"reflect"
+
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/jsonpath"
-	"reflect"
 )
 
-func GetJsonPath(p string, in interface{}) (interface{}, error) {
+func GetJSONPath(p string, in interface{}) (interface{}, error) {
 	jp, err := parsePath(p)
 	if err != nil {
-		return nil, errors.Wrapf(err, "couldn't parse GetJsonPath %s", p)
+		return nil, errors.Wrapf(err, "couldn't parse GetJSONPath %s", p)
 	}
 
 	results, err := jp.FindResults(in)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing GetJsonPath failed")
+		return nil, errors.Wrap(err, "executing GetJSONPath failed")
 	}
 
 	var out interface{}
@@ -60,5 +61,5 @@ func extractResult(v reflect.Value) (interface{}, error) {
 	if v.CanInterface() {
 		return v.Interface(), nil
 	}
-	return nil, errors.Errorf("GetJsonPath couldn't access field")
+	return nil, errors.Errorf("GetJSONPath couldn't access field")
 }

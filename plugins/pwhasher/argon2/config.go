@@ -13,7 +13,7 @@ type config struct {
 	// The number of iterations over the memory
 	Iterations uint32 `mapstructure:"iterations"`
 
-	// The number of threads (or lanes) used by the algorithm.
+	// The number of threads (or lanes) used by the algorithm
 	// Recommended value is between 1 and runtime.NumCPU()
 	Parallelism uint8 `mapstructure:"parallelism"`
 

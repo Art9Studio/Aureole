@@ -4,8 +4,9 @@ import (
 	authzT "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
 	"encoding/json"
-	"github.com/gofiber/fiber/v2"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func Login(context *phone) func(*fiber.Ctx) error {
@@ -249,7 +250,6 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			}
 			return sendError(c, fiber.StatusUnauthorized, "wrong otp")
 		}
-
 	}
 }
 

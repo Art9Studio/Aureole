@@ -5,6 +5,7 @@ import (
 	"aureole/internal/plugins/cryptokey"
 	_interface "aureole/internal/router/interface"
 	"context"
+
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
 )

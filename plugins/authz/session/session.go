@@ -7,10 +7,11 @@ import (
 	"aureole/internal/plugins/authz/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 type session struct {

@@ -3,15 +3,17 @@ package twilio
 import (
 	"aureole/internal/configs"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
 	txtTmpl "text/template"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type Exception struct {
@@ -54,8 +56,8 @@ func (t *Twilio) SendRaw(recipient, subject, message string) error {
 	data.Set("From", t.conf.From)
 	data.Set("To", recipient)
 
-	client := &http.Client{}
-	r, err := http.NewRequest("POST", endpoint, strings.NewReader(data.Encode()))
+	ctx := context.Background()
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(data.Encode()))
 	if err != nil {
 		return err
 	}
@@ -64,7 +66,7 @@ func (t *Twilio) SendRaw(recipient, subject, message string) error {
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-	res, err := client.Do(r)
+	res, err := http.DefaultClient.Do(r)
 	if err != nil {
 		return err
 	}
@@ -77,7 +79,7 @@ func (t *Twilio) SendRaw(recipient, subject, message string) error {
 			return err
 		}
 
-		return fmt.Errorf("twilio error occured: status: %d; message: %s", e.Status, e.Message)
+		return fmt.Errorf("twilio error occurred: status: %d; message: %s", e.Status, e.Message)
 	}
 
 	return nil

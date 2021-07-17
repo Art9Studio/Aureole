@@ -3,6 +3,7 @@ package jwt
 import (
 	"aureole/internal/plugins/authz/types"
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
 )

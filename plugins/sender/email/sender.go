@@ -3,13 +3,14 @@ package email
 import (
 	"aureole/internal/configs"
 	"bytes"
-	"github.com/jordan-wright/email"
-	"github.com/mitchellh/mapstructure"
 	htmlTmpl "html/template"
 	"net/smtp"
 	"path"
 	"strings"
 	txtTmpl "text/template"
+
+	"github.com/jordan-wright/email"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Email struct {

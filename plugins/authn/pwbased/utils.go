@@ -6,9 +6,10 @@ import (
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/pkg/jsonpath"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"path"
 	"reflect"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func sendError(c *fiber.Ctx, statusCode int, message string) error {
@@ -19,7 +20,7 @@ func sendError(c *fiber.Ctx, statusCode int, message string) error {
 }
 
 func getJsonData(json interface{}, fieldPath string, data *interface{}) (int, error) {
-	jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
+	jsonVal, err := jsonpath.GetJSONPath(fieldPath, json)
 	if err != nil {
 		return fiber.StatusBadRequest, err
 	}
@@ -40,7 +41,7 @@ func getLoginData(context *pwBased, json interface{}, jsonMap map[string]string,
 
 func getLoginTraitData(trait *identity.Trait, json interface{}, fieldPath string, defaultVal interface{}, iDataField *interface{}) {
 	if trait.IsEnabled {
-		jsonVal, _ := jsonpath.GetJsonPath(fieldPath, json)
+		jsonVal, _ := jsonpath.GetJSONPath(fieldPath, json)
 		*iDataField = getValueOrDefault(jsonVal, defaultVal)
 	}
 }
@@ -87,7 +88,7 @@ func getRegisterData(context *pwBased, json interface{}, jsonMap map[string]stri
 
 func getRegisterTraitData(trait *identity.Trait, json interface{}, fieldPath string, defaultVal interface{}, iDataField *interface{}) (int, error) {
 	if trait.IsEnabled {
-		jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
+		jsonVal, err := jsonpath.GetJSONPath(fieldPath, json)
 		val := getValueOrDefault(jsonVal, defaultVal)
 
 		if val == nil && trait.IsRequired {
@@ -112,7 +113,7 @@ func getExtraTraitsData(traits map[string]identity.ExtraTrait, json interface{},
 				fieldPath = fmt.Sprintf("{$.%s}", traitName)
 			}
 
-			jsonVal, err := jsonpath.GetJsonPath(fieldPath, json)
+			jsonVal, err := jsonpath.GetJSONPath(fieldPath, json)
 			value := getValueOrDefault(jsonVal, collFieldsMap[traitName].Default)
 			if value == nil && traits[traitName].IsRequired {
 				return fiber.StatusBadRequest, err
@@ -125,7 +126,7 @@ func getExtraTraitsData(traits map[string]identity.ExtraTrait, json interface{},
 }
 
 func getPwData(json interface{}, fieldsMap map[string]string, data *storageT.PwBasedData) (int, error) {
-	password, err := jsonpath.GetJsonPath(fieldsMap["password"], json)
+	password, err := jsonpath.GetJSONPath(fieldsMap["password"], json)
 	if err != nil {
 		return fiber.StatusBadRequest, err
 	}

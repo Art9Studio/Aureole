@@ -2,8 +2,9 @@ package twilio
 
 import (
 	"fmt"
-	"github.com/jarcoal/httpmock"
 	"testing"
+
+	"github.com/jarcoal/httpmock"
 )
 
 func TestTwilio_Send(test *testing.T) {

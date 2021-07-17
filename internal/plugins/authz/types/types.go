@@ -2,6 +2,7 @@ package types
 
 import (
 	"aureole/internal/collections"
+
 	"github.com/gofiber/fiber/v2"
 )
 

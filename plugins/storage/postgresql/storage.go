@@ -7,9 +7,10 @@ import (
 	"aureole/internal/plugins/storage/types"
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 // Storage represents a postgresql database

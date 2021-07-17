@@ -12,16 +12,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"path"
+	txtTmpl "text/template"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"path"
-	txtTmpl "text/template"
-	"time"
 )
 
 type jwtAuthz struct {
@@ -173,53 +174,92 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 	case AccessToken:
 		token := jwt.New()
 		// todo: think about multiple errors handling
-		token.Set(jwt.IssuerKey, conf.Iss)
-		token.Set(jwt.AudienceKey, conf.Aud)
-		token.Set(jwt.NotBeforeKey, conf.Nbf)
-		token.Set(jwt.JwtIDKey, conf.Jti)
+		err := token.Set(jwt.IssuerKey, conf.Iss)
+		if err != nil {
+			return nil, err
+		}
+		err = token.Set(jwt.AudienceKey, conf.Aud)
+		if err != nil {
+			return nil, err
+		}
+		err = token.Set(jwt.NotBeforeKey, conf.Nbf)
+		if err != nil {
+			return nil, err
+		}
+		err = token.Set(jwt.JwtIDKey, conf.Jti)
+		if err != nil {
+			return nil, err
+		}
 
 		if conf.Sub {
-			token.Set(jwt.SubjectKey, authzCtx.Id)
+			err := token.Set(jwt.SubjectKey, authzCtx.Id)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		currTime := time.Now()
 		nbf := currTime.Add(time.Duration(conf.Nbf) * time.Second).Unix()
-		token.Set(jwt.NotBeforeKey, nbf)
+		err = token.Set(jwt.NotBeforeKey, nbf)
+		if err != nil {
+			return nil, err
+		}
 
 		if conf.Iat {
-			token.Set(jwt.IssuedAtKey, currTime.Unix())
+			err := token.Set(jwt.IssuedAtKey, currTime.Unix())
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		exp := currTime.Add(time.Duration(conf.AccessExp) * time.Second).Unix()
-		token.Set(jwt.ExpirationKey, exp)
+		err = token.Set(jwt.ExpirationKey, exp)
+		if err != nil {
+			return nil, err
+		}
 
 		payload, err := getPayload(conf.Payload, authzCtx)
 		if err != nil {
 			return nil, err
 		}
 		for k, v := range payload {
-			token.Set(k, v)
+			err := token.Set(k, v)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		t = token
 	case RefreshToken:
 		token := jwt.New()
-		token.Set(jwt.IssuerKey, conf.Iss)
+		err := token.Set(jwt.IssuerKey, conf.Iss)
+		if err != nil {
+			return nil, err
+		}
 
 		if conf.Sub {
-			token.Set(jwt.SubjectKey, authzCtx.Id)
+			err := token.Set(jwt.SubjectKey, authzCtx.Id)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		currTime := time.Now()
 		refreshExp := currTime.Add(time.Duration(conf.RefreshExp) * time.Second).Unix()
-		token.Set(jwt.ExpirationKey, refreshExp)
+		err = token.Set(jwt.ExpirationKey, refreshExp)
+		if err != nil {
+			return nil, err
+		}
 
 		payload, err := defaultPayload(authzCtx)
 		if err != nil {
 			return nil, err
 		}
 		for k, v := range payload {
-			token.Set(k, v)
+			err := token.Set(k, v)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		t = token

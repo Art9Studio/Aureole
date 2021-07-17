@@ -6,9 +6,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
-	"time"
 )
 
 func Login(context *pwBased) func(*fiber.Ctx) error {
