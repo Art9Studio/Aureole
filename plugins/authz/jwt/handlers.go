@@ -22,6 +22,7 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 			jwt.WithValidate(true),
 			jwt.WithKeySet(keySet),
 		)
+
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}

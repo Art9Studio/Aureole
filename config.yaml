@@ -383,12 +383,12 @@ crypto_keys:
     config:
       path: "https://www.googleapis.com/oauth2/v3/certs"
 
-  #- type: "file"
-  #  name: file
-  #  config:
-  #    alg: "rsa"
-  #    kid: "kkk"
-  #    path: "./keys/private.pem"
+  - type: "pem"
+    name: pem
+    path_prefix: "/pem-keys"
+    config:
+      alg: "ES256"
+      path: "lab/keys/apple_key.p8"
 
 senders:
   - type: "email"

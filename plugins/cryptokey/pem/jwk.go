@@ -1,4 +1,4 @@
-package jwk
+package pem
 
 import (
 	"aureole/internal/configs"
@@ -14,22 +14,22 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-type Jwk struct {
+type Pem struct {
 	rawConf    *configs.CryptoKey
 	conf       *config
 	privateSet jwk.Set
 	publicSet  jwk.Set
 }
 
-func (j *Jwk) Init() (err error) {
-	if j.conf, err = initConfig(&j.rawConf.Config); err != nil {
+func (p *Pem) Init() (err error) {
+	if p.conf, err = initConfig(&p.rawConf.Config); err != nil {
 		return err
 	}
-	err = initKeySets(j)
+	err = initKeySets(p)
 	if err != nil {
 		return err
 	}
-	createRoutes(j)
+	createRoutes(p)
 
 	return nil
 }
@@ -43,8 +43,8 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func initKeySets(j *Jwk) error {
-	keySet, err := getKeys(j.conf.Path)
+func initKeySets(p *Pem) error {
+	keySet, err := jwk.ReadFile(p.conf.Path, jwk.WithPEM(true))
 	if err != nil {
 		return err
 	}
@@ -54,28 +54,20 @@ func initKeySets(j *Jwk) error {
 		return err
 	}
 
+	if err = setAlg(keySet, p.conf.Alg); err != nil {
+		return err
+	}
+
 	if setType == types.Private {
-		j.privateSet = keySet
-		if j.publicSet, err = jwk.PublicSetOf(j.privateSet); err != nil {
+		p.privateSet = keySet
+		if p.publicSet, err = jwk.PublicSetOf(p.privateSet); err != nil {
 			return err
 		}
 	} else {
-		j.publicSet = keySet
+		p.publicSet = keySet
 	}
 
 	return nil
-}
-
-func getKeys(path string) (jwk.Set, error) {
-	keySet, err := jwk.Fetch(context.Background(), path)
-	if err != nil {
-		keySet, err = jwk.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return keySet, nil
 }
 
 func getKeySetType(keySet jwk.Set) (types.KeyType, error) {
@@ -144,26 +136,37 @@ func isPublicSet(keySet jwk.Set) (bool, error) {
 	return true, nil
 }
 
-func createRoutes(j *Jwk) {
+func setAlg(keySet jwk.Set, alg string) error {
+	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
+		pair := it.Pair()
+		key := pair.Value.(jwk.Key)
+		if err := key.Set("alg", alg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func createRoutes(p *Pem) {
 	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    j.rawConf.PathPrefix + "/jwk",
-			Handler: GetJwkKeys(j),
+			Path:    p.rawConf.PathPrefix + "/jwk",
+			Handler: GetJwkKeys(p),
 		},
 		{
 			Method:  "GET",
-			Path:    j.rawConf.PathPrefix + "/pem",
-			Handler: GetPemKeys(j),
+			Path:    p.rawConf.PathPrefix + "/pem",
+			Handler: GetPemKeys(p),
 		},
 	}
 	cryptokey.Repository.PluginApi.Router.AddProjectRoutes(routes)
 }
 
-func (j *Jwk) GetPrivateSet() jwk.Set {
-	return j.privateSet
+func (p *Pem) GetPrivateSet() jwk.Set {
+	return p.privateSet
 }
 
-func (j *Jwk) GetPublicSet() jwk.Set {
-	return j.publicSet
+func (p *Pem) GetPublicSet() jwk.Set {
+	return p.publicSet
 }
