@@ -12,6 +12,7 @@ type (
 
 	Project struct {
 		APIVersion   string         `config:"api_version"`
+		PingPath     string         `config:"ping_path"`
 		Apps         map[string]App `config:"apps"`
 		StorageConfs []Storage      `config:"storages"`
 		CollConfs    []Collection   `config:"collections"`
