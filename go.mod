@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/goccy/go-json v0.5.1 // indirect
-	github.com/gofiber/fiber/v2 v2.14.0
+	github.com/gofiber/fiber/v2 v2.15.0
 	github.com/gofrs/uuid v3.4.0+incompatible
 	github.com/huandu/go-sqlbuilder v1.12.1
 	github.com/jackc/pgx/v4 v4.11.0
