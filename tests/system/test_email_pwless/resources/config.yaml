@@ -1,0 +1,97 @@
+api_version: "0.1"
+
+apps:
+  email_pwless:
+    path_prefix: "/${UUID}"
+
+    identity:
+      collection: identity
+      email:
+        unique: true
+        required: true
+
+    authN:
+      - type: "email"
+        path_prefix: "/email"
+        authz: jwt
+        config:
+          collection: identity
+          storage: one_db
+          login:
+            path: "/login"
+            fields_map:
+              email: "{$.email}"
+          register:
+            path: "/register"
+            fields_map:
+              username: "{$.username}"
+              email: "{$.email}"
+          magic_link:
+            path: "/email-confirm"
+            collection: magic_link
+            sender: email
+            template: magic_link
+            token:
+              exp: 3600
+              hash_func: "sha256"
+
+    authZ:
+      - type: "jwt"
+        name: jwt
+        config:
+          sub: true
+          aud: [ "hasura-api" ]
+          iat: true
+          jti: 0
+          alg: "RS256"
+          sign_key: jwk_file
+          verify_keys: [ jwk_file ]
+          payload: "${RES_PATH}/jwt_payload.json"
+
+collections:
+  - type: "identity"
+    name: identity
+    config:
+      name: "users"
+      pk: "id"
+      fields_map:
+        id: "id"
+        username: "username"
+        email: "email"
+        phone: "phone"
+        is_active: no
+        created: no
+
+  - type: "email_link"
+    name: magic_link
+    config:
+      name: "email_links"
+      pk: "id"
+      fields_map:
+        id: "id"
+        email: "email"
+        token: "token"
+        expires: "expires"
+        invalid: "invalid"
+
+storages:
+  - type: "postgresql"
+    name: one_db
+    config:
+      url: "${DB_CONNECTION_psql}"
+
+crypto_keys:
+  - type: "jwk"
+    name: jwk_file
+    path_prefix: "/keys"
+    config:
+      path: "${RES_PATH}/keys.json"
+
+senders:
+  - type: "email"
+    name: email
+    config:
+      host: "smtp.gmail.com:587"
+      username: "test.aureole@gmail.com"
+      password: "12341234"
+      from: "test.aureole@gmail.com"

@@ -1,0 +1,38 @@
+version: '2'
+
+services:
+  aureole:
+    image: aureolecloud/aureole:latest
+    ports:
+      - "3000:3000"
+    container_name: aureole
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./config.yaml:/config.yaml
+      {% for module in modules %}
+      - {{ module.get('path') }}/resources/aureole:{{ module.get('res_path') }}
+      {% endfor %}
+    healthcheck:
+        test: ["CMD", "wget", "-nv", "-t1", "--spider", "http://localhost:3000/ping"]
+        start_period: 1s
+        interval: 2s
+        timeout: 2s
+        retries: 5
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./psql-dbs.sql:/docker-entrypoint-initdb.d/1-databases.sql
+      - ./psql-schemas.sql:/docker-entrypoint-initdb.d/2-databases.sql
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_connections=on"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      start_period: 1s
+      interval: 2s
+      timeout: 2s
+      retries: 5

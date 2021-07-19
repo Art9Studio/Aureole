@@ -76,7 +76,7 @@ linters:
     - errcheck
     - exportloopref
     #    - exhaustive # todo: enable and FIX
-    #    - funlen #todo: think what we can do
+    #    - funlen # todo: think what we can do
     #    - goconst # todo: enable and FIX
     - gocritic
     #    - gocyclo # todo: increase limit and FIX
