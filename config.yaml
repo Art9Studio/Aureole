@@ -1,4 +1,5 @@
 api_version: "0.1"
+ping_path: "/ping"
 
 apps:
   one:

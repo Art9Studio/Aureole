@@ -17,12 +17,24 @@ import (
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/plugins/storage"
 	"aureole/internal/plugins/storage/types"
+	"aureole/internal/router"
+	_interface "aureole/internal/router/interface"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"net/url"
 )
 
 func Init(conf *configs.Project, ctx *ProjectCtx) error {
 	ctx.APIVersion = conf.APIVersion
+	router.Router.AddProjectRoutes([]*_interface.Route{
+		{
+			Method: "GET",
+			Path:   conf.PingPath,
+			Handler: func(c *fiber.Ctx) error {
+				return c.SendStatus(fiber.StatusOK)
+			},
+		},
+	})
 
 	if err := createGlobalPlugins(conf, ctx); err != nil {
 		return err
