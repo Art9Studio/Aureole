@@ -54,7 +54,7 @@ func initKeySets(p *Pem) error {
 		return err
 	}
 
-	if err = setAlg(keySet, p.conf.Alg); err != nil {
+	if err := setAttr(keySet, p.conf.Alg); err != nil {
 		return err
 	}
 
@@ -136,11 +136,14 @@ func isPublicSet(keySet jwk.Set) (bool, error) {
 	return true, nil
 }
 
-func setAlg(keySet jwk.Set, alg string) error {
+func setAttr(keySet jwk.Set, alg string) error {
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
 		pair := it.Pair()
 		key := pair.Value.(jwk.Key)
 		if err := key.Set("alg", alg); err != nil {
+			return err
+		}
+		if err := key.Set("use", "sig"); err != nil {
 			return err
 		}
 	}
