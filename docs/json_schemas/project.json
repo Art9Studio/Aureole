@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "api_version",
+    "apps",
+    "collections",
+    "storages"
+  ],
+  "properties": {
+    "api_version": {
+      "type": "string",
+      "uuid": "666bf281-fcf0-4b6b-bd64-dbe6b691f274"
+    },
+    "ping_path": {
+      "type": "string",
+      "uuid": "8bd7986f-7910-45e4-8247-42fdb2abf8d6",
+      "default": "/ping",
+      "metatags": "@rel_url"
+    },
+    "apps": {
+      "type": "object",
+      "uuid": "6d0ccc24-0a20-4d26-905b-90251111be96",
+      "patternProperties": {
+        ".+": {
+          "type": "object",
+          "uuid": "7aa01768-7bfc-4d31-87d5-7c9435597f1b",
+          "additionalProperties": false,
+          "required": [
+            "host",
+            "path_prefix",
+            "identity",
+            "authN",
+            "authZ"
+          ],
+          "properties": {
+            "host": {
+              "type": "string",
+              "uuid": "0da3d79b-7029-452e-8d20-ff0ca0cd0c79",
+              "default": "http://localhost:3000",
+              "metatags": "@url"
+            },
+            "path_prefix": {
+              "type": "string",
+              "uuid": "b59c5fa8-256c-4bd9-9484-11026a9b51ed",
+              "default": "",
+              "metatags": "@rel_url"
+            },
+            "identity": {
+              "$ref": "identity.json"
+            },
+            "authN": {
+              "type": "array",
+              "uuid": "39042e0a-292c-4e9e-9f59-e132fc471938",
+              "items": {
+                "$ref": "../../plugins/authn/schema.json"
+              },
+              "minItems": 1
+            },
+            "authZ": {
+              "type": "array",
+              "uuid": "6aa36e4e-17f9-4ac7-83db-cc51989849df",
+              "items": {
+                "$ref": "../../plugins/authz/schema.json"
+              },
+              "minItems": 1
+            }
+          }
+        }
+      },
+      "minProperties": 1
+    },
+    "storages": {
+      "type": "array",
+      "uuid": "5d2ef815-0404-45ab-abf2-f28257205f22",
+      "items": {
+        "$ref": "../../plugins/storage/schema.json"
+      },
+      "minItems": 1
+    },
+    "collections": {
+      "type": "array",
+      "uuid": "a8b52a9e-92ec-44dd-9bbd-02adb9a66e1a",
+      "items": {
+        "$ref": "collection.json"
+      },
+      "minItems": 1
+    },
+    "hashers": {
+      "type": "array",
+      "uuid": "cb77c9fe-bfb5-4d7a-83d0-5cbb66e0b92f",
+      "items": {
+        "$ref": "../../plugins/pwhasher/schema.json"
+      }
+    },
+    "crypto_keys": {
+      "type": "array",
+      "uuid": "49bda2a6-5ea4-4899-992f-322424deb332",
+      "items": {
+        "$ref": "../../plugins/cryptokey/schema.json"
+      }
+    },
+    "senders": {
+      "type": "array",
+      "uuid": "d9404fd9-d6f5-432e-b80e-fa73dba384bd",
+      "items": {
+        "$ref": "../../plugins/sender/schema.json"
+      }
+    }
+  }
+}

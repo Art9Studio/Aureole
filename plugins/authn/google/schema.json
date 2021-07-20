@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "e91f39d3-55d9-4010-9e17-1ff2c18a116c",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "google",
+      "uuid": "ee531fe4-4875-4c73-871f-eb5b445b8c61"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "b5baaa2c-b74c-4386-a3aa-8e0c73940bd9",
+      "additionalProperties": false,
+      "required": [
+        "collection",
+        "storage",
+        "client_id",
+        "client_secret",
+        "redirect_uri"
+      ],
+      "properties": {
+        "collection": {
+          "type": "string",
+          "uuid": "a52ebde7-1590-4c81-9cd2-bacb21db2b55",
+          "minLength": 1,
+          "metatags": "@collection_ref"
+        },
+        "storage": {
+          "type": "string",
+          "uuid": "ace13190-545c-4bf6-8bd0-d0da29c17722",
+          "minLength": 1,
+          "metatags": "@storage_ref"
+        },
+        "client_id": {
+          "type": "string",
+          "uuid": "41aecc55-4472-4424-9f1a-9c65dca4b0a1",
+          "minLength": 1
+        },
+        "client_secret": {
+          "type": "string",
+          "uuid": "694ae151-9af0-4e9c-8330-dd5fe65dc58a",
+          "minLength": 1
+        },
+        "scopes": {
+          "type": "array",
+          "uuid": "77159365-0894-4812-bd18-3fef6fa83c86",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": [
+            "email"
+          ],
+          "uniqueItems": true
+        },
+        "redirect_uri": {
+          "type": "string",
+          "uuid": "d58ab4ab-136e-4e37-bd83-347ae65756ab",
+          "minLength": 1,
+          "metatags": "@rel_url"
+        }
+      }
+    }
+  }
+}

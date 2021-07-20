@@ -1,0 +1,238 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "8dd95afc-ebdd-4886-b8d6-3f6f1ec63601",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "email",
+      "uuid": "0b922b29-91a4-4cfb-9d16-99f5f042f507"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "f213f303-8ecb-46a5-8bbc-7b6360cba5fd",
+      "additionalProperties": false,
+      "required": [
+        "collection",
+        "storage",
+        "magic_link"
+      ],
+      "properties": {
+        "collection": {
+          "type": "string",
+          "uuid": "c59a475a-87e1-477d-88a5-307182935ff5",
+          "minLength": 1,
+          "metatags": "@collection_ref"
+        },
+        "storage": {
+          "type": "string",
+          "uuid": "52450cff-5c1e-475e-b083-a51d45416ca0",
+          "minLength": 1,
+          "metatags": "@storage_ref"
+        },
+        "login": {
+          "type": "object",
+          "uuid": "8dde2a4f-6cb1-4d79-82aa-6d9b700c907f",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "c68e8772-6230-4373-8f9d-2c50a2640ee6",
+              "default": "/login",
+              "metatags": "@rel_url"
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "54248a0d-b312-45fc-9a74-6efd29f6c577",
+              "additionalProperties": false,
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "uuid": "f957e537-6ffc-4cb2-bf34-eb6ceab6c064",
+                  "default": "{$.email}",
+                  "metatags": "@json_path"
+                }
+              }
+            }
+          }
+        },
+        "register": {
+          "type": "object",
+          "uuid": "77a0a49e-71f3-4754-987c-416ad2454305",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "758585ea-7ae7-4299-998c-f01f63fca107",
+              "default": "/register",
+              "metatags": "@rel_url"
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "68eab9c6-3717-4b2d-8f24-271dd65c5715",
+              "additionalProperties": false,
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "uuid": "d75ee039-d678-4877-9cb4-be1b09814101",
+                  "default": "{$.username}",
+                  "metatags": "@json_path"
+                },
+                "email": {
+                  "type": "string",
+                  "uuid": "179b81b3-ec60-44ef-ac46-94e2f5385e47",
+                  "default": "{$.email}",
+                  "metatags": "@json_path"
+                },
+                "phone": {
+                  "type": "string",
+                  "uuid": "0fa40c8c-a301-4fa3-a181-76da28db6e53",
+                  "default": "{$.phone}",
+                  "metatags": "@json_path"
+                }
+              }
+            }
+          }
+        },
+        "magic_link": {
+          "type": "object",
+          "uuid": "c9934618-a5b9-4413-ba1c-623de1197cbd",
+          "additionalProperties": false,
+          "required": [
+            "collection",
+            "sender",
+            "template"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "d1be97af-b8d2-4ae7-a931-ea8152fbcf1f",
+              "minLength": 1,
+              "default": "/email-confirm",
+              "metatags": "@rel_url"
+            },
+            "collection": {
+              "type": "string",
+              "uuid": "4fad2038-bf9f-4a7a-84db-ff29a178543e",
+              "minLength": 1,
+              "metatags": "@collection_ref"
+            },
+            "sender": {
+              "type": "string",
+              "uuid": "1a405c8d-4b5d-4d0c-8684-7a34870ed542",
+              "minLength": 1,
+              "metatags": "@sender_ref"
+            },
+            "template": {
+              "type": "string",
+              "uuid": "cbc328e5-ec8d-4826-835c-4c45a5231108",
+              "minLength": 1,
+              "metatags": "@template_ref"
+            },
+            "token": {
+              "type": "object",
+              "uuid": "6671d3f8-f750-4c1f-a96b-a81139edab47",
+              "additionalProperties": false,
+              "properties": {
+                "exp": {
+                  "type": "integer",
+                  "uuid": "c3aa031c-d807-43b8-801d-36bb9711016c",
+                  "default": 3600,
+                  "minimum": 0,
+                  "metatags": "@unit:s"
+                },
+                "hash_func": {
+                  "enum": [
+                    "sha1",
+                    "sha224",
+                    "sha256",
+                    "sha384",
+                    "sha512"
+                  ],
+                  "uuid": "a685ce30-d3e9-4987-89b3-c5e5c678930e",
+                  "default": "sha256"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "EmailLinkCollection": {
+      "properties": {
+        "type": {
+          "const": "email_link",
+          "uuid": "445e7ffa-90b6-4ff0-ae6a-50752c28e07d"
+        },
+        "config": {
+          "type": "object",
+          "uuid": "6da302df-00e8-4493-8957-2d0e77103667",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "pk",
+            "fields_map"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "uuid": "502b0542-8c98-446e-981c-a01146e6466f",
+              "minLength": 1,
+              "metatags": "@plugin_name"
+            },
+            "pk": {
+              "type": "string",
+              "uuid": "37af2b8a-7771-4dde-8add-daa3f1f09509",
+              "minLength": 1
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "52f21dbb-679d-4bfc-af68-947b8faf16ff",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "email",
+                "token",
+                "expires",
+                "invalid"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "uuid": "e385ba0d-13ed-4ab8-bdb0-d4284172659a",
+                  "minLength": 1
+                },
+                "email": {
+                  "type": "string",
+                  "uuid": "e566878e-8a55-47d6-9643-b1817c94cc87",
+                  "minLength": 1
+                },
+                "token": {
+                  "type": "string",
+                  "uuid": "ceee5f3e-8c7a-440f-be07-1eb728965086",
+                  "minLength": 1
+                },
+                "expires": {
+                  "type": "string",
+                  "uuid": "7c28efb4-cc72-47e0-bd82-3cea5fd49c33",
+                  "minLength": 1
+                },
+                "invalid": {
+                  "type": "string",
+                  "uuid": "c631c331-4ad2-4b01-8bca-accf1fcd7ec5",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

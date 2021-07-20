@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "eb4604cc-1a53-4532-859c-a07e18f9c188",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "uuid": "3054a2e3-22b0-4e2f-8204-88fdf6d13285",
+      "minLength": 1,
+      "metatags": "@plugin_name"
+    },
+    "path_prefix": {
+      "type": "string",
+      "uuid": "3e7e2967-c8cf-4f90-8dbe-4fa9b72c6a77",
+      "default": "/",
+      "metatags": "@rel_url"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "oneOf": [
+    {
+      "$ref": "jwt/schema.json"
+    },
+    {
+      "$ref": "session/schema.json"
+    }
+  ]
+}

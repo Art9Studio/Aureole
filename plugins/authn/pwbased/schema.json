@@ -1,0 +1,499 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "855d8f40-1178-4b06-966f-ecde0601bedf",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "password_based",
+      "uuid": "cf27e982-54cd-4e43-a15a-1c36d82a7440"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "a54db23d-390a-4380-b0c4-d97eb489a45d",
+      "additionalProperties": false,
+      "required": [
+        "main_hasher",
+        "collection",
+        "storage"
+      ],
+      "properties": {
+        "main_hasher": {
+          "type": "string",
+          "uuid": "74be3f3d-1bca-4024-a994-eb1174c270a3",
+          "minLength": 1,
+          "metatags": "@hasher_ref"
+        },
+        "compat_hashers": {
+          "type": "array",
+          "uuid": "6797130f-3700-4271-9a8a-6eabdc5435d4",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "metatags": "@hasher_ref"
+          },
+          "uniqueItems": true
+        },
+        "collection": {
+          "type": "string",
+          "uuid": "55fb6977-b0f1-4b59-8491-e43c3a875b3a",
+          "minLength": 1,
+          "metatags": "@collection_ref"
+        },
+        "storage": {
+          "type": "string",
+          "uuid": "91e4f539-b916-4dfd-9374-1e53a4f34975",
+          "minLength": 1,
+          "metatags": "@storage_ref"
+        },
+        "login": {
+          "type": "object",
+          "uuid": "0e264bca-ceb0-42c8-9869-be1237b8f7ba",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "850c2f59-67b0-4098-89cd-ce5c613d81bb",
+              "default": "/login",
+              "metatags": "@rel_url"
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "d0b8b51c-8ef7-43af-ab95-2f1e4f5a8722",
+              "additionalProperties": false,
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "uuid": "a89f6e00-1b29-4e61-bf4d-667b33c9d516",
+                  "default": "{$.username}",
+                  "metatags": "@json_path"
+                },
+                "email": {
+                  "type": "string",
+                  "uuid": "757f2739-cbf2-4470-9547-e99d897db53b",
+                  "default": "{$.email}",
+                  "metatags": "@json_path"
+                },
+                "phone": {
+                  "type": "string",
+                  "uuid": "7aa90572-edc2-4f75-a55a-f30fd9c621bb",
+                  "default": "{$.phone}",
+                  "metatags": "@json_path"
+                },
+                "password": {
+                  "type": "string",
+                  "uuid": "e7571029-0d13-4ed8-a03d-082d5857dd22",
+                  "default": "{$.password}",
+                  "metatags": "@json_path"
+                }
+              }
+            }
+          }
+        },
+        "register": {
+          "type": "object",
+          "uuid": "012db479-3d1e-4fb4-bd7e-649e77de7127",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "7f45dab9-5364-49f0-b3d9-21f480bb098b",
+              "default": "/register",
+              "metatags": "@rel_url"
+            },
+            "login_after": {
+              "type": "boolean",
+              "uuid": "a2905f92-e58e-4341-b949-2e31ca33c689",
+              "default": false
+            },
+            "verify_after": {
+              "type": "boolean",
+              "uuid": "c1fe879e-e5c4-4e45-b718-bad9a1a38d07",
+              "default": false
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "643e8482-d861-41f3-962a-ad537f269789",
+              "additionalProperties": false,
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "uuid": "c3d3e2da-e1a8-4a94-9548-32d4698015cb",
+                  "default": "{$.username}",
+                  "metatags": "@json_path"
+                },
+                "email": {
+                  "type": "string",
+                  "uuid": "0101f775-2d38-4556-8948-d4aedfd43c68",
+                  "default": "{$.email}",
+                  "metatags": "@json_path"
+                },
+                "phone": {
+                  "type": "string",
+                  "uuid": "a18a5b75-fd53-4448-8ae8-fadaa912a0cd",
+                  "default": "{$.phone}",
+                  "metatags": "@json_path"
+                },
+                "password": {
+                  "type": "string",
+                  "uuid": "0191d88e-b2ce-4732-90df-c7c7972006ac",
+                  "default": "{$.password}",
+                  "metatags": "@json_path"
+                }
+              }
+            }
+          }
+        },
+        "password_reset": {
+          "type": "object",
+          "uuid": "6473258b-3027-4cdf-9676-65852a59a400",
+          "additionalProperties": false,
+          "required": [
+            "collection",
+            "sender",
+            "template"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "ac803cc4-c231-4c87-8a0f-79bea49b63ff",
+              "default": "/password/reset",
+              "metatags": "@rel_url"
+            },
+            "confirm_url": {
+              "type": "string",
+              "uuid": "0e625725-6398-4ff6-8b4c-171e7d8ff8a7",
+              "default": "/password/reset/confirm",
+              "metatags": "@rel_url"
+            },
+            "collection": {
+              "type": "string",
+              "uuid": "de72c45f-17e1-4507-b045-8553ba5d418d",
+              "minLength": 1,
+              "metatags": "@collection_ref"
+            },
+            "sender": {
+              "type": "string",
+              "uuid": "4b7576b9-cc42-44ee-a9aa-583c391e733b",
+              "minLength": 1,
+              "metatags": "@sender_ref"
+            },
+            "template": {
+              "type": "string",
+              "uuid": "df37378f-edde-4fcd-bfe3-e5015f927e38",
+              "minLength": 1,
+              "metatags": "@template_ref"
+            },
+            "token": {
+              "type": "object",
+              "uuid": "d2dc6e60-3b53-4701-aea6-b558f5dd5520",
+              "additionalProperties": false,
+              "properties": {
+                "exp": {
+                  "type": "integer",
+                  "uuid": "25ad4120-4af5-454b-973b-966cee455568",
+                  "default": 3600,
+                  "minimum": 0,
+                  "metatags": "@unit:s"
+                },
+                "hash_func": {
+                  "enum": [
+                    "sha1",
+                    "sha224",
+                    "sha256",
+                    "sha384",
+                    "sha512"
+                  ],
+                  "uuid": "40c2e769-a3c4-4fa8-b2cc-5de43606f65e",
+                  "default": "sha256"
+                }
+              }
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "c10d5f53-a915-41c5-b84d-ba89fba92527",
+              "additionalProperties": false,
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "uuid": "0a12d07a-6004-4e62-9cbd-9fb330171d39",
+                  "default": "{$.email}",
+                  "metatags": "@json_path"
+                }
+              }
+            }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "uuid": "16897068-8392-48b5-b637-affd5d97b2de",
+          "additionalProperties": false,
+          "required": [
+            "collection",
+            "sender",
+            "template"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "c2935ee7-d237-4d8a-8fc6-114838428901",
+              "default": "/email-verify",
+              "metatags": "@rel_url"
+            },
+            "confirm_url": {
+              "type": "string",
+              "uuid": "a57ae417-0e43-4677-bc47-857b931f1898",
+              "default": "/email-verify/confirm",
+              "metatags": "@rel_url"
+            },
+            "collection": {
+              "type": "string",
+              "uuid": "7c3e68bd-cbe4-46ef-b279-bae2bac84df1",
+              "minLength": 1,
+              "metatags": "@collection_ref"
+            },
+            "sender": {
+              "type": "string",
+              "uuid": "4ec161aa-c0a2-40c5-b232-2e413e29f635",
+              "minLength": 1,
+              "metatags": "@sender_ref"
+            },
+            "template": {
+              "type": "string",
+              "uuid": "5264d73a-2f21-4598-a107-c2270f02ff18",
+              "minLength": 1,
+              "metatags": "@template_ref"
+            },
+            "token": {
+              "type": "object",
+              "uuid": "5ce6953f-bf1d-4c50-9a10-d4c6451c42d3",
+              "additionalProperties": false,
+              "properties": {
+                "exp": {
+                  "type": "integer",
+                  "uuid": "2a1c9129-a024-4460-afa8-3f4bd5cf61b4",
+                  "default": 3600,
+                  "minimum": 0,
+                  "metatags": "@unit:s"
+                },
+                "hash_func": {
+                  "enum": [
+                    "sha1",
+                    "sha224",
+                    "sha256",
+                    "sha384",
+                    "sha512"
+                  ],
+                  "uuid": "2d21d82a-b14f-4d25-afa5-1e38f30a8d0d",
+                  "default": "sha256"
+                }
+              }
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "4d16c087-51e8-4214-8b23-7b84b597f8bb",
+              "additionalProperties": false,
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "uuid": "bdaf905c-c844-4726-8016-c96953324031",
+                  "default": "{$.email}",
+                  "metatags": "@json_path"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "PwbasedCollection": {
+      "properties": {
+        "type": {
+          "const": "pwbased",
+          "uuid": "86d81a58-87c0-4b4a-91b7-41ec3a8d9cec"
+        },
+        "config": {
+          "type": "object",
+          "uuid": "a427598d-1764-467d-baa4-d02ee8e90f0a",
+          "additionalProperties": false,
+          "required": [
+            "fields_map"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "uuid": "7bdfa9cd-d927-4153-afec-2b11baf729c5",
+              "minLength": 1
+            },
+            "pk": {
+              "type": "string",
+              "uuid": "33be4897-9773-4641-b275-96a2089fb296",
+              "minLength": 1
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "8685a6b1-5b37-4c11-82cc-a5c245e5a98a",
+              "additionalProperties": false,
+              "required": [
+                "password"
+              ],
+              "properties": {
+                "password": {
+                  "type": "string",
+                  "uuid": "c0c42510-25f7-4953-825a-30ba717e6b2f",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "PasswordResetCollection": {
+      "properties": {
+        "type": {
+          "const": "password_reset",
+          "uuid": "04959fce-d809-4259-ae41-d74ff5842515"
+        },
+        "config": {
+          "type": "object",
+          "uuid": "1104fb7f-15b9-4b46-b51a-ddd023f29fdf",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "pk",
+            "fields_map"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "uuid": "3a693bc5-f1f6-4141-b7bb-5bef8fbcee51",
+              "minLength": 1,
+              "metatags": "@plugin_name"
+            },
+            "pk": {
+              "type": "string",
+              "uuid": "6a09018f-4094-473f-8894-1d9b11864ecf",
+              "minLength": 1
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "e44de318-25bc-4684-99c9-809f04486c47",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "email",
+                "token",
+                "expires",
+                "invalid"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "uuid": "9ccfb507-29f2-4a32-af28-f8484dc81d08",
+                  "minLength": 1
+                },
+                "email": {
+                  "type": "string",
+                  "uuid": "c392d47d-bd53-4b2d-b9a8-891dd360f380",
+                  "minLength": 1
+                },
+                "token": {
+                  "type": "string",
+                  "uuid": "a40d2f96-c0da-4062-b1ea-f975e70661a1",
+                  "minLength": 1
+                },
+                "expires": {
+                  "type": "string",
+                  "uuid": "1bd1e29c-3f84-47fb-ae8a-c8a461555b4a",
+                  "minLength": 1
+                },
+                "invalid": {
+                  "type": "string",
+                  "uuid": "2e269843-d2c4-4416-8b08-d8d5bc5b5f55",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "EmailVerificationCollection": {
+      "properties": {
+        "type": {
+          "const": "email_verification",
+          "uuid": "a66d39dd-5b81-427e-a039-426d66fd9275"
+        },
+        "config": {
+          "type": "object",
+          "uuid": "dbaf357f-32df-4ee6-a4f4-a79e9dd86c13",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "pk",
+            "fields_map"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "uuid": "bf54e6b5-039f-4938-91d0-fadb89dd37a0",
+              "minLength": 1,
+              "metatags": "@plugin_name"
+            },
+            "pk": {
+              "type": "string",
+              "uuid": "9c1ae672-0c8d-407f-a0fa-7826f33d0d8f",
+              "minLength": 1
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "201a5eb0-c0c7-40c0-93e4-726c2e30bb0c",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "email",
+                "token",
+                "expires",
+                "invalid"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "uuid": "bc2a7774-09d6-42cd-8c93-8bdc8c6ae8fd",
+                  "minLength": 1
+                },
+                "email": {
+                  "type": "string",
+                  "uuid": "4bc8abe9-402b-4312-a779-835ae8d32ee4",
+                  "minLength": 1
+                },
+                "token": {
+                  "type": "string",
+                  "uuid": "220f506d-7851-4815-990e-b4050aff962a",
+                  "minLength": 1
+                },
+                "expires": {
+                  "type": "string",
+                  "uuid": "c9f8215b-dea6-4faa-8496-1713f7a971d4",
+                  "minLength": 1
+                },
+                "invalid": {
+                  "type": "string",
+                  "uuid": "452bc280-dec5-4340-83cb-5f200391ba5a",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

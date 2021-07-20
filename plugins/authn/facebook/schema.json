@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "1522d20f-d5db-4f5b-8dd5-32fd24956fee",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "facebook",
+      "uuid": "f8433a03-91ab-4a69-9337-b0302afc0abd"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "148c39c1-e32c-4fc8-aeef-53673a2cbd94",
+      "additionalProperties": false,
+      "required": [
+        "collection",
+        "storage",
+        "client_id",
+        "client_secret",
+        "redirect_uri"
+      ],
+      "properties": {
+        "collection": {
+          "type": "string",
+          "uuid": "f66d7d8e-61b5-45fc-81cd-a81a5df0778f",
+          "minLength": 1,
+          "metatags": "@collection_ref"
+        },
+        "storage": {
+          "type": "string",
+          "uuid": "40c71c03-398e-4f6e-ae7b-bfda645b7e9d",
+          "minLength": 1,
+          "metatags": "@storage_ref"
+        },
+        "client_id": {
+          "type": "string",
+          "uuid": "83db36cf-949c-4e8c-8a1f-2a2936162176",
+          "minLength": 1
+        },
+        "client_secret": {
+          "type": "string",
+          "uuid": "330020ae-59fc-4762-9718-22c0fb9b3afc",
+          "minLength": 1
+        },
+        "scopes": {
+          "type": "array",
+          "uuid": "f7d6f46e-9acf-4014-8dee-6879aaa7a788",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": [
+            "email"
+          ],
+          "uniqueItems": true
+        },
+        "redirect_uri": {
+          "type": "string",
+          "uuid": "0690fb3b-5a1b-4c19-85ab-d978c1c30308",
+          "minLength": 1,
+          "metatags": "@rel_url"
+        },
+        "fields": {
+          "type": "array",
+          "uuid": "3de5c342-7e9d-49e1-86a1-a9600e52a144",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": [
+            "email"
+          ],
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

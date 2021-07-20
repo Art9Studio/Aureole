@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "b6e4657d-f6de-41c6-adbc-0e91aa554730",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "jwk",
+      "uuid": "1f769669-48a2-437d-81b4-4ba80f2815cb"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "8a90c0b9-b9bb-476c-8c7f-debbdc2815ac",
+      "additionalProperties": false,
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
+          "minLength": 1,
+          "metatags": "@rel_url @file_path"
+        }
+      }
+    }
+  }
+}

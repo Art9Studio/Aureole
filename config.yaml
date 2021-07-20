@@ -70,8 +70,8 @@ apps:
               password: "{$.password}"
 
     authZ:
-      - name: session
-        type: "session"
+      - type: "session"
+        name: session
         config:
           collection: session
           storage: one_db
@@ -91,7 +91,9 @@ apps:
       collection: identity
       id:
       username:
+        enabled: false
       phone:
+        enabled: false
       email:
         enabled: true
 
@@ -114,10 +116,7 @@ apps:
               exp: 3600
               hash_func: "sha256"
             fields_map:
-              username: "{$.username}"
               email: "{$.email}"
-              phone: "{$.phone}"
-              password: "{$.password}"
           verification:
             path: "/email-verify"
             confirm_url: "/email-verify/confirm"
@@ -132,7 +131,7 @@ apps:
 
       - type: "google"
         path_prefix: "/oauth2/google"
-        authz: jwt
+        authZ: jwt
         config:
           collection: oauth2
           storage: one_db
@@ -145,7 +144,7 @@ apps:
 
       - type: "vk"
         path_prefix: "/oauth2/vk"
-        authz: jwt
+        authZ: jwt
         config:
           collection: oauth2
           storage: one_db
@@ -158,7 +157,7 @@ apps:
 
       - type: "facebook"
         path_prefix: "/oauth2/facebook"
-        authz: jwt
+        authZ: jwt
         config:
           collection: oauth2
           storage: one_db
@@ -172,7 +171,7 @@ apps:
 
       - type: "apple"
         path_prefix: "/oauth2/apple"
-        authz: jwt
+        authZ: jwt
         config:
           collection: oauth2
           storage: one_db
@@ -199,7 +198,7 @@ apps:
           jti: "0" # todo: implement jti
           access_bearer: "cookie" # [cookie, header, both]
           refresh_bearer: "body" # [cookie, body, both]
-          alg: "RS256"
+          #alg: "RS256"
           sign_key: jwk_file
           verify_keys: [ jwk_file ]
           access_exp: 900
@@ -224,7 +223,7 @@ apps:
     authN:
       - type: "email"
         path_prefix: "/email"
-        authz: jwt
+        authZ: jwt
         config:
           collection: identity
           storage: one_db
@@ -291,7 +290,7 @@ apps:
           jti: "0" # todo: implement jti
           access_bearer: "cookie" # [cookie, header, both]
           refresh_bearer: "cookie" # [cookie, body, both]
-          alg: "RS256"
+          #alg: "RS256"
           sign_key: jwk_file
           verify_keys: [ jwk_file ]
           access_exp: 900
@@ -333,7 +332,7 @@ collections:
         email_verified: "email_verified"
         phone_verified: "phone_verified"
         is_superuser:
-          field: "is_superuser"
+          name: "is_superuser"
           type: boolean
           default: false
         is_staff:

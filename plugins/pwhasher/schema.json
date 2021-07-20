@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "6f9f5646-e445-40f7-a837-f0049ae92b35",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "uuid": "a09d3a7a-9a8f-4722-850b-200d71f7eafa",
+      "minLength": 1,
+      "metatags": "@plugin_name"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "oneOf": [
+    {
+      "$ref": "argon2/schema.json"
+    },
+    {
+      "$ref": "pbkdf2/schema.json"
+    }
+  ]
+}

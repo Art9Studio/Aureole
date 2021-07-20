@@ -8,7 +8,7 @@ import (
 func (c *config) setDefaults() {
 	c.Login.setDefaults()
 	c.Register.setDefaults()
-	c.Link.Token.setDefaults()
+	c.Link.setDefaults()
 }
 
 func (l *login) setDefaults() {
@@ -24,6 +24,11 @@ func (r *register) setDefaults() {
 func (t *token) setDefaults() {
 	configs.SetDefault(&t.Exp, 600)
 	configs.SetDefault(&t.HashFunc, "sha256")
+}
+
+func (m *magicLinkConf) setDefaults() {
+	m.Token.setDefaults()
+	configs.SetDefault(&m.Path, "/email-confirm")
 }
 
 func setDefaultMap(fieldsMap map[string]string, keys []string) map[string]string {

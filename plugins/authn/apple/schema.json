@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "f1b48e98-6305-4a4c-9415-ddab3db30524",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "apple",
+      "uuid": "5db5cdb8-a944-488e-bd7a-45f7f74015df"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "2ff386b1-1f0f-4596-85be-e4433f0c7c97",
+      "additionalProperties": false,
+      "required": [
+        "collection",
+        "storage",
+        "secret_key",
+        "public_key",
+        "client_id",
+        "team_id",
+        "key_id",
+        "redirect_uri"
+      ],
+      "properties": {
+        "collection": {
+          "type": "string",
+          "uuid": "67338693-1c94-4931-9085-3fdc73a0f29c",
+          "minLength": 1,
+          "metatags": "@collection_ref"
+        },
+        "storage": {
+          "type": "string",
+          "uuid": "50759058-8a26-4c7c-9c85-0fde0535a30b",
+          "minLength": 1,
+          "metatags": "@storage_ref"
+        },
+        "secret_key": {
+          "type": "string",
+          "uuid": "76cb35c6-c81b-4486-8c71-a40a87aae590",
+          "minLength": 1,
+          "metatags": "@crypto_key_ref"
+        },
+        "public_key": {
+          "type": "string",
+          "uuid": "1a231190-3fc6-4b4e-bd63-19160733d720",
+          "minLength": 1,
+          "metatags": "@crypto_key_ref"
+        },
+        "client_id": {
+          "type": "string",
+          "uuid": "284fd272-1b39-4f7f-ae52-233fa29e3a38",
+          "minLength": 1
+        },
+        "team_id": {
+          "type": "string",
+          "uuid": "c9b1858a-d1b3-47c6-88ed-b3e6bd2135e7",
+          "minLength": 1
+        },
+        "key_id": {
+          "type": "string",
+          "uuid": "ac05ec86-0a99-463d-a339-c86710199437",
+          "minLength": 1
+        },
+        "scopes": {
+          "type": "array",
+          "uuid": "b208b99e-6825-410b-aeef-4f9ca9aa8b85",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": [
+            "email"
+          ],
+          "uniqueItems": true
+        },
+        "redirect_uri": {
+          "type": "string",
+          "uuid": "3e65dfd7-cb26-4b1d-9cbc-0a7f21f83163",
+          "minLength": 1,
+          "metatags": "@rel_url"
+        }
+      }
+    }
+  }
+}

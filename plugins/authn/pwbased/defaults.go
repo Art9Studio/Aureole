@@ -26,7 +26,7 @@ func (r *register) setDefaults() {
 func (c *resetConf) setDefaults() {
 	configs.SetDefault(&c.Path, "/password/reset")
 	configs.SetDefault(&c.ConfirmUrl, "/password/reset/confirm")
-	c.FieldsMap = setDefaultMap(c.FieldsMap, []string{"username", "email", "phone", "password"})
+	c.FieldsMap = setDefaultMap(c.FieldsMap, []string{"email"})
 	configs.SetDefault(&c.Token.Exp, 3600)
 	configs.SetDefault(&c.Token.HashFunc, "sha256")
 }

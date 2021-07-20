@@ -29,9 +29,8 @@ func (v *verifConf) setDefaults() {
 	v.FieldsMap = setDefaultMap(v.FieldsMap, []string{"id", "otp"})
 }
 func (c *otp) setDefaults() {
-	configs.SetDefault(&c.Length, 6)
+	configs.SetDefault(&c.Length, 1)
 	configs.SetDefault(&c.Alphabet, "1234567890")
-	configs.SetDefault(&c.Prefix, "A-")
 	configs.SetDefault(&c.Exp, 300)
 }
 
