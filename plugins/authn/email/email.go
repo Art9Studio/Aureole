@@ -3,26 +3,24 @@ package email
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
+	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
-	_interface "aureole/internal/router/interface"
+	"aureole/internal/router/interface"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"hash"
-	"net/url"
-
 	"github.com/mitchellh/mapstructure"
+	"hash"
 )
 
 type (
 	email struct {
-		appName    string
-		appUrl     *url.URL
+		app        app.AppCtx
 		rawConf    *configs.Authn
 		conf       *config
 		identity   *identity.Identity
@@ -39,56 +37,49 @@ type (
 	}
 )
 
-func (p *email) Init(appName string, appUrl *url.URL) (err error) {
-	p.appName = appName
-	p.appUrl = appUrl
-
-	p.conf, err = initConfig(&p.rawConf.Config)
+func (e *email) Init(app app.AppCtx) (err error) {
+	e.app = app
+	e.identity = app.GetIdentity()
+	e.conf, err = initConfig(&e.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	pluginApi := authn.Repository.PluginApi
-
-	p.coll, err = pluginApi.Project.GetCollection(p.conf.Collection)
+	e.coll, err = pluginApi.Project.GetCollection(e.conf.Collection)
 	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
+		return fmt.Errorf("collection named '%s' is not declared", e.conf.Collection)
 	}
 
-	p.link.coll, err = pluginApi.Project.GetCollection(p.conf.Link.Collection)
+	e.link.coll, err = pluginApi.Project.GetCollection(e.conf.Link.Collection)
 	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", p.conf.Link.Collection)
+		return fmt.Errorf("collection named '%s' is not declared", e.conf.Link.Collection)
 	}
 
-	p.storage, err = pluginApi.Project.GetStorage(p.conf.Storage)
+	e.storage, err = pluginApi.Project.GetStorage(e.conf.Storage)
 	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
+		return fmt.Errorf("storage named '%s' is not declared", e.conf.Storage)
 	}
-	p.link.sender, err = pluginApi.Project.GetSender(p.conf.Link.Sender)
+	e.link.sender, err = pluginApi.Project.GetSender(e.conf.Link.Sender)
 	if err != nil {
-		return fmt.Errorf("sender named '%s' is not declared", p.conf.Link.Sender)
-	}
-
-	p.authorizer, err = pluginApi.Project.GetAuthorizer(p.rawConf.AuthzName, appName)
-	if err != nil {
-		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
+		return fmt.Errorf("sender named '%s' is not declared", e.conf.Link.Sender)
 	}
 
-	p.identity, err = pluginApi.Project.GetIdentity(appName)
+	e.authorizer, err = e.app.GetAuthorizer(e.rawConf.AuthzName)
 	if err != nil {
-		return fmt.Errorf("identity in app '%s' is not declared", appName)
+		return fmt.Errorf("authorizer named '%s' is not declared", e.rawConf.AuthzName)
 	}
 
-	p.link.hasher, err = initHasher(p.conf.Link.Token.HashFunc)
+	e.link.hasher, err = initHasher(e.conf.Link.Token.HashFunc)
 	if err != nil {
 		return err
 	}
 
-	if err := p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
+	if err := e.storage.CheckFeaturesAvailable([]string{e.coll.Type}); err != nil {
 		return err
 	}
 
-	createRoutes(p)
+	createRoutes(e)
 	return nil
 }
 
@@ -121,23 +112,23 @@ func initHasher(hasherName string) (func() hash.Hash, error) {
 	return h, nil
 }
 
-func createRoutes(p *email) {
+func createRoutes(e *email) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Login.Path,
-			Handler: GetMagicLink(p),
+			Path:    e.rawConf.PathPrefix + e.conf.Login.Path,
+			Handler: GetMagicLink(e),
 		},
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Register.Path,
-			Handler: Register(p),
+			Path:    e.rawConf.PathPrefix + e.conf.Register.Path,
+			Handler: Register(e),
 		},
 		{
 			Method:  "GET",
-			Path:    p.rawConf.PathPrefix + p.conf.Link.Path,
-			Handler: Login(p),
+			Path:    e.rawConf.PathPrefix + e.conf.Link.Path,
+			Handler: Login(e),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(p.appName, routes)
+	authn.Repository.PluginApi.Router.AddAppRoutes(e.app.GetName(), routes)
 }

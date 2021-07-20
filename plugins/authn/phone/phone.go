@@ -3,23 +3,21 @@ package phone
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
+	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
-	_interface "aureole/internal/router/interface"
+	"aureole/internal/router/interface"
 	"fmt"
-	"net/url"
-
 	"github.com/mitchellh/mapstructure"
 )
 
 type (
 	phone struct {
-		appName      string
-		appUrl       *url.URL
+		app          app.AppCtx
 		rawConf      *configs.Authn
 		conf         *config
 		identity     *identity.Identity
@@ -36,16 +34,16 @@ type (
 	}
 )
 
-func (p *phone) Init(appName string, appUrl *url.URL) (err error) {
-	p.appName = appName
-	p.appUrl = appUrl
-
+func (p *phone) Init(app app.AppCtx) (err error) {
+	p.app = app
+	p.identity = app.GetIdentity()
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	pluginApi := authn.Repository.PluginApi
+
 	p.hasher, err = pluginApi.Project.GetHasher(p.conf.Hasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.Hasher)
@@ -70,14 +68,9 @@ func (p *phone) Init(appName string, appUrl *url.URL) (err error) {
 		return fmt.Errorf("sender named '%s' is not declared", p.conf.Verification.Sender)
 	}
 
-	p.authorizer, err = pluginApi.Project.GetAuthorizer(p.rawConf.AuthzName, appName)
+	p.authorizer, err = p.app.GetAuthorizer(p.rawConf.AuthzName)
 	if err != nil {
 		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
-	}
-
-	p.identity, err = pluginApi.Project.GetIdentity(appName)
-	if err != nil {
-		return fmt.Errorf("identity in app '%s' is not declared", appName)
 	}
 
 	if err := p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
@@ -121,5 +114,5 @@ func createRoutes(p *phone) {
 			Handler: Resend(p),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(p.appName, routes)
+	authn.Repository.PluginApi.Router.AddAppRoutes(p.app.GetName(), routes)
 }

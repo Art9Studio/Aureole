@@ -3,12 +3,13 @@ package apple
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
+	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzT "aureole/internal/plugins/authz/types"
 	cKeyT "aureole/internal/plugins/cryptokey/types"
 	storageT "aureole/internal/plugins/storage/types"
-	"aureole/internal/router/interface"
+	router "aureole/internal/router/interface"
 	"context"
 	"errors"
 	"fmt"
@@ -16,7 +17,6 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
-	"net/url"
 	"path"
 	"time"
 )
@@ -24,12 +24,11 @@ import (
 const Provider = "apple"
 
 type apple struct {
-	appName    string
-	appUrl     *url.URL
+	app        app.AppCtx
 	rawConf    *configs.Authn
 	conf       *config
-	identity   *identity.Identity
 	coll       *collections.Collection
+	identity   *identity.Identity
 	storage    storageT.Storage
 	secretKey  cKeyT.CryptoKey
 	publicKey  cKeyT.CryptoKey
@@ -37,21 +36,15 @@ type apple struct {
 	authorizer authzT.Authorizer
 }
 
-func (a *apple) Init(appName string, appUrl *url.URL) (err error) {
-	a.appName = appName
-	a.appUrl = appUrl
-
+func (a *apple) Init(app app.AppCtx) (err error) {
+	a.app = app
+	a.identity = app.GetIdentity()
 	a.conf, err = initConfig(&a.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	a.identity, err = pluginApi.Project.GetIdentity(appName)
-	if err != nil {
-		return fmt.Errorf("identity in app '%s' is not declared", appName)
-	}
-
 	a.coll, err = pluginApi.Project.GetCollection(a.conf.Coll)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", a.conf.Coll)
@@ -72,26 +65,12 @@ func (a *apple) Init(appName string, appUrl *url.URL) (err error) {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.PublicKey)
 	}
 
-	a.authorizer, err = pluginApi.Project.GetAuthorizer(a.rawConf.AuthzName, appName)
+	a.authorizer, err = a.app.GetAuthorizer(a.rawConf.AuthzName)
 	if err != nil {
 		return fmt.Errorf("authorizer named '%s' is not declared", a.rawConf.AuthzName)
 	}
 
-	redirectUrl := a.appUrl
-	redirectUrl.Path = path.Clean(redirectUrl.Path + a.rawConf.PathPrefix + a.conf.RedirectUrl)
-	a.provider = &Config{
-		ClientId: a.conf.ClientId,
-		TeamId:   a.conf.TeamId,
-		KeyId:    a.conf.KeyId,
-		Endpoint: Endpoint{
-			AuthUrl:  AuthUrl,
-			TokenUrl: TokenUrl,
-		},
-		RedirectUrl: redirectUrl.String(),
-		Scopes:      a.conf.Scopes,
-	}
-
-	if err := createSecret(a.provider, a.secretKey); err != nil {
+	if err := initProvider(a); err != nil {
 		return err
 	}
 	createRoutes(a)
@@ -105,6 +84,24 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	}
 	adapterConf.setDefaults()
 	return adapterConf, nil
+}
+
+func initProvider(a *apple) error {
+	redirectUrl := a.app.GetUrl()
+	redirectUrl.Path = path.Clean(redirectUrl.Path + a.rawConf.PathPrefix + a.conf.RedirectUrl)
+	a.provider = &Config{
+		ClientId: a.conf.ClientId,
+		TeamId:   a.conf.TeamId,
+		KeyId:    a.conf.KeyId,
+		Endpoint: Endpoint{
+			AuthUrl:  AuthUrl,
+			TokenUrl: TokenUrl,
+		},
+		RedirectUrl: redirectUrl.String(),
+		Scopes:      a.conf.Scopes,
+	}
+
+	return createSecret(a.provider, a.secretKey)
 }
 
 func createSecret(p *Config, key cKeyT.CryptoKey) error {
@@ -157,7 +154,7 @@ func signToken(signKey cKeyT.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func createRoutes(a *apple) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
 			Method:  "GET",
 			Path:    a.rawConf.PathPrefix,
@@ -169,5 +166,5 @@ func createRoutes(a *apple) {
 			Handler: Login(a),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(a.appName, routes)
+	authn.Repository.PluginApi.Router.AddAppRoutes(a.app.GetName(), routes)
 }

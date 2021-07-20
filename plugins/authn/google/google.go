@@ -3,6 +3,7 @@ package google
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
+	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
@@ -12,15 +13,13 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
-	"net/url"
 	"path"
 )
 
 const Provider = "google"
 
 type google struct {
-	appName    string
-	appUrl     *url.URL
+	app        app.AppCtx
 	rawConf    *configs.Authn
 	conf       *config
 	identity   *identity.Identity
@@ -30,21 +29,15 @@ type google struct {
 	authorizer authzTypes.Authorizer
 }
 
-func (g *google) Init(appName string, appUrl *url.URL) (err error) {
-	g.appName = appName
-	g.appUrl = appUrl
-
+func (g *google) Init(app app.AppCtx) (err error) {
+	g.app = app
+	g.identity = app.GetIdentity()
 	g.conf, err = initConfig(&g.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	g.identity, err = pluginApi.Project.GetIdentity(appName)
-	if err != nil {
-		return fmt.Errorf("identity in app '%s' is not declared", appName)
-	}
-
 	g.coll, err = pluginApi.Project.GetCollection(g.conf.Coll)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", g.conf.Coll)
@@ -55,21 +48,12 @@ func (g *google) Init(appName string, appUrl *url.URL) (err error) {
 		return fmt.Errorf("storage named '%s' is not declared", g.conf.Storage)
 	}
 
-	g.authorizer, err = pluginApi.Project.GetAuthorizer(g.rawConf.AuthzName, appName)
+	g.authorizer, err = g.app.GetAuthorizer(g.rawConf.AuthzName)
 	if err != nil {
 		return fmt.Errorf("authorizer named '%s' is not declared", g.rawConf.AuthzName)
 	}
 
-	redirectUri := g.appUrl
-	redirectUri.Path = path.Clean(redirectUri.Path + g.rawConf.PathPrefix + g.conf.RedirectUri)
-	g.provider = &oauth2.Config{
-		ClientID:     g.conf.ClientId,
-		ClientSecret: g.conf.ClientSecret,
-		Endpoint:     endpoints.Google,
-		RedirectURL:  redirectUri.String(),
-		Scopes:       g.conf.Scopes,
-	}
-
+	initProvider(g)
 	createRoutes(g)
 	return nil
 }
@@ -81,6 +65,18 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	}
 	adapterConf.setDefaults()
 	return adapterConf, nil
+}
+
+func initProvider(g *google) {
+	redirectUri := g.app.GetUrl()
+	redirectUri.Path = path.Clean(redirectUri.Path + g.rawConf.PathPrefix + g.conf.RedirectUri)
+	g.provider = &oauth2.Config{
+		ClientID:     g.conf.ClientId,
+		ClientSecret: g.conf.ClientSecret,
+		Endpoint:     endpoints.Google,
+		RedirectURL:  redirectUri.String(),
+		Scopes:       g.conf.Scopes,
+	}
 }
 
 func createRoutes(g *google) {
@@ -96,5 +92,5 @@ func createRoutes(g *google) {
 			Handler: Login(g),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(g.appName, routes)
+	authn.Repository.PluginApi.Router.AddAppRoutes(g.app.GetName(), routes)
 }

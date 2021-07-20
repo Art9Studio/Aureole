@@ -33,9 +33,9 @@ func isCredential(trait *identity.Trait) bool {
 	return trait.IsCredential && trait.IsRequired && trait.IsUnique
 }
 
-func getRegisterData(context *email, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
-	collMap := context.coll.Spec.FieldsMap
-	i := context.identity
+func getRegisterData(e *email, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
+	collMap := e.coll.Spec.FieldsMap
+	i := e.identity
 
 	statusCode, err := getRegisterTraitData(&i.Username, json, jsonMap["username"], collMap["username"].Default, &iData.Username)
 	if err != nil {
@@ -113,7 +113,7 @@ func isZeroVal(x interface{}) bool {
 }
 
 func getMagicLink(e *email, token string) string {
-	u := e.appUrl
+	u := e.app.GetUrl()
 
 	u.Path = path.Clean(u.Path + e.rawConf.PathPrefix + e.conf.Link.Path)
 	q := u.Query()
