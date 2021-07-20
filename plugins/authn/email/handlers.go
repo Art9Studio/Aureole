@@ -30,7 +30,9 @@ func GetMagicLink(context *email) func(*fiber.Ctx) error {
 		}
 
 		emailCol := context.coll.Spec.FieldsMap["email"].Name
-		exist, err := context.storage.IsIdentityExist(context.identity, emailCol, identity.Email)
+		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
+			{Name: emailCol, Value: identity.Email},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -52,7 +54,9 @@ func GetMagicLink(context *email) func(*fiber.Ctx) error {
 		}
 
 		linkSpecs := &context.link.coll.Spec
-		err = context.storage.InvalidateEmailLink(linkSpecs, linkSpecs.FieldsMap["email"].Name, identity.Phone)
+		err = context.storage.InvalidateEmailLink(linkSpecs, []storageT.Filter{
+			{Name: linkSpecs.FieldsMap["email"].Name, Value: identity.Email},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -88,7 +92,9 @@ func Register(context *email) func(*fiber.Ctx) error {
 		}
 
 		emailField := context.coll.Spec.FieldsMap["email"].Name
-		exist, err := context.storage.IsIdentityExist(context.identity, emailField, identity.Email)
+		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
+			{Name: emailField, Value: identity.Email},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -115,7 +121,9 @@ func Register(context *email) func(*fiber.Ctx) error {
 		}
 
 		linkSpecs := &context.link.coll.Spec
-		err = context.storage.InvalidateEmailLink(linkSpecs, linkSpecs.FieldsMap["email"].Name, identity.Email)
+		err = context.storage.InvalidateEmailLink(linkSpecs, []storageT.Filter{
+			{Name: linkSpecs.FieldsMap["email"].Name, Value: identity.Email},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -149,7 +157,9 @@ func Login(context *email) func(*fiber.Ctx) error {
 		tokenName := context.link.coll.Spec.FieldsMap["token"].Name
 
 		tokenHash := context.link.hasher().Sum([]byte(token))
-		rawEmailLink, err := context.storage.GetEmailLink(linkSpecs, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
+		rawEmailLink, err := context.storage.GetEmailLink(linkSpecs, []storageT.Filter{
+			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -171,16 +181,17 @@ func Login(context *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusUnauthorized, "link expire")
 		}
 
-		err = context.storage.InvalidateEmailLink(linkSpecs, tokenName, base64.StdEncoding.EncodeToString(tokenHash))
+		err = context.storage.InvalidateEmailLink(linkSpecs, []storageT.Filter{
+			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		iCollSpec := context.identity.Collection.Spec
-		rawIdentity, err := context.storage.GetIdentity(context.identity,
-			iCollSpec.FieldsMap["email"].Name,
-			emailLink[linkSpecs.FieldsMap["email"].Name],
-		)
+		rawIdentity, err := context.storage.GetIdentity(context.identity, []storageT.Filter{
+			{Name: iCollSpec.FieldsMap["email"].Name, Value: emailLink[linkSpecs.FieldsMap["email"].Name]},
+		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

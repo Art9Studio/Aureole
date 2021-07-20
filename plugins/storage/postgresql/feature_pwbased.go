@@ -69,7 +69,7 @@ func (s *Storage) InsertPwBased(i *identity.Identity, pwColl *collections.Collec
 	return s.RawQuery(sql, args...)
 }
 
-func (s *Storage) GetPassword(coll *collections.Collection, filterField string, filterValue interface{}) (types.JSONCollResult, error) {
+func (s *Storage) GetPassword(coll *collections.Collection, filters []types.Filter) (types.JSONCollResult, error) {
 	pluginApi := authn.Repository.PluginApi
 	identityColl, err := pluginApi.Project.GetCollection(coll.ParentName)
 	if err != nil {
@@ -78,13 +78,17 @@ func (s *Storage) GetPassword(coll *collections.Collection, filterField string, 
 
 	b := sqlbuilder.PostgreSQL.NewSelectBuilder()
 	b.Select(Sanitize(coll.Spec.FieldsMap["password"].Name)).From(Sanitize(identityColl.Spec.Name))
-	b.Where(b.Equal(Sanitize(identityColl.Spec.FieldsMap[filterField].Name), filterValue))
+
+	for _, f := range filters {
+		b.Where(b.Equal(Sanitize(f.Name), f.Value))
+	}
+
 	sql, args := b.Build()
 
 	return s.RawQuery(sql, args...)
 }
 
-func (s *Storage) UpdatePassword(coll *collections.Collection, filterField string, filterVal, updateVal interface{}) (types.JSONCollResult, error) {
+func (s *Storage) UpdatePassword(coll *collections.Collection, filters []types.Filter, newPw interface{}) (types.JSONCollResult, error) {
 	pluginApi := authn.Repository.PluginApi
 	identityColl, err := pluginApi.Project.GetCollection(coll.ParentName)
 	if err != nil {
@@ -92,8 +96,12 @@ func (s *Storage) UpdatePassword(coll *collections.Collection, filterField strin
 	}
 
 	b := sqlbuilder.PostgreSQL.NewUpdateBuilder()
-	b.Update(Sanitize(identityColl.Spec.Name)).Set(b.Assign(Sanitize(coll.Spec.FieldsMap["password"].Name), updateVal))
-	b.Where(b.Equal(Sanitize(identityColl.Spec.FieldsMap[filterField].Name), filterVal))
+	b.Update(Sanitize(identityColl.Spec.Name)).Set(b.Assign(Sanitize(coll.Spec.FieldsMap["password"].Name), newPw))
+
+	for _, f := range filters {
+		b.Where(b.Equal(Sanitize(f.Name), f.Value))
+	}
+
 	b.SQL(fmt.Sprintf(" returning %s", Sanitize(identityColl.Spec.Pk)))
 	sql, args := b.Build()
 

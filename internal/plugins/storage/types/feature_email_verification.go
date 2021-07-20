@@ -13,7 +13,7 @@ type EmailVerifData struct {
 type EmailVerification interface {
 	InsertEmailVerif(*collections.Spec, *EmailVerifData) (JSONCollResult, error)
 
-	GetEmailVerif(*collections.Spec, string, interface{}) (JSONCollResult, error)
+	GetEmailVerif(*collections.Spec, []Filter) (JSONCollResult, error)
 
-	InvalidateEmailVerif(*collections.Spec, string, interface{}) error
+	InvalidateEmailVerif(*collections.Spec, []Filter) error
 }
