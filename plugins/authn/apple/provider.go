@@ -1,9 +1,11 @@
 package apple
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -52,7 +54,16 @@ func (c *Config) Exchange(code string) (map[string]interface{}, error) {
 }
 
 func doRequest(c *Config, v url.Values) (map[string]interface{}, error) {
-	resp, err := http.PostForm(c.Endpoint.TokenUrl, v)
+	ctx := context.Background()
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Endpoint.TokenUrl, strings.NewReader(v.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(v.Encode())))
+
+	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
 		return nil, err
 	}
