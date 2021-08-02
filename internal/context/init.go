@@ -5,6 +5,8 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/context/app"
 	"aureole/internal/identity"
+	"aureole/internal/plugins/admin"
+	adminTypes "aureole/internal/plugins/admin/types"
 	"aureole/internal/plugins/authn"
 	authnTypes "aureole/internal/plugins/authn/types"
 	"aureole/internal/plugins/authz"
@@ -80,6 +82,9 @@ func createGlobalPlugins(conf *configs.Project, ctx *ProjectCtx) error {
 	if err := createStorages(conf, ctx); err != nil {
 		return err
 	}
+	if err := createAdmins(conf, ctx); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -145,6 +150,23 @@ func cleanupStorages(conf *configs.Project, ctx *ProjectCtx) {
 			}
 		}
 	}
+}
+
+func createAdmins(conf *configs.Project, ctx *ProjectCtx) error {
+	ctx.Admins = make(map[string]adminTypes.Admin)
+
+	for i := range conf.AdminConfs {
+		adminConf := conf.AdminConfs[i]
+		a, err := admin.New(&adminConf)
+		if err != nil {
+			return fmt.Errorf("cannot create admin pluign '%s': %v", adminConf.Name, err)
+		}
+
+		ctx.Admins[adminConf.Name] = a
+	}
+
+	cleanupStorages(conf, ctx)
+	return nil
 }
 
 func createCollections(conf *configs.Project, ctx *ProjectCtx) error {
@@ -342,6 +364,16 @@ func initCryptoKeys(ctx *ProjectCtx) error {
 	return nil
 }
 
+func initAdmins(ctx *ProjectCtx) error {
+	for _, a := range ctx.Admins {
+		if err := a.Init(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func initGlobalPlugins(ctx *ProjectCtx) error {
 	if err := initStorages(ctx); err != nil {
 		return err
@@ -353,6 +385,9 @@ func initGlobalPlugins(ctx *ProjectCtx) error {
 		return err
 	}
 	if err := initCryptoKeys(ctx); err != nil {
+		return err
+	}
+	if err := initAdmins(ctx); err != nil {
 		return err
 	}
 

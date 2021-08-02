@@ -65,3 +65,11 @@ func (r *TRouter) AddProjectRoutes(routes []*_interface.Route) {
 
 	r.ProjectRoutes = append(r.ProjectRoutes, routes...)
 }
+
+func (r *TRouter) GetAppRoutes() map[string][]*_interface.Route {
+	return r.AppRoutes
+}
+
+func (r *TRouter) GetProjectRoutes() []*_interface.Route {
+	return r.ProjectRoutes
+}
