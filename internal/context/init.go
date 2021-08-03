@@ -82,11 +82,7 @@ func createGlobalPlugins(conf *configs.Project, ctx *ProjectCtx) error {
 	if err := createStorages(conf, ctx); err != nil {
 		return err
 	}
-	if err := createAdmins(conf, ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return createAdmins(conf, ctx)
 }
 
 func createAppPlugins(conf *configs.Project, ctx *ProjectCtx) error {
@@ -387,11 +383,7 @@ func initGlobalPlugins(ctx *ProjectCtx) error {
 	if err := initCryptoKeys(ctx); err != nil {
 		return err
 	}
-	if err := initAdmins(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return initAdmins(ctx)
 }
 
 func initAppPlugins(ctx *ProjectCtx) error {
