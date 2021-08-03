@@ -103,7 +103,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	if err := mapstructure.Decode(rawConf, adapterConf); err != nil {
 		return nil, err
 	}
-
+	adapterConf.setDefaults()
 	return adapterConf, nil
 }
 
