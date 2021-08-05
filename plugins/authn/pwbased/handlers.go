@@ -12,7 +12,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-func Login(context *pwBased) func(*fiber.Ctx) error {
+func Login(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -20,15 +20,16 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		identityData := &storageT.IdentityData{}
-		getLoginData(context, authInput, context.conf.Login.FieldsMap, identityData)
+		getLoginData(p, authInput, p.conf.Login.FieldsMap, identityData)
 
-		credName, credVal, statusCode, err := getCredField(context, identityData)
+		credName, credVal, statusCode, err := getCredField(p, identityData)
 		if err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
+		i := p.identity
 		f := []storageT.Filter{{Name: credName, Value: credVal}}
-		exist, err := context.storage.IsIdentityExist(context.identity, f)
+		exist, err := p.storage.IsIdentityExist(i, f)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -37,43 +38,43 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		pwData := &storageT.PwBasedData{}
-		if statusCode, err := getPwData(authInput, context.conf.Login.FieldsMap, pwData); err != nil {
+		if statusCode, err := getPwData(authInput, p.conf.Login.FieldsMap, pwData); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		rawIdentity, err := context.storage.GetIdentity(context.identity, f)
+		rawIdentity, err := p.storage.GetIdentity(i, f)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		i, ok := rawIdentity.(map[string]interface{})
+		identity, ok := rawIdentity.(map[string]interface{})
 		if !ok {
 			return sendError(c, fiber.StatusInternalServerError, "cannot get identity from database")
 		}
 
-		pw, err := context.storage.GetPassword(context.coll, f)
+		pw, err := p.storage.GetPassword(p.coll, f)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		isMatch, err := context.pwHasher.ComparePw(pwData.Password.(string), pw.(string))
+		isMatch, err := p.pwHasher.ComparePw(pwData.Password.(string), pw.(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		if isMatch {
-			collSpec := context.identity.Collection.Spec
-			authzCtx := authzT.NewContext(i, collSpec.FieldsMap)
+			collSpec := i.Collection.Spec
+			authzCtx := authzT.NewContext(identity, collSpec.FieldsMap)
 			// todo: refactor this
 			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
-				queries := context.authorizer.GetNativeQueries()
+				queries := p.authorizer.GetNativeQueries()
 
 				q, ok := queries[queryName]
 				if !ok {
 					return "--an error occurred during render--"
 				}
 
-				rawRes, err := context.storage.NativeQuery(q, args...)
+				rawRes, err := p.storage.NativeQuery(q, args...)
 				if err != nil {
 					return "--an error occurred during render--"
 				}
@@ -85,14 +86,14 @@ func Login(context *pwBased) func(*fiber.Ctx) error {
 
 				return string(res)
 			}
-			return context.authorizer.Authorize(c, authzCtx)
+			return p.authorizer.Authorize(c, authzCtx)
 		} else {
 			return sendError(c, fiber.StatusUnauthorized, fmt.Sprintf("wrong password or %s", credName))
 		}
 	}
 }
 
-func Register(context *pwBased) func(*fiber.Ctx) error {
+func Register(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -100,27 +101,28 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		identity := &storageT.IdentityData{Additional: map[string]interface{}{}}
-		if statusCode, err := getRegisterData(context, authInput, context.conf.Register.FieldsMap, identity); err != nil {
+		if statusCode, err := getRegisterData(p, authInput, p.conf.Register.FieldsMap, identity); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
 		pwData := &storageT.PwBasedData{}
-		if statusCode, err := getPwData(authInput, context.conf.Register.FieldsMap, pwData); err != nil {
+		if statusCode, err := getPwData(authInput, p.conf.Register.FieldsMap, pwData); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		pwHash, err := context.pwHasher.HashPw(pwData.Password.(string))
+		pwHash, err := p.pwHasher.HashPw(pwData.Password.(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		pwData.PasswordHash = pwHash
 
-		credName, credVal, statusCode, err := getCredField(context, identity)
+		credName, credVal, statusCode, err := getCredField(p, identity)
 		if err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{{Name: credName, Value: credVal}})
+		i := p.identity
+		exist, err := p.storage.IsIdentityExist(i, []storageT.Filter{{Name: credName, Value: credVal}})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -129,49 +131,49 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, "user already exist")
 		}
 
-		userId, err := context.storage.InsertPwBased(context.identity, context.coll, identity, pwData)
+		userId, err := p.storage.InsertPwBased(i, p.coll, identity, pwData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		if context.conf.Register.IsVerifyAfter {
+		if p.conf.Register.IsVerifyAfter {
 			token, err := uuid.NewV4()
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			tokenHash := context.verif.hasher().Sum([]byte(token.String()))
+			tokenHash := p.verif.hasher().Sum([]byte(token.String()))
 			verifData := &storageT.EmailVerifData{
 				Email:   identity.Email,
 				Token:   base64.StdEncoding.EncodeToString(tokenHash),
-				Expires: time.Now().Add(time.Duration(context.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
+				Expires: time.Now().Add(time.Duration(p.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
 				Invalid: false,
 			}
 
-			verifSpecs := &context.verif.coll.Spec
-			err = context.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
+			verifSpecs := &p.verif.coll.Spec
+			err = p.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
 				{Name: verifSpecs.FieldsMap["email"].Name, Value: identity.Email},
 			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			_, err = context.storage.InsertEmailVerif(verifSpecs, verifData)
+			_, err = p.storage.InsertEmailVerif(verifSpecs, verifData)
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			link := getConfirmLink(VerifyLink, context, token.String())
-			err = context.verif.sender.Send(verifData.Email.(string),
+			link := getConfirmLink(VerifyLink, p, token.String())
+			err = p.verif.sender.Send(verifData.Email.(string),
 				"Verify your email",
-				context.conf.Verif.Template,
+				p.conf.Verif.Template,
 				map[string]interface{}{"link": link})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 		}
 
-		if context.conf.Register.IsLoginAfter {
+		if p.conf.Register.IsLoginAfter {
 			authzCtx := authzT.Context{
 				Id:         identity.Id,
 				Username:   identity.Username,
@@ -181,14 +183,14 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 			}
 			// todo: refactor this
 			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
-				queries := context.authorizer.GetNativeQueries()
+				queries := p.authorizer.GetNativeQueries()
 
 				q, ok := queries[queryName]
 				if !ok {
 					return "--an error occurred during render--"
 				}
 
-				rawRes, err := context.storage.NativeQuery(q, args)
+				rawRes, err := p.storage.NativeQuery(q, args)
 				if err != nil {
 					return "--an error occurred during render--"
 				}
@@ -200,14 +202,14 @@ func Register(context *pwBased) func(*fiber.Ctx) error {
 
 				return string(res)
 			}
-			return context.authorizer.Authorize(c, &authzCtx)
+			return p.authorizer.Authorize(c, &authzCtx)
 		} else {
 			return c.JSON(&fiber.Map{"user_id": userId})
 		}
 	}
 }
 
-func Reset(context *pwBased) func(*fiber.Ctx) error {
+func Reset(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -215,11 +217,11 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 		}
 
 		identityData := &storageT.IdentityData{}
-		collMap := context.coll.Parent.Spec.FieldsMap
-		i := context.identity
-		getLoginTraitData(&i.Email, authInput, context.conf.Login.FieldsMap["email"], collMap["email"].Default, &identityData.Email)
+		collMap := p.coll.Parent.Spec.FieldsMap
+		i := p.identity
+		getLoginTraitData(&i.Email, authInput, p.conf.Login.FieldsMap["email"], collMap["email"].Default, &identityData.Email)
 
-		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{{
+		exist, err := p.storage.IsIdentityExist(i, []storageT.Filter{{
 			Name: collMap["email"].Name, Value: identityData.Email},
 		})
 		if err != nil {
@@ -235,31 +237,31 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		tokenHash := context.reset.hasher().Sum([]byte(token.String()))
+		tokenHash := p.reset.hasher().Sum([]byte(token.String()))
 		resetData := &storageT.PwResetData{
 			Email:   identityData.Email,
 			Token:   base64.StdEncoding.EncodeToString(tokenHash),
-			Expires: time.Now().Add(time.Duration(context.conf.Reset.Token.Exp) * time.Second).Format(time.RFC3339),
+			Expires: time.Now().Add(time.Duration(p.conf.Reset.Token.Exp) * time.Second).Format(time.RFC3339),
 			Invalid: false,
 		}
 
-		collSpec := &context.reset.coll.Spec
-		err = context.storage.InvalidateReset(collSpec, []storageT.Filter{
+		collSpec := &p.reset.coll.Spec
+		err = p.storage.InvalidateReset(collSpec, []storageT.Filter{
 			{Name: collSpec.FieldsMap["email"].Name, Value: identityData.Email},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		_, err = context.storage.InsertReset(&context.reset.coll.Spec, resetData)
+		_, err = p.storage.InsertReset(&p.reset.coll.Spec, resetData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := getConfirmLink(ResetLink, context, token.String())
-		err = context.reset.sender.Send(resetData.Email.(string),
+		link := getConfirmLink(ResetLink, p, token.String())
+		err = p.reset.sender.Send(resetData.Email.(string),
 			"Reset your password",
-			context.conf.Reset.Template,
+			p.conf.Reset.Template,
 			map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -269,18 +271,18 @@ func Reset(context *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
+func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		token := c.Query("token")
 		if token == "" {
 			return sendError(c, fiber.StatusNotFound, "page not found")
 		}
 
-		resetSpecs := &context.reset.coll.Spec
-		tokenName := context.reset.coll.Spec.FieldsMap["token"].Name
+		resetSpecs := &p.reset.coll.Spec
+		tokenName := p.reset.coll.Spec.FieldsMap["token"].Name
 
-		tokenHash := context.reset.hasher().Sum([]byte(token))
-		rawReset, err := context.storage.GetReset(resetSpecs, []storageT.Filter{
+		tokenHash := p.reset.hasher().Sum([]byte(token))
+		rawReset, err := p.storage.GetReset(resetSpecs, []storageT.Filter{
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
@@ -309,35 +311,35 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		r := context.conf.Reset
+		r := p.conf.Reset
 		pw := &storageT.PwBasedData{}
 
 		if statusCode, err := getJsonData(authInput, r.FieldsMap["password"], &pw.Password); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
-		pwHash, err := context.pwHasher.HashPw(pw.Password.(string))
+		pwHash, err := p.pwHasher.HashPw(pw.Password.(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		pw.PasswordHash = pwHash
 
-		identitySpecs := context.coll.Parent.Spec
+		identitySpecs := p.coll.Parent.Spec
 		email := reset[resetSpecs.FieldsMap["email"].Name].(string)
-		_, err = context.storage.UpdatePassword(context.coll,
+		_, err = p.storage.UpdatePassword(p.coll,
 			[]storageT.Filter{{Name: identitySpecs.FieldsMap["email"].Name, Value: email}},
 			pw.PasswordHash)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.storage.InvalidateReset(resetSpecs, []storageT.Filter{
+		err = p.storage.InvalidateReset(resetSpecs, []storageT.Filter{
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.reset.sender.SendRaw(reset[resetSpecs.FieldsMap["email"].Name].(string),
+		err = p.reset.sender.SendRaw(reset[resetSpecs.FieldsMap["email"].Name].(string),
 			"Reset your password",
 			"Your password has been successfully changed")
 		if err != nil {
@@ -355,15 +357,15 @@ func ResetConfirm(context *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func Verify(context *pwBased) func(*fiber.Ctx) error {
+func Verify(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		i := context.identity
-		loginMap := context.conf.Login.FieldsMap
+		i := p.identity
+		loginMap := p.conf.Login.FieldsMap
 		if !i.Email.IsEnabled || !isCredential(i.Email) {
 			return sendError(c, fiber.StatusInternalServerError, "expects 1 credential, 0 got")
 		}
@@ -373,8 +375,8 @@ func Verify(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		fieldName := context.coll.Parent.Spec.FieldsMap["email"].Name
-		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
+		fieldName := p.coll.Parent.Spec.FieldsMap["email"].Name
+		exist, err := p.storage.IsIdentityExist(i, []storageT.Filter{
 			{Name: fieldName, Value: identity.Email},
 		})
 		if err != nil {
@@ -389,31 +391,31 @@ func Verify(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		tokenHash := context.verif.hasher().Sum([]byte(token.String()))
+		tokenHash := p.verif.hasher().Sum([]byte(token.String()))
 		verifData := &storageT.EmailVerifData{
 			Email:   identity.Email,
 			Token:   base64.StdEncoding.EncodeToString(tokenHash),
-			Expires: time.Now().Add(time.Duration(context.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
+			Expires: time.Now().Add(time.Duration(p.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
 			Invalid: false,
 		}
 
-		verifSpecs := &context.verif.coll.Spec
-		err = context.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
+		verifSpecs := &p.verif.coll.Spec
+		err = p.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
 			{Name: verifSpecs.FieldsMap["email"].Name, Value: identity.Email},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		_, err = context.storage.InsertEmailVerif(verifSpecs, verifData)
+		_, err = p.storage.InsertEmailVerif(verifSpecs, verifData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := getConfirmLink(VerifyLink, context, token.String())
-		err = context.verif.sender.Send(verifData.Email.(string),
+		link := getConfirmLink(VerifyLink, p, token.String())
+		err = p.verif.sender.Send(verifData.Email.(string),
 			"Verify your email",
-			context.conf.Verif.Template,
+			p.conf.Verif.Template,
 			map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -423,18 +425,18 @@ func Verify(context *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func VerifyConfirm(context *pwBased) func(*fiber.Ctx) error {
+func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		token := c.Query("token")
 		if token == "" {
 			return sendError(c, fiber.StatusNotFound, "page not found")
 		}
 
-		verifSpecs := &context.verif.coll.Spec
-		tokenName := context.verif.coll.Spec.FieldsMap["token"].Name
+		verifSpecs := &p.verif.coll.Spec
+		tokenName := p.verif.coll.Spec.FieldsMap["token"].Name
 
-		tokenHash := context.verif.hasher().Sum([]byte(token))
-		rawVerif, err := context.storage.GetEmailVerif(verifSpecs, []storageT.Filter{
+		tokenHash := p.verif.hasher().Sum([]byte(token))
+		rawVerif, err := p.storage.GetEmailVerif(verifSpecs, []storageT.Filter{
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
@@ -458,15 +460,15 @@ func VerifyConfirm(context *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusUnauthorized, "link expire")
 		}
 
-		err = context.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
+		err = p.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		iCollSpec := &context.identity.Collection.Spec
-		err = context.storage.SetEmailVerified(iCollSpec, []storageT.Filter{
+		iCollSpec := &p.identity.Collection.Spec
+		err = p.storage.SetEmailVerified(iCollSpec, []storageT.Filter{
 			{Name: iCollSpec.FieldsMap["email"].Name, Value: verif[verifSpecs.FieldsMap["email"].Name]},
 		})
 		if err != nil {

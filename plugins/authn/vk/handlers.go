@@ -143,22 +143,23 @@ func getUserInfoUrl(v *vk) (string, error) {
 }
 
 func createOrLink(v *vk, socAuth *storageT.SocialAuthData) (user *storageT.IdentityData, err error) {
-	s := &v.identity.Collection.Spec
+	i := v.identity
+	s := &i.Collection.Spec
 
 	if socAuth.Email == nil {
-		socAuth.UserId, err = v.storage.InsertIdentity(v.identity, &storageT.IdentityData{})
+		socAuth.UserId, err = v.storage.InsertIdentity(i, &storageT.IdentityData{})
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		filter := []storageT.Filter{{Name: s.FieldsMap["email"].Name, Value: socAuth.Email}}
-		exist, err := v.storage.IsIdentityExist(v.identity, filter)
+		exist, err := v.storage.IsIdentityExist(i, filter)
 		if err != nil {
 			return nil, err
 		}
 
 		if exist {
-			rawUser, err := v.storage.GetIdentity(v.identity, filter)
+			rawUser, err := v.storage.GetIdentity(i, filter)
 			if err != nil {
 				return nil, err
 			}
@@ -166,7 +167,7 @@ func createOrLink(v *vk, socAuth *storageT.SocialAuthData) (user *storageT.Ident
 			socAuth.UserId = user.Id
 		} else {
 			newUser := &storageT.IdentityData{Email: socAuth.Email}
-			socAuth.UserId, err = v.storage.InsertIdentity(v.identity, newUser)
+			socAuth.UserId, err = v.storage.InsertIdentity(i, newUser)
 			if err != nil {
 				return nil, err
 			}

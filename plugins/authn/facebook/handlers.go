@@ -136,15 +136,16 @@ func getUserInfoUrl(f *facebook) (string, error) {
 
 func createOrLink(f *facebook, socAuth *storageT.SocialAuthData) (*storageT.IdentityData, error) {
 	var user *storageT.IdentityData
-	s := &f.identity.Collection.Spec
+	i := f.identity
+	s := &i.Collection.Spec
 	filter := []storageT.Filter{{Name: s.FieldsMap["email"].Name, Value: socAuth.Email}}
-	exist, err := f.storage.IsIdentityExist(f.identity, filter)
+	exist, err := f.storage.IsIdentityExist(i, filter)
 	if err != nil {
 		return nil, err
 	}
 
 	if exist {
-		rawUser, err := f.storage.GetIdentity(f.identity, filter)
+		rawUser, err := f.storage.GetIdentity(i, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +153,7 @@ func createOrLink(f *facebook, socAuth *storageT.SocialAuthData) (*storageT.Iden
 		socAuth.UserId = user.Id
 	} else {
 		newUser := &storageT.IdentityData{Email: socAuth.Email}
-		socAuth.UserId, err = f.storage.InsertIdentity(f.identity, newUser)
+		socAuth.UserId, err = f.storage.InsertIdentity(i, newUser)
 		if err != nil {
 			return nil, err
 		}

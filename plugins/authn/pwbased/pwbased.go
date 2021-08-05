@@ -3,27 +3,25 @@ package pwbased
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
+	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
-	_interface "aureole/internal/router/interface"
+	"aureole/internal/router/interface"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"hash"
-	"net/url"
-
 	"github.com/mitchellh/mapstructure"
+	"hash"
 )
 
 type (
 	pwBased struct {
-		appName    string
-		appUrl     *url.URL
+		app        app.AppCtx
 		rawConf    *configs.Authn
 		conf       *config
 		identity   *identity.Identity
@@ -55,10 +53,9 @@ const (
 	VerifyLink linkType = "verify"
 )
 
-func (p *pwBased) Init(appName string, appUrl *url.URL) (err error) {
-	p.appName = appName
-	p.appUrl = appUrl
-
+func (p *pwBased) Init(app app.AppCtx) (err error) {
+	p.app = app
+	p.identity = app.GetIdentity()
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
@@ -80,14 +77,9 @@ func (p *pwBased) Init(appName string, appUrl *url.URL) (err error) {
 		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
 	}
 
-	p.authorizer, err = pluginApi.Project.GetAuthorizer(p.rawConf.AuthzName, appName)
+	p.authorizer, err = p.app.GetAuthorizer(p.rawConf.AuthzName)
 	if err != nil {
 		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
-	}
-
-	p.identity, err = pluginApi.Project.GetIdentity(appName)
-	if err != nil {
-		return fmt.Errorf("identity in app '%s' is not declared", appName)
 	}
 
 	storageFeatures := []string{p.coll.Type}
@@ -223,5 +215,5 @@ func createRoutes(p *pwBased) {
 		routes = append(routes, verifRoutes...)
 	}
 
-	authn.Repository.PluginApi.Router.AddAppRoutes(p.appName, routes)
+	authn.Repository.PluginApi.Router.AddAppRoutes(p.app.GetName(), routes)
 }

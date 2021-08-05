@@ -30,9 +30,9 @@ func getJsonData(json interface{}, fieldPath string, data *interface{}) (int, er
 }
 
 // todo: refactor getLoginData and getRegisterData methods, maybe create parser struct for this stuff?
-func getLoginData(context *pwBased, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) {
-	collMap := context.coll.Parent.Spec.FieldsMap
-	i := context.identity
+func getLoginData(p *pwBased, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) {
+	collMap := p.coll.Parent.Spec.FieldsMap
+	i := p.identity
 
 	getLoginTraitData(&i.Username, json, jsonMap["username"], collMap["username"].Default, &iData.Username)
 	getLoginTraitData(&i.Email, json, jsonMap["email"], collMap["email"].Default, &iData.Email)
@@ -60,9 +60,9 @@ func isZeroVal(x interface{}) bool {
 	return x == nil || reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
 }
 
-func getRegisterData(context *pwBased, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
-	collMap := context.coll.Parent.Spec.FieldsMap
-	i := context.identity
+func getRegisterData(p *pwBased, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
+	collMap := p.coll.Parent.Spec.FieldsMap
+	i := p.identity
 
 	statusCode, err := getRegisterTraitData(&i.Username, json, jsonMap["username"], collMap["username"].Default, &iData.Username)
 	if err != nil {
@@ -135,10 +135,10 @@ func getPwData(json interface{}, fieldsMap map[string]string, data *storageT.PwB
 	return 0, nil
 }
 
-func getCredField(context *pwBased, iData *storageT.IdentityData) (string, interface{}, int, error) {
+func getCredField(p *pwBased, iData *storageT.IdentityData) (string, interface{}, int, error) {
 	var credName string
 	credVals := map[string]interface{}{}
-	i := context.identity
+	i := p.identity
 
 	if iData.Username != nil && isCredential(i.Username) {
 		credVals["username"] = iData.Username
@@ -167,7 +167,7 @@ func isCredential(trait identity.Trait) bool {
 }
 
 func getConfirmLink(linkType linkType, p *pwBased, token string) string {
-	u := p.appUrl
+	u := p.app.GetUrl()
 
 	switch linkType {
 	case ResetLink:

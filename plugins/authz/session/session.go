@@ -15,6 +15,7 @@ import (
 )
 
 type session struct {
+	appName    string
 	rawConf    *configs.Authz
 	conf       *config
 	storage    storageTypes.Storage
@@ -22,6 +23,7 @@ type session struct {
 }
 
 func (s *session) Init(appName string) (err error) {
+	s.appName = appName
 	s.conf, err = initConfig(&s.rawConf.Config)
 	if err != nil {
 		return err

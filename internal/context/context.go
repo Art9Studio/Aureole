@@ -3,8 +3,6 @@ package context
 import (
 	"aureole/internal/collections"
 	"aureole/internal/context/app"
-	"aureole/internal/identity"
-	authzTypes "aureole/internal/plugins/authz/types"
 	cryptoKeyTypes "aureole/internal/plugins/cryptokey/types"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
@@ -23,6 +21,15 @@ type (
 		CryptoKeys  map[string]cryptoKeyTypes.CryptoKey
 	}
 )
+
+func (ctx *ProjectCtx) GetApp(name string) (*app.App, error) {
+	a, ok := ctx.Apps[name]
+	if !ok {
+		return nil, fmt.Errorf("can't find app named '%s'", name)
+	}
+
+	return a, nil
+}
 
 func (ctx *ProjectCtx) GetCollection(name string) (*collections.Collection, error) {
 	c, ok := ctx.Collections[name]
@@ -67,27 +74,4 @@ func (ctx *ProjectCtx) GetCryptoKey(name string) (cryptoKeyTypes.CryptoKey, erro
 	}
 
 	return k, nil
-}
-
-func (ctx *ProjectCtx) GetAuthorizer(name, appName string) (authzTypes.Authorizer, error) {
-	app, ok := ctx.Apps[appName]
-	if !ok {
-		return nil, fmt.Errorf("can't find app named '%s'", appName)
-	}
-
-	authz, ok := app.Authorizers[name]
-	if !ok {
-		return nil, fmt.Errorf("can't find authorizer named '%s'", name)
-	}
-
-	return authz, nil
-}
-
-func (ctx *ProjectCtx) GetIdentity(appName string) (*identity.Identity, error) {
-	app, ok := ctx.Apps[appName]
-	if !ok {
-		return nil, fmt.Errorf("can't find app named '%s'", appName)
-	}
-
-	return app.Identity, nil
 }

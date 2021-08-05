@@ -1,7 +1,7 @@
 package types
 
-import "net/url"
+import _interface "aureole/internal/context/interface"
 
 type Authenticator interface {
-	Init(string, *url.URL) error
+	Init(app _interface.AppCtx) error
 }

@@ -212,16 +212,35 @@ func createCryptoKeys(conf *configs.Project, ctx *ProjectCtx) error {
 func createApps(conf *configs.Project, ctx *ProjectCtx) error {
 	ctx.Apps = make(map[string]*app.App, len(conf.Apps))
 
-	for n := range conf.Apps {
-		appConf := conf.Apps[n]
+	for name := range conf.Apps {
+		appConf := conf.Apps[name]
 
-		ctx.Apps[n] = &app.App{
-			Host:       appConf.Host,
+		appUrl, err := createAppUrl(&appConf)
+		if err != nil {
+			return err
+		}
+
+		ctx.Apps[name] = &app.App{
+			Name:       name,
+			Url:        *appUrl,
 			PathPrefix: appConf.PathPrefix,
 		}
 	}
 
 	return nil
+}
+
+func createAppUrl(app *configs.App) (*url.URL, error) {
+	appUrl, err := url.Parse(app.Host + app.PathPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	if appUrl.Scheme == "" {
+		appUrl.Scheme = "https"
+	}
+
+	return appUrl, nil
 }
 
 func createIdentities(conf *configs.Project, ctx *ProjectCtx) error {
@@ -341,11 +360,11 @@ func initGlobalPlugins(ctx *ProjectCtx) error {
 }
 
 func initAppPlugins(ctx *ProjectCtx) error {
-	for appName, a := range ctx.Apps {
-		if err := initAuthenticators(appName, a); err != nil {
+	for name, a := range ctx.Apps {
+		if err := initAuthenticators(a); err != nil {
 			return err
 		}
-		if err := initAuthorizers(appName, a); err != nil {
+		if err := initAuthorizers(name, a); err != nil {
 			return err
 		}
 	}
@@ -353,32 +372,14 @@ func initAppPlugins(ctx *ProjectCtx) error {
 	return nil
 }
 
-func initAuthenticators(appName string, app *app.App) error {
+func initAuthenticators(app *app.App) error {
 	for _, authenticator := range app.Authenticators {
-		appUrl, err := getAppUrl(app)
-		if err != nil {
-			return err
-		}
-
-		if err := authenticator.Init(appName, appUrl); err != nil {
+		if err := authenticator.Init(app); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func getAppUrl(app *app.App) (*url.URL, error) {
-	appUrl, err := url.Parse(app.Host + app.PathPrefix)
-	if err != nil {
-		return nil, err
-	}
-
-	if appUrl.Scheme == "" {
-		appUrl.Scheme = "https"
-	}
-
-	return appUrl, nil
 }
 
 func initAuthorizers(appName string, app *app.App) error {

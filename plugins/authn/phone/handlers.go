@@ -9,15 +9,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Login(context *phone) func(*fiber.Ctx) error {
+func Login(p *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		i := context.identity
-		loginMap := context.conf.Login.FieldsMap
+		i := p.identity
+		loginMap := p.conf.Login.FieldsMap
 
 		if !i.Phone.IsEnabled || !isCredential(&i.Phone) {
 			return sendError(c, fiber.StatusInternalServerError, "expects 1 credential, 0 got")
@@ -29,7 +29,7 @@ func Login(context *phone) func(*fiber.Ctx) error {
 		}
 
 		specs := i.Collection.Spec
-		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
+		exist, err := p.storage.IsIdentityExist(i, []storageT.Filter{
 			{Name: specs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
@@ -39,13 +39,13 @@ func Login(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
 		}
 
-		v := context.conf.Verification
+		v := p.conf.Verification
 		otp, err := getRandomString(v.Otp.Length, v.Otp.Alphabet)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		otpHash, err := context.hasher.HashPw(v.Otp.Prefix + otp)
+		otpHash, err := p.hasher.HashPw(v.Otp.Prefix + otp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -58,22 +58,22 @@ func Login(context *phone) func(*fiber.Ctx) error {
 			Invalid:  false,
 		}
 
-		vSpecs := &context.verification.coll.Spec
-		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
+		vSpecs := &p.verification.coll.Spec
+		err = p.storage.InvalidateVerification(vSpecs, []storageT.Filter{
 			{Name: vSpecs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationId, err := context.storage.InsertVerification(vSpecs, verificationData)
+		verificationId, err := p.storage.InsertVerification(vSpecs, verificationData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.verification.sender.Send(verificationData.Phone.(string),
+		err = p.verification.sender.Send(verificationData.Phone.(string),
 			"",
-			context.conf.Verification.Template,
+			p.conf.Verification.Template,
 			map[string]interface{}{"otp": otp})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -83,7 +83,7 @@ func Login(context *phone) func(*fiber.Ctx) error {
 	}
 }
 
-func Register(context *phone) func(*fiber.Ctx) error {
+func Register(p *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
@@ -91,12 +91,13 @@ func Register(context *phone) func(*fiber.Ctx) error {
 		}
 
 		identityData := &storageT.IdentityData{Additional: map[string]interface{}{}}
-		if statusCode, err := getRegisterData(context, authInput, context.conf.Register.FieldsMap, identityData); err != nil {
+		if statusCode, err := getRegisterData(p, authInput, p.conf.Register.FieldsMap, identityData); err != nil {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		specs := context.identity.Collection.Spec
-		exist, err := context.storage.IsIdentityExist(context.identity, []storageT.Filter{
+		i := p.identity
+		specs := i.Collection.Spec
+		exist, err := p.storage.IsIdentityExist(i, []storageT.Filter{
 			{Name: specs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
@@ -107,18 +108,18 @@ func Register(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, "user already exist")
 		}
 
-		_, err = context.storage.InsertIdentity(context.identity, identityData)
+		_, err = p.storage.InsertIdentity(i, identityData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		v := context.conf.Verification
+		v := p.conf.Verification
 		otp, err := getRandomString(v.Otp.Length, v.Otp.Alphabet)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		otpHash, err := context.hasher.HashPw(v.Otp.Prefix + otp)
+		otpHash, err := p.hasher.HashPw(v.Otp.Prefix + otp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -131,22 +132,22 @@ func Register(context *phone) func(*fiber.Ctx) error {
 			Invalid:  false,
 		}
 
-		vSpecs := &context.verification.coll.Spec
-		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
+		vSpecs := &p.verification.coll.Spec
+		err = p.storage.InvalidateVerification(vSpecs, []storageT.Filter{
 			{Name: vSpecs.FieldsMap["phone"].Name, Value: identityData.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationId, err := context.storage.InsertVerification(&context.verification.coll.Spec, verificationData)
+		verificationId, err := p.storage.InsertVerification(&p.verification.coll.Spec, verificationData)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.verification.sender.Send(verificationData.Phone.(string),
+		err = p.verification.sender.Send(verificationData.Phone.(string),
 			"",
-			context.conf.Verification.Template,
+			p.conf.Verification.Template,
 			map[string]interface{}{"otp": otp})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -156,14 +157,14 @@ func Register(context *phone) func(*fiber.Ctx) error {
 	}
 }
 
-func Verify(context *phone) func(*fiber.Ctx) error {
+func Verify(p *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		v := context.conf.Verification
+		v := p.conf.Verification
 		requestData := &storageT.PhoneVerificationData{}
 		if statusCode, err := getJsonData(authInput, v.FieldsMap["id"], &requestData.Id); err != nil {
 			return sendError(c, statusCode, err.Error())
@@ -172,8 +173,8 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		storage := context.storage
-		vSpecs := context.verification.coll.Spec
+		storage := p.storage
+		vSpecs := p.verification.coll.Spec
 
 		rawVerification, err := storage.GetVerification(&vSpecs, []storageT.Filter{
 			{Name: vSpecs.FieldsMap["id"].Name, Value: requestData.Id},
@@ -200,49 +201,50 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 		}
 
 		// todo: fix type conversion
-		if int(verification[vSpecs.FieldsMap["attempts"].Name].(float64)) >= context.conf.Verification.MaxAttempts {
+		if int(verification[vSpecs.FieldsMap["attempts"].Name].(float64)) >= p.conf.Verification.MaxAttempts {
 			return sendError(c, fiber.StatusUnauthorized, "too much attempts")
 		}
 
 		otp := v.Otp.Prefix + requestData.Otp.(string)
-		isMatch, err := context.hasher.ComparePw(otp, verification[vSpecs.FieldsMap["otp"].Name].(string))
+		isMatch, err := p.hasher.ComparePw(otp, verification[vSpecs.FieldsMap["otp"].Name].(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		if isMatch {
-			iCollSpec := context.identity.Collection.Spec
+			i := p.identity
+			iCollSpec := i.Collection.Spec
 
-			rawIdentity, err := context.storage.GetIdentity(context.identity, []storageT.Filter{
+			rawIdentity, err := p.storage.GetIdentity(i, []storageT.Filter{
 				{Name: iCollSpec.FieldsMap["phone"].Name, Value: verification[vSpecs.FieldsMap["phone"].Name]},
 			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			i, ok := rawIdentity.(map[string]interface{})
+			identity, ok := rawIdentity.(map[string]interface{})
 			if !ok {
 				return sendError(c, fiber.StatusInternalServerError, "cannot get identity from database")
 			}
 
-			err = context.storage.SetPhoneVerified(&iCollSpec, []storageT.Filter{
-				{Name: iCollSpec.FieldsMap["phone"].Name, Value: i[iCollSpec.FieldsMap["phone"].Name]},
+			err = p.storage.SetPhoneVerified(&iCollSpec, []storageT.Filter{
+				{Name: iCollSpec.FieldsMap["phone"].Name, Value: identity[iCollSpec.FieldsMap["phone"].Name]},
 			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			authzCtx := authzT.NewContext(i, iCollSpec.FieldsMap)
+			authzCtx := authzT.NewContext(identity, iCollSpec.FieldsMap)
 			// todo: refactor this
 			authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
-				queries := context.authorizer.GetNativeQueries()
+				queries := p.authorizer.GetNativeQueries()
 
 				q, ok := queries[queryName]
 				if !ok {
 					return "--an error occurred during render--"
 				}
 
-				rawRes, err := context.storage.NativeQuery(q, args...)
+				rawRes, err := p.storage.NativeQuery(q, args...)
 				if err != nil {
 					return "--an error occurred during render--"
 				}
@@ -254,9 +256,9 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 
 				return string(res)
 			}
-			return context.authorizer.Authorize(c, authzCtx)
+			return p.authorizer.Authorize(c, authzCtx)
 		} else {
-			if err := context.storage.IncrAttempts(&vSpecs, []storageT.Filter{
+			if err := p.storage.IncrAttempts(&vSpecs, []storageT.Filter{
 				{Name: vSpecs.FieldsMap["id"].Name, Value: requestData.Id},
 			}); err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -266,14 +268,14 @@ func Verify(context *phone) func(*fiber.Ctx) error {
 	}
 }
 
-func Resend(context *phone) func(*fiber.Ctx) error {
+func Resend(p *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var authInput interface{}
 		if err := c.BodyParser(&authInput); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		v := context.conf.Verification
+		v := p.conf.Verification
 		requestData := &storageT.PhoneVerificationData{}
 
 		statusCode, err := getJsonData(authInput, v.FieldsMap["id"], &requestData.Id)
@@ -281,8 +283,8 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, statusCode, err.Error())
 		}
 
-		storage := context.storage
-		collSpec := context.verification.coll.Spec
+		storage := p.storage
+		collSpec := p.verification.coll.Spec
 
 		rawVerification, err := storage.GetVerification(&collSpec, []storageT.Filter{
 			{Name: collSpec.FieldsMap["id"].Name, Value: requestData.Id},
@@ -301,7 +303,7 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		otpHash, err := context.hasher.HashPw(v.Otp.Prefix + otp)
+		otpHash, err := p.hasher.HashPw(v.Otp.Prefix + otp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -314,22 +316,22 @@ func Resend(context *phone) func(*fiber.Ctx) error {
 			Invalid:  false,
 		}
 
-		vSpecs := &context.verification.coll.Spec
-		err = context.storage.InvalidateVerification(vSpecs, []storageT.Filter{
+		vSpecs := &p.verification.coll.Spec
+		err = p.storage.InvalidateVerification(vSpecs, []storageT.Filter{
 			{Name: vSpecs.FieldsMap["phone"].Name, Value: verification.Phone},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationId, err := context.storage.InsertVerification(vSpecs, verification)
+		verificationId, err := p.storage.InsertVerification(vSpecs, verification)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = context.verification.sender.Send(verification.Phone.(string),
+		err = p.verification.sender.Send(verification.Phone.(string),
 			"",
-			context.conf.Verification.Template,
+			p.conf.Verification.Template,
 			map[string]interface{}{"otp": otp})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())

@@ -34,9 +34,9 @@ func isCredential(trait *identity.Trait) bool {
 	return trait.IsCredential && trait.IsRequired && trait.IsUnique
 }
 
-func getRegisterData(context *phone, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
-	collMap := context.coll.Spec.FieldsMap
-	i := context.identity
+func getRegisterData(p *phone, json interface{}, jsonMap map[string]string, iData *storageT.IdentityData) (int, error) {
+	collMap := p.coll.Spec.FieldsMap
+	i := p.identity
 
 	statusCode, err := getRegisterTraitData(&i.Username, json, jsonMap["username"], collMap["username"].Default, &iData.Username)
 	if err != nil {

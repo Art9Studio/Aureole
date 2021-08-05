@@ -186,7 +186,6 @@ apps:
             - "name"
           redirect_uri: "/login"
 
-
     authZ:
       - type: "jwt"
         name: jwt

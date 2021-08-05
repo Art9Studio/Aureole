@@ -109,15 +109,16 @@ func getJwt(g *google, code string) (jwt.Token, error) {
 
 func createOrLink(g *google, socAuth *storageT.SocialAuthData) (*storageT.IdentityData, error) {
 	var user *storageT.IdentityData
-	s := &g.identity.Collection.Spec
+	i := g.identity
+	s := &i.Collection.Spec
 	filter := []storageT.Filter{{Name: s.FieldsMap["email"].Name, Value: socAuth.Email}}
-	exist, err := g.storage.IsIdentityExist(g.identity, filter)
+	exist, err := g.storage.IsIdentityExist(i, filter)
 	if err != nil {
 		return nil, err
 	}
 
 	if exist {
-		rawUser, err := g.storage.GetIdentity(g.identity, filter)
+		rawUser, err := g.storage.GetIdentity(i, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +126,7 @@ func createOrLink(g *google, socAuth *storageT.SocialAuthData) (*storageT.Identi
 		socAuth.UserId = user.Id
 	} else {
 		newUser := &storageT.IdentityData{Email: socAuth.Email}
-		socAuth.UserId, err = g.storage.InsertIdentity(g.identity, newUser)
+		socAuth.UserId, err = g.storage.InsertIdentity(i, newUser)
 		if err != nil {
 			return nil, err
 		}
