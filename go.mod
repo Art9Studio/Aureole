@@ -6,9 +6,9 @@ require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gofiber/fiber/v2 v2.15.0
-	github.com/gofrs/uuid v3.4.0+incompatible
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/huandu/go-sqlbuilder v1.12.1
-	github.com/jackc/pgx/v4 v4.11.0
+	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/joho/godotenv v1.3.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
@@ -28,7 +28,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasthttp v1.28.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
