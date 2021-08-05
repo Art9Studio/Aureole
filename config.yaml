@@ -84,7 +84,7 @@ apps:
           clean_interval: 60
 
   two:
-    host: "http://localhost:3000"
+    host: "https://t.aureole.cloud"
     path_prefix: "/two"
 
     identity:
@@ -130,6 +130,63 @@ apps:
             fields_map:
               email: "{$.email}"
 
+      - type: "google"
+        path_prefix: "/oauth2/google"
+        authz: jwt
+        config:
+          collection: oauth2
+          storage: one_db
+          client_id: "${GOOGLE_CLIENT_ID}"
+          client_secret: "${GOOGLE_SECRET}"
+          scopes:
+            - "https://www.googleapis.com/auth/userinfo.email"
+            - "https://www.googleapis.com/auth/userinfo.profile"
+          redirect_uri: "/login"
+
+      - type: "vk"
+        path_prefix: "/oauth2/vk"
+        authz: jwt
+        config:
+          collection: oauth2
+          storage: one_db
+          client_id: "${VK_CLIENT_ID}"
+          client_secret: "${VK_SECRET}"
+          scopes:
+            - "email"
+          redirect_uri: "/login"
+          fields: [ ]
+
+      - type: "facebook"
+        path_prefix: "/oauth2/facebook"
+        authz: jwt
+        config:
+          collection: oauth2
+          storage: one_db
+          client_id: "${FACEBOOK_CLIENT_ID}"
+          client_secret: "${FACEBOOK_SECRET}"
+          scopes:
+            - "email"
+          redirect_uri: "/login"
+          fields:
+            - "email"
+
+      - type: "apple"
+        path_prefix: "/oauth2/apple"
+        authz: jwt
+        config:
+          collection: oauth2
+          storage: one_db
+          secret_key: apple_signin_key
+          public_key: apple_keys
+          client_id: "${APPLE_CLIENT_ID}"
+          team_id: "${APPLE_TEAM_ID}"
+          key_id: "${APPLE_KEY_ID}"
+          scopes:
+            - "email"
+            - "name"
+          redirect_uri: "/login"
+
+
     authZ:
       - type: "jwt"
         name: jwt
@@ -140,9 +197,9 @@ apps:
           aud: [ "app1", "app2" ]
           nbf: 0
           iat: true
-          jti: 0 # todo: implement jti
+          jti: "0" # todo: implement jti
           access_bearer: "cookie" # [cookie, header, both]
-          refresh_bearer: "cookie" # [cookie, body, both]
+          refresh_bearer: "body" # [cookie, body, both]
           alg: "RS256"
           sign_key: jwk_file
           verify_keys: [ jwk_file ]
@@ -232,7 +289,7 @@ apps:
           aud: [ "app1", "app2" ]
           nbf: 0
           iat: true
-          jti: 0 # todo: implement jti
+          jti: "0" # todo: implement jti
           access_bearer: "cookie" # [cookie, header, both]
           refresh_bearer: "cookie" # [cookie, body, both]
           alg: "RS256"
@@ -351,6 +408,19 @@ collections:
         expires: "expires"
         invalid: "invalid"
 
+  - type: "oauth2"
+    name: oauth2
+    config:
+      name: "social_logins"
+      pk: id
+      fields_map:
+        id: "id"
+        social_id: "social_id"
+        email: "email"
+        provider: "provider"
+        user_data: "user_data"
+        user_id: "user_id"
+
 hashers:
   - type: "argon2"
     name: argon2
@@ -384,11 +454,17 @@ crypto_keys:
       path: "https://www.googleapis.com/oauth2/v3/certs"
 
   - type: "pem"
-    name: pem
+    name: apple_signin_key
     path_prefix: "/pem-keys"
     config:
       alg: "ES256"
       path: "lab/keys/apple_key.p8"
+
+  - type: "jwk"
+    name: apple_keys
+    path_prefix: "/apple-keys"
+    config:
+      path: "https://appleid.apple.com/auth/keys"
 
 senders:
   - type: "email"

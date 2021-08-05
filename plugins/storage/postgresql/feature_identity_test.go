@@ -3,7 +3,6 @@ package postgresql
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	"aureole/internal/identity"
 	"aureole/internal/plugins/storage"
 	"aureole/internal/plugins/storage/types"
 	"github.com/stretchr/testify/assert"
@@ -44,6 +43,7 @@ func Test_Session_IsCollExists(t *testing.T) {
 	assert.Equal(t, res, false)
 }
 
+/*
 func Test_Session_CreateIdentitytColl(t *testing.T) {
 	usersSess := createConnSess(t)
 	defer usersSess.Close()
@@ -106,10 +106,9 @@ func Test_Session_CreateIdentitytColl(t *testing.T) {
 		isDropExist, err := usersSess.IsCollExists(collections.Spec{Name: "); drop table other; --", Pk: "id"})
 		assert.NoError(t, err)
 		assert.True(t, isDropExist)
-	*/
+
 }
 
-/*
 func Test_Session_InsertIdentity(t *testing.T) {
 	usersSess := createConnSess(t)
 	defer usersSess.Close()

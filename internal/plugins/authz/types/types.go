@@ -14,9 +14,11 @@ type Authorizer interface {
 
 type Context struct {
 	Id         interface{}
+	SocialId   interface{}
 	Username   interface{}
 	Phone      interface{}
 	Email      interface{}
+	UserData   interface{}
 	Additional map[string]interface{}
 	NativeQ    func(queryName string, args ...interface{}) string
 }
