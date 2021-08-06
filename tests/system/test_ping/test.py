@@ -1,22 +1,22 @@
+import json
 import os
 from pathlib import Path
 
 import pytest
 import requests
 
-WORK_DIR = Path(__file__).parent.resolve()
+GLOBAL_RES_DIR = os.path.join(Path(__file__).parent.parent.resolve(), 'resources')
+TEST_NAME = Path(__file__).parent.resolve().name
+BASE_URL = 'http://aureole:3000'
 
 
 @pytest.fixture(scope='module')
 def uuid():
-    uuid_path = os.path.join(WORK_DIR, './resources/uuid')
+    uuid_path = os.path.join(GLOBAL_RES_DIR, 'uuid.txt')
     with open(uuid_path, 'r') as f:
-        return f.read()
-
-
-def test_1(uuid):
-    print(f'-  test_1({uuid})', __name__)
+        uuids = json.loads(f.read())
+        return uuids[TEST_NAME]
 
 
 def test_ping():
-    assert requests.get('http://localhost:3000/ping').status_code == 200
+    assert requests.get(BASE_URL + '/ping').ok

@@ -1,13 +1,30 @@
-version: '2'
+version: '2.9'
 
 services:
+  aureole-tests:
+    image: aureole-tests:latest
+    container_name: aureole-tests
+    depends_on:
+      aureole:
+        condition: service_healthy
+    volumes:
+      - ../:/app/tests/system
+    networks:
+      - default
+
   aureole:
-    image: aureolecloud/aureole:latest
-    ports:
-      - "3000:3000"
+    #image: aureolecloud/aureole:latest
+    build: "/mnt/c/Users/semen/Projects/Aureole"
+    restart: on-failure
     container_name: aureole
     depends_on:
       postgres:
+        condition: service_healthy
+      smtp:
+        condition: service_healthy
+      twilio:
+        condition: service_healthy
+      social-auth:
         condition: service_healthy
     volumes:
       - ./config.yaml:/config.yaml
@@ -15,11 +32,13 @@ services:
       - {{ module.get('path') }}/resources/aureole:{{ module.get('res_path') }}
       {% endfor %}
     healthcheck:
-        test: ["CMD", "wget", "-nv", "-t1", "--spider", "http://localhost:3000/ping"]
-        start_period: 1s
-        interval: 2s
-        timeout: 2s
-        retries: 5
+      test: ["CMD", "wget", "-nv", "-t1", "--spider", "http://localhost:3000/ping"]
+      start_period: 1s
+      interval: 2s
+      timeout: 2s
+      retries: 5
+    networks:
+      - default
 
   postgres:
     image: postgres:13
@@ -36,3 +55,56 @@ services:
       interval: 2s
       timeout: 2s
       retries: 5
+    networks:
+      - default
+
+  smtp:
+    image: reachfive/fake-smtp-server:latest
+    healthcheck:
+      test: ["CMD", "wget", "-nv", "-t1", "--spider", "http://localhost:1080"]
+      start_period: 1s
+      interval: 2s
+      timeout: 2s
+      retries: 5
+    networks:
+      - default
+
+  twilio:
+    image: twilio-stub:latest
+    volumes:
+      - ./certs:/certs
+    healthcheck:
+      test: ["CMD", "wget", "-nv", "-t1", "--spider", "--no-check-certificate", "https://localhost:443/ping"]
+      start_period: 1s
+      interval: 2s
+      timeout: 2s
+      retries: 5
+    networks:
+      default:
+        aliases:
+          - api.twilio.com
+
+  social-auth:
+    image: social-auth-stub:latest
+    container_name: social-auth
+    volumes:
+      - ./certs:/certs
+    healthcheck:
+      test: ["CMD", "wget", "-nv", "-t1", "--spider", "--no-check-certificate", "https://localhost:443/ping"]
+      start_period: 1s
+      interval: 2s
+      timeout: 2s
+      retries: 5
+    networks:
+      default:
+        aliases:
+          - accounts.google.com
+          - oauth2.googleapis.com
+          - appleid.apple.com
+          - www.facebook.com
+          - graph.facebook.com
+          - oauth.vk.com
+          - api.vk.com
+
+networks:
+  default:

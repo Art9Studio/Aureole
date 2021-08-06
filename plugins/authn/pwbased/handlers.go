@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -175,7 +177,7 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 
 		if p.conf.Register.IsLoginAfter {
 			authzCtx := authzT.Context{
-				Id:         identity.Id,
+				Id:         userId,
 				Username:   identity.Username,
 				Phone:      identity.Phone,
 				Email:      identity.Email,
@@ -237,7 +239,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		tokenHash := p.reset.hasher().Sum([]byte(token.String()))
+		tokenHash := p.reset.hasher().Sum(token.Bytes())
 		resetData := &storageT.PwResetData{
 			Email:   identityData.Email,
 			Token:   base64.StdEncoding.EncodeToString(tokenHash),
@@ -273,15 +275,19 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 
 func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		token := c.Query("token")
-		if token == "" {
-			return sendError(c, fiber.StatusNotFound, "page not found")
+		t := c.Query("token")
+		if t == "" {
+			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
+
+		token, err := uuid.FromString(strings.TrimRight(t, "\n"))
+		if err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
+		}
+		tokenHash := p.verif.hasher().Sum(token.Bytes())
 
 		resetSpecs := &p.reset.coll.Spec
 		tokenName := p.reset.coll.Spec.FieldsMap["token"].Name
-
-		tokenHash := p.reset.hasher().Sum([]byte(token))
 		rawReset, err := p.storage.GetReset(resetSpecs, []storageT.Filter{
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
@@ -391,7 +397,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		tokenHash := p.verif.hasher().Sum([]byte(token.String()))
+		tokenHash := p.verif.hasher().Sum(token.Bytes())
 		verifData := &storageT.EmailVerifData{
 			Email:   identity.Email,
 			Token:   base64.StdEncoding.EncodeToString(tokenHash),
@@ -427,20 +433,24 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 
 func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		token := c.Query("token")
-		if token == "" {
-			return sendError(c, fiber.StatusNotFound, "page not found")
+		t := c.Query("token")
+		if t == "" {
+			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
+
+		token, err := uuid.FromString(strings.TrimRight(t, "\n"))
+		if err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
+		}
+		tokenHash := p.verif.hasher().Sum(token.Bytes())
 
 		verifSpecs := &p.verif.coll.Spec
 		tokenName := p.verif.coll.Spec.FieldsMap["token"].Name
-
-		tokenHash := p.verif.hasher().Sum([]byte(token))
 		rawVerif, err := p.storage.GetEmailVerif(verifSpecs, []storageT.Filter{
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return sendError(c, fiber.StatusInternalServerError, errors.Wrap(err, "error get email verify").Error())
 		}
 
 		verif, ok := rawVerif.(map[string]interface{})
@@ -464,7 +474,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return sendError(c, fiber.StatusInternalServerError, errors.Wrap(err, "error invalidate email verify").Error())
 		}
 
 		iCollSpec := &p.identity.Collection.Spec

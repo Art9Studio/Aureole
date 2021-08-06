@@ -82,7 +82,7 @@ func (s *session) Authorize(ctx *fiber.Ctx, authzCtx *types.Context) error {
 	sessionData := storageTypes.InsertSessionData{
 		UserId:       userId,
 		SessionToken: sessionToken,
-		Expiration:   expires,
+		Expiration:   expires.Format(time.RFC3339),
 	}
 	_, err = s.storage.InsertSession(s.collection.Spec, sessionData)
 	if err != nil {

@@ -3,6 +3,8 @@ package apple
 import (
 	"context"
 	"encoding/json"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -69,9 +71,13 @@ func doRequest(c *Config, v url.Values) (map[string]interface{}, error) {
 	}
 	defer resp.Body.Close()
 
-	var data map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	var data = make(map[string]interface{})
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
+	}
+	if err := json.Unmarshal(b, &data); err != nil {
+		return nil, errors.Wrapf(err, "decode - %s", string(b))
 	}
 
 	return data, nil

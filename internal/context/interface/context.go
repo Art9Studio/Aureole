@@ -13,6 +13,7 @@ import (
 
 type (
 	ProjectCtx interface {
+		IsTestRun() bool
 		GetCollection(name string) (*collections.Collection, error)
 		GetStorage(name string) (storageTypes.Storage, error)
 		GetHasher(name string) (pwhasherTypes.PwHasher, error)

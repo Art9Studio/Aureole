@@ -18,7 +18,7 @@ func (s *Storage) GetSession(spec collections.Spec, userId int) (types.JSONCollR
 }
 
 func (s *Storage) InsertSession(spec collections.Spec, data types.InsertSessionData) (types.JSONCollResult, error) {
-	expires := data.Expiration.Unix()
+	expires := data.Expiration
 	sql := fmt.Sprintf("INSERT INTO %s (%s, %s, %s) VALUES ($1, $2, $3) ON CONFLICT (%s) DO UPDATE SET %s = $4, %s = $5 RETURNING $6",
 		Sanitize(spec.Name),
 		Sanitize(spec.Pk),

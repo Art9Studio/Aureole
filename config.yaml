@@ -1,5 +1,6 @@
 api_version: "0.1"
 ping_path: "/ping"
+test_run: true
 
 apps:
   one:
@@ -24,27 +25,27 @@ apps:
         required: false
         credential: true
       email:
-        enabled: false
+        enabled: true
         unique: true
         required: true
         credential: true
-      additional:
-        - is_superuser:
-            unique: false
-            required: false
-            internal: true
-        - first_name:
-            unique: false
-            required: false
-            internal: false
-        - last_name:
-            unique: false
-            required: false
-            internal: false
-        - is_staff:
-            unique: false
-            required: false
-            internal: true
+      #additional:
+        #- is_superuser:
+        #    unique: false
+        #    required: false
+        #    internal: true
+        #- first_name:
+        #    unique: false
+        #    required: false
+        #    internal: false
+        #- last_name:
+        #    unique: false
+        #    required: false
+        #    internal: false
+        #- is_staff:
+        #    unique: false
+        #    required: false
+        #    internal: true
 
     authN:
       - type: "password_based"
@@ -84,7 +85,8 @@ apps:
           clean_interval: 60
 
   two:
-    host: "https://t.aureole.cloud"
+    #host: "https://t.aureole.cloud"
+    host: "http://localhost:3000"
     path_prefix: "/two"
 
     identity:
@@ -209,7 +211,7 @@ apps:
           native_queries: "lab/native-queries/native.yaml"
 
   three:
-    host: "localhost:3000"
+    host: "http://localhost:3000"
     path_prefix: "/three"
 
     identity:
@@ -469,9 +471,11 @@ senders:
   - type: "email"
     name: email
     config:
-      host: "smtp.gmail.com:587"
+      #host: "smtp.gmail.com:587"
+      host: "localhost:1025"
       username: "test.aureole@gmail.com"
       password: "${SMTP_PASSWORD}"
+      insecure_skip_verify: true
       from: "test.aureole@gmail.com"
       bcc: [ ]
       cc: [ ]

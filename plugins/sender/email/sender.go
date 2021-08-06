@@ -2,7 +2,9 @@ package email
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/sender"
 	"bytes"
+	"crypto/tls"
 	htmlTmpl "html/template"
 	"net/smtp"
 	"path"
@@ -62,6 +64,9 @@ func (e *Email) Send(recipient, subject, tmplName string, tmplCtx map[string]int
 	hostname := strings.Split(e.conf.Host, ":")[0]
 	plainAuth := smtp.PlainAuth("", e.conf.Username, e.conf.Password, hostname)
 
+	if sender.Repository.PluginApi.Project.IsTestRun() {
+		return mail.SendWithStartTLS(e.conf.Host, plainAuth, &tls.Config{InsecureSkipVerify: true})
+	}
 	return mail.Send(e.conf.Host, plainAuth)
 }
 
@@ -79,5 +84,8 @@ func (e *Email) SendRaw(recipient, subject, message string) error {
 	hostname := strings.Split(e.conf.Host, ":")[0]
 	plainAuth := smtp.PlainAuth("", e.conf.Username, e.conf.Password, hostname)
 
+	if sender.Repository.PluginApi.Project.IsTestRun() {
+		return mail.SendWithStartTLS(e.conf.Host, plainAuth, &tls.Config{InsecureSkipVerify: true})
+	}
 	return mail.Send(e.conf.Host, plainAuth)
 }

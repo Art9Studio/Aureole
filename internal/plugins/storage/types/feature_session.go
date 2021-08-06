@@ -2,15 +2,13 @@ package types
 
 import (
 	"aureole/internal/collections"
-	"time"
-
 	"github.com/gofrs/uuid"
 )
 
 type InsertSessionData struct {
 	UserId       interface{}
 	SessionToken uuid.UUID
-	Expiration   time.Time
+	Expiration   interface{}
 }
 
 type Session interface {

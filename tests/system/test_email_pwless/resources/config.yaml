@@ -1,22 +1,22 @@
 api_version: "0.1"
+test_run: true
 
 apps:
   email_pwless:
     path_prefix: "/${UUID}"
+    host: "http://aureole:3000"
 
     identity:
-      collection: identity
+      collection: email_pwless_identity
       email:
-        unique: true
-        required: true
+        enabled: true
 
     authN:
       - type: "email"
-        path_prefix: "/email"
-        authz: jwt
+        authz: email_pwless_session
         config:
-          collection: identity
-          storage: one_db
+          collection: email_pwless_identity
+          storage: email_pwless_one_db
           login:
             path: "/login"
             fields_map:
@@ -28,29 +28,30 @@ apps:
               email: "{$.email}"
           magic_link:
             path: "/email-confirm"
-            collection: magic_link
-            sender: email
-            template: magic_link
+            collection: email_pwless_magic_link
+            sender: email_pwless_email
+            template: email_pwless_magic_link
             token:
               exp: 3600
               hash_func: "sha256"
 
     authZ:
-      - type: "jwt"
-        name: jwt
+      - name: email_pwless_session
+        type: "session"
         config:
-          sub: true
-          aud: [ "hasura-api" ]
-          iat: true
-          jti: 0
-          alg: "RS256"
-          sign_key: jwk_file
-          verify_keys: [ jwk_file ]
-          payload: "${RES_PATH}/jwt_payload.json"
+          collection: email_pwless_session
+          storage: email_pwless_one_db
+          domain: "aureole-tests"
+          path: "/"
+          max_age: 3600
+          secure: false
+          http_only: false
+          same_site: ""
+          clean_interval: 60
 
 collections:
   - type: "identity"
-    name: identity
+    name: email_pwless_identity
     config:
       name: "users"
       pk: "id"
@@ -61,9 +62,10 @@ collections:
         phone: "phone"
         is_active: no
         created: no
+        email_verified: "email_verified"
 
   - type: "email_link"
-    name: magic_link
+    name: email_pwless_magic_link
     config:
       name: "email_links"
       pk: "id"
@@ -74,24 +76,37 @@ collections:
         expires: "expires"
         invalid: "invalid"
 
+  - type: "session" # main coll
+    name: email_pwless_session
+    config:
+      name: "sessions"
+      pk: "user_id"
+      fields_map:
+        id: "user_id"
+        session_token: "session_id"
+        expiration: "expiration"
+
 storages:
   - type: "postgresql"
-    name: one_db
+    name: email_pwless_one_db
     config:
       url: "${DB_CONNECTION_psql}"
 
 crypto_keys:
   - type: "jwk"
-    name: jwk_file
-    path_prefix: "/keys"
+    name: email_pwless_jwk_file
+    path_prefix: "/${UUID}/keys"
     config:
       path: "${RES_PATH}/keys.json"
 
 senders:
   - type: "email"
-    name: email
+    name: email_pwless_email
     config:
-      host: "smtp.gmail.com:587"
+      host: "smtp:1025"
       username: "test.aureole@gmail.com"
-      password: "12341234"
+      password: "123456"
+      insecure_skip_verify: true
       from: "test.aureole@gmail.com"
+      templates:
+        email_pwless_magic_link: "${RES_PATH}/magic_link.txt"

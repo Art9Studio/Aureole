@@ -3,6 +3,7 @@ package router
 import (
 	"aureole/internal/context/app"
 	_interface "aureole/internal/router/interface"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"path"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +21,7 @@ var Router *TRouter
 func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 	r := fiber.New(fiber.Config{AppName: "Aureole"})
 	r.Use(cors.New())
+	r.Use(logger.New())
 	v := r.Group("")
 
 	for appName, routes := range Router.AppRoutes {

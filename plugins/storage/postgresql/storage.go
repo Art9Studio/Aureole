@@ -53,13 +53,8 @@ func (s *Storage) Open() error {
 		url = s.conf.Url
 	}
 
-	conn, err := pgx.Connect(context.Background(), url)
-	if err != nil {
-		return err
-	}
-
-	s.conn = conn
-	return nil
+	s.conn, err = pgx.Connect(context.Background(), url)
+	return err
 }
 
 // Close terminates the currently active connection to the DBMS
