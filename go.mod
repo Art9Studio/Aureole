@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/gofiber/fiber/v2 v2.15.0
+	github.com/gofiber/fiber/v2 v2.16.0
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/huandu/go-sqlbuilder v1.12.1
 	github.com/jackc/pgx/v4 v4.13.0
