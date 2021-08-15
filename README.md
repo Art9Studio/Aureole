@@ -147,7 +147,7 @@ Aureole легко встраивается в любую архитектуру
 # ⭐ Оценили
 [![Stargazers repo roster for @USERNAME/REPO_NAME](https://reporoster.com/stars/Art9Studio/Aureole)](https://github.com/Art9Studio/Aureole/stargazers)
 
-# :octocat: Сделали Fork
+# <span style="font-size:30px;">:octocat:</span> Сделали Fork
 [![Forkers repo roster for @USERNAME/REPO_NAME](https://reporoster.com/forks/Art9Studio/Aureole)](https://github.com/Art9Studio/Aureole/network/members)
 
 
