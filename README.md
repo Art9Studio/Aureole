@@ -144,10 +144,10 @@ Aureole легко встраивается в любую архитектуру
 - Поговорите с нами в чате: [Telegram](https://t.me/joinchat/lsaDf65QlHk5M2Ri)
 - Написать на E-mail: [hi@aureole.cloud](mailto:hi@aureole.cloud)
 
-# &#8627; Stargazers
+# ⭐ Оценили
 [![Stargazers repo roster for @USERNAME/REPO_NAME](https://reporoster.com/stars/Art9Studio/Aureole)](https://github.com/Art9Studio/Aureole/stargazers)
 
-# &#8627; Forkers
+# :octocat: Сделали Fork
 [![Forkers repo roster for @USERNAME/REPO_NAME](https://reporoster.com/forks/Art9Studio/Aureole)](https://github.com/Art9Studio/Aureole/network/members)
 
 
