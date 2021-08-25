@@ -3,6 +3,7 @@ package context
 import (
 	"aureole/internal/collections"
 	"aureole/internal/context/app"
+	adminTypes "aureole/internal/plugins/admin/types"
 	cryptoKeyTypes "aureole/internal/plugins/cryptokey/types"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
@@ -21,6 +22,7 @@ type (
 		Hashers     map[string]pwhasherTypes.PwHasher
 		Senders     map[string]senderTypes.Sender
 		CryptoKeys  map[string]cryptoKeyTypes.CryptoKey
+		Admins      map[string]adminTypes.Admin
 	}
 )
 

@@ -493,3 +493,10 @@ senders:
       from: "${TEST_TWILIO_PHONE_NUMBER}"
       templates:
         phone_otp: "lab/templates/phone_otp.txt"
+
+
+plugins:
+  - type: "urls"
+    name: "get-urls"
+    config:
+      path: "/url-list"

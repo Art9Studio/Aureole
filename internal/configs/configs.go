@@ -21,6 +21,7 @@ type (
 		HasherConfs  []PwHasher     `config:"hashers"`
 		CryptoKeys   []CryptoKey    `config:"crypto_keys"`
 		Senders      []Sender       `config:"senders"`
+		AdminConfs   []Admin        `config:"plugins"`
 	}
 
 	App struct {
@@ -93,6 +94,12 @@ type (
 	}
 
 	Sender struct {
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
+	}
+
+	Admin struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`
