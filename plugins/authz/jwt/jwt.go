@@ -333,7 +333,7 @@ func signToken(signKey ckeyTypes.CryptoKey, token jwt.Token) ([]byte, error) {
 
 func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string]map[string]string, tokens map[string][]byte) error {
 	jsonBody := make(map[string]interface{})
-	if respBody := c.Response().Body(); respBody != nil && len(respBody) != 0 {
+	if respBody := c.Response().Body(); len(respBody) != 0 {
 		if err := json.Unmarshal(respBody, &jsonBody); err != nil {
 			return err
 		}

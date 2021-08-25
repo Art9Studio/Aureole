@@ -2,7 +2,6 @@ Jinja2 == 3.0.1
 PyJWT == 2.1.0
 cryptography == 3.4.7
 PyYAML == 5.4.1
-docker == 5.0.0
 pytest == 6.2.4
 requests == 2.25.1
 yamlreader == 3.0.4

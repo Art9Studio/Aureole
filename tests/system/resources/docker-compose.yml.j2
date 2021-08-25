@@ -13,8 +13,7 @@ services:
       - default
 
   aureole:
-    #image: aureolecloud/aureole:latest
-    build: "/mnt/c/Users/semen/Projects/Aureole"
+    image: aureolecloud/aureole:latest
     restart: on-failure
     container_name: aureole
     depends_on:

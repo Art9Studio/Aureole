@@ -9,8 +9,6 @@ from pathlib import Path
 
 import jinja2
 import yaml
-from docker import APIClient
-from time import sleep
 from yaml import safe_dump
 from yamlreader import data_merge
 
