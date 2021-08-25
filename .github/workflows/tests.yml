@@ -16,6 +16,8 @@ jobs:
       run: cd tests/stubs/social_auth && ./build.sh
     - name: Build the test Docker image
       run: cd tests/system && ./build.sh
+    - name: Install python dependencies
+      run: pip install yamlreader
     - name: Run tests
       run: tests/system/run
 
