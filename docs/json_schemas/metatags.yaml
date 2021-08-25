@@ -1,0 +1,17 @@
+metatags:
+  - @plugin_name
+  - @authz_ref
+  - @collection_ref
+  - @storage_ref
+  - @sender_ref
+  - @hasher_ref
+  - @crypto_key_ref
+  - @template_ref
+  - @url
+  - @rel_url
+  - @json_path
+  - @file_path
+  - @email
+  - @phone
+  - @f_ext
+  - @unit

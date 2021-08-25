@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "5478520c-8ced-4f0f-96f3-be7c47788129",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "session",
+      "uuid": "c9ecdcc0-b54a-4dd5-ab9d-bde810f71738"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "93a49dd1-5a7a-449c-a438-dbc1aa68a1ef",
+      "additionalProperties": false,
+      "required": [
+        "collection",
+        "storage",
+        "domain"
+      ],
+      "properties": {
+        "collection": {
+          "type": "string",
+          "uuid": "06fe614a-3052-4b8e-a7c8-8c691b651ffc",
+          "minLength": 1,
+          "metatags": "@collection_ref"
+        },
+        "storage": {
+          "type": "string",
+          "uuid": "d568f5cb-35c8-459f-a932-bf5b7981ddda",
+          "minLength": 1,
+          "metatags": "@storage_ref"
+        },
+        "domain": {
+          "type": "string",
+          "uuid": "999faee6-8108-4846-85d3-d6f3133f58db",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "uuid": "1041c2bf-77d9-409d-b64f-6e32a06a7e75",
+          "default": "",
+          "metatags": "@rel_url"
+        },
+        "max_age": {
+          "type": "integer",
+          "uuid": "829bed14-289b-4bc9-a38f-bce83b72947c",
+          "minimum": 0,
+          "default": 3600
+        },
+        "secure": {
+          "type": "boolean",
+          "uuid": "489484e4-76e2-496b-b065-cd9c88f59c65",
+          "default": false
+        },
+        "http_only": {
+          "type": "boolean",
+          "uuid": "401f4b55-07d6-47de-bf33-aa1f5767f709",
+          "default": false
+        },
+        "same_site": {
+          "type": "string",
+          "uuid": "d7bc2743-ce7a-461e-8d7a-8688fdcfc53b",
+          "default": ""
+        },
+        "clean_interval": {
+          "type": "integer",
+          "uuid": "969ead53-b0ed-4c34-a3db-daecba87d4a9",
+          "minimum": 0,
+          "default": 86400
+        }
+      }
+    }
+  },
+  "definitions": {
+    "SessionCollection": {
+      "properties": {
+        "type": {
+          "const": "session",
+          "uuid": "4a22c3b5-a493-4760-84bc-d37dcb743a56"
+        },
+        "config": {
+          "type": "object",
+          "uuid": "b2333c7a-0de5-4077-b62e-6fc23e669c6d",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "pk",
+            "fields_map"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "uuid": "a406f057-404c-454b-b969-04b9c0690ee1",
+              "minLength": 1,
+              "metatags": "@plugin_name"
+            },
+            "pk": {
+              "type": "string",
+              "uuid": "a2803cba-c19a-416e-a13f-42bc1db8275f",
+              "minLength": 1
+            },
+            "fields_map": {
+              "type": "object",
+              "uuid": "bd0c80c4-5ad0-4bcb-82b2-e1e13795275e",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "session_token",
+                "expiration"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "uuid": "ecbc0edb-b1b0-4448-8224-bee60aa5fdfe",
+                  "minLength": 1
+                },
+                "session_token": {
+                  "type": "string",
+                  "uuid": "408a8b4d-797b-4ea5-a385-59457814dc7f",
+                  "minLength": 1
+                },
+                "expiration": {
+                  "type": "string",
+                  "uuid": "29a91001-7c47-4c31-ac35-b375192fef05",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

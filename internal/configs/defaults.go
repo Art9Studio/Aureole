@@ -49,14 +49,6 @@ func (p *Project) setDefaults() {
 }
 
 func (a *App) setDefaults() {
-	for i := range a.Authn {
-		a.Authn[i].setDefaults()
-	}
-
-	for i := range a.Authz {
-		a.Authz[i].setDefaults()
-	}
-
 	a.Identity.setDefaults()
 }
 
@@ -85,12 +77,4 @@ func setDefaultTrait(trait map[string]bool, keys []string, vals []bool) map[stri
 		}
 	}
 	return trait
-}
-
-func (authn *Authn) setDefaults() {
-	SetDefault(&authn.PathPrefix, "/")
-}
-
-func (authz *Authz) setDefaults() {
-	SetDefault(&authz.PathPrefix, "/")
 }

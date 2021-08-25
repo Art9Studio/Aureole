@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "dd81f956-67be-4fa3-b184-ff7bf993d9a3",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "uuid": "fdbedc93-139d-4b5d-8a67-4ca6f478c22b",
+      "minLength": 1,
+      "metatags": "@plugin_name"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "oneOf": [
+    {
+      "$ref": "postgresql/schema.json"
+    }
+  ]
+}

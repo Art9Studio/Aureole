@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "b948eb5f-acff-417d-99e1-c3fe36a7bb8e",
+  "additionalProperties": false,
+  "required": [
+    "collection",
+    "id",
+    "username",
+    "phone",
+    "email"
+  ],
+  "properties": {
+    "collection": {
+      "type": "string",
+      "uuid": "f63244f0-b833-4896-b478-d5f281c821ad",
+      "minLength": 1,
+      "metatags": "@collection_ref"
+    },
+    "id": {
+      "$ref": "#/definitions/Trait",
+      "uuid": "1f11f3d8-bd9c-4455-a6de-b4962273437c",
+      "default": [
+        {
+          "enabled": true,
+          "unique": true,
+          "required": true,
+          "credential": false
+        }
+      ]
+    },
+    "username": {
+      "$ref": "#/definitions/Trait",
+      "uuid": "31c9aac6-4022-4857-9d47-7126f083c669",
+      "default": [
+        {
+          "enabled": true,
+          "unique": false,
+          "required": false,
+          "credential": true
+        }
+      ]
+    },
+    "phone": {
+      "$ref": "#/definitions/Trait",
+      "uuid": "3e9ffda1-bff0-4188-a03b-2b4a233c2cc5",
+      "default": [
+        {
+          "enabled": false,
+          "unique": true,
+          "required": false,
+          "credential": true
+        }
+      ]
+    },
+    "email": {
+      "$ref": "#/definitions/Trait",
+      "uuid": "742e8d7a-0f1d-42b3-bc7a-f9a7cc4018e5",
+      "default": [
+        {
+          "enabled": false,
+          "unique": true,
+          "required": true,
+          "credential": true
+        }
+      ]
+    },
+    "additional": {
+      "type": "array",
+      "uuid": "1cf8e6ca-b0a1-40d0-87c9-ad5cc6e790a9",
+      "items": {
+        "type": "object",
+        "patternProperties": {
+          ".+": {
+            "$ref": "#/definitions/ExtraTrait"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Trait": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "uuid": "6fa5b8f7-49f6-4ef7-9405-e3ce172a56f5",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "uuid": "83d572c2-d416-4093-9465-db1563710298"
+        },
+        "unique": {
+          "type": "boolean",
+          "uuid": "bcddf48d-66ec-49f5-8358-8ddddf717aec"
+        },
+        "required": {
+          "type": "boolean",
+          "uuid": "d74fb617-5114-4ed1-bb79-2102ea153e9b"
+        },
+        "credential": {
+          "type": "boolean",
+          "uuid": "ec146632-74f6-49b7-89b5-aeb765e800ba"
+        }
+      }
+    },
+    "ExtraTrait": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "uuid": "65c4ca5c-6207-46ca-b456-7f7df83393b6",
+      "additionalProperties": false,
+      "properties": {
+        "unique": {
+          "type": "boolean",
+          "uuid": "7b9d88c8-4411-4c71-b1b6-f15bf2ba58c7",
+          "default": false
+        },
+        "required": {
+          "type": "boolean",
+          "uuid": "5070ed6e-c8b6-46e5-ba22-092b334af718",
+          "default": false
+        },
+        "internal": {
+          "type": "boolean",
+          "uuid": "a1bdf485-e71e-486a-8074-f4ef8b9ac67f",
+          "default": false
+        }
+      }
+    }
+  }
+}

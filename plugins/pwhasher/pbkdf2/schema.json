@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "d8592fe5-80d6-4ec7-8e65-7a2374a662d7",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "pbkdf2",
+      "uuid": "3abf485f-aba6-49ca-9ad8-d6a695f6cf55"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "a6008849-508f-4db5-9a65-39070d3ddf82",
+      "additionalProperties": false,
+      "properties": {
+        "func": {
+          "enum": [
+            "sha1",
+            "sha224",
+            "sha256",
+            "sha384",
+            "sha512"
+          ],
+          "uuid": "a4cd72eb-b229-443f-b28a-5bc446773d8a",
+          "default": "sha256"
+        },
+        "iterations": {
+          "type": "integer",
+          "uuid": "2748a0f6-3519-4308-b931-04bcaca160fa",
+          "minimum": 1,
+          "default": 260000
+        },
+        "salt_length": {
+          "type": "integer",
+          "uuid": "c734fca4-f7fa-4386-a96e-e0d362fdafa4",
+          "minimum": 1,
+          "default": 22
+        },
+        "key_length": {
+          "type": "integer",
+          "uuid": "fa637493-7d29-4e6e-958c-a84d6058910b",
+          "minimum": 1,
+          "default": 32
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JsonSchemaMappingsProjectConfiguration">
+    <state>
+      <map>
+        <entry key="Aureole schema">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="Aureole schema" />
+              <option name="relativePathToSchema" value="docs/json_schemas/project.json" />
+              <option name="schemaVersion" value="JSON Schema version 7" />
+              <option name="applicationDefined" value="true" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="config.yaml" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+        <entry key="JSON Schema version 7">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="JSON Schema version 7" />
+              <option name="relativePathToSchema" value="http://json-schema.org/draft-07/schema" />
+              <option name="schemaVersion" value="JSON Schema version 7" />
+              <option name="applicationDefined" value="true" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="def.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="docs/example/main.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="docs/json_schemas/plugins/authn/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="internal/identity/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authn/apple/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authn/email/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authn/facebook/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authn/google/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authn/phone/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authn/pwbased/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authn/vk/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authz/jwt/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authz/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/authz/session/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/cryptokey/jwk/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/cryptokey/pem/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/cryptokey/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/pwhasher/argon2/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/pwhasher/pbkdf2/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/pwhasher/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/sender/email/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/sender/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/sender/twilio/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/storage/postgresql/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="plugins/storage/schema.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="docs/json_schemas/collection.json" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+      </map>
+    </state>
+  </component>
+</project>

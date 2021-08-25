@@ -1,0 +1,1 @@
+{"$schema": "http://json-schema.org/draft-07/schema#", "$id": "/", "definitions": {"notEmptyStr": {"type": "string", "uuid": "e8d75b4c-9ad3-46a4-9732-b54f926ca7e7\n", "minLength": 1}, "jsonPath": {"type": "string", "uuid": "bb12266a-d465-4439-b9b0-2dbbe05571c6\n", "pattern": "^\\{\\$\\..+\\}$"}}}
