@@ -57,7 +57,7 @@ var keyMap = map[string]map[string]string{
 		"cookie": "access_token",
 	},
 	"refresh": {
-		"header": "refresh",
+		"body":   "refresh",
 		"cookie": "refresh_token",
 	},
 }
@@ -333,7 +333,7 @@ func signToken(signKey ckeyTypes.CryptoKey, token jwt.Token) ([]byte, error) {
 
 func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string]map[string]string, tokens map[string][]byte) error {
 	jsonBody := make(map[string]interface{})
-	if respBody := c.Response().Body(); respBody != nil {
+	if respBody := c.Response().Body(); len(respBody) != 0 {
 		if err := json.Unmarshal(respBody, &jsonBody); err != nil {
 			return err
 		}
@@ -341,8 +341,10 @@ func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string
 
 	for name, token := range tokens {
 		switch bearers[name] {
-		case Body, Header:
-			jsonBody[keyMap[name]["header"]] = string(token)
+		case Body:
+			jsonBody[keyMap[name]["body"]] = string(token)
+		case Header:
+			c.Set(keyMap[name]["header"], string(token))
 		case Cookie:
 			cookie := &fiber.Cookie{
 				Name:  keyMap[name]["cookie"],

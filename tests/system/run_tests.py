@@ -1,36 +1,27 @@
+import json
 import os
 import pathlib
+import pprint
 import re
 import subprocess
 import uuid
 from pathlib import Path
-from time import sleep
 
 import jinja2
 import yaml
-from docker import APIClient
 from yaml import safe_dump
 from yamlreader import data_merge
 
 WORK_DIR = Path(__file__).parent.resolve()
-RES_DIR = os.path.join(Path(__file__).parent.resolve(), 'resources')
+RES_DIR = Path(__file__).parent.resolve() / 'resources'
 CLEANUP_FILES_QUEUE = []
 matcher = re.compile(r"\$\{([a-zA-Z_$0-9]+)(:-.*)?\}")
 
 
-# TheEarliestHook
-# def pytest_sessionstart(session):
-#     print('\n--------setup_session()', __name__)
-#
-# # onJustBeforeRunTest
-# def pytest_runtestloop(session):
-#     print('\n--------runtestloop()', __name__)
-
-# onAllTestsFound
-def pytest_collection_finish(session):
-    modules = get_modules(session)
+def prepare_tests():
+    modules = get_modules()
     populate_modules_vars(modules)
-    print(modules)
+    pprint.pprint(modules)
     ensure_resources_dir(modules)
     reveal_uuids_to_modules(modules)
 
@@ -38,27 +29,11 @@ def pytest_collection_finish(session):
     prepare_psql_schemas(modules)
     merge_aureole_configs(modules)
     prepare_module_resources(modules)
-    run_and_wait_aureole()
 
 
-# onExit
-def pytest_sessionfinish(session, exitstatus):
+def finish_tests():
     clean_up_docker()
     clean_up_files()
-
-
-#############
-def run_and_wait_aureole():
-    subprocess.run('cd tests/system/resources && docker-compose up -d',
-                   shell=True, check=True, text=True)
-
-    api_client = APIClient()
-
-    is_healthy = False
-    while not is_healthy:
-        sleep(1)
-        inspect_results = api_client.inspect_container("aureole")
-        is_healthy = inspect_results['State']['Health']['Status'] == 'healthy'
 
 
 def prepare_module_resources(modules):
@@ -108,12 +83,15 @@ def ensure_resources_dir(modules):
 
 
 def reveal_uuids_to_modules(modules):
+    module_uuids = {}
     for module in modules:
-        target_path = os.path.join(module.get('path'), "resources", "uuid")
-        with open(target_path, 'w') as f:
-            f.write(module.get('uuid'))
+        module_uuids[module.get('name')] = module.get('uuid')
 
-        CLEANUP_FILES_QUEUE.append(target_path)
+    target_path = os.path.join(RES_DIR, "uuid.txt")
+    with open(target_path, 'w') as f:
+        f.write(json.dumps(module_uuids))
+
+    CLEANUP_FILES_QUEUE.append(target_path)
 
 
 def populate_modules_vars(modules):
@@ -122,14 +100,14 @@ def populate_modules_vars(modules):
         module.update(get_aureole_resource_pathes(module))
 
 
-def get_modules(session):
+def get_modules():
     modules = []
     pathes = []
-    for item in session.items:
-        path = str(Path(item.fspath).parent.resolve())
-        if path not in pathes:
-            modules.append({'path': path, 'uuid': str(uuid.uuid4())})
-            pathes.append(path)
+    for path in Path(Path(__file__).parent.resolve()).iterdir():
+        if path.is_dir() and path.name.startswith('test_'):
+            if path not in pathes:
+                modules.append({'path': str(path), 'uuid': str(uuid.uuid4()), 'name': path.name})
+                pathes.append(path)
     return modules
 
 
@@ -199,4 +177,20 @@ def interpolate_vars(text, module):
     text = re.sub(matcher, repl, text)
     return text
 
+
 #############
+
+
+def run_and_wait_docker():
+    try:
+        subprocess.run(
+            'cd tests/system/resources && docker-compose up -d aureole postgres smtp twilio social-auth && docker-compose up aureole-tests',
+            shell=True, check=True, text=True)
+    except KeyboardInterrupt:
+        return
+
+
+if __name__ == '__main__':
+    prepare_tests()
+    run_and_wait_docker()
+    finish_tests()

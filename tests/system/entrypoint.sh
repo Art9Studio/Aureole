@@ -1,0 +1,1 @@
+python3 -m pytest -s -v --durations=0 --durations-min=1.0 ./system

@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/pkg/errors"
 )
 
 func GetAuthCode(g *google) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
+		// todo: save state and compare later #1
 		u := g.provider.AuthCodeURL("state")
 		return c.Redirect(u)
 	}
@@ -18,6 +20,7 @@ func GetAuthCode(g *google) func(*fiber.Ctx) error {
 
 func Login(g *google) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
+		// todo: save state and compare later #2
 		state := c.Query("state")
 		if state != "state" {
 			return sendError(c, fiber.StatusBadRequest, "invalid state")
@@ -29,7 +32,7 @@ func Login(g *google) func(*fiber.Ctx) error {
 
 		jwtT, err := getJwt(g, code)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return sendError(c, fiber.StatusInternalServerError, errors.Wrap(err, "error while exchange").Error())
 		}
 
 		var (

@@ -1,0 +1,152 @@
+api_version: "0.1"
+
+apps:
+  pwbased:
+    path_prefix: "/${UUID}"
+    host: "http://aureole:3000"
+
+    identity:
+      collection: pwbased_identity
+      email:
+        enabled: true
+
+    authN:
+      - type: "password_based"
+        authZ: pwbased_jwt
+        config:
+          main_hasher: pwbased_argon2
+          collection: pwbased_pwbased
+          storage: pwbased_one_db
+          login:
+            path: "/login"
+            fields_map:
+              username: "{$.username}"
+              email: "{$.email}"
+              phone: "{$.phone}"
+              password: "{$.password}"
+          register:
+            path: "/register"
+            fields_map:
+              username: "{$.username}"
+              email: "{$.email}"
+              phone: "{$.phone}"
+              password: "{$.password}"
+          password_reset:
+            path: "/password/reset"
+            confirm_url: "/password/reset/confirm"
+            collection: pwbased_reset
+            sender: pwbased_email
+            template: pwbased_reset
+            token:
+              exp: 3600
+              hash_func: "sha256"
+            fields_map:
+              email: "{$.email}"
+              password: "{$.password}"
+          verification:
+            path: "/email-verify"
+            confirm_url: "/email-verify/confirm"
+            collection: pwbased_email_verification
+            sender: pwbased_email
+            template: pwbased_email_verification
+            token:
+              exp: 3600
+              hash_func: "sha256"
+            fields_map:
+              email: "{$.email}"
+
+    authZ:
+      - type: "jwt"
+        name: pwbased_jwt
+        config:
+          sub: true
+          aud: [ "${UUID}" ]
+          iat: true
+          jti: "0"
+          alg: "RS256"
+          sign_key: pwbased_jwk_file
+          verify_keys: [ pwbased_jwk_file ]
+          payload: "${RES_PATH}/jwt_payload.json"
+
+collections:
+  - type: "identity"
+    name: pwbased_identity
+    config:
+      name: "users"
+      pk: "id"
+      fields_map:
+        id: "id"
+        username: "username"
+        email: "email"
+        phone: "phone"
+        is_active: no
+        created: no
+        email_verified: "email_verified"
+
+  - type: "pwbased"
+    name: pwbased_pwbased
+    parent: pwbased_identity
+    config:
+      fields_map:
+        password: "password"
+
+  - type: "password_reset"
+    name: pwbased_reset
+    config:
+      name: "password_resets"
+      pk: "id"
+      fields_map:
+        id: "id"
+        email: "email"
+        token: "token"
+        expires: "expires"
+        invalid: "invalid"
+
+  - type: "email_verification"
+    name: pwbased_email_verification
+    config:
+      name: "email_verifications"
+      pk: "id"
+      fields_map:
+        id: "id"
+        email: "email"
+        token: "token"
+        expires: "expires"
+        invalid: "invalid"
+
+hashers:
+  - type: "argon2"
+    name: pwbased_argon2
+    config:
+      kind: "argon2i"
+      iterations: 1
+      parallelism: 1
+      salt_length: 16
+      key_length: 16
+      memory: 16384
+
+storages:
+  - type: "postgresql"
+    name: pwbased_one_db
+    config:
+      url: "${DB_CONNECTION_psql}"
+
+crypto_keys:
+  - type: "jwk"
+    name: pwbased_jwk_file
+    path_prefix: "/${UUID}/keys"
+    config:
+      path: "${RES_PATH}/keys.json"
+
+senders:
+  - type: "email"
+    name: pwbased_email
+    config:
+      host: "smtp:1025"
+      username: "test.aureole@gmail.com"
+      password: "123456"
+      insecure_skip_verify: true
+      from: "test.aureole@gmail.com"
+      templates:
+        pwbased_reset: "${RES_PATH}/password_reset.txt"
+        pwbased_email_verification: "${RES_PATH}/email_verification.txt"

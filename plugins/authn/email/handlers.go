@@ -5,6 +5,8 @@ import (
 	storageT "aureole/internal/plugins/storage/types"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -45,7 +47,7 @@ func GetMagicLink(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		tokenHash := e.link.hasher().Sum([]byte(token.String()))
+		tokenHash := e.link.hasher().Sum(token.Bytes())
 		linkData := &storageT.EmailLinkData{
 			Email:   identity.Email,
 			Token:   base64.StdEncoding.EncodeToString(tokenHash),
@@ -113,7 +115,7 @@ func Register(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		tokenHash := e.link.hasher().Sum([]byte(token.String()))
+		tokenHash := e.link.hasher().Sum(token.Bytes())
 		linkData := &storageT.EmailLinkData{
 			Email:   identity.Email,
 			Token:   base64.StdEncoding.EncodeToString(tokenHash),
@@ -149,20 +151,24 @@ func Register(e *email) func(*fiber.Ctx) error {
 
 func Login(e *email) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		token := c.Query("token")
-		if token == "" {
-			return sendError(c, fiber.StatusNotFound, "page not found")
+		t := c.Query("token")
+		if t == "" {
+			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
+
+		token, err := uuid.FromString(strings.TrimRight(t, "\n"))
+		if err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
+		}
+		tokenHash := e.link.hasher().Sum(token.Bytes())
 
 		linkSpecs := &e.link.coll.Spec
 		tokenName := e.link.coll.Spec.FieldsMap["token"].Name
-
-		tokenHash := e.link.hasher().Sum([]byte(token))
 		rawEmailLink, err := e.storage.GetEmailLink(linkSpecs, []storageT.Filter{
 			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
 		})
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return sendError(c, fiber.StatusInternalServerError, fmt.Sprintf("%s: %s", err.Error(), token.String()))
 		}
 
 		emailLink, ok := rawEmailLink.(map[string]interface{})

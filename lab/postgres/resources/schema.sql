@@ -62,10 +62,17 @@ CREATE TABLE email_verifications
 
 CREATE TABLE social_logins
 (
-    id         SERIAL PRIMARY KEY,
-    social_id  TEXT,
-    email      TEXT,
-    provider   TEXT,
-    user_data  jsonb,
-    user_id INT REFERENCES users
+    id        SERIAL PRIMARY KEY,
+    social_id TEXT,
+    email     TEXT,
+    provider  TEXT,
+    user_data jsonb,
+    user_id   INT REFERENCES users
+);
+
+CREATE TABLE sessions
+(
+    user_id    INT PRIMARY KEY REFERENCES users,
+    session_id TEXT,
+    expiration timestamptz
 );

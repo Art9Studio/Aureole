@@ -19,17 +19,27 @@ import (
 	"aureole/internal/plugins/storage/types"
 	"aureole/internal/router"
 	_interface "aureole/internal/router/interface"
+	"crypto/tls"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 	"net/url"
+	"strings"
 )
 
 func Init(conf *configs.Project, ctx *ProjectCtx) error {
 	ctx.APIVersion = conf.APIVersion
+	ctx.TestRun = conf.TestRun
+	ctx.PingPath = conf.PingPath
+
+	if ctx.TestRun {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+
 	router.Router.AddProjectRoutes([]*_interface.Route{
 		{
 			Method: "GET",
-			Path:   conf.PingPath,
+			Path:   ctx.PingPath,
 			Handler: func(c *fiber.Ctx) error {
 				return c.SendStatus(fiber.StatusOK)
 			},
@@ -231,13 +241,13 @@ func createApps(conf *configs.Project, ctx *ProjectCtx) error {
 }
 
 func createAppUrl(app *configs.App) (*url.URL, error) {
+	if !strings.HasPrefix(app.Host, "http") {
+		app.Host = "https://" + app.Host
+	}
+
 	appUrl, err := url.Parse(app.Host + app.PathPrefix)
 	if err != nil {
 		return nil, err
-	}
-
-	if appUrl.Scheme == "" {
-		appUrl.Scheme = "https"
 	}
 
 	return appUrl, nil
@@ -306,7 +316,9 @@ func initStorages(ctx *ProjectCtx) error {
 		if err := s.Init(); err != nil {
 			return err
 		}
-		return s.Ping()
+		if err := s.Ping(); err != nil {
+			return err
+		}
 	}
 
 	return nil

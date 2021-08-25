@@ -64,8 +64,8 @@ func (a *Argon2) HashPw(pw string) (string, error) {
 		a.conf.Memory,
 		a.conf.Iterations,
 		a.conf.Parallelism,
-		base64.RawStdEncoding.EncodeToString(salt),
-		base64.RawStdEncoding.EncodeToString(key),
+		base64.StdEncoding.EncodeToString(salt),
+		base64.StdEncoding.EncodeToString(key),
 	)
 
 	return hashed, nil
@@ -121,13 +121,13 @@ func decodePwHash(hash string) (*config, []byte, []byte, error) {
 		return nil, nil, nil, err
 	}
 
-	salt, err := base64.RawStdEncoding.DecodeString(vals[4])
+	salt, err := base64.StdEncoding.DecodeString(vals[4])
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	conf.SaltLen = uint32(len(salt))
 
-	key, err := base64.RawStdEncoding.DecodeString(vals[5])
+	key, err := base64.StdEncoding.DecodeString(vals[5])
 	if err != nil {
 		return nil, nil, nil, err
 	}

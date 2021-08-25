@@ -1,0 +1,121 @@
+api_version: "0.1"
+test_run: true
+
+apps:
+  phone_pwless:
+    path_prefix: "/${UUID}"
+    host: "http://aureole:3000"
+
+    identity:
+      collection: phone_pwless_identity
+      phone:
+        enabled: true
+        required: true
+
+    authN:
+      - type: "phone"
+        path_prefix: "/"
+        authZ: phone_pwless_jwt
+        config:
+          hasher:  phone_pwless_argon2
+          collection: phone_pwless_identity
+          storage: phone_pwless_one_db
+          login:
+            path: "/login"
+            fields_map:
+              phone: "{$.phone}"
+          register:
+            path: "/register"
+            fields_map:
+              username: "{$.username}"
+              phone: "{$.phone}"
+          verification:
+            path: "/login/verify"
+            resend_url: "login/resend"
+            collection: phone_pwless_phone_otp
+            max_attempts: 3
+            sender: phone_pwless_twilio
+            template: phone_pwless_phone_otp
+            otp:
+              length: 6
+              alphabet: "1234567890"
+              prefix: "A-"
+              exp: 300
+            fields_map:
+              id: "{$.otp_id}"
+              otp: "{$.otp}"
+
+    authZ:
+      - type: "jwt"
+        name: phone_pwless_jwt
+        config:
+          sub: true
+          aud: [ "${UUID}" ]
+          iat: true
+          jti: "0"
+          alg: "RS256"
+          sign_key: phone_pwless_jwk_file
+          verify_keys: [ phone_pwless_jwk_file ]
+          payload: "${RES_PATH}/jwt_payload.json"
+
+collections:
+  - type: "identity"
+    name: phone_pwless_identity
+    config:
+      name: "users"
+      pk: "id"
+      fields_map:
+        id: "id"
+        username: "username"
+        email: "email"
+        phone: "phone"
+        is_active: no
+        created: no
+        phone_verified: "phone_verified"
+
+  - type: "phone_otp"
+    name: phone_pwless_phone_otp
+    config:
+      name: "phone_verifications"
+      pk: "id"
+      fields_map:
+        id: "id"
+        phone: "phone"
+        otp: "otp"
+        attempts: "attempts"
+        expires: "expires"
+        invalid: "invalid"
+
+storages:
+  - type: "postgresql"
+    name: phone_pwless_one_db
+    config:
+      url: "${DB_CONNECTION_psql}"
+
+hashers:
+  - type: "argon2"
+    name: phone_pwless_argon2
+    config:
+      kind: "argon2i"
+      iterations: 1
+      parallelism: 1
+      salt_length: 16
+      key_length: 16
+      memory: 16384
+
+crypto_keys:
+  - type: "jwk"
+    name: phone_pwless_jwk_file
+    path_prefix: "/${UUID}/keys"
+    config:
+      path: "${RES_PATH}/keys.json"
+
+senders:
+  - type: "twilio"
+    name: phone_pwless_twilio
+    config:
+      account_sid: "123456"
+      auth_token: "qwerty"
+      from: "+380711234567"
+      templates:
+        phone_pwless_phone_otp: "${RES_PATH}/phone_otp.txt"

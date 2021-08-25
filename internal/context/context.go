@@ -13,6 +13,8 @@ import (
 type (
 	ProjectCtx struct {
 		APIVersion  string
+		TestRun     bool
+		PingPath    string
 		Apps        map[string]*app.App
 		Collections map[string]*collections.Collection
 		Storages    map[string]storageTypes.Storage
@@ -21,6 +23,10 @@ type (
 		CryptoKeys  map[string]cryptoKeyTypes.CryptoKey
 	}
 )
+
+func (ctx *ProjectCtx) IsTestRun() bool {
+	return ctx.TestRun
+}
 
 func (ctx *ProjectCtx) GetApp(name string) (*app.App, error) {
 	a, ok := ctx.Apps[name]
