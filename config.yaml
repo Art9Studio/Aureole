@@ -466,6 +466,16 @@ crypto_keys:
     config:
       path: "https://appleid.apple.com/auth/keys"
 
+  - type: "jwk"
+    name: gen_keys
+    path_prefix: "/gen-keys"
+    config:
+      kty: "RSA"
+      alg: "RS256"
+      size: 2048
+      kid: "SHA-256"
+      path: "lab/keys/gen_keys.json"
+
 senders:
   - type: "email"
     name: email

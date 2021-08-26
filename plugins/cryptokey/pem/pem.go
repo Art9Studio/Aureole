@@ -140,10 +140,10 @@ func setAttr(keySet jwk.Set, alg string) error {
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
 		pair := it.Pair()
 		key := pair.Value.(jwk.Key)
-		if err := key.Set("alg", alg); err != nil {
+		if err := key.Set(jwk.AlgorithmKey, alg); err != nil {
 			return err
 		}
-		if err := key.Set("use", "sig"); err != nil {
+		if err := key.Set(jwk.KeyUsageKey, "sig"); err != nil {
 			return err
 		}
 	}
