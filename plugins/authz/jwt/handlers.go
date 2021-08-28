@@ -33,10 +33,10 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 		}
 
 		// todo: add identity support
-		//username, ok := refreshT.Get("username")
-		//if !ok {
-		//	return sendError(c, fiber.StatusBadRequest, "can't access username from token")
-		//}
+		// username, ok := refreshT.Get("username")
+		// if !ok {
+		// 	return sendError(c, fiber.StatusBadRequest, "can't access username from token")
+		// }
 
 		authzCtx := &types.Context{
 			// Username: username.(string),

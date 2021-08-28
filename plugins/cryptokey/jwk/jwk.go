@@ -54,6 +54,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	if err := mapstructure.Decode(rawConf, adapterConf); err != nil {
 		return nil, err
 	}
+	adapterConf.setDefaults()
 
 	return adapterConf, nil
 }
@@ -162,14 +163,14 @@ func generateKey(conf *config) (keySet jwk.Set, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = ioutil.WriteFile(conf.Path, jwkFile, 0644); err != nil {
+	if err := ioutil.WriteFile(conf.Path, jwkFile, 0644); err != nil {
 		return nil, err
 	}
 
 	return keySet, nil
 }
 
-func generateRawKey(conf *config) (pubRawKey interface{}, privRawKey interface{}, err error) {
+func generateRawKey(conf *config) (pubRawKey, privRawKey interface{}, err error) {
 	// todo: delete defaults after adding validation
 	switch conf.Kty {
 	case "RSA":
