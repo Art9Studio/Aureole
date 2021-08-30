@@ -1,4 +1,4 @@
-name: Run Aureole tests
+name: Aureole tests
 
 on:
   pull_request:
@@ -10,6 +10,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Build the Aureole Docker image
+      run: ./build.sh
     - name: Build the Twilio stub Docker image
       run: cd tests/stubs/twilio && ./build.sh
     - name: Build the Social Auth stub Docker image
