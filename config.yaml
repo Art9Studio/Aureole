@@ -504,8 +504,7 @@ senders:
       templates:
         phone_otp: "lab/templates/phone_otp.txt"
 
-
-plugins:
+admin_plugins:
   - type: "urls"
     name: "get-urls"
     config:

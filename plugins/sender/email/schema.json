@@ -73,7 +73,7 @@
             ".+": {
               "type": "string",
               "minLength": 1,
-              "metatags": "@file_path @f_ext:txt @f_ext:html"
+              "metatags": "@file_path @f_ext:txt,html"
             }
           },
           "minProperties": 1
