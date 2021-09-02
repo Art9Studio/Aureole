@@ -64,8 +64,8 @@ apps:
           iat: true
           jti: "0"
           alg: "RS256"
-          sign_key: pwbased_jwk_file
-          verify_keys: [ pwbased_jwk_file ]
+          sign_key: pwbased_gen_keys
+          verify_keys: [ pwbased_gen_keys ]
           payload: "${RES_PATH}/jwt_payload.json"
 
 collections:
@@ -133,10 +133,14 @@ storages:
 
 crypto_keys:
   - type: "jwk"
-    name: pwbased_jwk_file
-    path_prefix: "/${UUID}/keys"
+    name: pwbased_gen_keys
+    path_prefix: "/${UUID}/gen-keys"
     config:
-      path: "${RES_PATH}/keys.json"
+      kty: "EC"
+      alg: "ES256"
+      curve: "P-256"
+      kid: "SHA-256"
+      path: "${RES_PATH}/gen_keys.json"
 
 senders:
   - type: "email"

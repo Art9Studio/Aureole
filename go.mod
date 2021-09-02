@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gofiber/fiber/v2 v2.16.0
 	github.com/gofrs/uuid v4.0.0+incompatible

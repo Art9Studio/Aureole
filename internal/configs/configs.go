@@ -143,5 +143,6 @@ func validate() {
 	// todo: trait can't be unique if not required
 	// todo: check check if no non-existent keys (not in [enabled, unique, required, credential]) have been set in the config
 	// todo: check bearer names [cookie, body, header, both]
+	// todo: check curve, alg and kty in crypto keys generation
 }
 */

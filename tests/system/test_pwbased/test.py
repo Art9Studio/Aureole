@@ -54,13 +54,13 @@ def test_login(app_url, uuid):
     cookie.load(login_resp.headers['Set-Cookie'])
     assert cookie.get('refresh_token') is not None
     assert verify_jwt(login_resp.headers['access'], cookie.get('refresh_token').value,
-                      app_url + '/keys/jwk', ['RS256'], uuid, 'Aureole Server')
+                      app_url + '/gen-keys/jwk', ['ES256'], uuid, 'Aureole Server')
 
     refresh_resp = requests.post(app_url + '/refresh', cookies=login_resp.cookies)
     assert refresh_resp.ok
     assert refresh_resp.headers['access'] is not None
     assert verify_jwt(refresh_resp.headers['access'], cookie.get('refresh_token').value,
-                      app_url + '/keys/jwk', ['RS256'], uuid, 'Aureole Server')
+                      app_url + '/gen-keys/jwk', ['ES256'], uuid, 'Aureole Server')
 
 
 def test_email_verification(app_url):

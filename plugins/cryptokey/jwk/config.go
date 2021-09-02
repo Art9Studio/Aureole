@@ -6,7 +6,12 @@ import (
 )
 
 type config struct {
-	Path string `mapstructure:"path"`
+	Kty   string `mapstructure:"kty"`
+	Alg   string `mapstructure:"alg"`
+	Curve string `mapstructure:"curve"`
+	Size  int    `mapstructure:"size"`
+	Kid   string `mapstructure:"kid"`
+	Path  string `mapstructure:"path"`
 }
 
 func (j jwkAdapter) Create(conf *configs.CryptoKey) types.CryptoKey {
