@@ -3,7 +3,7 @@ ping_path: "/ping"
 test_run: true
 
 apps:
-  one:
+  - name: one
     host: "http://localhost:3000"
     path_prefix: "/one"
 
@@ -84,7 +84,7 @@ apps:
           same_site: ""
           clean_interval: 60
 
-  two:
+  - name: two
     #host: "https://t.aureole.cloud"
     host: "http://localhost:3000"
     path_prefix: "/two"
@@ -209,7 +209,7 @@ apps:
           payload: "lab/templates/jwt_payload.json"
           native_queries: "lab/native-queries/native.yaml"
 
-  three:
+  - name: three
     host: "http://localhost:3000"
     path_prefix: "/three"
 

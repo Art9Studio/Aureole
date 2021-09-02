@@ -20,56 +20,12 @@
       "metatags": "@rel_url"
     },
     "apps": {
-      "type": "object",
+      "type": "array",
       "uuid": "6d0ccc24-0a20-4d26-905b-90251111be96",
-      "patternProperties": {
-        ".+": {
-          "type": "object",
-          "uuid": "7aa01768-7bfc-4d31-87d5-7c9435597f1b",
-          "additionalProperties": false,
-          "required": [
-            "host",
-            "path_prefix",
-            "identity",
-            "authN",
-            "authZ"
-          ],
-          "properties": {
-            "host": {
-              "type": "string",
-              "uuid": "0da3d79b-7029-452e-8d20-ff0ca0cd0c79",
-              "default": "http://localhost:3000",
-              "metatags": "@url"
-            },
-            "path_prefix": {
-              "type": "string",
-              "uuid": "b59c5fa8-256c-4bd9-9484-11026a9b51ed",
-              "default": "",
-              "metatags": "@rel_url"
-            },
-            "identity": {
-              "$ref": "identity.json"
-            },
-            "authN": {
-              "type": "array",
-              "uuid": "39042e0a-292c-4e9e-9f59-e132fc471938",
-              "items": {
-                "$ref": "../../plugins/authn/schema.json"
-              },
-              "minItems": 1
-            },
-            "authZ": {
-              "type": "array",
-              "uuid": "6aa36e4e-17f9-4ac7-83db-cc51989849df",
-              "items": {
-                "$ref": "../../plugins/authz/schema.json"
-              },
-              "minItems": 1
-            }
-          }
-        }
+      "items": {
+        "$ref": "app.json"
       },
-      "minProperties": 1
+      "minItems": 1
     },
     "storages": {
       "type": "array",

@@ -1,7 +1,7 @@
 api_version: "0.1"
 
 apps:
-  pwbased:
+  - name: pwbased
     path_prefix: "/${UUID}"
     host: "http://aureole:3000"
 

@@ -96,9 +96,15 @@ func createGlobalPlugins(conf *configs.Project, ctx *ProjectCtx) error {
 }
 
 func createAppPlugins(conf *configs.Project, ctx *ProjectCtx) error {
-	for n := range ctx.Apps {
-		appCtx := ctx.Apps[n]
-		appConf := conf.Apps[n]
+	for appName := range ctx.Apps {
+		appCtx := ctx.Apps[appName]
+
+		var appConf configs.App
+		for _, a := range conf.Apps {
+			if a.Name == appName {
+				appConf = a
+			}
+		}
 
 		authenticators, err := createAuthenticators(&appConf)
 		if err != nil {
@@ -240,16 +246,15 @@ func createCryptoKeys(conf *configs.Project, ctx *ProjectCtx) error {
 func createApps(conf *configs.Project, ctx *ProjectCtx) error {
 	ctx.Apps = make(map[string]*app.App, len(conf.Apps))
 
-	for name := range conf.Apps {
-		appConf := conf.Apps[name]
+	for _, appConf := range conf.Apps {
 
 		appUrl, err := createAppUrl(&appConf)
 		if err != nil {
 			return err
 		}
 
-		ctx.Apps[name] = &app.App{
-			Name:       name,
+		ctx.Apps[appConf.Name] = &app.App{
+			Name:       appConf.Name,
 			Url:        *appUrl,
 			PathPrefix: appConf.PathPrefix,
 		}
@@ -272,9 +277,16 @@ func createAppUrl(app *configs.App) (*url.URL, error) {
 }
 
 func createIdentities(conf *configs.Project, ctx *ProjectCtx) error {
-	for n := range ctx.Apps {
-		appCtx := ctx.Apps[n]
-		appConf := conf.Apps[n]
+	for appName := range ctx.Apps {
+		appCtx := ctx.Apps[appName]
+
+		var appConf configs.App
+		for _, a := range conf.Apps {
+			if a.Name == appName {
+				appConf = a
+			}
+		}
+
 		i, err := identity.Create(&appConf.Identity, ctx.Collections)
 		if err != nil {
 			return err
