@@ -2,7 +2,7 @@ api_version: "0.1"
 test_run: true
 
 apps:
-  email_pwless:
+  - name: email_pwless
     path_prefix: "/${UUID}"
     host: "http://aureole:3000"
 

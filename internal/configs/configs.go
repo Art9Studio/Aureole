@@ -12,19 +12,20 @@ type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion   string         `config:"api_version"`
-		PingPath     string         `config:"ping_path"`
-		TestRun      bool           `config:"test_run"`
-		Apps         map[string]App `config:"apps"`
-		StorageConfs []Storage      `config:"storages"`
-		CollConfs    []Collection   `config:"collections"`
-		HasherConfs  []PwHasher     `config:"hashers"`
-		CryptoKeys   []CryptoKey    `config:"crypto_keys"`
-		Senders      []Sender       `config:"senders"`
-		AdminConfs   []Admin        `config:"plugins"`
+		APIVersion   string       `config:"api_version"`
+		PingPath     string       `config:"ping_path"`
+		TestRun      bool         `config:"test_run"`
+		Apps         []App        `config:"apps"`
+		StorageConfs []Storage    `config:"storages"`
+		CollConfs    []Collection `config:"collections"`
+		HasherConfs  []PwHasher   `config:"hashers"`
+		CryptoKeys   []CryptoKey  `config:"crypto_keys"`
+		Senders      []Sender     `config:"senders"`
+		AdminConfs   []Admin      `config:"plugins"`
 	}
 
 	App struct {
+		Name       string   `config:"name"`
 		Host       string   `config:"host"`
 		PathPrefix string   `config:"path_prefix"`
 		Identity   Identity `config:"identity"`
@@ -130,7 +131,6 @@ func LoadMainConfig() (*Project, error) {
 	if err = confLoader.Load(&rawConf); err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)
 	}
-
 	rawConf.setDefaults()
 
 	return &rawConf, nil
