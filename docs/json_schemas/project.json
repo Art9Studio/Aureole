@@ -20,6 +20,11 @@
       "default": "/ping",
       "metatags": "@rel_url"
     },
+    "test_run": {
+      "type": "boolean",
+      "uuid": "1ebdbe28-efd5-48b9-bcba-08ae95929f80",
+      "default": false
+    },
     "apps": {
       "type": "array",
       "uuid": "6d0ccc24-0a20-4d26-905b-90251111be96",
@@ -63,6 +68,13 @@
       "uuid": "d9404fd9-d6f5-432e-b80e-fa73dba384bd",
       "items": {
         "$ref": "../../plugins/sender/schema.json"
+      }
+    },
+    "admin_plugins": {
+      "type": "array",
+      "uuid": "f83f8913-29d3-4a0e-a0af-9897e8725c95",
+      "items": {
+        "$ref": "../../plugins/admin/schema.json"
       }
     }
   }

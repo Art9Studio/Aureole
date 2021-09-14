@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "484b855a-f99a-43f2-9c1c-bc3c03c880b7",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "urls",
+      "uuid": "960d676e-eaef-4705-a388-82d249c649f4"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "e6cb4c01-e5a1-4434-82f1-96039d794298",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "uuid": "acd83de2-a3d9-41d0-97c9-b17b62e75eb8",
+          "minLength": 1,
+          "metatags": "@rel_url"
+        }
+      }
+    }
+  }
+}
