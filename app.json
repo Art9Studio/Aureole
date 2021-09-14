@@ -1,0 +1,7 @@
+{
+  "name": "Aureole",
+  "description": "The most flexible and modern open-source auth server",
+  "repository": "https://github.com/Art9Studio/Aureole",
+  "logo": "https://github.com/Art9Studio/Aureole/raw/Readme/assets/Logo.svg",
+  "keywords": ["Aureole", "authentication", "authorization"]
+}
