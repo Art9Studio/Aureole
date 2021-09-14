@@ -119,6 +119,9 @@
                   <Item>
                     <option name="path" value="plugins/2fa/authenticator/definitions/token.json" />
                   </Item>
+                  <Item>
+                    <option name="path" value="app.json" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>

@@ -63,7 +63,7 @@ Watch branch **main** of this repo to get notified when we are ready for public 
 
 | Privider | Link | Documentation |
 | --- | --- | --- |
-| Heroku | ![](https://www.herokucdn.com/deploy/button.svg) | Link |
+| Heroku | [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy) | Link |
 | Render | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Art9Studio/Aureole) | Link |
 
 # ⚙ Architecture
