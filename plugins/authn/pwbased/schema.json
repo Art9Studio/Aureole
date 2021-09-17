@@ -326,19 +326,9 @@
             "fields_map"
           ],
           "properties": {
-            "name": {
-              "type": "string",
-              "uuid": "7bdfa9cd-d927-4153-afec-2b11baf729c5",
-              "minLength": 1
-            },
-            "pk": {
-              "type": "string",
-              "uuid": "33be4897-9773-4641-b275-96a2089fb296",
-              "minLength": 1
-            },
             "fields_map": {
               "type": "object",
-              "uuid": "8685a6b1-5b37-4c11-82cc-a5c245e5a98a",
+              "uuid": "7bdfa9cd-d927-4153-afec-2b11baf729c5",
               "additionalProperties": false,
               "required": [
                 "password"

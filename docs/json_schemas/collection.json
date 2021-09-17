@@ -22,6 +22,7 @@
   },
   "oneOf": [
     {
+      "uuid": "2dbf6dc7-4df0-43d5-8d58-051b41cbf8be",
       "properties": {
         "type": {
           "const": "identity",
@@ -192,6 +193,7 @@
       }
     },
     {
+      "uuid": "b8591fe4-2e09-4aa8-abe5-e6af4de4ed13",
       "properties": {
         "type": {
           "const": "oauth2",

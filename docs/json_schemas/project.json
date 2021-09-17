@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
+  "uuid": "b7c4d3ea-a46c-46b8-85c5-8c4f2ab21be9",
   "additionalProperties": false,
   "required": [
     "api_version",

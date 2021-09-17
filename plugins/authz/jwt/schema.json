@@ -125,7 +125,7 @@
           "type": "string",
           "uuid": "02b4424a-f59a-4e9f-8ccd-1311d3009f7a",
           "default": "",
-          "metatags": "@file_path @f_ext:yaml @f_ext:yml"
+          "metatags": "@file_path @f_ext:yaml,yml"
         }
       }
     }
