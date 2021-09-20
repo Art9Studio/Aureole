@@ -57,7 +57,6 @@
 - [Лицензия](#-лицензия)
 - [Переводы](#%EF%B8%8F-переводы)
 
-<!--
 # 🚀 Быстрый запуск: ![](RackMultipart20210814-4-ec3q2v_html_cb55ddb5edd60516.gif)
 
 
@@ -67,7 +66,6 @@
 | --- | --- | --- |
 | Heroku | ![](https://www.herokucdn.com/deploy/button.svg) | Ссылка |
 | Render | ![](https://render.com/images/deploy-to-render-button.svg) | Ссылка |
--->
 
 # ⚙ Архитектура
 
