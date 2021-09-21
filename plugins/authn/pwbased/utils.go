@@ -163,7 +163,7 @@ func getCredField(p *pwBased, iData *storageT.IdentityData) (string, interface{}
 }
 
 func isCredential(trait identity.Trait) bool {
-	return trait.IsCredential && trait.IsRequired && trait.IsUnique
+	return trait.IsCredential && trait.IsUnique
 }
 
 func initConfirmLink(u *url.URL, token string) string {

@@ -1,0 +1,27 @@
+{
+  {{ if .Id }}
+    "id": {{ .Id }},
+  {{ end }}
+  {{ if .SocialId }}
+    "social_id": {{ .SocialId }},
+  {{ end }}
+  {{ if .Username }}
+    "username": "{{ .Username }}",
+  {{ end }}
+  {{ if .Phone }}
+    "phone": "{{ .Phone }}",
+  {{ end }}
+  {{ if .Email }}
+    "email": "{{ .Email }}",
+  {{ end }}
+  {{ if .UserData }}
+    "user_data": {{ .UserData }},
+  {{ end }}
+  {{ if .Additional }}
+    "additional": {
+        {{ range $key, $value := .Additional }}
+           "{{ $key }}": {{ $value }},
+        {{ end }}
+    },
+  {{ end }}
+}
