@@ -32,7 +32,7 @@ class Md:
         return '***'
 
 
-class Parser:
+class MDParser:
     tab_size = 2
 
     @staticmethod
@@ -147,10 +147,8 @@ class Parser:
             i = " " * self.tab_size * (indent_level + 1)
             output_lines.append(i + Md.h3('Допустим любой из вариантов конфига:') + '\n')
             for property_obj in obj["anyOf"]:
-                output_lines.append(i + Md.h4('{') + '\n')
                 output_lines = self.parse_object(property_obj, "", output_lines=output_lines,
                                                  indent_level=indent_level + 1)
-                output_lines.append(i + Md.h4('}') + '\n')
 
         if "definitions" in obj:
             output_lines.append(indentation + Md.h3('Определения:') + '\n')
