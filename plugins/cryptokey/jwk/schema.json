@@ -19,14 +19,91 @@
       "required": [
         "path"
       ],
-      "properties": {
-        "path": {
-          "type": "string",
-          "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
-          "minLength": 1,
-          "metatags": "@rel_url @file_path"
+      "oneOf": [
+        {
+          "required": ["path"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
+              "minLength": 1,
+              "metatags": "@rel_url @file_path"
+            }
+          }
+        },
+        {
+          "required": ["path", "kty", "alg", "size", "kid"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "ea7286ce-94c8-4348-97a3-8411251e375d",
+              "minLength": 1,
+              "metatags": "@file_path"
+            },
+            "kty": {
+              "enum": ["RSA", "oct"],
+              "uuid": "357fac72-8bbd-451f-8bf0-9ecec3805f4c"
+            },
+            "alg": {
+              "enum": ["RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "HS256", "HS384", "HS512"],
+              "uuid": "a8a9fc3a-aa88-4eb5-93ef-b0e984082760"
+            },
+            "size": {
+              "type": "integer",
+              "multipleOf": 2,
+              "minimum": 512,
+              "uuid": "88f3cf8d-5425-4d13-8b6e-1bbbbfb1c8ef"
+            },
+            "kid": {
+              "uuid": "083d6213-ae34-493d-8c51-315033373d49",
+              "anyOf": [
+                {
+                  "enum": ["SHA-256", "SHA-1"]
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "required": ["path", "kty", "alg", "curve", "kid"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "uuid": "ea7286ce-94c8-4348-97a3-8411251e375d",
+              "minLength": 1,
+              "metatags": "@file_path"
+            },
+            "kty": {
+              "enum": ["EC", "OKP"],
+              "uuid": "357fac72-8bbd-451f-8bf0-9ecec3805f4c"
+            },
+            "alg": {
+              "enum": ["ES256", "ES384", "ES512", "ES256K", "EdDSA"],
+              "uuid": "a8a9fc3a-aa88-4eb5-93ef-b0e984082760"
+            },
+            "curve": {
+              "enum": ["P-256", "P-384", "P-512", "secp256k1", "Ed25519", "Ed448", "X25519", "X448"],
+              "uuid": "f68683a7-e880-42cd-a218-8895f30851be"
+            },
+            "kid": {
+              "uuid": "083d6213-ae34-493d-8c51-315033373d49",
+              "anyOf": [
+                {
+                  "enum": ["SHA-256", "SHA-1"]
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
         }
-      }
+      ]
     }
   }
 }

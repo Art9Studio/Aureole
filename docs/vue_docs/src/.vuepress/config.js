@@ -56,7 +56,8 @@ module.exports = {
                 'storage',
                 'hasher',
                 'crypto_key',
-                'sender'
+                'sender',
+                'admin_plugin'
             ],
         }
     },

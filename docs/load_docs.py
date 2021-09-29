@@ -96,7 +96,8 @@ def split_json_schema(project_schema):
         'collection': props_keys + ['collections', 'items'],
         'hasher': props_keys + ['hashers', 'items'],
         'crypto_key': props_keys + ['crypto_keys', 'items'],
-        'sender': props_keys + ['senders', 'items']
+        'sender': props_keys + ['senders', 'items'],
+        'admin_plugin': props_keys + ['admin_plugins', 'items']
     }
 
     plugin_schemas = {}

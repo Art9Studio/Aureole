@@ -1,6 +1,5 @@
 api_version: "0.1"
 ping_path: "/ping"
-test_run: true
 
 apps:
   - name: one
