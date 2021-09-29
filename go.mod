@@ -11,7 +11,7 @@ require (
 	github.com/huandu/go-sqlbuilder v1.13.0
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/joho/godotenv v1.3.0
+	github.com/joho/godotenv v1.4.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.7
