@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gofiber/fiber/v2 v2.19.0
 	github.com/gofrs/uuid v4.0.0+incompatible
-	github.com/huandu/go-sqlbuilder v1.12.2
+	github.com/huandu/go-sqlbuilder v1.13.0
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/joho/godotenv v1.3.0
