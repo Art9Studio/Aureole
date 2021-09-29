@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"aureole/pkg/configuro"
 	"github.com/joho/godotenv"
-	"github.com/sherifabdlnaby/configuro"
 )
 
 type (
