@@ -1,1 +1,1 @@
-getUserPosts: "select * from posts where user_id = $1"
+getUserPosts: "select content from posts where user_id = $1"

@@ -10,7 +10,7 @@ services:
     volumes:
       - ./aureole/config.yml:/config.yaml
       - ./aureole/keys.json:/keys.json
-      - ./aureole/jwt_payload.json:/jwt_payload.json
+      - ./aureole/jwt_payload.json.tmpl:/jwt_payload.json.tmpl
       - ./aureole/native.yaml:/native.yaml
 
   graphql-engine:

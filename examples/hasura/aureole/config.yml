@@ -29,7 +29,7 @@ apps:
           alg: "RS256"
           sign_key: jwk_file
           verify_keys: [jwk_file]
-          payload: "/jwt_payload.json"
+          payload: "/jwt_payload.json.tmpl"
           native_queries: "/native.yaml"
 
 storages:

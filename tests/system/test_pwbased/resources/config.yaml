@@ -66,7 +66,7 @@ apps:
           alg: "RS256"
           sign_key: pwbased_gen_keys
           verify_keys: [ pwbased_gen_keys ]
-          payload: "${RES_PATH}/jwt_payload.json"
+          payload: "${RES_PATH}/jwt_payload.json.tmpl"
 
 collections:
   - type: "identity"
