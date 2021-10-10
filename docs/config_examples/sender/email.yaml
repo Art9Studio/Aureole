@@ -1,0 +1,11 @@
+senders:
+  - type: "email"
+    name: email
+    config:
+      host: "smtp.gmail.com:587"
+      username: "username@example.com"
+      password: "${SMTP_PASSWORD}"
+      from: "app@example.com"
+      templates:
+        txt_tmpl: "lab/templates/default.txt"
+        html_tmpl: "lab/templates/default.html"

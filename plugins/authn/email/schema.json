@@ -163,6 +163,7 @@
       }
     }
   },
+  "example": "authn/email",
   "definitions": {
     "EmailLinkCollection": {
       "properties": {

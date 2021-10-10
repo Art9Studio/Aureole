@@ -129,5 +129,6 @@
         }
       }
     }
-  }
+  },
+  "example": "authz/jwt"
 }

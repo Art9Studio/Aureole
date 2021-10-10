@@ -1,0 +1,15 @@
+authN:
+  - type: "password_based"
+    authZ: jwt
+    config:
+      main_hasher: argon2
+      collection: pwbased
+      storage: db
+      password_reset:
+        collection: reset
+        sender: email
+        template: reset
+      verification:
+        collection: email_verification
+        sender: email
+        template: email_verification

@@ -77,5 +77,6 @@
         "$ref": "../../plugins/admin/schema.json"
       }
     }
-  }
+  },
+  "example": "project"
 }

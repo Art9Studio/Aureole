@@ -10,6 +10,7 @@ from md_parser import MDParser
 BASE_DIR = Path(__file__).parent.resolve()
 JSON_SCHEMAS_DIR = BASE_DIR / 'json_schemas'
 DESCRIPTIONS_DIR = BASE_DIR / 'descriptions'
+EXAMPLES_DIR = BASE_DIR / 'config_examples'
 MD_DIR = BASE_DIR / 'vuepress_docs/docs/config'
 
 
@@ -25,6 +26,7 @@ def assemble_json_schema(schema_path):
     work_dir = Path(schema_path).parent.resolve()
     descriptions = load_descriptions()
     metatags = load_metatags()
+    examples = load_examples()
 
     def wrapped(obj):
         if 'uuid' in obj:
@@ -43,6 +45,9 @@ def assemble_json_schema(schema_path):
                 else:
                     info += metatags[tag] + ', '
             obj['metainfo'] = info.rstrip(', ')
+
+        if 'example' in obj:
+            obj['example'] = examples[obj['example']]
 
         if '$ref' in obj:
             ref = obj['$ref']
@@ -83,6 +88,19 @@ def load_metatags():
         metatags[tag] = meta_descriptions[uuid]
 
     return metatags
+
+
+def load_examples():
+    examples = {}
+
+    path = Path(EXAMPLES_DIR)
+    for p in path.glob("**/*.yaml"):
+        rel_path = p.relative_to(path)
+        with open(EXAMPLES_DIR / rel_path) as examples_f:
+            key = (rel_path.parent / rel_path.stem).as_posix()
+            examples[key] = examples_f.read()
+
+    return examples
 
 
 def split_json_schema(project_schema):

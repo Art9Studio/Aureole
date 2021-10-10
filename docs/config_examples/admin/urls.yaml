@@ -1,0 +1,3 @@
+admin_plugins:
+  - type: "urls"
+    name: "get-urls"

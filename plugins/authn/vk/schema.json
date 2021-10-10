@@ -75,5 +75,6 @@
         }
       }
     }
-  }
+  },
+  "example": "authn/vk"
 }

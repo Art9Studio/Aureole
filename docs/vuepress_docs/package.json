@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/Art9Studio/Aureole#readme",
   "devDependencies": {
-    "@vuepress/plugin-docsearch": "^2.0.0-beta.26",
+    "@vuepress/plugin-search": "^2.0.0-beta.26",
     "vuepress": "^2.0.0-beta.26"
   }
 }

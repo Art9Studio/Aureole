@@ -20,6 +20,7 @@
       "metatags": "@collection_ref"
     }
   },
+  "example": "collection",
   "oneOf": [
     {
       "uuid": "2dbf6dc7-4df0-43d5-8d58-051b41cbf8be",
@@ -76,51 +77,23 @@
                 },
                 "is_active": {
                   "uuid": "be905993-6238-44cb-b2a2-4f9df8139236",
-                  "anyOf": [
-                    {
                       "type": "string",
                       "minLength": 1
-                    },
-                    {
-                      "const": "no"
-                    }
-                  ]
                 },
                 "created": {
                   "uuid": "77435be6-2fba-4b6d-9caa-cc9663acc0ba",
-                  "anyOf": [
-                    {
                       "type": "string",
                       "minLength": 1
-                    },
-                    {
-                      "const": "no"
-                    }
-                  ]
                 },
                 "email_verified": {
                   "uuid": "c6696890-8797-480d-8b5d-7fd48bfb35bb",
-                  "anyOf": [
-                    {
                       "type": "string",
                       "minLength": 1
-                    },
-                    {
-                      "const": "no"
-                    }
-                  ]
                 },
                 "phone_verified": {
                   "uuid": "60cbc26b-124a-4711-9ae5-85c84c399e56",
-                  "anyOf": [
-                    {
                       "type": "string",
                       "minLength": 1
-                    },
-                    {
-                      "const": "no"
-                    }
-                  ]
                 }
               },
               "anyOf": [

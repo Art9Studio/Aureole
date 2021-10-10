@@ -4,8 +4,6 @@
   "additionalProperties": false,
   "required": [
     "name",
-    "host",
-    "path_prefix",
     "identity",
     "authN",
     "authZ"

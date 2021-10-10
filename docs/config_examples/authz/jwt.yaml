@@ -1,0 +1,8 @@
+authZ:
+  - type: "jwt"
+    name: jwt
+    config:
+      jti: "0"
+      sign_key: jwk_file
+      verify_keys: [ jwk_file ]
+      payload: "lab/templates/jwt_payload.json"

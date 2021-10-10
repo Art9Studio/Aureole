@@ -6,7 +6,7 @@ set -e
 python3 build_md_docs.py
 
 # navigate into the vuepress project directory
-cd vue_docs
+cd vuepress_docs
 # build
 npm run docs:build
 
@@ -18,6 +18,6 @@ git add -A
 git commit -m 'Deploy vuepress docs'
 
 # if you are deploying to https://<USERNAME>.github.io/<REPO>
-git push -f git@github.com:art9studio/Aureole.git F98_new:docs
+git push -f git@github.com:art9studio/Aureole.git master:docs
 
 cd -

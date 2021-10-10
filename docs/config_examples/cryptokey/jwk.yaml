@@ -1,0 +1,22 @@
+crypto_keys:
+  # load keys from file
+  - type: "jwk"
+    name: jwk_file
+    config:
+      path: "lab/keys/keys.json"
+
+  # load keys from url
+  - type: "jwk"
+    name: jwk_url
+    config:
+      path: "https://www.googleapis.com/oauth2/v3/certs"
+
+  # generate keys and save to file
+  - type: "jwk"
+    name: jwk_gen
+    config:
+      kty: "RSA"
+      alg: "RS256"
+      size: 2048
+      kid: "SHA-256"
+      path: "lab/keys/gen_keys.json"
