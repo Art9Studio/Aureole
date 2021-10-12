@@ -56,7 +56,7 @@ apps:
           alg: "RS256"
           sign_key: phone_pwless_jwk_file
           verify_keys: [ phone_pwless_jwk_file ]
-          payload: "${RES_PATH}/jwt_payload.json"
+          payload: "${RES_PATH}/jwt_payload.json.tmpl"
 
 collections:
   - type: "identity"

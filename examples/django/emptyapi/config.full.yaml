@@ -85,7 +85,7 @@ apps:
           access_exp: 900
           refresh_exp: 7890000
           refresh_url: "/refresh"
-          payload: "./examples/django/emptyapi/jwt_payload.json"
+          payload: "./examples/django/emptyapi/jwt_payload.json.tmpl"
 
 storages:
   - type: "postgresql"

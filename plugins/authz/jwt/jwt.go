@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"regexp"
 	txtTmpl "text/template"
 	"time"
 
@@ -279,26 +280,29 @@ func getPayload(filePath string, authzCtx *authzTypes.Context) (map[string]inter
 func parsePayload(filePath string, authzCtx *authzTypes.Context) (map[string]interface{}, error) {
 	tmplFile := filePath
 	baseName := path.Base(tmplFile)
-	extension := path.Ext(tmplFile)
-	rawPayload := &bytes.Buffer{}
+	bufRawPayload := &bytes.Buffer{}
 
-	if extension == ".json" {
+	extension := path.Ext(tmplFile)
+	if extension == ".tmpl" {
 		tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
 			"NativeQ": authzCtx.NativeQ,
 		}).ParseFiles(tmplFile))
-		if err := tmpl.Execute(rawPayload, authzCtx); err != nil {
+		if err := tmpl.Execute(bufRawPayload, authzCtx); err != nil {
 			return nil, err
 		}
+
+		strRawPayload := regexp.MustCompile(`\s+`).ReplaceAllString(bufRawPayload.String(), "")
+		strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
+
+		payload := make(map[string]interface{})
+		if err := json.Unmarshal([]byte(strRawPayload), &payload); err != nil {
+			return nil, err
+		}
+
+		return payload, nil
 	} else {
 		return nil, fmt.Errorf("jwt: json type expected, '%s' found", extension)
 	}
-
-	payload := make(map[string]interface{})
-	if err := json.Unmarshal(rawPayload.Bytes(), &payload); err != nil {
-		return nil, err
-	}
-
-	return payload, nil
 }
 
 func defaultPayload(authzCtx *authzTypes.Context) (map[string]interface{}, error) {

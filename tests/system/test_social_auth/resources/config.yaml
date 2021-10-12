@@ -79,7 +79,7 @@ apps:
           alg: "RS256"
           sign_key: social_auth_jwk_file
           verify_keys: [ social_auth_jwk_file ]
-          payload: "${RES_PATH}/jwt_payload.json"
+          payload: "${RES_PATH}/jwt_payload.json.tmpl"
 
 collections:
   - type: "identity"

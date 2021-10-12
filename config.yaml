@@ -205,7 +205,7 @@ apps:
           access_exp: 900
           refresh_exp: 7890000
           refresh_url: "/refresh"
-          payload: "lab/templates/jwt_payload.json"
+          payload: "lab/templates/jwt_payload.json.tmpl"
           native_queries: "lab/native-queries/native.yaml"
 
   - name: three
@@ -297,7 +297,7 @@ apps:
           access_exp: 900
           refresh_exp: 7890000
           refresh_url: "/refresh"
-          payload: "lab/templates/jwt_payload.json"
+          payload: "lab/templates/jwt_payload.json.tmpl"
 
 storages:
   - type: "postgresql"
