@@ -3,8 +3,8 @@ ping_path: "/ping"
 
 apps:
   - name: one
-    host: "http://localhost:3000"
-    path_prefix: "/one"
+    host: "${APP_HOST:https://localhost:3000}"
+    path_prefix: "${APP_PREFIX:/one}"
 
     identity:
       collection: identity
