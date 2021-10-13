@@ -41,7 +41,7 @@ func (ctx *ProjectCtx) GetApp(name string) (*app.App, error) {
 
 func (ctx *ProjectCtx) GetCollection(name string) (*collections.Collection, error) {
 	c, ok := ctx.Collections[name]
-	if !ok {
+	if !ok || c == nil {
 		return nil, fmt.Errorf("can't find collection named '%s'", name)
 	}
 
@@ -50,7 +50,7 @@ func (ctx *ProjectCtx) GetCollection(name string) (*collections.Collection, erro
 
 func (ctx *ProjectCtx) GetStorage(name string) (storageTypes.Storage, error) {
 	s, ok := ctx.Storages[name]
-	if !ok {
+	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find storage named '%s'", name)
 	}
 
@@ -59,7 +59,7 @@ func (ctx *ProjectCtx) GetStorage(name string) (storageTypes.Storage, error) {
 
 func (ctx *ProjectCtx) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
 	h, ok := ctx.Hashers[name]
-	if !ok {
+	if !ok || h == nil {
 		return nil, fmt.Errorf("can't find hasher named '%s'", name)
 	}
 
@@ -68,7 +68,7 @@ func (ctx *ProjectCtx) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
 
 func (ctx *ProjectCtx) GetSender(name string) (senderTypes.Sender, error) {
 	s, ok := ctx.Senders[name]
-	if !ok {
+	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find sender named '%s'", name)
 	}
 
@@ -77,7 +77,7 @@ func (ctx *ProjectCtx) GetSender(name string) (senderTypes.Sender, error) {
 
 func (ctx *ProjectCtx) GetCryptoKey(name string) (cryptoKeyTypes.CryptoKey, error) {
 	k, ok := ctx.CryptoKeys[name]
-	if !ok {
+	if !ok || k == nil {
 		return nil, fmt.Errorf("can't find crypto key named '%s'", name)
 	}
 

@@ -165,7 +165,7 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			link := getConfirmLink(VerifyLink, p, token.String())
+			link := initConfirmLink(p.verif.confirmLink, token.String())
 			err = p.verif.sender.Send(verifData.Email.(string),
 				"Verify your email",
 				p.conf.Verif.Template,
@@ -260,7 +260,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := getConfirmLink(ResetLink, p, token.String())
+		link := initConfirmLink(p.reset.confirmLink, token.String())
 		err = p.reset.sender.Send(resetData.Email.(string),
 			"Reset your password",
 			p.conf.Reset.Template,
@@ -418,7 +418,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := getConfirmLink(VerifyLink, p, token.String())
+		link := initConfirmLink(p.verif.confirmLink, token.String())
 		err = p.verif.sender.Send(verifData.Email.(string),
 			"Verify your email",
 			p.conf.Verif.Template,

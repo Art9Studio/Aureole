@@ -17,12 +17,9 @@ func main() {
 	}
 
 	Project = &context.ProjectCtx{}
-
-	r := router.Init()
-	pluginCore.InitApi(Project, r)
-	if err := context.Init(projConf, Project); err != nil {
-		log.Panic(err)
-	}
+	pluginCore.InitApi(Project, router.Init())
+	context.Init(projConf, Project)
+	context.ListPluginStatus(Project)
 
 	server, err := router.CreateServer(Project.Apps)
 	if err != nil {

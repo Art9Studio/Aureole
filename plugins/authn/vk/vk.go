@@ -53,7 +53,9 @@ func (v *vk) Init(app app.AppCtx) (err error) {
 		return fmt.Errorf("authorizer named '%s' is not declared", v.rawConf.AuthzName)
 	}
 
-	initProvider(v)
+	if err := initProvider(v); err != nil {
+		return err
+	}
 	createRoutes(v)
 	return nil
 }
@@ -67,8 +69,12 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func initProvider(v *vk) {
-	redirectUri := v.app.GetUrl()
+func initProvider(v *vk) error {
+	redirectUri, err := v.app.GetUrl()
+	if err != nil {
+		return err
+	}
+
 	redirectUri.Path = path.Clean(redirectUri.Path + v.rawConf.PathPrefix + v.conf.RedirectUri)
 	v.provider = &oauth2.Config{
 		ClientID:     v.conf.ClientId,
@@ -77,6 +83,7 @@ func initProvider(v *vk) {
 		RedirectURL:  redirectUri.String(),
 		Scopes:       v.conf.Scopes,
 	}
+	return nil
 }
 
 func createRoutes(v *vk) {

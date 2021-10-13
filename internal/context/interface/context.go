@@ -23,7 +23,7 @@ type (
 
 	AppCtx interface {
 		GetName() string
-		GetUrl() url.URL
+		GetUrl() (*url.URL, error)
 		GetPathPrefix() string
 		GetIdentity() *identity.Identity
 		GetAuthorizer(name string) (authzTypes.Authorizer, error)

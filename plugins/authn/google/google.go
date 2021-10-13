@@ -53,7 +53,9 @@ func (g *google) Init(app app.AppCtx) (err error) {
 		return fmt.Errorf("authorizer named '%s' is not declared", g.rawConf.AuthzName)
 	}
 
-	initProvider(g)
+	if err := initProvider(g); err != nil {
+		return err
+	}
 	createRoutes(g)
 	return nil
 }
@@ -67,8 +69,12 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func initProvider(g *google) {
-	redirectUri := g.app.GetUrl()
+func initProvider(g *google) error {
+	redirectUri, err := g.app.GetUrl()
+	if err != nil {
+		return err
+	}
+
 	redirectUri.Path = path.Clean(redirectUri.Path + g.rawConf.PathPrefix + g.conf.RedirectUri)
 	g.provider = &oauth2.Config{
 		ClientID:     g.conf.ClientId,
@@ -77,6 +83,7 @@ func initProvider(g *google) {
 		RedirectURL:  redirectUri.String(),
 		Scopes:       g.conf.Scopes,
 	}
+	return nil
 }
 
 func createRoutes(g *google) {

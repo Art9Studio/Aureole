@@ -6,7 +6,7 @@ import (
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/pkg/jsonpath"
 	"fmt"
-	"path"
+	"net/url"
 	"reflect"
 
 	"github.com/gofiber/fiber/v2"
@@ -112,10 +112,7 @@ func isZeroVal(x interface{}) bool {
 	return x == nil || reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
 }
 
-func getMagicLink(e *email, token string) string {
-	u := e.app.GetUrl()
-
-	u.Path = path.Clean(u.Path + e.rawConf.PathPrefix + e.conf.Link.Path)
+func initMagicLink(u *url.URL, token string) string {
 	q := u.Query()
 	q.Set("token", token)
 	u.RawQuery = q.Encode()

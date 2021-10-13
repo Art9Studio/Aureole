@@ -87,7 +87,11 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initProvider(a *apple) error {
-	redirectUrl := a.app.GetUrl()
+	redirectUrl, err := a.app.GetUrl()
+	if err != nil {
+		return err
+	}
+
 	redirectUrl.Path = path.Clean(redirectUrl.Path + a.rawConf.PathPrefix + a.conf.RedirectUrl)
 	a.provider = &Config{
 		ClientId: a.conf.ClientId,
