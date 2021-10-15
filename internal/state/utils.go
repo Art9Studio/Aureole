@@ -1,15 +1,18 @@
-package context
+package state
 
 import (
 	"fmt"
+	"reflect"
 	"unicode/utf8"
 )
 
-func ListPluginStatus(ctx *ProjectCtx) {
+func ListPluginStatus(p *Project) {
 	fmt.Println("AUREOLE PLUGINS STATUS")
 
-	for appName, app := range ctx.Apps {
+	for appName, app := range p.Apps {
 		fmt.Printf("\nAPP: %s\n", appName)
+
+		printStatus("identity", p.Apps[appName].Identity)
 
 		for name, authn := range app.Authenticators {
 			printStatus(name, authn)
@@ -18,48 +21,46 @@ func ListPluginStatus(ctx *ProjectCtx) {
 		for name, authz := range app.Authorizers {
 			printStatus(name, authz)
 		}
-
-		printStatus("identity", app.Identity)
 	}
 
-	if len(ctx.Collections) != 0 {
+	if len(p.Collections) != 0 {
 		fmt.Println("\nCOLLECTION PLUGINS")
-		for name, plugin := range ctx.Collections {
+		for name, plugin := range p.Collections {
 			printStatus(name, plugin)
 		}
 	}
 
-	if len(ctx.Storages) != 0 {
+	if len(p.Storages) != 0 {
 		fmt.Println("\nSTORAGE PLUGINS")
-		for name, plugin := range ctx.Storages {
+		for name, plugin := range p.Storages {
 			printStatus(name, plugin)
 		}
 	}
 
-	if len(ctx.Hashers) != 0 {
+	if len(p.Hashers) != 0 {
 		fmt.Println("\nHASHER PLUGINS")
-		for name, plugin := range ctx.Hashers {
+		for name, plugin := range p.Hashers {
 			printStatus(name, plugin)
 		}
 	}
 
-	if len(ctx.Senders) != 0 {
+	if len(p.Senders) != 0 {
 		fmt.Println("\nSENDER PLUGINS")
-		for name, plugin := range ctx.Senders {
+		for name, plugin := range p.Senders {
 			printStatus(name, plugin)
 		}
 	}
 
-	if len(ctx.CryptoKeys) != 0 {
+	if len(p.CryptoKeys) != 0 {
 		fmt.Println("\nCRYPTOKEY PLUGINS")
-		for name, plugin := range ctx.CryptoKeys {
+		for name, plugin := range p.CryptoKeys {
 			printStatus(name, plugin)
 		}
 	}
 
-	if len(ctx.Admins) != 0 {
+	if len(p.Admins) != 0 {
 		fmt.Println("\nADMIN PLUGINS")
-		for name, plugin := range ctx.Admins {
+		for name, plugin := range p.Admins {
 			printStatus(name, plugin)
 		}
 	}
@@ -73,7 +74,7 @@ func printStatus(name string, plugin interface{}) {
 	checkMark, _ := utf8.DecodeRuneInString("\u2714")
 	crossMark, _ := utf8.DecodeRuneInString("\u274c")
 
-	if plugin != nil {
+	if plugin != nil && !reflect.ValueOf(plugin).IsNil() {
 		fmt.Printf("%s%s - %v%s\n", colorGreen, name, string(checkMark), resetColor)
 	} else {
 		fmt.Printf("%s%s - %v%s\n", colorRed, name, string(crossMark), resetColor)

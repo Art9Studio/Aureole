@@ -12,7 +12,7 @@ type (
 		ClientId     string   `mapstructure:"client_id"`
 		ClientSecret string   `mapstructure:"client_secret"`
 		Scopes       []string `mapstructure:"scopes"`
-		RedirectUri  string   `mapstructure:"redirect_uri"`
+		RedirectUri  string
 		Fields       []string `mapstructure:"fields"`
 	}
 )

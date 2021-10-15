@@ -4,12 +4,6 @@
   "uuid": "f9080da9-9249-413e-ae30-1c1c3f1be6cf",
   "additionalProperties": false,
   "properties": {
-    "path_prefix": {
-      "type": "string",
-      "uuid": "41921cd7-6bc4-4141-8e35-157605e05e50",
-      "default": "",
-      "metatags": "@rel_url"
-    },
     "authZ": {
       "type": "string",
       "uuid": "1ee50b20-4f09-4ed8-ac29-6d54feccc036",

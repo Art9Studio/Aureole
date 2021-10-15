@@ -23,11 +23,11 @@
     "path_prefix": {
       "type": "string",
       "uuid": "b59c5fa8-256c-4bd9-9484-11026a9b51ed",
-      "default": "",
+      "default": "/",
       "metatags": "@rel_url"
     },
     "identity": {
-      "$ref": "identity.json"
+      "$ref": "identity.schema.json"
     },
     "authN": {
       "type": "array",

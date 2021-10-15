@@ -15,7 +15,7 @@ type (
 		TeamId      string   `mapstructure:"team_id"`
 		KeyId       string   `mapstructure:"key_id"`
 		Scopes      []string `mapstructure:"scopes"`
-		RedirectUrl string   `mapstructure:"redirect_uri"`
+		RedirectUri string
 	}
 )
 

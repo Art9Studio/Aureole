@@ -3,7 +3,6 @@ package phone
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
@@ -11,13 +10,14 @@ import (
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
+	app "aureole/internal/state/interface"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 )
 
 type (
 	phone struct {
-		app          app.AppCtx
+		app          app.AppState
 		rawConf      *configs.Authn
 		conf         *config
 		identity     *identity.Identity
@@ -34,25 +34,30 @@ type (
 	}
 )
 
-func (p *phone) Init(app app.AppCtx) (err error) {
+func (p *phone) Init(app app.AppState) (err error) {
 	p.app = app
-	p.identity = app.GetIdentity()
+	p.rawConf.PathPrefix = "/" + AdapterName
+
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	pluginApi := authn.Repository.PluginApi
+	p.identity, err = app.GetIdentity()
+	if err != nil {
+		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+	}
 
 	p.hasher, err = pluginApi.Project.GetHasher(p.conf.Hasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.Hasher)
 	}
 
-	p.coll, err = pluginApi.Project.GetCollection(p.conf.Collection)
+	/*p.coll, err = pluginApi.Project.GetCollection(p.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
-	}
+	}*/
 
 	p.verification.coll, err = pluginApi.Project.GetCollection(p.conf.Verification.Collection)
 	if err != nil {
@@ -63,6 +68,7 @@ func (p *phone) Init(app app.AppCtx) (err error) {
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
 	}
+
 	p.verification.sender, err = pluginApi.Project.GetSender(p.conf.Verification.Sender)
 	if err != nil {
 		return fmt.Errorf("sender named '%s' is not declared", p.conf.Verification.Sender)
@@ -95,18 +101,13 @@ func createRoutes(p *phone) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Login.Path,
-			Handler: Login(p),
-		},
-		{
-			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Register.Path,
-			Handler: Register(p),
+			Path:    p.rawConf.PathPrefix + p.conf.Path,
+			Handler: SendOtp(p),
 		},
 		{
 			Method:  "POST",
 			Path:    p.rawConf.PathPrefix + p.conf.Verification.Path,
-			Handler: Verify(p),
+			Handler: Login(p),
 		},
 		{
 			Method:  "POST",

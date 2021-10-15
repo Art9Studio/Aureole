@@ -12,6 +12,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/ed25519"
+	"strings"
 )
 
 type Pem struct {
@@ -22,6 +23,7 @@ type Pem struct {
 }
 
 func (p *Pem) Init() (err error) {
+	p.rawConf.PathPrefix = "/" + strings.Replace(p.rawConf.Name, "_", "-", -1)
 	if p.conf, err = initConfig(&p.rawConf.Config); err != nil {
 		return err
 	}

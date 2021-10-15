@@ -3,12 +3,12 @@ package facebook
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
+	app "aureole/internal/state/interface"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
@@ -19,7 +19,7 @@ import (
 const Provider = "facebook"
 
 type facebook struct {
-	app        app.AppCtx
+	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
 	identity   *identity.Identity
@@ -29,16 +29,22 @@ type facebook struct {
 	authorizer authzTypes.Authorizer
 }
 
-func (f *facebook) Init(app app.AppCtx) (err error) {
+func (f *facebook) Init(app app.AppState) (err error) {
 	f.app = app
-	f.identity = app.GetIdentity()
+	f.rawConf.PathPrefix = "/oauth2/" + AdapterName
+
 	f.conf, err = initConfig(&f.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	pluginApi := authn.Repository.PluginApi
-	f.coll, err = pluginApi.Project.GetCollection(f.conf.Coll)
+	//pluginApi := authn.Repository.PluginApi
+	f.identity, err = app.GetIdentity()
+	if err != nil {
+		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+	}
+
+	/*f.coll, err = pluginApi.Project.GetCollection(f.conf.Coll)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", f.conf.Coll)
 	}
@@ -46,7 +52,7 @@ func (f *facebook) Init(app app.AppCtx) (err error) {
 	f.storage, err = pluginApi.Project.GetStorage(f.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", f.conf.Storage)
-	}
+	}*/
 
 	f.authorizer, err = f.app.GetAuthorizer(f.rawConf.AuthzName)
 	if err != nil {

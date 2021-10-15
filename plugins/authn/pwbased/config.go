@@ -18,35 +18,31 @@ type (
 	}
 
 	login struct {
-		Path      string            `mapstructure:"path"`
-		FieldsMap map[string]string `mapstructure:"fields_map"`
+		Path string
 	}
 
 	register struct {
-		Path          string            `mapstructure:"path"`
-		IsLoginAfter  bool              `mapstructure:"login_after"`
-		IsVerifyAfter bool              `mapstructure:"verify_after"`
-		FieldsMap     map[string]string `mapstructure:"fields_map"`
+		Path          string
+		IsLoginAfter  bool `mapstructure:"login_after"`
+		IsVerifyAfter bool `mapstructure:"verify_after"`
 	}
 
 	resetConf struct {
-		Path       string            `mapstructure:"path"`
-		ConfirmUrl string            `mapstructure:"confirm_url"`
-		Collection string            `mapstructure:"collection"`
-		Sender     string            `mapstructure:"sender"`
-		Template   string            `mapstructure:"template"`
-		Token      token             `mapstructure:"token"`
-		FieldsMap  map[string]string `mapstructure:"fields_map"`
+		Path       string
+		ConfirmUrl string
+		Collection string `mapstructure:"collection"`
+		Sender     string `mapstructure:"sender"`
+		Template   string `mapstructure:"template"`
+		Token      token  `mapstructure:"token"`
 	}
 
 	verifConf struct {
-		Path       string            `mapstructure:"path"`
-		ConfirmUrl string            `mapstructure:"confirm_url"`
-		Collection string            `mapstructure:"collection"`
-		Sender     string            `mapstructure:"sender"`
-		Template   string            `mapstructure:"template"`
-		Token      token             `mapstructure:"token"`
-		FieldsMap  map[string]string `mapstructure:"fields_map"`
+		Path       string
+		ConfirmUrl string
+		Collection string `mapstructure:"collection"`
+		Sender     string `mapstructure:"sender"`
+		Template   string `mapstructure:"template"`
+		Token      token  `mapstructure:"token"`
 	}
 
 	token struct {

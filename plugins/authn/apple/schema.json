@@ -23,8 +23,7 @@
         "public_key",
         "client_id",
         "team_id",
-        "key_id",
-        "redirect_uri"
+        "key_id"
       ],
       "properties": {
         "collection": {
@@ -77,12 +76,6 @@
             "email"
           ],
           "uniqueItems": true
-        },
-        "redirect_uri": {
-          "type": "string",
-          "uuid": "3e65dfd7-cb26-4b1d-9cbc-0a7f21f83163",
-          "minLength": 1,
-          "metatags": "@rel_url"
         }
       }
     }

@@ -12,7 +12,7 @@ import (
 )
 
 type (
-	ProjectCtx interface {
+	ProjectState interface {
 		IsTestRun() bool
 		GetCollection(name string) (*collections.Collection, error)
 		GetStorage(name string) (storageTypes.Storage, error)
@@ -21,11 +21,11 @@ type (
 		GetCryptoKey(name string) (cryptoKeyTypes.CryptoKey, error)
 	}
 
-	AppCtx interface {
+	AppState interface {
 		GetName() string
 		GetUrl() (*url.URL, error)
 		GetPathPrefix() string
-		GetIdentity() *identity.Identity
+		GetIdentity() (*identity.Identity, error)
 		GetAuthorizer(name string) (authzTypes.Authorizer, error)
 	}
 )

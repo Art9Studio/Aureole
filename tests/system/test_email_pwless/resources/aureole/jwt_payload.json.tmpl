@@ -1,4 +1,8 @@
 {
-  "id": "{{ .Id }}",
-  "email": "{{ .Email }}"
+  {{ if .Id }}
+    "id": {{ .Id }},
+  {{ end }}
+  {{ if .Email }}
+    "email": "{{ .Email }}",
+  {{ end }}
 }

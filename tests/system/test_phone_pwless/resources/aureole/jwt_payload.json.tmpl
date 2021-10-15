@@ -1,4 +1,8 @@
 {
-  "id": "{{ .Id }}",
-  "phone": "{{ .Phone }}"
+  {{ if .Id }}
+    "id": {{ .Id }},
+  {{ end }}
+  {{ if .Phone }}
+    "phone": "{{ .Phone }}",
+  {{ end }}
 }

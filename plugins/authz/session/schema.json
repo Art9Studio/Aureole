@@ -42,7 +42,6 @@
         "path": {
           "type": "string",
           "uuid": "1041c2bf-77d9-409d-b64f-6e32a06a7e75",
-          "default": "",
           "metatags": "@rel_url"
         },
         "max_age": {
@@ -63,8 +62,7 @@
         },
         "same_site": {
           "type": "string",
-          "uuid": "d7bc2743-ce7a-461e-8d7a-8688fdcfc53b",
-          "default": ""
+          "uuid": "d7bc2743-ce7a-461e-8d7a-8688fdcfc53b"
         },
         "clean_interval": {
           "type": "integer",

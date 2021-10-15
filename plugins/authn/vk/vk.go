@@ -3,12 +3,12 @@ package vk
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
+	app "aureole/internal/state/interface"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
@@ -19,7 +19,7 @@ import (
 const Provider = "vk"
 
 type vk struct {
-	app        app.AppCtx
+	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
 	identity   *identity.Identity
@@ -29,16 +29,22 @@ type vk struct {
 	authorizer authzTypes.Authorizer
 }
 
-func (v *vk) Init(app app.AppCtx) (err error) {
+func (v *vk) Init(app app.AppState) (err error) {
 	v.app = app
-	v.identity = app.GetIdentity()
+	v.rawConf.PathPrefix = "/oauth2/" + AdapterName
+
 	v.conf, err = initConfig(&v.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	pluginApi := authn.Repository.PluginApi
-	v.coll, err = pluginApi.Project.GetCollection(v.conf.Coll)
+	//pluginApi := authn.Repository.PluginApi
+	v.identity, err = app.GetIdentity()
+	if err != nil {
+		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+	}
+
+	/*v.coll, err = pluginApi.Project.GetCollection(v.conf.Coll)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", v.conf.Coll)
 	}
@@ -46,7 +52,7 @@ func (v *vk) Init(app app.AppCtx) (err error) {
 	v.storage, err = pluginApi.Project.GetStorage(v.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", v.conf.Storage)
-	}
+	}*/
 
 	v.authorizer, err = v.app.GetAuthorizer(v.rawConf.AuthzName)
 	if err != nil {

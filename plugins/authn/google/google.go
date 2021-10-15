@@ -3,12 +3,12 @@ package google
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
+	app "aureole/internal/state/interface"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
@@ -19,7 +19,7 @@ import (
 const Provider = "google"
 
 type google struct {
-	app        app.AppCtx
+	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
 	identity   *identity.Identity
@@ -29,16 +29,22 @@ type google struct {
 	authorizer authzTypes.Authorizer
 }
 
-func (g *google) Init(app app.AppCtx) (err error) {
+func (g *google) Init(app app.AppState) (err error) {
 	g.app = app
-	g.identity = app.GetIdentity()
+	g.rawConf.PathPrefix = "/oauth2/" + AdapterName
+
 	g.conf, err = initConfig(&g.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	pluginApi := authn.Repository.PluginApi
-	g.coll, err = pluginApi.Project.GetCollection(g.conf.Coll)
+	//pluginApi := authn.Repository.PluginApi
+	g.identity, err = app.GetIdentity()
+	if err != nil {
+		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+	}
+
+	/*g.coll, err = pluginApi.Project.GetCollection(g.conf.Coll)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", g.conf.Coll)
 	}
@@ -46,7 +52,7 @@ func (g *google) Init(app app.AppCtx) (err error) {
 	g.storage, err = pluginApi.Project.GetStorage(g.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", g.conf.Storage)
-	}
+	}*/
 
 	g.authorizer, err = g.app.GetAuthorizer(g.rawConf.AuthzName)
 	if err != nil {

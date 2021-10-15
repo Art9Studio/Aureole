@@ -70,8 +70,8 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func (s *session) Authorize(ctx *fiber.Ctx, authzCtx *types.Context) error {
-	userId := authzCtx.Id
+func (s *session) Authorize(c *fiber.Ctx, payload *types.Payload) error {
+	userId := payload.Id
 	expires := time.Now().Add(time.Duration(s.conf.MaxAge) * time.Second)
 
 	sessionToken, err := uuid.NewV4()
@@ -100,7 +100,7 @@ func (s *session) Authorize(ctx *fiber.Ctx, authzCtx *types.Context) error {
 		HTTPOnly: s.conf.HttpOnly,
 		SameSite: s.conf.SameSite,
 	}
-	ctx.Cookie(cookie)
+	c.Cookie(cookie)
 
 	return nil
 }

@@ -1,8 +1,8 @@
 package router
 
 import (
-	"aureole/internal/context/app"
 	_interface "aureole/internal/router/interface"
+	"aureole/internal/state/app"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"path"
 

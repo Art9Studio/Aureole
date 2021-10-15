@@ -1,11 +1,13 @@
 package email
 
 import (
+	authnTypes "aureole/internal/plugins/authn/types"
 	authzT "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"strings"
 	"time"
 
@@ -13,34 +15,31 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-func GetMagicLink(e *email) func(*fiber.Ctx) error {
+func SendMagicLink(e *email) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var authInput interface{}
-		if err := c.BodyParser(&authInput); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
-		}
-
-		i := e.identity
-		loginMap := e.conf.Login.FieldsMap
-		if !i.Email.IsEnabled || !isCredential(&i.Email) {
+		if !e.identity.Email.IsEnabled || !isCredential(&e.identity.Email) {
 			return sendError(c, fiber.StatusInternalServerError, "expects 1 credential, 0 got")
 		}
 
-		identity := &storageT.IdentityData{}
-		if statusCode, err := getJsonData(authInput, loginMap["email"], &identity.Email); err != nil {
-			return sendError(c, statusCode, err.Error())
+		input, err := authnTypes.NewInput(c)
+		if err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
+		identity := &storageT.IdentityData{Email: input.Email}
 
-		emailCol := e.coll.Spec.FieldsMap["email"].Name
-		exist, err := e.storage.IsIdentityExist(i, []storageT.Filter{
+		/*emailCol := e.coll.Spec.FieldsMap["email"].Name
+		exist, err := e.storage.IsIdentityExist(e.identity, []storageT.Filter{
 			{Name: emailCol, Value: identity.Email},
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		if !exist {
-			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
-		}
+			_, err := e.storage.InsertIdentity(e.identity, identity)
+			if err != nil {
+				return sendError(c, fiber.StatusInternalServerError, err.Error())
+			}
+		}*/
 
 		token, err := uuid.NewV4()
 		if err != nil {
@@ -83,19 +82,29 @@ func GetMagicLink(e *email) func(*fiber.Ctx) error {
 
 func Register(e *email) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var authInput interface{}
-		if err := c.BodyParser(&authInput); err != nil {
+		var (
+			rawInput interface{}
+			input    authnTypes.Input
+		)
+		if err := c.BodyParser(&rawInput); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-
-		identity := &storageT.IdentityData{Additional: map[string]interface{}{}}
-		if statusCode, err := getRegisterData(e, authInput, e.conf.Register.FieldsMap, identity); err != nil {
-			return sendError(c, statusCode, err.Error())
+		if err := mapstructure.Decode(rawInput, &input); err != nil {
+			return err
+		}
+		if err := input.Init(e.identity, e.identity.Collection.Spec.FieldsMap, true); err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
+		}
+		identity := &storageT.IdentityData{
+			Id:         input.Id,
+			Username:   input.Username,
+			Phone:      input.Phone,
+			Email:      input.Email,
+			Additional: input.Additional,
 		}
 
-		i := e.identity
 		emailField := e.coll.Spec.FieldsMap["email"].Name
-		exist, err := e.storage.IsIdentityExist(i, []storageT.Filter{
+		exist, err := e.storage.IsIdentityExist(e.identity, []storageT.Filter{
 			{Name: emailField, Value: identity.Email},
 		})
 		if err != nil {
@@ -105,7 +114,7 @@ func Register(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, "user already exist")
 		}
 
-		userId, err := e.storage.InsertIdentity(i, identity)
+		userId, err := e.storage.InsertIdentity(e.identity, identity)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -195,22 +204,8 @@ func Login(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		iCollSpec := e.identity.Collection.Spec
-		rawIdentity, err := e.storage.GetIdentity(e.identity, []storageT.Filter{
-			{Name: iCollSpec.FieldsMap["email"].Name, Value: emailLink[linkSpecs.FieldsMap["email"].Name]},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		i, ok := rawIdentity.(map[string]interface{})
-		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "cannot get identity from database")
-		}
-
-		authzCtx := authzT.NewContext(i, iCollSpec.FieldsMap)
-		// todo: refactor this
-		authzCtx.NativeQ = func(queryName string, args ...interface{}) string {
+		payload := &authzT.Payload{Email: emailLink[linkSpecs.FieldsMap["email"].Name]}
+		payload.NativeQ = func(queryName string, args ...interface{}) string {
 			queries := e.authorizer.GetNativeQueries()
 
 			q, ok := queries[queryName]
@@ -230,6 +225,6 @@ func Login(e *email) func(*fiber.Ctx) error {
 
 			return string(res)
 		}
-		return e.authorizer.Authorize(c, authzCtx)
+		return e.authorizer.Authorize(c, payload)
 	}
 }

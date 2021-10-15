@@ -2,13 +2,11 @@ package main
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/context"
 	pluginCore "aureole/internal/plugins/core"
 	"aureole/internal/router"
+	"aureole/internal/state"
 	"log"
 )
-
-var Project *context.ProjectCtx
 
 func main() {
 	projConf, err := configs.LoadMainConfig()
@@ -16,12 +14,12 @@ func main() {
 		log.Panic(err)
 	}
 
-	Project = &context.ProjectCtx{}
-	pluginCore.InitApi(Project, router.Init())
-	context.Init(projConf, Project)
-	context.ListPluginStatus(Project)
+	project := &state.Project{}
+	pluginCore.InitApi(project, router.Init())
+	state.Init(projConf, project)
+	state.ListPluginStatus(project)
 
-	server, err := router.CreateServer(Project.Apps)
+	server, err := router.CreateServer(project.Apps)
 	if err != nil {
 		log.Panicf("router init: %v", err)
 	}

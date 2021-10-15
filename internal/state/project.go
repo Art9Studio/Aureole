@@ -1,18 +1,18 @@
-package context
+package state
 
 import (
 	"aureole/internal/collections"
-	"aureole/internal/context/app"
 	adminTypes "aureole/internal/plugins/admin/types"
 	cryptoKeyTypes "aureole/internal/plugins/cryptokey/types"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
+	"aureole/internal/state/app"
 	"fmt"
 )
 
 type (
-	ProjectCtx struct {
+	Project struct {
 		APIVersion  string
 		TestRun     bool
 		PingPath    string
@@ -26,12 +26,12 @@ type (
 	}
 )
 
-func (ctx *ProjectCtx) IsTestRun() bool {
-	return ctx.TestRun
+func (p *Project) IsTestRun() bool {
+	return p.TestRun
 }
 
-func (ctx *ProjectCtx) GetApp(name string) (*app.App, error) {
-	a, ok := ctx.Apps[name]
+func (p *Project) GetApp(name string) (*app.App, error) {
+	a, ok := p.Apps[name]
 	if !ok {
 		return nil, fmt.Errorf("can't find app named '%s'", name)
 	}
@@ -39,8 +39,8 @@ func (ctx *ProjectCtx) GetApp(name string) (*app.App, error) {
 	return a, nil
 }
 
-func (ctx *ProjectCtx) GetCollection(name string) (*collections.Collection, error) {
-	c, ok := ctx.Collections[name]
+func (p *Project) GetCollection(name string) (*collections.Collection, error) {
+	c, ok := p.Collections[name]
 	if !ok || c == nil {
 		return nil, fmt.Errorf("can't find collection named '%s'", name)
 	}
@@ -48,8 +48,8 @@ func (ctx *ProjectCtx) GetCollection(name string) (*collections.Collection, erro
 	return c, nil
 }
 
-func (ctx *ProjectCtx) GetStorage(name string) (storageTypes.Storage, error) {
-	s, ok := ctx.Storages[name]
+func (p *Project) GetStorage(name string) (storageTypes.Storage, error) {
+	s, ok := p.Storages[name]
 	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find storage named '%s'", name)
 	}
@@ -57,8 +57,8 @@ func (ctx *ProjectCtx) GetStorage(name string) (storageTypes.Storage, error) {
 	return s, nil
 }
 
-func (ctx *ProjectCtx) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
-	h, ok := ctx.Hashers[name]
+func (p *Project) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
+	h, ok := p.Hashers[name]
 	if !ok || h == nil {
 		return nil, fmt.Errorf("can't find hasher named '%s'", name)
 	}
@@ -66,8 +66,8 @@ func (ctx *ProjectCtx) GetHasher(name string) (pwhasherTypes.PwHasher, error) {
 	return h, nil
 }
 
-func (ctx *ProjectCtx) GetSender(name string) (senderTypes.Sender, error) {
-	s, ok := ctx.Senders[name]
+func (p *Project) GetSender(name string) (senderTypes.Sender, error) {
+	s, ok := p.Senders[name]
 	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find sender named '%s'", name)
 	}
@@ -75,8 +75,8 @@ func (ctx *ProjectCtx) GetSender(name string) (senderTypes.Sender, error) {
 	return s, nil
 }
 
-func (ctx *ProjectCtx) GetCryptoKey(name string) (cryptoKeyTypes.CryptoKey, error) {
-	k, ok := ctx.CryptoKeys[name]
+func (p *Project) GetCryptoKey(name string) (cryptoKeyTypes.CryptoKey, error) {
+	k, ok := p.CryptoKeys[name]
 	if !ok || k == nil {
 		return nil, fmt.Errorf("can't find crypto key named '%s'", name)
 	}

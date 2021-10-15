@@ -169,8 +169,7 @@
                 },
                 "prefix": {
                   "type": "string",
-                  "uuid": "56d5a7e8-3999-4a96-9361-fecb2d4fd36a",
-                  "default": ""
+                  "uuid": "56d5a7e8-3999-4a96-9361-fecb2d4fd36a"
                 },
                 "exp": {
                   "type": "integer",

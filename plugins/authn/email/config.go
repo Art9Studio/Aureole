@@ -9,23 +9,12 @@ type (
 	config struct {
 		Collection string        `mapstructure:"collection"`
 		Storage    string        `mapstructure:"storage"`
-		Login      login         `mapstructure:"login"`
-		Register   register      `mapstructure:"register"`
+		Path       string        `mapstructure:"path"`
 		Link       magicLinkConf `mapstructure:"magic_link"`
 	}
 
-	login struct {
-		Path      string            `mapstructure:"path"`
-		FieldsMap map[string]string `mapstructure:"fields_map"`
-	}
-
-	register struct {
-		Path      string            `mapstructure:"path"`
-		FieldsMap map[string]string `mapstructure:"fields_map"`
-	}
-
 	magicLinkConf struct {
-		Path       string `mapstructure:"path"`
+		Path       string
 		Collection string `mapstructure:"collection"`
 		Sender     string `mapstructure:"sender"`
 		Template   string `mapstructure:"template"`

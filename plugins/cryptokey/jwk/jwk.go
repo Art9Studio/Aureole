@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"math/big"
 	"os"
+	"strings"
 )
 
 type Jwk struct {
@@ -37,6 +38,7 @@ type Jwk struct {
 }
 
 func (j *Jwk) Init() (err error) {
+	j.rawConf.PathPrefix = "/" + strings.Replace(j.rawConf.Name, "_", "-", -1)
 	if j.conf, err = initConfig(&j.rawConf.Config); err != nil {
 		return err
 	}

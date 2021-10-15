@@ -3,13 +3,13 @@ package apple
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzT "aureole/internal/plugins/authz/types"
 	cKeyT "aureole/internal/plugins/cryptokey/types"
 	storageT "aureole/internal/plugins/storage/types"
 	router "aureole/internal/router/interface"
+	app "aureole/internal/state/interface"
 	"context"
 	"errors"
 	"fmt"
@@ -24,7 +24,7 @@ import (
 const Provider = "apple"
 
 type apple struct {
-	app        app.AppCtx
+	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
 	coll       *collections.Collection
@@ -36,16 +36,22 @@ type apple struct {
 	authorizer authzT.Authorizer
 }
 
-func (a *apple) Init(app app.AppCtx) (err error) {
+func (a *apple) Init(app app.AppState) (err error) {
 	a.app = app
-	a.identity = app.GetIdentity()
+	a.rawConf.PathPrefix = "/oauth2/" + AdapterName
+
 	a.conf, err = initConfig(&a.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	a.coll, err = pluginApi.Project.GetCollection(a.conf.Coll)
+	a.identity, err = app.GetIdentity()
+	if err != nil {
+		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+	}
+
+	/*a.coll, err = pluginApi.Project.GetCollection(a.conf.Coll)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", a.conf.Coll)
 	}
@@ -53,7 +59,7 @@ func (a *apple) Init(app app.AppCtx) (err error) {
 	a.storage, err = pluginApi.Project.GetStorage(a.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", a.conf.Storage)
-	}
+	}*/
 
 	a.secretKey, err = pluginApi.Project.GetCryptoKey(a.conf.SecretKey)
 	if err != nil {
@@ -92,7 +98,7 @@ func initProvider(a *apple) error {
 		return err
 	}
 
-	redirectUrl.Path = path.Clean(redirectUrl.Path + a.rawConf.PathPrefix + a.conf.RedirectUrl)
+	redirectUrl.Path = path.Clean(redirectUrl.Path + a.rawConf.PathPrefix + a.conf.RedirectUri)
 	a.provider = &Config{
 		ClientId: a.conf.ClientId,
 		TeamId:   a.conf.TeamId,
@@ -166,7 +172,7 @@ func createRoutes(a *apple) {
 		},
 		{
 			Method:  "POST",
-			Path:    a.rawConf.PathPrefix + a.conf.RedirectUrl,
+			Path:    a.rawConf.PathPrefix + a.conf.RedirectUri,
 			Handler: Login(a),
 		},
 	}

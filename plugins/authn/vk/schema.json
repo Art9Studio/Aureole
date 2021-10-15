@@ -20,8 +20,7 @@
         "collection",
         "storage",
         "client_id",
-        "client_secret",
-        "redirect_uri"
+        "client_secret"
       ],
       "properties": {
         "collection": {
@@ -57,12 +56,6 @@
             "email"
           ],
           "uniqueItems": true
-        },
-        "redirect_uri": {
-          "type": "string",
-          "uuid": "b82eb1f2-2ee5-4bb8-9e48-d625175c04ee",
-          "minLength": 1,
-          "metatags": "@rel_url"
         },
         "fields": {
           "type": "array",

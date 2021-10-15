@@ -38,12 +38,12 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 		// 	return sendError(c, fiber.StatusBadRequest, "can't access username from token")
 		// }
 
-		authzCtx := &types.Context{
+		payload := &types.Payload{
 			// Username: username.(string),
 			Id: int(id.(float64)),
 		}
 
-		accessT, err := newToken(AccessToken, j.conf, authzCtx)
+		accessT, err := newToken(AccessToken, j.conf, payload)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

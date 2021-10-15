@@ -14,24 +14,12 @@ apps:
 
     authN:
       - type: "phone"
-        path_prefix: "/"
         authZ: phone_pwless_jwt
         config:
           hasher:  phone_pwless_argon2
           collection: phone_pwless_identity
           storage: phone_pwless_one_db
-          login:
-            path: "/login"
-            fields_map:
-              phone: "{$.phone}"
-          register:
-            path: "/register"
-            fields_map:
-              username: "{$.username}"
-              phone: "{$.phone}"
           verification:
-            path: "/login/verify"
-            resend_url: "login/resend"
             collection: phone_pwless_phone_otp
             max_attempts: 3
             sender: phone_pwless_twilio
@@ -106,7 +94,6 @@ hashers:
 crypto_keys:
   - type: "jwk"
     name: phone_pwless_jwk_file
-    path_prefix: "/${UUID}/keys"
     config:
       path: "${RES_PATH}/keys.json"
 
