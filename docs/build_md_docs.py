@@ -3,14 +3,14 @@ import operator
 from functools import reduce
 from pathlib import Path
 
-from docs.parser import Parser
-
 import yaml
+
+from md_parser import MDParser
 
 BASE_DIR = Path(__file__).parent.resolve()
 JSON_SCHEMAS_DIR = BASE_DIR / 'json_schemas'
 DESCRIPTIONS_DIR = BASE_DIR / 'descriptions'
-MD_DIR = BASE_DIR / 'vue_docs/src/config'
+MD_DIR = BASE_DIR / 'vuepress_docs/docs/config'
 
 
 def load_json_schema():
@@ -51,8 +51,8 @@ def assemble_json_schema(schema_path):
                 definition_ref = definition_name.lower().replace(' ', '-')
 
                 if definition_path:
-                    plugin_names = [d.name for d in Path('./../plugins').iterdir() if d.is_dir()] + ['collection',
-                                                                                                     'identity']
+                    plugin_names = [d.name for d in Path('../plugins').iterdir() if d.is_dir()] + ['collection',
+                                                                                                      'identity']
                     plugin_name = list(set(plugin_names) & set(p.name for p in Path(definition_path).parents))[0]
                     obj['$ref'] = f'[{definition_name}](./{plugin_name}.md#{definition_ref})'
                 else:
@@ -103,7 +103,8 @@ def split_json_schema(project_schema):
     plugin_schemas = {}
     for plugin_name, keys in plugin_keys.items():
         plugin_schemas[plugin_name] = get_by_path(project_schema, keys)
-        ref = f'[{plugin_name.capitalize()}](./{plugin_name}.md)'
+        pretty_name = ''.join(word.title() for word in plugin_name.split('_'))
+        ref = f'[{pretty_name}](./{plugin_name}.md)'
         set_by_path(project_schema, keys, {'$ref': ref})
 
     return plugin_schemas
@@ -121,7 +122,7 @@ if __name__ == '__main__':
     project_schema = load_json_schema()
     plugin_schemas = split_json_schema(project_schema)
 
-    parser = Parser()
+    parser = MDParser()
     project_md = parser.parse_schema(project_schema)
     with open(MD_DIR / 'project.md', 'w', encoding='utf-8') as project_md_f:
         project_md_f.writelines(project_md)
