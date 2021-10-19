@@ -122,6 +122,7 @@ func LoadMainConfig() (*Project, error) {
 		configuro.WithLoadFromConfigFile(confPath, true),
 		configuro.WithoutValidateByTags(),
 		configuro.WithLoadDotEnv(".env"),
+		configuro.WithExpandEnvVars(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)

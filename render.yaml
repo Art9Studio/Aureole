@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: aureole
+    env: docker
+    dockerfilePath: render.Dockerfile
+
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aureole
+          property: connectionString
+
+      - key: JWT_ACCESS_BEARER
+        sync: false
+      - key: JWT_REFRESH_BEARER
+        sync: false
+
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_SECRET
+        sync: false
+
+      - key: VK_CLIENT_ID
+        sync: false
+      - key: VK_SECRET
+        sync: false
+
+      - key: FACEBOOK_CLIENT_ID
+        sync: false
+      - key: FACEBOOK_SECRET
+        sync: false
+
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: APPLE_TEAM_ID
+        sync: false
+      - key: APPLE_KEY_ID
+        sync: false
+      - key: APPLE_PRIVATE_KEY
+        sync: false
+
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+
+databases:
+  - name: aureole
