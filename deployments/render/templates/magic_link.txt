@@ -1,1 +1,1 @@
-Перейдите по ссылке, чтобы войти в Ваш аккаунт: {{.link}}
+Follow the link to login into your account: {{.link}}

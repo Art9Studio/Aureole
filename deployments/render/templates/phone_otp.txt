@@ -1,1 +1,1 @@
-Ваш код подтверждения для входа в аккаунт: {{.otp}}
+Your confirmation code for login into the account: {{.otp}}

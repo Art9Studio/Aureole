@@ -1,1 +1,1 @@
-Перейдите по ссылке, чтобы верифицировать Ваш email: {{.link}}
+Follow the link to verify your email: {{.link}}
