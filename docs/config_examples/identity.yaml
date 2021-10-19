@@ -1,0 +1,19 @@
+identity:
+  collection: identity
+  id:
+    enabled: true
+    unique: true
+    required: true
+    credential: false
+  username:
+    unique: true
+    required: true
+  phone:
+    enabled: true
+  email:
+  additional:
+    first_name:
+      required: false
+      unique: false
+      internal: false
+    last_name:

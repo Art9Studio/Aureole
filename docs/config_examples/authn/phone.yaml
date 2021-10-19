@@ -1,0 +1,12 @@
+authn:
+  - type: "phone"
+    authZ: jwt
+    config:
+      hasher: django
+      collection: identity
+      storage: db
+      verification:
+        collection: phone_otp
+        max_attempts: 3
+        sender: twilio
+        template: phone_otp

@@ -311,6 +311,7 @@
       }
     }
   },
+  "example": "authn/pwbased",
   "definitions": {
     "PwbasedCollection": {
       "properties": {

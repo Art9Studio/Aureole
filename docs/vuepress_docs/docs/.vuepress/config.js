@@ -7,7 +7,7 @@ module.exports = {
         ['meta', {name: 'theme-color', content: '#3eaf7c'}],
         ['meta', {name: 'apple-mobile-web-app-capable', content: 'yes'}],
         ['meta', {name: 'apple-mobile-web-app-status-bar-style', content: 'black'}],
-        ['link', {rel: 'icon', href: '/favicon.ico' }]
+        ['link', {rel: 'icon', href: 'favicon.ico' }]
     ],
 
     themeConfig: {
@@ -22,20 +22,30 @@ module.exports = {
             {
                 text: 'Конфиг',
                 link: '/config/project/'
+            },
+            {
+                text: 'Render',
+                link: '/render/'
             }
         ],
         sidebar: {
+            '/render/': [
+                {
+                    text: 'Render',
+                    children: ['/render/Readme.md']
+                }
+            ],
             '/config/': [
-                '/config/project.md',
-                '/config/identity.md',
-                '/config/collection.md',
-                '/config/authn.md',
-                '/config/authz.md',
-                '/config/storage.md',
-                '/config/hasher.md',
-                '/config/crypto_key.md',
-                '/config/sender.md',
-                '/config/admin_plugin.md'
+                        '/config/project.md',
+                        '/config/identity.md',
+                        '/config/collection.md',
+                        '/config/authn.md',
+                        '/config/authz.md',
+                        '/config/storage.md',
+                        '/config/hasher.md',
+                        '/config/crypto_key.md',
+                        '/config/sender.md',
+                        '/config/admin_plugin.md'
             ],
         }
     },
@@ -43,5 +53,6 @@ module.exports = {
     plugins: [
         '@vuepress/plugin-back-to-top',
         '@vuepress/plugin-medium-zoom',
+        '@vuepress/plugin-search',
     ]
 }

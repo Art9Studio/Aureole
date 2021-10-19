@@ -1,0 +1,6 @@
+crypto_keys:
+  - type: "pem"
+    name: pem_key
+    config:
+      alg: "ES256"
+      path: "keys/key.p8"

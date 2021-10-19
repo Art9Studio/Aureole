@@ -1,0 +1,23 @@
+api_version: "0.1"
+
+apps:
+  - name: app
+    identity:
+      # identity config
+    authn:
+      # array of authenticators
+    authz:
+      # array of authorizers
+
+storages:
+  # array of storages
+collections:
+  # array of collections
+hashers:
+  # array of hashers
+crypo_keys:
+  # array of crypto keys
+senders:
+  # array of senders
+admin_plugins:
+  # array of admin plugins

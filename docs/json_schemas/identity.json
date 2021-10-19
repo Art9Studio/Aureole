@@ -78,6 +78,7 @@
       }
     }
   },
+  "example": "identity",
   "definitions": {
     "Trait": {
       "type": [

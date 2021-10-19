@@ -33,10 +33,10 @@ func Test_Session_RawExec(t *testing.T) {
 func Test_Session_RawQuery(t *testing.T) {
 	// todo: check it
 	conf := &configs.Storage{
-		Type: "",
+		Type: "postgresql",
 		Name: "",
 		Config: configs.RawConfig{
-			"connection_url": "postgresql://root:password@localhost:5432/test",
+			"connection_url": "postgresql://root:password@localhost:5432/aureole",
 		},
 	}
 

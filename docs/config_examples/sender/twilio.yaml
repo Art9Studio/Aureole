@@ -1,0 +1,9 @@
+senders:
+  - type: "twilio"
+    name: twilio
+    config:
+      account_sid: "${TEST_TWILIO_ACCOUNT_SID}"
+      auth_token: "${TEST_TWILIO_AUTH_TOKEN}"
+      from: "${TEST_TWILIO_PHONE_NUMBER}"
+      templates:
+        phone_otp: "lab/templates/phone_otp.txt"

@@ -75,6 +75,7 @@
       }
     }
   },
+  "example": "authz/session",
   "definitions": {
     "SessionCollection": {
       "properties": {

@@ -85,5 +85,6 @@
         }
       }
     }
-  }
+  },
+  "example": "sender/email"
 }

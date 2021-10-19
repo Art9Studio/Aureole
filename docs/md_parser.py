@@ -12,6 +12,10 @@ class Md:
         return f'* {value}'
 
     @staticmethod
+    def num_list_item(value):
+        return f'1. {value}'
+
+    @staticmethod
     def h1(value):
         return f'# {value}'
 
@@ -44,7 +48,7 @@ class MDParser:
         if 'const' in obj:
             description.append(f"Константа: {Md.bold(obj['const'])}.")
         if 'enum' in obj:
-            description.append(f"Допускаются следующие значения: [{', '.join(map(Md.code, obj['enum']))}].")
+            description.append(f"Допускаются следующие значения: {', '.join(map(Md.code, obj['enum']))}.")
         if 'metainfo' in obj:
             description.append(f"Дополнительно: {obj['metainfo']}.")
         if 'default' in obj:
@@ -57,7 +61,7 @@ class MDParser:
                 description.append((obj['description']))
 
         if 'required' in obj:
-            description.append(f"Обязательны: [{', '.join(map(Md.code, obj['required']))}].")
+            description.append(f"Обязательны: {', '.join(map(Md.code, obj['required']))}.")
         if 'additionalProperties' in obj:
             val = 'Допустимо' if obj['additionalProperties'] else 'Недопустимо'
             description.append(f"Наличие дополнительных свойств: {Md.bold(val)}.")
@@ -135,25 +139,34 @@ class MDParser:
 
         if "oneOf" in obj:
             i = " " * self.tab_size * (indent_level + 1)
-            output_lines.append(i + Md.h2('Допустим один из вариантов конфига:') + '\n')
+            output_lines.append(i + Md.h4('Допустим один из вариантов конфига') + '\n')
             for property_obj in obj["oneOf"]:
                 if 'title' in property_obj:
-                    output_lines.append(i + Md.h3(property_obj['title']) + '\n')
+                    output_lines.append(i + Md.h2(property_obj['title']) + '\n')
 
                 output_lines = self.parse_object(property_obj, "", output_lines=output_lines,
                                                  indent_level=indent_level + 1)
 
         if "anyOf" in obj:
             i = " " * self.tab_size * (indent_level + 1)
-            output_lines.append(i + Md.h3('Допустим любой из вариантов конфига:') + '\n')
+            output_lines.append(i + Md.h4('Допустим любой из вариантов конфига') + '\n')
             for property_obj in obj["anyOf"]:
                 output_lines = self.parse_object(property_obj, "", output_lines=output_lines,
                                                  indent_level=indent_level + 1)
 
+        if 'example' in obj:
+            i = " " * self.tab_size * (indent_level + 1)
+            lines = obj['example'].split('\n')
+            lines = [i + line for line in lines]
+            example = '\n'.join(lines)
+
+            output_lines.append(f"{i}{Md.h3('Пример конфига')}\n")
+            output_lines.append(f"{i}```yaml\n{example}\n{i}```\n")
+
         if "definitions" in obj:
-            output_lines.append(indentation + Md.h3('Определения:') + '\n')
+            output_lines.append(indentation + Md.h3('Определения') + '\n')
             for def_name, def_obj in obj["definitions"].items():
-                output_lines.append(indentation + Md.h3(def_name) + '\n')
+                output_lines.append(indentation + Md.h4(def_name) + '\n')
                 output_lines = self.parse_object(def_obj, def_name, output_lines=output_lines)
 
         return output_lines

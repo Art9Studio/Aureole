@@ -34,5 +34,6 @@
         }
       }
     }
-  }
+  },
+  "example": "cryptokey/pem"
 }
