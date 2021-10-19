@@ -6,7 +6,7 @@ import (
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/pkg/jsonpath"
 	"fmt"
-	"path"
+	"net/url"
 	"reflect"
 
 	"github.com/gofiber/fiber/v2"
@@ -166,16 +166,7 @@ func isCredential(trait identity.Trait) bool {
 	return trait.IsCredential && trait.IsRequired && trait.IsUnique
 }
 
-func getConfirmLink(linkType linkType, p *pwBased, token string) string {
-	u := p.app.GetUrl()
-
-	switch linkType {
-	case ResetLink:
-		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl)
-	case VerifyLink:
-		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Verif.ConfirmUrl)
-	}
-
+func initConfirmLink(u *url.URL, token string) string {
 	q := u.Query()
 	q.Set("token", token)
 	u.RawQuery = q.Encode()

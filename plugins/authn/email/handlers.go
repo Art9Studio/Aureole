@@ -68,7 +68,7 @@ func GetMagicLink(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := getMagicLink(e, token.String())
+		link := initMagicLink(e.link.magicLink, token.String())
 		err = e.link.sender.Send(linkData.Email.(string),
 			"",
 			e.conf.Link.Template,
@@ -136,7 +136,7 @@ func Register(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := getMagicLink(e, token.String())
+		link := initMagicLink(e.link.magicLink, token.String())
 		err = e.link.sender.Send(linkData.Email.(string),
 			"",
 			e.conf.Link.Template,

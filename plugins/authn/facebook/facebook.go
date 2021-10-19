@@ -53,7 +53,9 @@ func (f *facebook) Init(app app.AppCtx) (err error) {
 		return fmt.Errorf("authorizer named '%s' is not declared", f.rawConf.AuthzName)
 	}
 
-	initProvider(f)
+	if err := initProvider(f); err != nil {
+		return err
+	}
 	createRoutes(f)
 	return nil
 }
@@ -67,8 +69,12 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func initProvider(f *facebook) {
-	redirectUri := f.app.GetUrl()
+func initProvider(f *facebook) error {
+	redirectUri, err := f.app.GetUrl()
+	if err != nil {
+		return err
+	}
+
 	redirectUri.Path = path.Clean(redirectUri.Path + f.rawConf.PathPrefix + f.conf.RedirectUri)
 	f.provider = &oauth2.Config{
 		ClientID:     f.conf.ClientId,
@@ -77,6 +83,7 @@ func initProvider(f *facebook) {
 		RedirectURL:  redirectUri.String(),
 		Scopes:       f.conf.Scopes,
 	}
+	return nil
 }
 
 func createRoutes(f *facebook) {

@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"hash"
+	"net/url"
+	"path"
 )
 
 type (
@@ -34,15 +36,17 @@ type (
 	}
 
 	reset struct {
-		coll   *collections.Collection
-		sender senderTypes.Sender
-		hasher func() hash.Hash
+		coll        *collections.Collection
+		sender      senderTypes.Sender
+		hasher      func() hash.Hash
+		confirmLink *url.URL
 	}
 
 	verification struct {
-		coll   *collections.Collection
-		sender senderTypes.Sender
-		hasher func() hash.Hash
+		coll        *collections.Collection
+		sender      senderTypes.Sender
+		hasher      func() hash.Hash
+		confirmLink *url.URL
 	}
 
 	linkType string
@@ -101,6 +105,11 @@ func (p *pwBased) Init(app app.AppCtx) (err error) {
 			return err
 		}
 
+		p.reset.confirmLink, err = createConfirmLink(ResetLink, p)
+		if err != nil {
+			return err
+		}
+
 		storageFeatures = append(storageFeatures, p.reset.coll.Type)
 	}
 
@@ -117,6 +126,11 @@ func (p *pwBased) Init(app app.AppCtx) (err error) {
 		}
 
 		p.verif.hasher, err = initHasher(p.conf.Verif.Token.HashFunc)
+		if err != nil {
+			return err
+		}
+
+		p.verif.confirmLink, err = createConfirmLink(VerifyLink, p)
 		if err != nil {
 			return err
 		}
@@ -167,6 +181,22 @@ func initHasher(hasherName string) (func() hash.Hash, error) {
 		return nil, fmt.Errorf("hasher '%s' doesn't supported", hasherName)
 	}
 	return h, nil
+}
+
+func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
+	u, err := p.app.GetUrl()
+	if err != nil {
+		return nil, err
+	}
+
+	switch linkType {
+	case ResetLink:
+		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl)
+	case VerifyLink:
+		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Verif.ConfirmUrl)
+	}
+
+	return u, nil
 }
 
 func createRoutes(p *pwBased) {

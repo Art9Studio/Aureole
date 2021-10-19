@@ -10,10 +10,10 @@ import (
 
 type App struct {
 	Name           string
-	Url            url.URL
+	Url            *url.URL
 	PathPrefix     string
 	Identity       *identity.Identity
-	Authenticators []authnTypes.Authenticator
+	Authenticators map[string]authnTypes.Authenticator
 	Authorizers    map[string]authzTypes.Authorizer
 }
 
@@ -21,8 +21,12 @@ func (a *App) GetName() string {
 	return a.Name
 }
 
-func (a *App) GetUrl() url.URL {
-	return a.Url
+func (a *App) GetUrl() (*url.URL, error) {
+	if a.Url == nil {
+		return nil, fmt.Errorf("can't find app url for app '%s'", a.Name)
+	}
+
+	return a.Url, nil
 }
 
 func (a *App) GetPathPrefix() string {
@@ -35,7 +39,7 @@ func (a *App) GetIdentity() *identity.Identity {
 
 func (a *App) GetAuthorizer(name string) (authzTypes.Authorizer, error) {
 	authz, ok := a.Authorizers[name]
-	if !ok {
+	if !ok || authz == nil {
 		return nil, fmt.Errorf("can't find authorizer named '%s'", name)
 	}
 	return authz, nil

@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"hash"
+	"net/url"
+	"path"
 )
 
 type (
@@ -31,9 +33,10 @@ type (
 	}
 
 	magicLink struct {
-		coll   *collections.Collection
-		sender senderTypes.Sender
-		hasher func() hash.Hash
+		coll      *collections.Collection
+		sender    senderTypes.Sender
+		hasher    func() hash.Hash
+		magicLink *url.URL
 	}
 )
 
@@ -75,6 +78,11 @@ func (e *email) Init(app app.AppCtx) (err error) {
 		return err
 	}
 
+	e.link.magicLink, err = createMagicLink(e)
+	if err != nil {
+		return err
+	}
+
 	if err := e.storage.CheckFeaturesAvailable([]string{e.coll.Type}); err != nil {
 		return err
 	}
@@ -110,6 +118,16 @@ func initHasher(hasherName string) (func() hash.Hash, error) {
 		return nil, fmt.Errorf("email auth: hasher '%s' doesn't supported", hasherName)
 	}
 	return h, nil
+}
+
+func createMagicLink(e *email) (*url.URL, error) {
+	u, err := e.app.GetUrl()
+	if err != nil {
+		return nil, err
+	}
+
+	u.Path = path.Clean(u.Path + e.rawConf.PathPrefix + e.conf.Link.Path)
+	return u, nil
 }
 
 func createRoutes(e *email) {
