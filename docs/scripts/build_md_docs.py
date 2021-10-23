@@ -7,7 +7,7 @@ import yaml
 
 from md_parser import MDParser
 
-BASE_DIR = Path(__file__).parent.resolve()
+BASE_DIR = Path(__file__).parent.parent.resolve()
 JSON_SCHEMAS_DIR = BASE_DIR / 'json_schemas'
 DESCRIPTIONS_DIR = BASE_DIR / 'descriptions'
 EXAMPLES_DIR = BASE_DIR / 'config_examples'

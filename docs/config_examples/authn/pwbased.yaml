@@ -6,10 +6,10 @@ authN:
       collection: pwbased
       storage: db
       password_reset:
-        collection: reset
         sender: email
         template: reset
+        exp: 3600
       verification:
-        collection: email_verification
         sender: email
         template: email_verification
+        exp: 3600

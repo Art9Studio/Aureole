@@ -87,7 +87,7 @@ func Login(f *facebook) func(*fiber.Ctx) error {
 			}
 		}*/
 
-		payload, err := createAuthzPayload(socAuth, user)
+		payload, err := createAuthzPayload(f, socAuth, user)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -134,7 +134,7 @@ func getUserInfoUrl(f *facebook) (string, error) {
 	return u.String(), nil
 }
 
-func createOrLink(f *facebook, socAuth *storageT.SocialAuthData) (*storageT.IdentityData, error) {
+/*func createOrLink(f *facebook, socAuth *storageT.SocialAuthData) (*storageT.IdentityData, error) {
 	var user *storageT.IdentityData
 	i := f.identity
 	s := &i.Collection.Spec
@@ -161,31 +161,25 @@ func createOrLink(f *facebook, socAuth *storageT.SocialAuthData) (*storageT.Iden
 
 	socAuth.Id, err = f.storage.InsertSocialAuth(&f.coll.Spec, socAuth)
 	return user, err
-}
+}*/
 
-func createAuthzPayload(socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
-	var payload *authzT.Payload
+func createAuthzPayload(f *facebook, socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
+	payload := authzT.NewPayload(f.authorizer, f.storage)
 	jsonUserData, err := json.Marshal(socAuth.UserData)
 	if err != nil {
 		return nil, err
 	}
 
+	payload.SocialId = socAuth.SocialId
+	payload.Email = socAuth.Email
+	payload.UserData = string(jsonUserData)
+
 	if user != nil {
-		payload = &authzT.Payload{
-			Id:         user.Id,
-			SocialId:   socAuth.SocialId,
-			Username:   user.Username,
-			Phone:      user.Phone,
-			Email:      user.Email,
-			UserData:   socAuth.UserData,
-			Additional: user.Additional,
-		}
-	} else {
-		payload = &authzT.Payload{
-			SocialId: socAuth.SocialId,
-			Email:    socAuth.Email,
-			UserData: string(jsonUserData),
-		}
+		payload.Id = user.Id
+		payload.Username = user.Username
+		payload.Phone = user.Phone
+		payload.Additional = user.Additional
 	}
+
 	return payload, nil
 }

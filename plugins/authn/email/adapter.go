@@ -10,7 +10,6 @@ const AdapterName = "email"
 // init initializes package by register adapter
 func init() {
 	authn.Repository.Register(AdapterName, emailAdapter{})
-	authn.Repository.PluginApi.RegisterCollectionType(emailLinkCollType)
 }
 
 // emailAdapter represents adapter for password based authentication

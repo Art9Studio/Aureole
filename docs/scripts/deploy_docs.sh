@@ -6,9 +6,9 @@ set -e
 python3 build_md_docs.py
 
 # navigate into the vuepress project directory
-cd vuepress_docs
+cd ../vuepress_docs
 # build
-npm run docs:build
+yarn docs:build
 
 # navigate into the build output directory
 cd docs/.vuepress/dist

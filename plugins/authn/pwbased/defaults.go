@@ -23,13 +23,11 @@ func (r *register) setDefaults() {
 func (c *resetConf) setDefaults() {
 	c.Path = "/reset-password"
 	c.ConfirmUrl = "/reset-password/confirm"
-	configs.SetDefault(&c.Token.Exp, 3600)
-	configs.SetDefault(&c.Token.HashFunc, "sha256")
+	configs.SetDefault(&c.Exp, 3600)
 }
 
 func (c *verifConf) setDefaults() {
 	c.Path = "/verify-email"
 	c.ConfirmUrl = "/verify-email/confirm"
-	configs.SetDefault(&c.Token.Exp, 3600)
-	configs.SetDefault(&c.Token.HashFunc, "sha256")
+	configs.SetDefault(&c.Exp, 3600)
 }

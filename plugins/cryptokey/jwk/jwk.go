@@ -38,7 +38,7 @@ type Jwk struct {
 }
 
 func (j *Jwk) Init() (err error) {
-	j.rawConf.PathPrefix = "/" + strings.Replace(j.rawConf.Name, "_", "-", -1)
+	j.rawConf.PathPrefix = "/" + strings.ReplaceAll(j.rawConf.Name, "_", "-")
 	if j.conf, err = initConfig(&j.rawConf.Config); err != nil {
 		return err
 	}

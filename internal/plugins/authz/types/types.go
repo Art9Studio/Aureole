@@ -1,7 +1,8 @@
 package types
 
 import (
-	"aureole/internal/collections"
+	storageT "aureole/internal/plugins/storage/types"
+	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,23 +24,27 @@ type Payload struct {
 	NativeQ    func(queryName string, args ...interface{}) string
 }
 
-func NewPayload(identity map[string]interface{}, collMap map[string]collections.FieldSpec) *Payload {
-	p := &Payload{
-		Id:         identity[collMap["id"].Name],
-		Username:   identity[collMap["username"].Name],
-		Phone:      identity[collMap["phone"].Name],
-		Email:      identity[collMap["email"].Name],
-		Additional: map[string]interface{}{},
-	}
+func NewPayload(authorizer Authorizer, storage storageT.Storage) *Payload {
+	p := &Payload{}
+	p.NativeQ = func(queryName string, args ...interface{}) string {
+		queries := authorizer.GetNativeQueries()
 
-	for fieldName, fieldVal := range identity {
-		if fieldName != collMap["id"].Name &&
-			fieldName != collMap["username"].Name &&
-			fieldName != collMap["email"].Name &&
-			fieldName != collMap["phone"].Name {
-			p.Additional[fieldName] = fieldVal
+		q, ok := queries[queryName]
+		if !ok {
+			return "--an error occurred during render--"
 		}
-	}
 
+		rawRes, err := storage.NativeQuery(q, args...)
+		if err != nil {
+			return "--an error occurred during render--"
+		}
+
+		res, err := json.Marshal(rawRes)
+		if err != nil {
+			return "--an error occurred during render--"
+		}
+
+		return string(res)
+	}
 	return p
 }

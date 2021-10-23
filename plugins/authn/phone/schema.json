@@ -19,7 +19,8 @@
       "required": [
         "collection",
         "storage",
-        "verification"
+        "sender",
+        "template"
       ],
       "properties": {
         "hasher": {
@@ -40,247 +41,60 @@
           "minLength": 1,
           "metatags": "@storage_ref"
         },
-        "login": {
-          "type": "object",
-          "uuid": "3f713c26-5d1d-460c-9b76-6e06cd7d7dc6",
-          "additionalProperties": false,
-          "properties": {
-            "path": {
-              "type": "string",
-              "uuid": "8ea214bf-f9a3-40dc-addd-e1bbccd7731e",
-              "default": "/login",
-              "metatags": "@rel_url"
-            },
-            "fields_map": {
-              "type": "object",
-              "uuid": "c2eecc3f-3980-4ae4-95ad-a35f1627b0c3",
-              "additionalProperties": false,
-              "properties": {
-                "phone": {
-                  "type": "string",
-                  "uuid": "dc9a288c-9f52-4492-977c-63541fd07d8c",
-                  "default": "{$.phone}",
-                  "metatags": "@json_path"
-                }
-              }
-            }
-          }
+        "sender": {
+          "type": "string",
+          "uuid": "7986fbd7-0542-4361-85f1-df0c5a4883bd",
+          "minLength": 1,
+          "metatags": "@sender_ref"
         },
-        "register": {
-          "type": "object",
-          "uuid": "f6db642d-5029-4b09-8ac0-9807c843cbcd",
-          "additionalProperties": false,
-          "properties": {
-            "path": {
-              "type": "string",
-              "uuid": "ac0e38ef-3342-43ce-8b48-2b7b9f285d3f",
-              "default": "/register",
-              "metatags": "@rel_url"
-            },
-            "fields_map": {
-              "type": "object",
-              "uuid": "9686cba4-5fe8-4877-bc10-63b4a93309fb",
-              "additionalProperties": false,
-              "properties": {
-                "username": {
-                  "type": "string",
-                  "uuid": "e305a233-0f30-47e4-b988-84e1ab6ffb53",
-                  "default": "{$.username}",
-                  "metatags": "@json_path"
-                },
-                "email": {
-                  "type": "string",
-                  "uuid": "a9def32d-7737-4806-9887-40450316de94",
-                  "default": "{$.email}",
-                  "metatags": "@json_path"
-                },
-                "phone": {
-                  "type": "string",
-                  "uuid": "11c872a3-34b1-46e1-8f97-1d875510838d",
-                  "default": "{$.phone}",
-                  "metatags": "@json_path"
-                }
-              }
-            }
-          }
+        "template": {
+          "type": "string",
+          "uuid": "dc3d7072-7717-4ba5-a1d8-cc421bb53116",
+          "minLength": 1,
+          "metatags": "@template_ref"
         },
-        "verification": {
+        "max_attempts": {
+          "type": "integer",
+          "uuid": "51d806f6-5a59-4fbc-a9c1-ced9255a7745",
+          "default": 3,
+          "minimum": 0
+        },
+        "otp": {
           "type": "object",
-          "uuid": "d7258d48-3fbb-4b2f-80fe-f50d75791646",
+          "uuid": "fd8a74bd-95b9-4f97-bd42-6aa3794d647c",
           "additionalProperties": false,
-          "required": [
-            "collection",
-            "sender",
-            "template"
-          ],
           "properties": {
-            "path": {
-              "type": "string",
-              "uuid": "a1b4cb0c-3c35-4f5b-a530-99f604a79768",
-              "default": "/login/verify",
-              "metatags": "@rel_url"
-            },
-            "resend_url": {
-              "type": "string",
-              "uuid": "99e43aa1-1e3a-4eb5-8dc6-071d09c5fb46",
-              "default": "/login/resend",
-              "metatags": "@rel_url"
-            },
-            "collection": {
-              "type": "string",
-              "uuid": "912b94e8-73a8-41df-b2cd-63f15c8c0271",
-              "minLength": 1,
-              "metatags": "@collection_ref"
-            },
-            "sender": {
-              "type": "string",
-              "uuid": "7986fbd7-0542-4361-85f1-df0c5a4883bd",
-              "minLength": 1,
-              "metatags": "@sender_ref"
-            },
-            "template": {
-              "type": "string",
-              "uuid": "dc3d7072-7717-4ba5-a1d8-cc421bb53116",
-              "minLength": 1,
-              "metatags": "@template_ref"
-            },
-            "max_attempts": {
+            "length": {
               "type": "integer",
-              "uuid": "51d806f6-5a59-4fbc-a9c1-ced9255a7745",
-              "default": 3,
-              "minimum": 0
+              "uuid": "8db1e602-3d49-4645-9e73-c45eca7a54d9",
+              "default": 1,
+              "minimum": 1
             },
-            "otp": {
-              "type": "object",
-              "uuid": "fd8a74bd-95b9-4f97-bd42-6aa3794d647c",
-              "additionalProperties": false,
-              "properties": {
-                "length": {
-                  "type": "integer",
-                  "uuid": "8db1e602-3d49-4645-9e73-c45eca7a54d9",
-                  "default": 1,
-                  "minimum": 1
-                },
-                "alphabet": {
-                  "type": "string",
-                  "uuid": "126af1c7-fd76-4bb2-a154-e643e081526a",
-                  "default": "1234567890",
-                  "minLength": 1
-                },
-                "prefix": {
-                  "type": "string",
-                  "uuid": "56d5a7e8-3999-4a96-9361-fecb2d4fd36a"
-                },
-                "exp": {
-                  "type": "integer",
-                  "uuid": "315acaed-849d-491c-80d4-b8f42ba32751",
-                  "default": 300,
-                  "minimum": 0,
-                  "metatags": "@unit:s"
-                }
-              }
+            "alphabet": {
+              "type": "string",
+              "uuid": "126af1c7-fd76-4bb2-a154-e643e081526a",
+              "default": "1234567890",
+              "minLength": 1
             },
-            "fields_map": {
-              "type": "object",
-              "uuid": "6c7a3f7c-9087-4345-9b0d-9b9b5ab9e3d4",
-              "additionalProperties": false,
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "uuid": "b28ff581-14a7-48ad-8b83-4e64fd7ec026",
-                  "default": "{$.id}",
-                  "metatags": "@json_path"
-                },
-                "otp": {
-                  "type": "string",
-                  "uuid": "10e0a39b-8868-426e-8f9b-b26e0eeea62d",
-                  "default": "{$.otp}",
-                  "metatags": "@json_path"
-                }
-              }
+            "prefix": {
+              "type": "string",
+              "uuid": "56d5a7e8-3999-4a96-9361-fecb2d4fd36a"
+            },
+            "postfix": {
+              "type": "string",
+              "uuid": "6fdbcac1-f18d-47d5-b1db-6b340720f42f"
+            },
+            "exp": {
+              "type": "integer",
+              "uuid": "315acaed-849d-491c-80d4-b8f42ba32751",
+              "default": 300,
+              "minimum": 0,
+              "metatags": "@unit:s"
             }
           }
         }
       }
     }
   },
-  "example": "authn/phone",
-  "definitions": {
-    "PhoneOtpCollection": {
-      "properties": {
-        "type": {
-          "const": "phone_otp",
-          "uuid": "5bcb3251-3060-4020-a593-0bf3df1bbe74"
-        },
-        "config": {
-          "type": "object",
-          "uuid": "91d26cd1-8218-4cf3-9828-723ef3fddfed",
-          "additionalProperties": false,
-          "required": [
-            "name",
-            "pk",
-            "fields_map"
-          ],
-          "properties": {
-            "name": {
-              "type": "string",
-              "uuid": "c3e0d40e-25f1-42f9-ad31-71bc3b4835f8",
-              "minLength": 1,
-              "metatags": "@plugin_name"
-            },
-            "pk": {
-              "type": "string",
-              "uuid": "cc8dbb54-2a78-4838-8dd8-b74792012aa3",
-              "minLength": 1
-            },
-            "fields_map": {
-              "type": "object",
-              "uuid": "945a51eb-500f-43b1-8237-03e5bc759517",
-              "additionalProperties": false,
-              "required": [
-                "id",
-                "phone",
-                "otp",
-                "attempts",
-                "expires",
-                "invalid"
-              ],
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "uuid": "efd5a16d-e8ab-4d35-8c19-4eb9c8e683eb",
-                  "minLength": 1
-                },
-                "phone": {
-                  "type": "string",
-                  "uuid": "d274290d-c396-45ef-9abb-ea4bc0e1c705",
-                  "minLength": 1
-                },
-                "otp": {
-                  "type": "string",
-                  "uuid": "d8d834c7-c6a5-4745-9241-2577713df37e",
-                  "minLength": 1
-                },
-                "attempts": {
-                  "type": "string",
-                  "uuid": "6f493306-2577-4c6b-b04a-9a363206c1fe",
-                  "minLength": 1
-                },
-                "expires": {
-                  "type": "string",
-                  "uuid": "9dadea0e-fc4a-48f7-811f-3abdacb62745",
-                  "minLength": 1
-                },
-                "invalid": {
-                  "type": "string",
-                  "uuid": "1eeefaaf-2394-456e-986f-fea67dc4acfa",
-                  "minLength": 1
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  "example": "authn/phone"
 }

@@ -7,27 +7,23 @@ import (
 
 type (
 	config struct {
-		Hasher       string    `mapstructure:"hasher"`
-		Collection   string    `mapstructure:"collection"`
-		Storage      string    `mapstructure:"storage"`
-		Path         string    `mapstructure:"path"`
-		Verification verifConf `mapstructure:"verification"`
-	}
-
-	verifConf struct {
-		Path        string
-		ResendUrl   string
+		Hasher      string `mapstructure:"hasher"`
 		Collection  string `mapstructure:"collection"`
+		Storage     string `mapstructure:"storage"`
 		MaxAttempts int    `mapstructure:"max_attempts"`
 		Sender      string `mapstructure:"sender"`
 		Template    string `mapstructure:"template"`
 		Otp         otp    `mapstructure:"otp"`
+		SendUrl     string
+		ConfirmUrl  string
+		ResendUrl   string
 	}
 
 	otp struct {
 		Length   int    `mapstructure:"length"`
 		Alphabet string `mapstructure:"alphabet"`
 		Prefix   string `mapstructure:"prefix"`
+		Postfix  string `mapstructure:"postfix"`
 		Exp      int    `mapstructure:"exp"`
 	}
 )

@@ -6,17 +6,15 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
+	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"hash"
 	"net/url"
 	"path"
 )
@@ -31,21 +29,18 @@ type (
 		storage    storageTypes.Storage
 		coll       *collections.Collection
 		authorizer authzTypes.Authorizer
+		serviceKey cKeyTypes.CryptoKey
 		reset      *reset
 		verif      *verification
 	}
 
 	reset struct {
-		coll        *collections.Collection
 		sender      senderTypes.Sender
-		hasher      func() hash.Hash
 		confirmLink *url.URL
 	}
 
 	verification struct {
-		coll        *collections.Collection
 		sender      senderTypes.Sender
-		hasher      func() hash.Hash
 		confirmLink *url.URL
 	}
 
@@ -77,6 +72,11 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
+	p.serviceKey, err = pluginApi.Project.GetCryptoKey("service_internal_key")
+	if err != nil {
+		return errors.New("cryptokey named 'service_internal_key' is not declared")
+	}
+
 	/*p.coll, err = pluginApi.Project.GetCollection(p.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
@@ -92,62 +92,35 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
 	}
 
-	storageFeatures := []string{p.coll.Type}
-
 	if pwResetEnable(p) {
 		p.reset = &reset{}
-		p.reset.coll, err = pluginApi.Project.GetCollection(p.conf.Reset.Collection)
-		if err != nil {
-			return fmt.Errorf("collection named '%s' is not declared", p.conf.Reset.Collection)
-		}
-
 		p.reset.sender, err = pluginApi.Project.GetSender(p.conf.Reset.Sender)
 		if err != nil {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
-		}
-
-		p.reset.hasher, err = initHasher(p.conf.Reset.Token.HashFunc)
-		if err != nil {
-			return err
 		}
 
 		p.reset.confirmLink, err = createConfirmLink(ResetLink, p)
 		if err != nil {
 			return err
 		}
-
-		storageFeatures = append(storageFeatures, p.reset.coll.Type)
 	}
 
 	if verifEnable(p) {
 		p.verif = &verification{}
-		p.verif.coll, err = pluginApi.Project.GetCollection(p.conf.Verif.Collection)
-		if err != nil {
-			return fmt.Errorf("collection named '%s' is not declared", p.conf.Verif.Collection)
-		}
-
 		p.verif.sender, err = pluginApi.Project.GetSender(p.conf.Verif.Sender)
 		if err != nil {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verif.Sender)
-		}
-
-		p.verif.hasher, err = initHasher(p.conf.Verif.Token.HashFunc)
-		if err != nil {
-			return err
 		}
 
 		p.verif.confirmLink, err = createConfirmLink(VerifyLink, p)
 		if err != nil {
 			return err
 		}
-
-		storageFeatures = append(storageFeatures, p.verif.coll.Type)
 	}
 
-	if err := p.storage.CheckFeaturesAvailable(storageFeatures); err != nil {
+	if err := p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
 		return err
 	}
-
 	createRoutes(p)
 	return nil
 }
@@ -163,30 +136,11 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func pwResetEnable(p *pwBased) bool {
-	return p.conf.Reset.Collection != "" && p.conf.Reset.Sender != "" && p.conf.Reset.Template != ""
+	return p.conf.Reset.Sender != "" && p.conf.Reset.Template != ""
 }
 
 func verifEnable(p *pwBased) bool {
-	return p.conf.Verif.Collection != "" && p.conf.Verif.Sender != "" && p.conf.Verif.Template != ""
-}
-
-func initHasher(hasherName string) (func() hash.Hash, error) {
-	var h func() hash.Hash
-	switch hasherName {
-	case "sha1":
-		h = sha1.New
-	case "sha224":
-		h = sha256.New224
-	case "sha256":
-		h = sha256.New
-	case "sha384":
-		h = sha512.New384
-	case "sha512":
-		h = sha512.New
-	default:
-		return nil, fmt.Errorf("hasher '%s' doesn't supported", hasherName)
-	}
-	return h, nil
+	return p.conf.Verif.Sender != "" && p.conf.Verif.Template != ""
 }
 
 func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
