@@ -28,6 +28,7 @@ def app_url(uuid):
 
 def test_google_login(app_url, uuid):
     r = requests.get(app_url + '/oauth2/google', verify=False)
+    print(r.text)
     assert r.ok
     assert r.headers['access'] is not None
 
@@ -35,11 +36,12 @@ def test_google_login(app_url, uuid):
     cookie.load(r.headers['Set-Cookie'])
     assert cookie.get('refresh_token') is not None
     assert verify_jwt(r.headers['access'], cookie.get('refresh_token').value,
-                      app_url + '/keys/jwk', ['RS256'], uuid, 'Aureole Server')
+                      app_url + '/social-auth-jwk-file/jwk', ['RS256'], uuid, 'Aureole Server')
 
 
 def test_apple_login(app_url, uuid):
     r = requests.get(app_url + '/oauth2/apple', verify=False)
+    print(r.text)
     assert r.ok
     assert r.headers['access'] is not None
 
@@ -47,11 +49,12 @@ def test_apple_login(app_url, uuid):
     cookie.load(r.headers['Set-Cookie'])
     assert cookie.get('refresh_token') is not None
     assert verify_jwt(r.headers['access'], cookie.get('refresh_token').value,
-                      app_url + '/keys/jwk', ['RS256'], uuid, 'Aureole Server')
+                      app_url + '/social-auth-jwk-file/jwk', ['RS256'], uuid, 'Aureole Server')
 
 
 def test_vk_login(app_url, uuid):
     r = requests.get(app_url + '/oauth2/vk', verify=False)
+    print(r.text)
     assert r.ok
     assert r.headers['access'] is not None
 
@@ -59,11 +62,12 @@ def test_vk_login(app_url, uuid):
     cookie.load(r.headers['Set-Cookie'])
     assert cookie.get('refresh_token') is not None
     assert verify_jwt(r.headers['access'], cookie.get('refresh_token').value,
-                      app_url + '/keys/jwk', ['RS256'], uuid, 'Aureole Server')
+                      app_url + '/social-auth-jwk-file/jwk', ['RS256'], uuid, 'Aureole Server')
 
 
 def test_facebook_login(app_url, uuid):
     r = requests.get(app_url + '/oauth2/facebook', verify=False)
+    print(r.text)
     assert r.ok
     assert r.headers['access'] is not None
 
@@ -71,4 +75,4 @@ def test_facebook_login(app_url, uuid):
     cookie.load(r.headers['Set-Cookie'])
     assert cookie.get('refresh_token') is not None
     assert verify_jwt(r.headers['access'], cookie.get('refresh_token').value,
-                      app_url + '/keys/jwk', ['RS256'], uuid, 'Aureole Server')
+                      app_url + '/social-auth-jwk-file/jwk', ['RS256'], uuid, 'Aureole Server')

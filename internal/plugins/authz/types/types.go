@@ -9,10 +9,10 @@ import (
 type Authorizer interface {
 	Init(string) error
 	GetNativeQueries() map[string]string
-	Authorize(*fiber.Ctx, *Context) error
+	Authorize(*fiber.Ctx, *Payload) error
 }
 
-type Context struct {
+type Payload struct {
 	Id         interface{}
 	SocialId   interface{}
 	Username   interface{}
@@ -23,23 +23,23 @@ type Context struct {
 	NativeQ    func(queryName string, args ...interface{}) string
 }
 
-func NewContext(identity map[string]interface{}, fieldsMap map[string]collections.FieldSpec) *Context {
-	context := &Context{
-		Id:         identity[fieldsMap["id"].Name],
-		Username:   identity[fieldsMap["username"].Name],
-		Phone:      identity[fieldsMap["phone"].Name],
-		Email:      identity[fieldsMap["email"].Name],
+func NewPayload(identity map[string]interface{}, collMap map[string]collections.FieldSpec) *Payload {
+	p := &Payload{
+		Id:         identity[collMap["id"].Name],
+		Username:   identity[collMap["username"].Name],
+		Phone:      identity[collMap["phone"].Name],
+		Email:      identity[collMap["email"].Name],
 		Additional: map[string]interface{}{},
 	}
 
 	for fieldName, fieldVal := range identity {
-		if fieldName != fieldsMap["id"].Name &&
-			fieldName != fieldsMap["username"].Name &&
-			fieldName != fieldsMap["email"].Name &&
-			fieldName != fieldsMap["phone"].Name {
-			context.Additional[fieldName] = fieldVal
+		if fieldName != collMap["id"].Name &&
+			fieldName != collMap["username"].Name &&
+			fieldName != collMap["email"].Name &&
+			fieldName != collMap["phone"].Name {
+			p.Additional[fieldName] = fieldVal
 		}
 	}
 
-	return context
+	return p
 }

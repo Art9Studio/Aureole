@@ -17,35 +17,14 @@ apps:
           main_hasher: pwbased_argon2
           collection: pwbased_pwbased
           storage: pwbased_one_db
-          login:
-            path: "/login"
-            fields_map:
-              username: "{$.username}"
-              email: "{$.email}"
-              phone: "{$.phone}"
-              password: "{$.password}"
-          register:
-            path: "/register"
-            fields_map:
-              username: "{$.username}"
-              email: "{$.email}"
-              phone: "{$.phone}"
-              password: "{$.password}"
           password_reset:
-            path: "/password/reset"
-            confirm_url: "/password/reset/confirm"
             collection: pwbased_reset
             sender: pwbased_email
             template: pwbased_reset
             token:
               exp: 3600
               hash_func: "sha256"
-            fields_map:
-              email: "{$.email}"
-              password: "{$.password}"
           verification:
-            path: "/email-verify"
-            confirm_url: "/email-verify/confirm"
             collection: pwbased_email_verification
             sender: pwbased_email
             template: pwbased_email_verification
@@ -134,7 +113,6 @@ storages:
 crypto_keys:
   - type: "jwk"
     name: pwbased_gen_keys
-    path_prefix: "/${UUID}/gen-keys"
     config:
       kty: "EC"
       alg: "ES256"

@@ -65,6 +65,7 @@ var keyMap = map[string]map[string]string{
 
 func (j *jwtAuthz) Init(appName string) (err error) {
 	j.appName = appName
+	j.rawConf.PathPrefix = "/" + AdapterName
 
 	j.conf, err = initConfig(&j.rawConf.Config)
 	if err != nil {
@@ -136,23 +137,23 @@ func (j *jwtAuthz) GetNativeQueries() map[string]string {
 	return j.nativeQueries
 }
 
-func (j *jwtAuthz) Authorize(fiberCtx *fiber.Ctx, authzCtx *authzTypes.Context) error {
-	accessT, err := newToken(AccessToken, j.conf, authzCtx)
+func (j *jwtAuthz) Authorize(c *fiber.Ctx, payload *authzTypes.Payload) error {
+	accessT, err := newToken(AccessToken, j.conf, payload)
 	if err != nil {
-		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
+		return sendError(c, fiber.StatusInternalServerError, err.Error())
 	}
-	refreshT, err := newToken(RefreshToken, j.conf, authzCtx)
+	refreshT, err := newToken(RefreshToken, j.conf, payload)
 	if err != nil {
-		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
+		return sendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	signedAccessT, err := signToken(j.signKey, accessT)
 	if err != nil {
-		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
+		return sendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 	signedRefreshT, err := signToken(j.signKey, refreshT)
 	if err != nil {
-		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
+		return sendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	bearers := map[string]bearerType{
@@ -163,14 +164,14 @@ func (j *jwtAuthz) Authorize(fiberCtx *fiber.Ctx, authzCtx *authzTypes.Context) 
 		"access":  signedAccessT,
 		"refresh": signedRefreshT,
 	}
-	if err := attachTokens(fiberCtx, bearers, keyMap, tokens); err != nil {
-		return sendError(fiberCtx, fiber.StatusInternalServerError, err.Error())
+	if err := attachTokens(c, bearers, keyMap, tokens); err != nil {
+		return sendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return nil
 }
 
-func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (t jwt.Token, err error) {
+func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t jwt.Token, err error) {
 	switch tokenType {
 	case AccessToken:
 		token := jwt.New()
@@ -193,7 +194,7 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 		}
 
 		if conf.Sub {
-			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", authzCtx.Id))
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.Id))
 			if err != nil {
 				return nil, err
 			}
@@ -219,11 +220,11 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 			return nil, err
 		}
 
-		payload, err := getPayload(conf.Payload, authzCtx)
+		p, err := parsePayload(conf.TmplPath, payload)
 		if err != nil {
 			return nil, err
 		}
-		for k, v := range payload {
+		for k, v := range p {
 			err := token.Set(k, v)
 			if err != nil {
 				return nil, err
@@ -239,7 +240,7 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 		}
 
 		if conf.Sub {
-			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", authzCtx.Id))
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.Id))
 			if err != nil {
 				return nil, err
 			}
@@ -252,7 +253,7 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 			return nil, err
 		}
 
-		payload, err := defaultPayload(authzCtx)
+		payload, err := defaultPayload(payload)
 		if err != nil {
 			return nil, err
 		}
@@ -269,50 +270,48 @@ func newToken(tokenType tokenType, conf *config, authzCtx *authzTypes.Context) (
 	return t, err
 }
 
-func getPayload(filePath string, authzCtx *authzTypes.Context) (map[string]interface{}, error) {
-	if filePath != "" {
-		return parsePayload(filePath, authzCtx)
+func parsePayload(tmplPath string, payload *authzTypes.Payload) (map[string]interface{}, error) {
+	if tmplPath != "" {
+		return renderPayload(tmplPath, payload)
 	} else {
-		return defaultPayload(authzCtx)
+		return defaultPayload(payload)
 	}
 }
 
-func parsePayload(filePath string, authzCtx *authzTypes.Context) (map[string]interface{}, error) {
-	tmplFile := filePath
+func renderPayload(tmplPath string, payload *authzTypes.Payload) (map[string]interface{}, error) {
+	tmplFile := tmplPath
 	baseName := path.Base(tmplFile)
 	bufRawPayload := &bytes.Buffer{}
 
 	extension := path.Ext(tmplFile)
 	if extension == ".tmpl" {
 		tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
-			"NativeQ": authzCtx.NativeQ,
+			"NativeQ": payload.NativeQ,
 		}).ParseFiles(tmplFile))
-		if err := tmpl.Execute(bufRawPayload, authzCtx); err != nil {
+		if err := tmpl.Execute(bufRawPayload, payload); err != nil {
 			return nil, err
 		}
 
 		strRawPayload := regexp.MustCompile(`\s+`).ReplaceAllString(bufRawPayload.String(), "")
 		strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
 
-		payload := make(map[string]interface{})
-		if err := json.Unmarshal([]byte(strRawPayload), &payload); err != nil {
+		p := make(map[string]interface{})
+		if err := json.Unmarshal([]byte(strRawPayload), &p); err != nil {
 			return nil, err
 		}
 
-		return payload, nil
+		return p, nil
 	} else {
 		return nil, fmt.Errorf("jwt: json type expected, '%s' found", extension)
 	}
 }
 
-func defaultPayload(authzCtx *authzTypes.Context) (map[string]interface{}, error) {
-	payload := make(map[string]interface{})
-
-	if authzCtx.Id != nil {
-		payload["id"] = authzCtx.Id
+func defaultPayload(payload *authzTypes.Payload) (map[string]interface{}, error) {
+	p := make(map[string]interface{})
+	if payload.Id != nil {
+		p["id"] = payload.Id
 	}
-
-	return payload, nil
+	return p, nil
 }
 
 func signToken(signKey ckeyTypes.CryptoKey, token jwt.Token) ([]byte, error) {

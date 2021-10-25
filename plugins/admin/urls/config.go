@@ -6,7 +6,7 @@ import (
 )
 
 type config struct {
-	Path string `mapstructure:"path"`
+	Path string
 }
 
 // Create returns urls hasher with the given settings

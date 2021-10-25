@@ -1,10 +1,9 @@
 api_version: "0.1"
-ping_path: "/ping"
 
 apps:
   - name: one
+    path_prefix: "/one"
     host: "${APP_HOST:https://localhost:3000}"
-    path_prefix: "${APP_PREFIX:/one}"
 
     identity:
       collection: identity
@@ -48,26 +47,14 @@ apps:
 
     authN:
       - type: "password_based"
-        path_prefix: "/"
         authZ: session
         config:
           main_hasher: argon2
           compat_hashers: [ ]  # todo: implement it
           collection: pwbased
           storage: one_db
-          login:
-            path: "/login"
-            fields_map:
-              username: "{$.username}"
-              password: "{$.password}"
           register:
-            path: "/register"
             login_after: true
-            fields_map:
-              username: "{$.username}"
-              email: "{$.email}"
-              phone: "{$.phone}" # it's redundant in this case. we disabled phone
-              password: "{$.password}"
 
     authZ:
       - type: "session"
@@ -84,9 +71,8 @@ apps:
           clean_interval: 60
 
   - name: two
-    #host: "https://t.aureole.cloud"
-    host: "http://localhost:3000"
     path_prefix: "/two"
+    host: "http://localhost:3000"
 
     identity:
       collection: identity
@@ -105,33 +91,22 @@ apps:
           main_hasher: argon2
           collection: pwbased
           storage: one_db
-          register:
-            verify_after: true
           password_reset:
-            path: "/password/reset"
-            confirm_url: "/password/reset/confirm"
             collection: reset
             sender: email
             template: reset
             token:
               exp: 3600
               hash_func: "sha256"
-            fields_map:
-              email: "{$.email}"
           verification:
-            path: "/email-verify"
-            confirm_url: "/email-verify/confirm"
             collection: email_verification
             sender: email
             template: email_verification
             token:
               exp: 3600
               hash_func: "sha256"
-            fields_map:
-              email: "{$.email}"
 
       - type: "google"
-        path_prefix: "/oauth2/google"
         authZ: jwt
         config:
           collection: oauth2
@@ -141,10 +116,8 @@ apps:
           scopes:
             - "https://www.googleapis.com/auth/userinfo.email"
             - "https://www.googleapis.com/auth/userinfo.profile"
-          redirect_uri: "/login"
 
       - type: "vk"
-        path_prefix: "/oauth2/vk"
         authZ: jwt
         config:
           collection: oauth2
@@ -153,11 +126,9 @@ apps:
           client_secret: "${VK_SECRET}"
           scopes:
             - "email"
-          redirect_uri: "/login"
           fields: [ ]
 
       - type: "facebook"
-        path_prefix: "/oauth2/facebook"
         authZ: jwt
         config:
           collection: oauth2
@@ -166,12 +137,10 @@ apps:
           client_secret: "${FACEBOOK_SECRET}"
           scopes:
             - "email"
-          redirect_uri: "/login"
           fields:
             - "email"
 
       - type: "apple"
-        path_prefix: "/oauth2/apple"
         authZ: jwt
         config:
           collection: oauth2
@@ -184,12 +153,10 @@ apps:
           scopes:
             - "email"
             - "name"
-          redirect_uri: "/login"
 
     authZ:
       - type: "jwt"
         name: jwt
-        path_prefix: "/"
         config:
           iss: "Aureole Server"
           sub: true
@@ -199,18 +166,16 @@ apps:
           jti: "0" # todo: implement jti
           access_bearer: "cookie" # [cookie, header, both]
           refresh_bearer: "body" # [cookie, body, both]
-          #alg: "RS256"
           sign_key: jwk_file
           verify_keys: [ jwk_file ]
           access_exp: 900
           refresh_exp: 7890000
-          refresh_url: "/refresh"
           payload: "lab/templates/jwt_payload.json.tmpl"
-          native_queries: "lab/native-queries/native.yaml"
+          #native_queries: "lab/native-queries/native.yaml"
 
   - name: three
-    host: "http://localhost:3000"
     path_prefix: "/three"
+    host: "http://localhost:3000"
 
     identity:
       collection: identity
@@ -223,22 +188,11 @@ apps:
 
     authN:
       - type: "email"
-        path_prefix: "/email"
         authZ: jwt
         config:
           collection: identity
           storage: one_db
-          login:
-            path: "/login"
-            fields_map:
-              email: "{$.email}"
-          register:
-            path: "/register"
-            fields_map:
-              username: "{$.username}"
-              email: "{$.email}"
           magic_link:
-            path: "/email-confirm"
             collection: magic_link
             sender: email
             template: magic_link
@@ -247,24 +201,12 @@ apps:
               hash_func: "sha256"
 
       - type: "phone"
-        path_prefix: "/"
         authZ: jwt
         config:
           hasher: django
           collection: identity
           storage: one_db
-          login:
-            path: "/login"
-            fields_map:
-              phone: "{$.phone}"
-          register:
-            path: "/register"
-            fields_map:
-              username: "{$.username}"
-              phone: "{$.phone}"
           verification:
-            path: "/login/verify"
-            resend_url: "login/resend"
             collection: phone_otp
             max_attempts: 3
             sender: twilio
@@ -281,7 +223,6 @@ apps:
     authZ:
       - type: "jwt"
         name: jwt
-        path_prefix: "/"
         config:
           iss: "Aureole Server"
           sub: true
@@ -291,19 +232,17 @@ apps:
           jti: "0" # todo: implement jti
           access_bearer: "cookie" # [cookie, header, both]
           refresh_bearer: "cookie" # [cookie, body, both]
-          #alg: "RS256"
           sign_key: jwk_file
           verify_keys: [ jwk_file ]
           access_exp: 900
           refresh_exp: 7890000
-          refresh_url: "/refresh"
           payload: "lab/templates/jwt_payload.json.tmpl"
 
 storages:
   - type: "postgresql"
     name: one_db
     config:
-      url: "postgresql://root:password@localhost:5432/aureole?sslmode=disable&search_path=public"
+      url: "postgresql://root:password@localhost:5432/aureole"
 
   - type: "postgresql"
     name: two_db
@@ -442,32 +381,27 @@ hashers:
 crypto_keys:
   - type: "jwk"
     name: jwk_file
-    path_prefix: "/keys"
     config:
       path: "lab/keys/keys.json"
 
   - type: "jwk"
     name: jwk_url
-    path_prefix: "/google-keys"
     config:
       path: "https://www.googleapis.com/oauth2/v3/certs"
 
   - type: "pem"
     name: apple_signin_key
-    path_prefix: "/pem-keys"
     config:
       alg: "ES256"
       path: "lab/keys/apple_key.p8"
 
   - type: "jwk"
     name: apple_keys
-    path_prefix: "/apple-keys"
     config:
       path: "https://appleid.apple.com/auth/keys"
 
   - type: "jwk"
     name: gen_keys
-    path_prefix: "/gen-keys"
     config:
       kty: "RSA"
       alg: "RS256"
@@ -479,11 +413,10 @@ senders:
   - type: "email"
     name: email
     config:
-      #host: "smtp.gmail.com:587"
-      host: "localhost:1025"
+      host: "smtp.gmail.com:587"
       username: "test.aureole@gmail.com"
       password: "${SMTP_PASSWORD}"
-      insecure_skip_verify: true
+      insecure_skip_verify: false
       from: "test.aureole@gmail.com"
       bcc: [ ]
       cc: [ ]
@@ -506,5 +439,3 @@ senders:
 admin_plugins:
   - type: "urls"
     name: "get-urls"
-    config:
-      path: "/url-list"

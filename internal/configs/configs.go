@@ -12,8 +12,8 @@ type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion   string       `config:"api_version"`
-		PingPath     string       `config:"ping_path"`
+		APIVersion   string `config:"api_version"`
+		PingPath     string
 		TestRun      bool         `config:"test_run"`
 		Apps         []App        `config:"apps"`
 		StorageConfs []Storage    `config:"storages"`
@@ -21,7 +21,7 @@ type (
 		HasherConfs  []PwHasher   `config:"hashers"`
 		CryptoKeys   []CryptoKey  `config:"crypto_keys"`
 		Senders      []Sender     `config:"senders"`
-		AdminConfs   []Admin      `config:"plugins"`
+		AdminConfs   []Admin      `config:"admin_plugins"`
 	}
 
 	App struct {
@@ -49,16 +49,16 @@ type (
 	}
 
 	Authn struct {
-		Type       string    `config:"type"`
-		PathPrefix string    `config:"path_prefix"`
+		Type       string `config:"type"`
+		PathPrefix string
 		AuthzName  string    `config:"authZ"`
 		Config     RawConfig `config:"config"`
 	}
 
 	Authz struct {
-		Type       string    `config:"type"`
-		Name       string    `config:"name"`
-		PathPrefix string    `config:"path_prefix"`
+		Type       string `config:"type"`
+		Name       string `config:"name"`
+		PathPrefix string
 		Config     RawConfig `config:"config"`
 	}
 
@@ -88,9 +88,9 @@ type (
 	}
 
 	CryptoKey struct {
-		Type       string    `config:"type"`
-		Name       string    `config:"name"`
-		PathPrefix string    `config:"path_prefix"`
+		Type       string `config:"type"`
+		Name       string `config:"name"`
+		PathPrefix string
 		Config     RawConfig `config:"config"`
 	}
 

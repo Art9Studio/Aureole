@@ -15,7 +15,7 @@ MD_DIR = BASE_DIR / 'vuepress_docs/docs/config'
 
 
 def load_json_schema():
-    schema_path = JSON_SCHEMAS_DIR / 'project.json'
+    schema_path = JSON_SCHEMAS_DIR / 'project.schema.json'
     with open(schema_path, 'r') as schema_f:
         whole_schema = json.load(schema_f, object_hook=assemble_json_schema(schema_path))
 

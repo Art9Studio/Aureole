@@ -10,30 +10,18 @@ type (
 		Hasher       string    `mapstructure:"hasher"`
 		Collection   string    `mapstructure:"collection"`
 		Storage      string    `mapstructure:"storage"`
-		Login        login     `mapstructure:"login"`
-		Register     register  `mapstructure:"register"`
+		Path         string    `mapstructure:"path"`
 		Verification verifConf `mapstructure:"verification"`
 	}
 
-	login struct {
-		Path      string            `mapstructure:"path"`
-		FieldsMap map[string]string `mapstructure:"fields_map"`
-	}
-
-	register struct {
-		Path      string            `mapstructure:"path"`
-		FieldsMap map[string]string `mapstructure:"fields_map"`
-	}
-
 	verifConf struct {
-		Path        string            `mapstructure:"path"`
-		ResendUrl   string            `mapstructure:"resend_url"`
-		Collection  string            `mapstructure:"collection"`
-		MaxAttempts int               `mapstructure:"max_attempts"`
-		Sender      string            `mapstructure:"sender"`
-		Template    string            `mapstructure:"template"`
-		Otp         otp               `mapstructure:"otp"`
-		FieldsMap   map[string]string `mapstructure:"fields_map"`
+		Path        string
+		ResendUrl   string
+		Collection  string `mapstructure:"collection"`
+		MaxAttempts int    `mapstructure:"max_attempts"`
+		Sender      string `mapstructure:"sender"`
+		Template    string `mapstructure:"template"`
+		Otp         otp    `mapstructure:"otp"`
 	}
 
 	otp struct {

@@ -14,12 +14,6 @@
       "type": "string",
       "uuid": "666bf281-fcf0-4b6b-bd64-dbe6b691f274"
     },
-    "ping_path": {
-      "type": "string",
-      "uuid": "8bd7986f-7910-45e4-8247-42fdb2abf8d6",
-      "default": "/ping",
-      "metatags": "@rel_url"
-    },
     "test_run": {
       "type": "boolean",
       "uuid": "1ebdbe28-efd5-48b9-bcba-08ae95929f80",
@@ -29,7 +23,7 @@
       "type": "array",
       "uuid": "6d0ccc24-0a20-4d26-905b-90251111be96",
       "items": {
-        "$ref": "app.json"
+        "$ref": "app.schema.json"
       },
       "minItems": 1
     },
@@ -45,7 +39,7 @@
       "type": "array",
       "uuid": "a8b52a9e-92ec-44dd-9bbd-02adb9a66e1a",
       "items": {
-        "$ref": "collection.json"
+        "$ref": "collection.schema.json"
       },
       "minItems": 1
     },

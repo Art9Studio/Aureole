@@ -21,8 +21,7 @@
     "additional": {
         {{ range $key, $value := .Additional }}
            "{{ $key }}": {{ $value }},
-        {{ end }}
+        {{end}}
     },
   {{ end }}
-  "posts": {{ NativeQ "getUserPosts" .Id }}
 }

@@ -35,13 +35,13 @@ func Login(v *vk) func(*fiber.Ctx) error {
 		}
 
 		var (
-			filter  []storageT.Filter
+			//filter  []storageT.Filter
 			socAuth *storageT.SocialAuthData
 			user    *storageT.IdentityData
 		)
-		s := &v.coll.Spec
-		email, ok := userData["email"]
-		if ok {
+		//s := &v.coll.Spec
+		email, _ := userData["email"]
+		/*if ok {
 			filter = []storageT.Filter{
 				{Name: s.FieldsMap["email"].Name, Value: email},
 				{Name: s.FieldsMap["provider"].Name, Value: Provider},
@@ -77,24 +77,24 @@ func Login(v *vk) func(*fiber.Ctx) error {
 				}
 				user = storageT.NewIdentityData(rawUser, iSpecs.FieldsMap)
 			}
-		} else {
-			socAuth = &storageT.SocialAuthData{
-				SocialId: fmt.Sprintf("%v", userData["user_id"]),
-				Email:    email,
-				Provider: Provider,
-				UserData: userData,
-			}
-			user, err = createOrLink(v, socAuth)
+		} else {*/
+		socAuth = &storageT.SocialAuthData{
+			SocialId: fmt.Sprintf("%v", userData["user_id"]),
+			Email:    email,
+			Provider: Provider,
+			UserData: userData,
+		}
+		/*user, err = createOrLink(v, socAuth)
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-		}
+		}*/
 
-		authzCtx, err := createAuthzCtx(socAuth, user)
+		payload, err := createAuthzPayload(socAuth, user)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		return v.authorizer.Authorize(c, authzCtx)
+		return v.authorizer.Authorize(c, payload)
 	}
 }
 
@@ -178,15 +178,15 @@ func createOrLink(v *vk, socAuth *storageT.SocialAuthData) (user *storageT.Ident
 	return user, err
 }
 
-func createAuthzCtx(socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Context, error) {
-	var authzCtx *authzT.Context
+func createAuthzPayload(socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
+	var payload *authzT.Payload
 	jsonUserData, err := json.Marshal(socAuth.UserData)
 	if err != nil {
 		return nil, err
 	}
 
 	if user != nil {
-		authzCtx = &authzT.Context{
+		payload = &authzT.Payload{
 			Id:         user.Id,
 			SocialId:   socAuth.SocialId,
 			Username:   user.Username,
@@ -196,11 +196,11 @@ func createAuthzCtx(socAuth *storageT.SocialAuthData, user *storageT.IdentityDat
 			Additional: user.Additional,
 		}
 	} else {
-		authzCtx = &authzT.Context{
+		payload = &authzT.Payload{
 			SocialId: socAuth.SocialId,
 			Email:    socAuth.Email,
 			UserData: string(jsonUserData),
 		}
 	}
-	return authzCtx, nil
+	return payload, nil
 }

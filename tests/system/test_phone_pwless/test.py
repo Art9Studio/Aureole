@@ -26,6 +26,7 @@ def app_url(uuid):
     return BASE_URL + f'/{uuid}'
 
 
+@pytest.mark.skip()
 def test_register(app_url):
     r = requests.post(app_url + '/register', json={'phone': '+380711234567'})
     assert r.ok
@@ -38,13 +39,14 @@ def test_register(app_url):
 
 
 def test_login(app_url, uuid):
-    r = requests.post(app_url + '/login', json={'phone': '+380711234567'})
+    r = requests.post(app_url + '/phone/send', json={'phone': '+380711234567'})
     assert r.ok
     otp_id = r.json()['verification_id']
 
     otps = requests.get('https://twilio/2010-04-01/Accounts/123456/Messages.json', verify=False)
     otp = otps.json()[0]['Body']
-    r = requests.post(app_url + '/login/verify', json={
+    print(otp)
+    r = requests.post(app_url + '/phone/login', json={
         'otp_id': otp_id,
         'otp': otp
     })
@@ -56,6 +58,6 @@ def test_login(app_url, uuid):
     cookie.load(r.headers['Set-Cookie'])
     assert cookie.get('refresh_token') is not None
     assert verify_jwt(r.headers['access'], cookie.get('refresh_token').value,
-                      app_url + '/keys/jwk', ['RS256'], uuid, 'Aureole Server')
+                      BASE_URL + '/phone-pwless-jwk-file/jwk', ['RS256'], uuid, 'Aureole Server')
 
     requests.delete('https://twilio/2010-04-01/Accounts/123456/Messages.json', verify=False)

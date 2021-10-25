@@ -186,7 +186,7 @@ def run_and_wait_docker():
         subprocess.run(
             'cd tests/system/resources && docker-compose up -d aureole postgres smtp twilio social-auth && docker-compose up aureole-tests',
             shell=True, check=True, text=True)
-    except KeyboardInterrupt:
+    except:
         return
 
 

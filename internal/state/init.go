@@ -1,9 +1,8 @@
-package context
+package state
 
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	"aureole/internal/context/app"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/admin"
 	adminTypes "aureole/internal/plugins/admin/types"
@@ -21,6 +20,7 @@ import (
 	"aureole/internal/plugins/storage/types"
 	"aureole/internal/router"
 	_interface "aureole/internal/router/interface"
+	"aureole/internal/state/app"
 	"crypto/tls"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -29,49 +29,49 @@ import (
 	"strings"
 )
 
-func Init(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.APIVersion = conf.APIVersion
-	ctx.TestRun = conf.TestRun
-	ctx.PingPath = conf.PingPath
+func Init(conf *configs.Project, p *Project) {
+	p.APIVersion = conf.APIVersion
+	p.TestRun = conf.TestRun
+	p.PingPath = conf.PingPath
 
-	if ctx.TestRun {
+	if p.TestRun {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
 	router.Router.AddProjectRoutes([]*_interface.Route{
 		{
 			Method: "GET",
-			Path:   ctx.PingPath,
+			Path:   p.PingPath,
 			Handler: func(c *fiber.Ctx) error {
 				return c.SendStatus(fiber.StatusOK)
 			},
 		},
 	})
 
-	createGlobalPlugins(conf, ctx)
-	createApps(conf, ctx)
-	createAppPlugins(conf, ctx)
+	createGlobalPlugins(conf, p)
+	createApps(conf, p)
+	createAppPlugins(conf, p)
 
-	createCollections(conf, ctx)
-	createIdentities(conf, ctx)
+	createCollections(conf, p)
+	createIdentities(conf, p)
 
-	initGlobalPlugins(ctx)
-	initAppPlugins(ctx)
+	initGlobalPlugins(p)
+	initAppPlugins(p)
 
-	initCollections(ctx)
+	initCollections(p)
 }
 
-func createGlobalPlugins(conf *configs.Project, ctx *ProjectCtx) {
-	createPwHashers(conf, ctx)
-	createSenders(conf, ctx)
-	createCryptoKeys(conf, ctx)
-	createStorages(conf, ctx)
-	createAdmins(conf, ctx)
+func createGlobalPlugins(conf *configs.Project, p *Project) {
+	createPwHashers(conf, p)
+	createSenders(conf, p)
+	createCryptoKeys(conf, p)
+	createStorages(conf, p)
+	createAdmins(conf, p)
 }
 
-func createAppPlugins(conf *configs.Project, ctx *ProjectCtx) {
-	for appName := range ctx.Apps {
-		appCtx := ctx.Apps[appName]
+func createAppPlugins(conf *configs.Project, p *Project) {
+	for appName := range p.Apps {
+		appState := p.Apps[appName]
 
 		var appConf configs.App
 		for _, a := range conf.Apps {
@@ -80,13 +80,13 @@ func createAppPlugins(conf *configs.Project, ctx *ProjectCtx) {
 			}
 		}
 
-		appCtx.Authenticators = createAuthenticators(&appConf)
-		appCtx.Authorizers = createAuthorizers(&appConf)
+		appState.Authenticators = createAuthenticators(&appConf)
+		appState.Authorizers = createAuthorizers(&appConf)
 	}
 }
 
-func createStorages(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.Storages = make(map[string]types.Storage)
+func createStorages(conf *configs.Project, p *Project) {
+	p.Storages = make(map[string]types.Storage)
 
 	for i := range conf.StorageConfs {
 		storageConf := conf.StorageConfs[i]
@@ -95,16 +95,16 @@ func createStorages(conf *configs.Project, ctx *ProjectCtx) {
 			fmt.Printf("open connection session to storage '%s': %v\n", storageConf.Name, err)
 		}
 
-		ctx.Storages[storageConf.Name] = connSess
+		p.Storages[storageConf.Name] = connSess
 	}
 
-	cleanupStorages(conf, ctx)
+	cleanupStorages(conf, p)
 }
 
-func cleanupStorages(conf *configs.Project, ctx *ProjectCtx) {
+func cleanupStorages(conf *configs.Project, p *Project) {
 	isUsedStorage := make(map[string]bool)
 
-	for storageName := range ctx.Storages {
+	for storageName := range p.Storages {
 		isUsedStorage[storageName] = false
 
 		for _, appConf := range conf.Apps {
@@ -125,8 +125,8 @@ func cleanupStorages(conf *configs.Project, ctx *ProjectCtx) {
 	}
 }
 
-func createAdmins(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.Admins = make(map[string]adminTypes.Admin)
+func createAdmins(conf *configs.Project, p *Project) {
+	p.Admins = make(map[string]adminTypes.Admin)
 
 	for i := range conf.AdminConfs {
 		adminConf := conf.AdminConfs[i]
@@ -135,26 +135,26 @@ func createAdmins(conf *configs.Project, ctx *ProjectCtx) {
 			fmt.Printf("cannot create admin plugin '%s': %v\n", adminConf.Name, err)
 		}
 
-		ctx.Admins[adminConf.Name] = a
+		p.Admins[adminConf.Name] = a
 	}
 
-	cleanupStorages(conf, ctx)
+	cleanupStorages(conf, p)
 }
 
-func createCollections(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.Collections = make(map[string]*collections.Collection)
+func createCollections(conf *configs.Project, p *Project) {
+	p.Collections = make(map[string]*collections.Collection)
 
 	for _, collConf := range conf.CollConfs {
 		coll, err := collections.Create(&collConf)
 		if err != nil {
 			fmt.Printf("cannot create collection '%s': %v\n", coll.Name, err)
 		}
-		ctx.Collections[collConf.Name] = coll
+		p.Collections[collConf.Name] = coll
 	}
 }
 
-func createPwHashers(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.Hashers = make(map[string]pwhasherTypes.PwHasher)
+func createPwHashers(conf *configs.Project, p *Project) {
+	p.Hashers = make(map[string]pwhasherTypes.PwHasher)
 
 	for i := range conf.HasherConfs {
 		hasherConf := conf.HasherConfs[i]
@@ -163,12 +163,12 @@ func createPwHashers(conf *configs.Project, ctx *ProjectCtx) {
 			fmt.Printf("cannot create hasher '%s': %v\n", hasherConf.Name, err)
 		}
 
-		ctx.Hashers[hasherConf.Name] = h
+		p.Hashers[hasherConf.Name] = h
 	}
 }
 
-func createSenders(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.Senders = make(map[string]senderTypes.Sender)
+func createSenders(conf *configs.Project, p *Project) {
+	p.Senders = make(map[string]senderTypes.Sender)
 
 	for i := range conf.Senders {
 		senderConf := conf.Senders[i]
@@ -177,12 +177,12 @@ func createSenders(conf *configs.Project, ctx *ProjectCtx) {
 			fmt.Printf("cannot create sender '%s': %v\n", senderConf.Name, err)
 		}
 
-		ctx.Senders[senderConf.Name] = s
+		p.Senders[senderConf.Name] = s
 	}
 }
 
-func createCryptoKeys(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.CryptoKeys = make(map[string]cryptoKeyTypes.CryptoKey)
+func createCryptoKeys(conf *configs.Project, p *Project) {
+	p.CryptoKeys = make(map[string]cryptoKeyTypes.CryptoKey)
 
 	for i := range conf.CryptoKeys {
 		ckeyConf := conf.CryptoKeys[i]
@@ -191,12 +191,12 @@ func createCryptoKeys(conf *configs.Project, ctx *ProjectCtx) {
 			fmt.Printf("cannot create crypto key '%s': %v\n", ckeyConf.Name, err)
 		}
 
-		ctx.CryptoKeys[ckeyConf.Name] = ckey
+		p.CryptoKeys[ckeyConf.Name] = ckey
 	}
 }
 
-func createApps(conf *configs.Project, ctx *ProjectCtx) {
-	ctx.Apps = make(map[string]*app.App, len(conf.Apps))
+func createApps(conf *configs.Project, p *Project) {
+	p.Apps = make(map[string]*app.App, len(conf.Apps))
 
 	for _, appConf := range conf.Apps {
 		appUrl, err := createAppUrl(&appConf)
@@ -205,7 +205,7 @@ func createApps(conf *configs.Project, ctx *ProjectCtx) {
 				appConf.Name, err)
 		}
 
-		ctx.Apps[appConf.Name] = &app.App{
+		p.Apps[appConf.Name] = &app.App{
 			Name:       appConf.Name,
 			Url:        appUrl,
 			PathPrefix: appConf.PathPrefix,
@@ -226,9 +226,9 @@ func createAppUrl(app *configs.App) (*url.URL, error) {
 	return appUrl, nil
 }
 
-func createIdentities(conf *configs.Project, ctx *ProjectCtx) {
-	for appName := range ctx.Apps {
-		appCtx := ctx.Apps[appName]
+func createIdentities(conf *configs.Project, p *Project) {
+	for appName := range p.Apps {
+		appState := p.Apps[appName]
 
 		var appConf configs.App
 		for _, a := range conf.Apps {
@@ -237,12 +237,12 @@ func createIdentities(conf *configs.Project, ctx *ProjectCtx) {
 			}
 		}
 
-		i, err := identity.Create(&appConf.Identity, ctx.Collections)
+		i, err := identity.Create(&appConf.Identity, p.Collections)
 		if err != nil {
 			fmt.Printf("cannot create idetity for app '%s'", appName)
-			appCtx.Identity = nil
+			appState.Identity = nil
 		} else {
-			appCtx.Identity = i
+			appState.Identity = i
 		}
 	}
 }
@@ -281,75 +281,75 @@ func createAuthorizers(app *configs.App) map[string]authzTypes.Authorizer {
 	return authorizers
 }
 
-func initCollections(ctx *ProjectCtx) {
-	for collName := range ctx.Collections {
-		coll := ctx.Collections[collName]
-		err := coll.Init(ctx.Collections)
+func initCollections(p *Project) {
+	for collName := range p.Collections {
+		coll := p.Collections[collName]
+		err := coll.Init(p.Collections)
 		if err != nil {
 			fmt.Printf("cannot init collection '%s': %v\n", collName, err)
-			ctx.Collections[collName] = nil
+			p.Collections[collName] = nil
 		}
 	}
 }
 
-func initStorages(ctx *ProjectCtx) {
-	for name, s := range ctx.Storages {
+func initStorages(p *Project) {
+	for name, s := range p.Storages {
 		if err := s.Init(); err != nil {
 			fmt.Printf("cannot init storage '%s': %v\n", name, err)
-			ctx.Storages[name] = nil
+			p.Storages[name] = nil
 		} else if err := s.Ping(); err != nil {
 			fmt.Printf("cannot ping storage '%s': %v\n", name, err)
-			ctx.Storages[name] = nil
+			p.Storages[name] = nil
 		}
 	}
 }
 
-func initPwHashers(ctx *ProjectCtx) {
-	for name, h := range ctx.Hashers {
+func initPwHashers(p *Project) {
+	for name, h := range p.Hashers {
 		if err := h.Init(); err != nil {
 			fmt.Printf("cannot init hasher '%s': %v\n", name, err)
-			ctx.Hashers[name] = nil
+			p.Hashers[name] = nil
 		}
 	}
 }
 
-func initSenders(ctx *ProjectCtx) {
-	for name, s := range ctx.Senders {
+func initSenders(p *Project) {
+	for name, s := range p.Senders {
 		if err := s.Init(); err != nil {
 			fmt.Printf("cannot init sender '%s': %v\n", name, err)
-			ctx.Senders[name] = nil
+			p.Senders[name] = nil
 		}
 	}
 }
 
-func initCryptoKeys(ctx *ProjectCtx) {
-	for name, k := range ctx.CryptoKeys {
+func initCryptoKeys(p *Project) {
+	for name, k := range p.CryptoKeys {
 		if err := k.Init(); err != nil {
 			fmt.Printf("cannot init storage '%s': %v\n", name, err)
-			ctx.CryptoKeys[name] = nil
+			p.CryptoKeys[name] = nil
 		}
 	}
 }
 
-func initAdmins(ctx *ProjectCtx) {
-	for name, a := range ctx.Admins {
+func initAdmins(p *Project) {
+	for name, a := range p.Admins {
 		if err := a.Init(); err != nil {
 			fmt.Printf("cannot init admin plugin '%s': %v\n", name, err)
-			ctx.Admins[name] = nil
+			p.Admins[name] = nil
 		}
 	}
 }
 
-func initGlobalPlugins(ctx *ProjectCtx) {
-	initStorages(ctx)
-	initPwHashers(ctx)
-	initSenders(ctx)
-	initCryptoKeys(ctx)
-	initAdmins(ctx)
+func initGlobalPlugins(p *Project) {
+	initStorages(p)
+	initPwHashers(p)
+	initSenders(p)
+	initCryptoKeys(p)
+	initAdmins(p)
 }
 
-func initAppPlugins(ctx *ProjectCtx) {
-	for name, a := range ctx.Apps {
+func initAppPlugins(p *Project) {
+	for name, a := range p.Apps {
 		initAuthenticators(a)
 		initAuthorizers(name, a)
 	}

@@ -26,6 +26,7 @@ def app_url(uuid):
     return BASE_URL + f'/{uuid}'
 
 
+@pytest.mark.skip()
 def test_register(app_url):
     r = requests.post(app_url + '/register', json={
         'email': 'john.doe@example.com',
@@ -42,6 +43,7 @@ def test_register(app_url):
     assert r.json()['message'] == 'user already exist'
 
 
+@pytest.mark.skip()
 def test_login(app_url, uuid):
     login_resp = requests.post(app_url + '/login', json={
         'email': 'john.doe@example.com',
@@ -63,6 +65,7 @@ def test_login(app_url, uuid):
                       app_url + '/gen-keys/jwk', ['ES256'], uuid, 'Aureole Server')
 
 
+@pytest.mark.skip()
 def test_email_verification(app_url):
     r = requests.post(app_url + '/email-verify', json={'email': 'john.doe@example.com'})
     assert r.ok
@@ -75,6 +78,7 @@ def test_email_verification(app_url):
     requests.delete('http://smtp:1080/api/emails')
 
 
+@pytest.mark.skip()
 def test_password_reset(app_url):
     r = requests.post(app_url + '/password/reset', json={'email': 'john.doe@example.com'})
     assert r.ok

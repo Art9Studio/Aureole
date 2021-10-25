@@ -13,21 +13,11 @@ apps:
 
     authN:
       - type: "email"
-        authz: email_pwless_session
+        authz: email_pwless_jwt
         config:
           collection: email_pwless_identity
           storage: email_pwless_one_db
-          login:
-            path: "/login"
-            fields_map:
-              email: "{$.email}"
-          register:
-            path: "/register"
-            fields_map:
-              username: "{$.username}"
-              email: "{$.email}"
           magic_link:
-            path: "/email-confirm"
             collection: email_pwless_magic_link
             sender: email_pwless_email
             template: email_pwless_magic_link
@@ -36,18 +26,17 @@ apps:
               hash_func: "sha256"
 
     authZ:
-      - name: email_pwless_session
-        type: "session"
+      - type: "jwt"
+        name: email_pwless_jwt
         config:
-          collection: email_pwless_session
-          storage: email_pwless_one_db
-          domain: "aureole-tests"
-          path: "/"
-          max_age: 3600
-          secure: false
-          http_only: false
-          same_site: ""
-          clean_interval: 60
+          sub: true
+          aud: [ "${UUID}" ]
+          iat: true
+          jti: "0"
+          alg: "RS256"
+          sign_key: email_pwless_jwk_file
+          verify_keys: [ email_pwless_jwk_file ]
+          payload: "${RES_PATH}/jwt_payload.json.tmpl"
 
 collections:
   - type: "identity"
@@ -76,16 +65,6 @@ collections:
         expires: "expires"
         invalid: "invalid"
 
-  - type: "session" # main coll
-    name: email_pwless_session
-    config:
-      name: "sessions"
-      pk: "user_id"
-      fields_map:
-        id: "user_id"
-        session_token: "session_id"
-        expiration: "expiration"
-
 storages:
   - type: "postgresql"
     name: email_pwless_one_db
@@ -95,7 +74,6 @@ storages:
 crypto_keys:
   - type: "jwk"
     name: email_pwless_jwk_file
-    path_prefix: "/${UUID}/keys"
     config:
       path: "${RES_PATH}/keys.json"
 

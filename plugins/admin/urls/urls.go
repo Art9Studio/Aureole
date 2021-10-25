@@ -16,6 +16,7 @@ func (u *urls) Init() (err error) {
 	if u.conf, err = initConfig(&u.rawConf.Config); err != nil {
 		return err
 	}
+	u.conf.Path = "/admin/urls"
 	createRoutes(u)
 	return nil
 }

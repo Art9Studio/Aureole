@@ -9,17 +9,10 @@
       "uuid": "57e54ce5-7db2-4f98-9871-754d05a3a82c",
       "minLength": 1,
       "metatags": "@plugin_name"
-    },
-    "path_prefix": {
-      "type": "string",
-      "uuid": "2af628e8-e12d-4199-ad24-c2a858862153",
-      "minLength": 1,
-      "metatags": "@rel_url"
     }
   },
   "required": [
-    "name",
-    "path_prefix"
+    "name"
   ],
   "oneOf": [
     {

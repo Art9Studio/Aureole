@@ -7,7 +7,7 @@
           <value>
             <SchemaInfo>
               <option name="name" value="Aureole schema" />
-              <option name="relativePathToSchema" value="docs/json_schemas/project.json" />
+              <option name="relativePathToSchema" value="docs/json_schemas/project.schema.json" />
               <option name="schemaVersion" value="JSON Schema version 7" />
               <option name="applicationDefined" value="true" />
               <option name="patterns">

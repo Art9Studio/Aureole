@@ -3,13 +3,13 @@ package email
 import (
 	"aureole/internal/collections"
 	"aureole/internal/configs"
-	app "aureole/internal/context/interface"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
+	app "aureole/internal/state/interface"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -22,7 +22,7 @@ import (
 
 type (
 	email struct {
-		app        app.AppCtx
+		app        app.AppState
 		rawConf    *configs.Authn
 		conf       *config
 		identity   *identity.Identity
@@ -40,19 +40,25 @@ type (
 	}
 )
 
-func (e *email) Init(app app.AppCtx) (err error) {
+func (e *email) Init(app app.AppState) (err error) {
 	e.app = app
-	e.identity = app.GetIdentity()
+	e.rawConf.PathPrefix = "/email-link"
+
 	e.conf, err = initConfig(&e.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	e.coll, err = pluginApi.Project.GetCollection(e.conf.Collection)
+	e.identity, err = app.GetIdentity()
+	if err != nil {
+		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+	}
+
+	/*e.coll, err = pluginApi.Project.GetCollection(e.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", e.conf.Collection)
-	}
+	}*/
 
 	e.link.coll, err = pluginApi.Project.GetCollection(e.conf.Link.Collection)
 	if err != nil {
@@ -63,6 +69,7 @@ func (e *email) Init(app app.AppCtx) (err error) {
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", e.conf.Storage)
 	}
+
 	e.link.sender, err = pluginApi.Project.GetSender(e.conf.Link.Sender)
 	if err != nil {
 		return fmt.Errorf("sender named '%s' is not declared", e.conf.Link.Sender)
@@ -134,13 +141,8 @@ func createRoutes(e *email) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
-			Path:    e.rawConf.PathPrefix + e.conf.Login.Path,
-			Handler: GetMagicLink(e),
-		},
-		{
-			Method:  "POST",
-			Path:    e.rawConf.PathPrefix + e.conf.Register.Path,
-			Handler: Register(e),
+			Path:    e.rawConf.PathPrefix + e.conf.Path,
+			Handler: SendMagicLink(e),
 		},
 		{
 			Method:  "GET",

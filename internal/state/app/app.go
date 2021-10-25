@@ -25,7 +25,6 @@ func (a *App) GetUrl() (*url.URL, error) {
 	if a.Url == nil {
 		return nil, fmt.Errorf("can't find app url for app '%s'", a.Name)
 	}
-
 	return a.Url, nil
 }
 
@@ -33,8 +32,11 @@ func (a *App) GetPathPrefix() string {
 	return a.PathPrefix
 }
 
-func (a *App) GetIdentity() *identity.Identity {
-	return a.Identity
+func (a *App) GetIdentity() (*identity.Identity, error) {
+	if a.Identity == nil {
+		return nil, fmt.Errorf("can't find identity for app '%s'", a.Name)
+	}
+	return a.Identity, nil
 }
 
 func (a *App) GetAuthorizer(name string) (authzTypes.Authorizer, error) {

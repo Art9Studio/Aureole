@@ -39,7 +39,7 @@ func isZero(v reflect.Value) bool {
 
 // todo: run all setDefaults recursively with reflect
 func (p *Project) setDefaults() {
-	SetDefault(&p.PingPath, "/ping")
+	p.PingPath = "/ping"
 
 	for i := range p.Apps {
 		a := p.Apps[i]
