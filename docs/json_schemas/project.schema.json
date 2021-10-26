@@ -18,6 +18,26 @@
       "uuid": "1ebdbe28-efd5-48b9-bcba-08ae95929f80",
       "default": false
     },
+    "service": {
+      "type": "object",
+      "uuid": "3096b94f-83f7-488c-8a49-84fdf216e24b",
+      "additionalProperties": false,
+      "required": ["storage"],
+      "properties": {
+        "internal_key": {
+          "type": "string",
+          "uuid": "06b81c7e-725f-473a-9a07-7be0d33efe39",
+          "minLength": 1,
+          "metatags": "@crypto_key_ref"
+        },
+        "storage": {
+          "type": "string",
+          "uuid": "7d900d80-53fa-488c-9541-4e0ca8b5af60",
+          "minLength": 1,
+          "metatags": "@storage_ref"
+        }
+      }
+    },
     "apps": {
       "type": "array",
       "uuid": "6d0ccc24-0a20-4d26-905b-90251111be96",

@@ -15,12 +15,18 @@ type (
 		APIVersion   string      `config:"api_version"`
 		PingPath     string      `config:"-"`
 		TestRun      bool        `config:"test_run"`
+		Service      Service     `config:"service"`
 		Apps         []App       `config:"apps"`
 		StorageConfs []Storage   `config:"storages"`
 		HasherConfs  []PwHasher  `config:"hashers"`
 		CryptoKeys   []CryptoKey `config:"crypto_keys"`
 		Senders      []Sender    `config:"senders"`
 		AdminConfs   []Admin     `config:"admin_plugins"`
+	}
+
+	Service struct {
+		InternalKey string `config:"internal_key"`
+		Storage     string `config:"storage"`
 	}
 
 	App struct {

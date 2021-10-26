@@ -10,7 +10,6 @@ import (
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
-	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 )
@@ -54,9 +53,9 @@ func (p *phone) Init(app app.AppState) (err error) {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.Hasher)
 	}
 
-	p.serviceKey, err = pluginApi.Project.GetCryptoKey("service_internal_key")
+	p.serviceKey, err = pluginApi.Project.GetServiceKey()
 	if err != nil {
-		return errors.New("cryptokey named 'service_internal_key' is not declared")
+		return err
 	}
 
 	p.sender, err = pluginApi.Project.GetSender(p.conf.Sender)

@@ -13,6 +13,8 @@ import (
 type (
 	ProjectState interface {
 		IsTestRun() bool
+		GetServiceKey() (cryptoKeyTypes.CryptoKey, error)
+		GetServiceStorage() (storageTypes.Storage, error)
 		GetStorage(name string) (storageTypes.Storage, error)
 		GetHasher(name string) (pwhasherTypes.PwHasher, error)
 		GetSender(name string) (senderTypes.Sender, error)
@@ -21,7 +23,7 @@ type (
 
 	AppState interface {
 		GetName() string
-		GetUrl() (*url.URL, error)
+		GetUrl() (url.URL, error)
 		GetPathPrefix() string
 		GetIdentityManager() (identity.ManagerI, error)
 		GetAuthorizer() (authzTypes.Authorizer, error)

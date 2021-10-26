@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/pkg/errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -72,7 +72,7 @@ func doRequest(c *Config, v url.Values) (map[string]interface{}, error) {
 	defer resp.Body.Close()
 
 	var data = make(map[string]interface{})
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

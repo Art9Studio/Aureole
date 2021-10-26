@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "99da1e26-c2a4-42b8-9bf0-ad6674552437",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "vault",
+      "uuid": "6ffc558c-8e79-4e1d-ac3e-d7d9e62afaa8"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "4790c2c7-e859-4138-828c-33a7a90f778c",
+      "required": [
+        "token",
+        "address",
+        "path"
+      ],
+      "properties": {
+        "token": {
+          "type": "string",
+          "uuid": "c8dbe31a-c8d8-4989-8884-49e15a28aa84"
+        },
+        "address": {
+          "type": "string",
+          "uuid": "3c734aa1-121a-4ebe-b81b-c87fb1966573",
+          "metatags": "@url"
+        },
+        "path": {
+          "type": "string",
+          "uuid": "4abc5aff-ccd8-4e90-bfb4-402ad9a13406",
+          "metatags": "@rel_url"
+        }
+      }
+    }
+  },
+  "example": "storage/vault"
+}

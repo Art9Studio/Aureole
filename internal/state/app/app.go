@@ -22,11 +22,11 @@ func (a *App) GetName() string {
 	return a.Name
 }
 
-func (a *App) GetUrl() (*url.URL, error) {
+func (a *App) GetUrl() (url.URL, error) {
 	if a.Url == nil {
-		return nil, fmt.Errorf("can't find app url for app '%s'", a.Name)
+		return url.URL{}, fmt.Errorf("can't find app url for app '%s'", a.Name)
 	}
-	return a.Url, nil
+	return *a.Url, nil
 }
 
 func (a *App) GetPathPrefix() string {

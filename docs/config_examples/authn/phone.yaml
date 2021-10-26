@@ -1,15 +1,13 @@
 authn:
   - type: "phone"
-      authZ: jwt
-      config:
-        hasher: django
-        storage: one_db
-        sender: twilio
-        template: phone_otp
-        max_attempts: 3
-        otp:
-          length: 6
-          alphabet: "1234567890"
-          prefix: "A-"
-          postfix: "-B"
-          exp: 300
+    config:
+      hasher: django
+      sender: twilio
+      template: phone_otp
+      max_attempts: 3
+      otp:
+        length: 6
+        alphabet: "1234567890"
+        prefix: "A-"
+        postfix: "-B"
+        exp: 300

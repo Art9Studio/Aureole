@@ -53,6 +53,14 @@ func Init(conf *configs.Project, p *Project) {
 
 	initGlobalPlugins(p)
 	initAppPlugins(p)
+
+	var err error
+	if p.Service.internalKey, err = p.GetCryptoKey(conf.Service.InternalKey); err != nil {
+		fmt.Printf("cannot init service key: %v\n", err)
+	}
+	if p.Service.storage, err = p.GetStorage(conf.Service.Storage); err != nil {
+		fmt.Printf("cannot init service storage: %v\n", err)
+	}
 }
 
 func createGlobalPlugins(conf *configs.Project, p *Project) {

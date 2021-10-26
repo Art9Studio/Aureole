@@ -49,3 +49,11 @@ func (s *Storage) Open() error {
 func (s *Storage) Close() error {
 	return s.conn.Close(context.Background())
 }
+
+func (s *Storage) Read() ([]byte, error) {
+	panic("implement me")
+}
+
+func (s *Storage) Write(value []byte) error {
+	panic("implement me")
+}

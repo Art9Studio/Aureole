@@ -6,8 +6,9 @@ import (
 )
 
 type config struct {
-	Alg  string `mapstructure:"alg"`
-	Path string `mapstructure:"path"`
+	Alg             string `mapstructure:"alg"`
+	Storage         string `mapstructure:"storage"`
+	RefreshInterval int    `mapstructure:"refresh_interval"`
 }
 
 func (p pemAdapter) Create(conf *configs.CryptoKey) types.CryptoKey {

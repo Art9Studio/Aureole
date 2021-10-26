@@ -1,9 +1,7 @@
 authN:
   - type: "password_based"
-    authZ: jwt
     config:
       main_hasher: argon2
-      storage: db
       password_reset:
         sender: email
         template: reset

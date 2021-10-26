@@ -17,28 +17,42 @@
       "uuid": "8a90c0b9-b9bb-476c-8c7f-debbdc2815ac",
       "additionalProperties": false,
       "required": [
-        "path"
+        "storage"
       ],
       "oneOf": [
         {
-          "required": ["path"],
+          "required": ["storage"],
           "properties": {
-            "path": {
+            "storage": {
               "type": "string",
               "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
               "minLength": 1,
-              "metatags": "@rel_url @file_path"
+              "metatags": "@storage_ref"
+            },
+            "refresh_interval": {
+              "type": "integer",
+              "uuid": "a154a736-c42a-4426-ad13-9f208319face",
+              "minimum": 0,
+              "default": 86400,
+              "metatags": "@unit:s"
             }
           }
         },
         {
-          "required": ["path", "kty", "alg", "size", "kid"],
+          "required": ["storage", "kty", "alg", "size", "kid"],
           "properties": {
-            "path": {
+            "storage": {
               "type": "string",
-              "uuid": "ea7286ce-94c8-4348-97a3-8411251e375d",
+              "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
               "minLength": 1,
-              "metatags": "@file_path"
+              "metatags": "@storage_ref"
+            },
+            "refresh_interval": {
+              "type": "integer",
+              "uuid": "a154a736-c42a-4426-ad13-9f208319face",
+              "minimum": 0,
+              "default": 86400,
+              "metatags": "@unit:s"
             },
             "kty": {
               "enum": ["RSA", "oct"],
@@ -69,13 +83,20 @@
           }
         },
         {
-          "required": ["path", "kty", "alg", "curve", "kid"],
+          "required": ["storage", "kty", "alg", "curve", "kid"],
           "properties": {
-            "path": {
+            "storage": {
               "type": "string",
-              "uuid": "ea7286ce-94c8-4348-97a3-8411251e375d",
+              "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
               "minLength": 1,
-              "metatags": "@file_path"
+              "metatags": "@storage_ref"
+            },
+            "refresh_interval": {
+              "type": "integer",
+              "uuid": "a154a736-c42a-4426-ad13-9f208319face",
+              "minimum": 0,
+              "default": 86400,
+              "metatags": "@unit:s"
             },
             "kty": {
               "enum": ["EC", "OKP"],
