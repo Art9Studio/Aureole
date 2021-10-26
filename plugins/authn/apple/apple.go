@@ -6,7 +6,6 @@ import (
 	"aureole/internal/plugins/authn"
 	authzT "aureole/internal/plugins/authz/types"
 	cKeyT "aureole/internal/plugins/cryptokey/types"
-	storageT "aureole/internal/plugins/storage/types"
 	router "aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"context"
@@ -20,15 +19,11 @@ import (
 	"time"
 )
 
-const Provider = "apple"
-
 type apple struct {
-	app     app.AppState
-	rawConf *configs.Authn
-	conf    *config
-	//coll       *collections.Collection
-	identity   *identity.Identity
-	storage    storageT.Storage
+	app        app.AppState
+	rawConf    *configs.Authn
+	conf       *config
+	manager    identity.ManagerI
 	secretKey  cKeyT.CryptoKey
 	publicKey  cKeyT.CryptoKey
 	provider   *Config
@@ -45,20 +40,10 @@ func (a *apple) Init(app app.AppState) (err error) {
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	a.identity, err = app.GetIdentity()
+	a.manager, err = app.GetIdentityManager()
 	if err != nil {
-		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", app.GetName())
 	}
-
-	/*a.coll, err = pluginApi.Project.GetCollection(a.conf.Coll)
-	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", a.conf.Coll)
-	}
-
-	a.storage, err = pluginApi.Project.GetStorage(a.conf.Storage)
-	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared", a.conf.Storage)
-	}*/
 
 	a.secretKey, err = pluginApi.Project.GetCryptoKey(a.conf.SecretKey)
 	if err != nil {
@@ -70,9 +55,9 @@ func (a *apple) Init(app app.AppState) (err error) {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.PublicKey)
 	}
 
-	a.authorizer, err = a.app.GetAuthorizer(a.rawConf.AuthzName)
+	a.authorizer, err = a.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named '%s' is not declared", a.rawConf.AuthzName)
+		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
 	}
 
 	if err := initProvider(a); err != nil {

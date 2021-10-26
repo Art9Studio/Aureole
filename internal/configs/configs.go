@@ -12,53 +12,35 @@ type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion   string `config:"api_version"`
-		PingPath     string
-		TestRun      bool         `config:"test_run"`
-		Apps         []App        `config:"apps"`
-		StorageConfs []Storage    `config:"storages"`
-		CollConfs    []Collection `config:"collections"`
-		HasherConfs  []PwHasher   `config:"hashers"`
-		CryptoKeys   []CryptoKey  `config:"crypto_keys"`
-		Senders      []Sender     `config:"senders"`
-		AdminConfs   []Admin      `config:"admin_plugins"`
+		APIVersion   string      `config:"api_version"`
+		PingPath     string      `config:"-"`
+		TestRun      bool        `config:"test_run"`
+		Apps         []App       `config:"apps"`
+		StorageConfs []Storage   `config:"storages"`
+		HasherConfs  []PwHasher  `config:"hashers"`
+		CryptoKeys   []CryptoKey `config:"crypto_keys"`
+		Senders      []Sender    `config:"senders"`
+		AdminConfs   []Admin     `config:"admin_plugins"`
 	}
 
 	App struct {
-		Name       string   `config:"name"`
-		Host       string   `config:"host"`
-		PathPrefix string   `config:"path_prefix"`
-		Identity   Identity `config:"identity"`
-		Authn      []Authn  `config:"authN"`
-		Authz      []Authz  `config:"authZ"`
-	}
-
-	Identity struct {
-		Collection string                `config:"collection"`
-		Id         map[string]bool       `config:"id"`
-		Username   map[string]bool       `config:"username"`
-		Phone      map[string]bool       `config:"phone"`
-		Email      map[string]bool       `config:"email"`
-		Additional map[string]extraTrait `config:"additional"`
-	}
-
-	extraTrait struct {
-		IsUnique   bool `config:"unique"`
-		IsRequired bool `config:"required"`
-		IsInternal bool `config:"internal"`
+		Name       string  `config:"name"`
+		Host       string  `config:"host"`
+		PathPrefix string  `config:"path_prefix"`
+		Authn      []Authn `config:"authN"`
+		Authz      Authz   `config:"authZ"`
 	}
 
 	Authn struct {
-		Type       string `config:"type"`
-		PathPrefix string
-		AuthzName  string    `config:"authZ"`
-		Config     RawConfig `config:"config"`
+		Type       string            `config:"type"`
+		PathPrefix string            `config:"-"`
+		Filter     map[string]string `config:"filter"`
+		Config     RawConfig         `config:"config"`
 	}
 
 	Authz struct {
-		Type       string `config:"type"`
-		Name       string `config:"name"`
-		PathPrefix string
+		Type       string    `config:"type"`
+		PathPrefix string    `config:"-"`
 		Config     RawConfig `config:"config"`
 	}
 
@@ -68,19 +50,6 @@ type (
 		Config RawConfig `config:"config"`
 	}
 
-	Collection struct {
-		Type   string   `config:"type"`
-		Name   string   `config:"name"`
-		Parent string   `config:"parent"`
-		Spec   collSpec `config:"config"`
-	}
-
-	collSpec struct {
-		Name      string                 `config:"name"`
-		Pk        string                 `config:"pk"`
-		FieldsMap map[string]interface{} `config:"fields_map"`
-	}
-
 	PwHasher struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
@@ -88,9 +57,9 @@ type (
 	}
 
 	CryptoKey struct {
-		Type       string `config:"type"`
-		Name       string `config:"name"`
-		PathPrefix string
+		Type       string    `config:"type"`
+		Name       string    `config:"name"`
+		PathPrefix string    `config:"-"`
 		Config     RawConfig `config:"config"`
 	}
 

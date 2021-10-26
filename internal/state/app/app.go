@@ -6,15 +6,16 @@ import (
 	authzTypes "aureole/internal/plugins/authz/types"
 	"fmt"
 	"net/url"
+	"regexp"
 )
 
 type App struct {
-	Name           string
-	Url            *url.URL
-	PathPrefix     string
-	Identity       *identity.Identity
-	Authenticators map[string]authnTypes.Authenticator
-	Authorizers    map[string]authzTypes.Authorizer
+	Name            string
+	Url             *url.URL
+	PathPrefix      string
+	IdentityManager identity.ManagerI
+	Authenticators  map[string]authnTypes.Authenticator
+	Authorizer      authzTypes.Authorizer
 }
 
 func (a *App) GetName() string {
@@ -32,17 +33,29 @@ func (a *App) GetPathPrefix() string {
 	return a.PathPrefix
 }
 
-func (a *App) GetIdentity() (*identity.Identity, error) {
-	if a.Identity == nil {
+func (a *App) GetIdentityManager() (identity.ManagerI, error) {
+	if a.IdentityManager == nil {
 		return nil, fmt.Errorf("can't find identity for app '%s'", a.Name)
 	}
-	return a.Identity, nil
+	return a.IdentityManager, nil
 }
 
-func (a *App) GetAuthorizer(name string) (authzTypes.Authorizer, error) {
-	authz, ok := a.Authorizers[name]
-	if !ok || authz == nil {
-		return nil, fmt.Errorf("can't find authorizer named '%s'", name)
+func (a *App) GetAuthorizer() (authzTypes.Authorizer, error) {
+	if a.Authorizer == nil {
+		return nil, fmt.Errorf("can't find authorizer for app '%s'", a.Name)
 	}
-	return authz, nil
+	return a.Authorizer, nil
+}
+
+func (a *App) Filter(fields, filters map[string]string) (bool, error) {
+	for fieldName, pattern := range filters {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return false, err
+		}
+		if !re.MatchString(fields[fieldName]) {
+			return false, nil
+		}
+	}
+	return true, nil
 }

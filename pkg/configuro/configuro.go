@@ -325,7 +325,7 @@ func (c *Config) setConfigFilepath(path string) error {
 func (c *Config) enableValidateUsingTag() {
 	c.validator = validator.New()
 	c.validator.SetTagName(c.validateTag)
-	// Get English Errors
+	// GetData English Errors
 	uni := ut.New(en.New(), en.New())
 	c.validatorTrans, _ = uni.GetTranslator("en")
 	_ = ens.RegisterDefaultTranslations(c.validator, c.validatorTrans)

@@ -12,22 +12,13 @@ func ListPluginStatus(p *Project) {
 	for appName, app := range p.Apps {
 		fmt.Printf("\nAPP: %s\n", appName)
 
-		printStatus("identity", p.Apps[appName].Identity)
+		printStatus("identity manager", p.Apps[appName].IdentityManager)
 
 		for name, authn := range app.Authenticators {
 			printStatus(name, authn)
 		}
 
-		for name, authz := range app.Authorizers {
-			printStatus(name, authz)
-		}
-	}
-
-	if len(p.Collections) != 0 {
-		fmt.Println("\nCOLLECTION PLUGINS")
-		for name, plugin := range p.Collections {
-			printStatus(name, plugin)
-		}
+		printStatus("identity manager", p.Apps[appName].Authorizer)
 	}
 
 	if len(p.Storages) != 0 {

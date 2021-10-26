@@ -1,7 +1,6 @@
 package pwbased
 
 import (
-	"aureole/internal/collections"
 	"aureole/internal/configs"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
@@ -9,7 +8,6 @@ import (
 	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
-	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"errors"
@@ -24,10 +22,8 @@ type (
 		app        app.AppState
 		rawConf    *configs.Authn
 		conf       *config
-		identity   *identity.Identity
+		manager    identity.ManagerI
 		pwHasher   types.PwHasher
-		storage    storageTypes.Storage
-		coll       *collections.Collection
 		authorizer authzTypes.Authorizer
 		serviceKey cKeyTypes.CryptoKey
 		reset      *reset
@@ -42,6 +38,14 @@ type (
 	verification struct {
 		sender      senderTypes.Sender
 		confirmLink *url.URL
+	}
+
+	input struct {
+		Id       interface{} `json:"id"`
+		Email    string      `json:"email"`
+		Phone    string      `json:"phone"`
+		Username string      `json:"username"`
+		Password string      `json:"password"`
 	}
 
 	linkType string
@@ -62,9 +66,12 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	p.identity, err = app.GetIdentity()
+	p.manager, err = app.GetIdentityManager()
 	if err != nil {
-		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("manager for app '%s' is not declared", app.GetName())
+	}
+	if err := p.manager.CheckFeaturesAvailable([]string{"on_register", "get_data", "update"}); err != nil {
+		return err
 	}
 
 	p.pwHasher, err = pluginApi.Project.GetHasher(p.conf.MainHasher)
@@ -77,19 +84,9 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 		return errors.New("cryptokey named 'service_internal_key' is not declared")
 	}
 
-	/*p.coll, err = pluginApi.Project.GetCollection(p.conf.Collection)
+	p.authorizer, err = p.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
-	}*/
-
-	p.storage, err = pluginApi.Project.GetStorage(p.conf.Storage)
-	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
-	}
-
-	p.authorizer, err = p.app.GetAuthorizer(p.rawConf.AuthzName)
-	if err != nil {
-		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
+		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
 	}
 
 	if pwResetEnable(p) {
@@ -118,9 +115,6 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 		}
 	}
 
-	if err := p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
-		return err
-	}
 	createRoutes(p)
 	return nil
 }

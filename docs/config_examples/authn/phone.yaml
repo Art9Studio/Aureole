@@ -3,7 +3,6 @@ authn:
       authZ: jwt
       config:
         hasher: django
-        collection: identity
         storage: one_db
         sender: twilio
         template: phone_otp

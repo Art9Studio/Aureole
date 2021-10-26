@@ -4,7 +4,6 @@
   "additionalProperties": false,
   "required": [
     "name",
-    "identity",
     "authN",
     "authZ"
   ],
@@ -26,9 +25,6 @@
       "default": "/",
       "metatags": "@rel_url"
     },
-    "identity": {
-      "$ref": "identity.schema.json"
-    },
     "authN": {
       "type": "array",
       "uuid": "39042e0a-292c-4e9e-9f59-e132fc471938",
@@ -38,12 +34,9 @@
       "minItems": 1
     },
     "authZ": {
-      "type": "array",
-      "uuid": "6aa36e4e-17f9-4ac7-83db-cc51989849df",
-      "items": {
-        "$ref": "../../plugins/authz/schema.json"
-      },
-      "minItems": 1
+      "type": "object",
+      "uuid": "eb4604cc-1a53-4532-859c-a07e18f9c188",
+      "$ref": "../../plugins/authz/schema.json"
     }
   }
 }

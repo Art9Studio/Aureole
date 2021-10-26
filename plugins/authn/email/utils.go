@@ -1,7 +1,6 @@
 package email
 
 import (
-	"aureole/internal/identity"
 	ckeyTypes "aureole/internal/plugins/cryptokey/types"
 	"context"
 	"errors"
@@ -18,10 +17,6 @@ func sendError(c *fiber.Ctx, statusCode int, message string) error {
 		"success": false,
 		"message": message,
 	})
-}
-
-func isCredential(trait *identity.Trait) bool {
-	return trait.IsCredential && trait.IsUnique
 }
 
 func createToken(e *email, claims map[string]interface{}) (string, error) {

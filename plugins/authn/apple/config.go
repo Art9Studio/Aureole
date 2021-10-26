@@ -7,8 +7,6 @@ import (
 
 type (
 	config struct {
-		Coll        string   `mapstructure:"collection"`
-		Storage     string   `mapstructure:"storage"`
 		SecretKey   string   `mapstructure:"secret_key"`
 		PublicKey   string   `mapstructure:"public_key"`
 		ClientId    string   `mapstructure:"client_id"`

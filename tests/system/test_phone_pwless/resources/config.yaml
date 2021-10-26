@@ -7,7 +7,6 @@ apps:
     host: "http://aureole:3000"
 
     identity:
-      collection: phone_pwless_identity
       phone:
         enabled: true
         required: true
@@ -17,10 +16,8 @@ apps:
         authZ: phone_pwless_jwt
         config:
           hasher:  phone_pwless_argon2
-          collection: phone_pwless_identity
           storage: phone_pwless_one_db
           verification:
-            collection: phone_pwless_phone_otp
             max_attempts: 3
             sender: phone_pwless_twilio
             template: phone_pwless_phone_otp
@@ -45,34 +42,6 @@ apps:
           sign_key: phone_pwless_jwk_file
           verify_keys: [ phone_pwless_jwk_file ]
           payload: "${RES_PATH}/jwt_payload.json.tmpl"
-
-collections:
-  - type: "identity"
-    name: phone_pwless_identity
-    config:
-      name: "users"
-      pk: "id"
-      fields_map:
-        id: "id"
-        username: "username"
-        email: "email"
-        phone: "phone"
-        is_active: no
-        created: no
-        phone_verified: "phone_verified"
-
-  - type: "phone_otp"
-    name: phone_pwless_phone_otp
-    config:
-      name: "phone_verifications"
-      pk: "id"
-      fields_map:
-        id: "id"
-        phone: "phone"
-        otp: "otp"
-        attempts: "attempts"
-        expires: "expires"
-        invalid: "invalid"
 
 storages:
   - type: "postgresql"

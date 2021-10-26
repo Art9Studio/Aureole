@@ -5,7 +5,6 @@ apps:
     path_prefix: "/emptyapi"
 
     identity:
-      collection: identity
       username:
         unique: true
         required: true
@@ -26,7 +25,6 @@ apps:
         authZ: jwt
         config:
           main_hasher: django
-          collection: pwbased
           storage: one_db
 
     authZ:
@@ -47,34 +45,6 @@ storages:
     name: one_db
     config:
       url: "postgresql://root:password@localhost:5432/aureole"
-
-collections:
-  - type: "identity"
-    name: identity
-    config:
-      name: "auth_user"
-      pk: "id"
-      fields_map:
-        id: "id"
-        username: "username"
-        email: "email"
-        last_name: "last_name"
-        first_name: "first_name"
-        is_active: "is_active"
-        created: "date_joined"
-        is_superuser:
-          name: "is_superuser"
-          default: false
-        is_staff:
-          name: "is_staff"
-          default: false
-
-  - type: "pwbased"
-    name: pwbased
-    parent: identity
-    config:
-      fields_map:
-        password: "password"
 
 hashers:
   - type: "pbkdf2"

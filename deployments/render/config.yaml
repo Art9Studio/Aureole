@@ -7,7 +7,6 @@ apps:
     path_prefix: "/auth"
 
     identity:
-      collection: identity
       id:
       username:
         enabled: true
@@ -22,7 +21,6 @@ apps:
         authZ: jwt
         config:
           main_hasher: django
-          collection: pwbased
           storage: db
           login:
             path: "/login"
@@ -31,7 +29,6 @@ apps:
           password_reset:
             path: "/password/reset"
             confirm_url: "/password/reset/confirm"
-            collection: reset
             sender: email
             template: reset
             token:
@@ -42,7 +39,6 @@ apps:
           verification:
             path: "/email-verify"
             confirm_url: "/email-verify/confirm"
-            collection: email_verification
             sender: email
             template: email_verification
             token:
@@ -55,7 +51,6 @@ apps:
         path_prefix: "/email"
         authZ: jwt
         config:
-          collection: identity
           storage: db
           login:
             path: "/login"
@@ -68,7 +63,6 @@ apps:
               email: "{$.email}"
           magic_link:
             path: "/email-confirm"
-            collection: magic_link
             sender: email
             template: magic_link
             token:
@@ -80,7 +74,6 @@ apps:
         authZ: jwt
         config:
           hasher: django
-          collection: identity
           storage: db
           login:
             path: "/login"
@@ -94,7 +87,6 @@ apps:
           verification:
             path: "/login/verify"
             resend_url: "login/resend"
-            collection: phone_otp
             max_attempts: 3
             sender: twilio
             template: phone_otp
@@ -111,7 +103,6 @@ apps:
         path_prefix: "/oauth2/google"
         authZ: jwt
         config:
-          collection: oauth2
           storage: db
           client_id: "${GOOGLE_CLIENT_ID}"
           client_secret: "${GOOGLE_SECRET}"
@@ -124,7 +115,6 @@ apps:
         path_prefix: "/oauth2/vk"
         authZ: jwt
         config:
-          collection: oauth2
           storage: db
           client_id: "${VK_CLIENT_ID}"
           client_secret: "${VK_SECRET}"
@@ -137,7 +127,6 @@ apps:
         path_prefix: "/oauth2/facebook"
         authZ: jwt
         config:
-          collection: oauth2
           storage: db
           client_id: "${FACEBOOK_CLIENT_ID}"
           client_secret: "${FACEBOOK_SECRET}"
@@ -151,7 +140,6 @@ apps:
         path_prefix: "/oauth2/apple"
         authZ: jwt
         config:
-          collection: oauth2
           storage: db
           secret_key: apple_private_key
           public_key: apple_public_keys
@@ -187,91 +175,6 @@ storages:
     name: db
     config:
       url: "${DATABASE_URL}"
-
-collections:
-  - type: "identity"
-    name: identity
-    config:
-      name: "users"
-      pk: "id"
-      fields_map:
-        id: "id"
-        username: "username"
-        phone: "phone"
-        email: "email"
-        is_active: no
-        created: no
-        email_verified: "email_verified"
-        phone_verified: "phone_verified"
-
-  - type: "pwbased"
-    name: pwbased
-    parent: identity
-    config:
-      fields_map:
-        password: "password"
-
-  - type: "phone_otp"
-    name: phone_otp
-    config:
-      name: "phone_verifications"
-      pk: "id"
-      fields_map:
-        id: "id"
-        phone: "phone"
-        otp: "otp"
-        attempts: "attempts"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "password_reset"
-    name: reset
-    config:
-      name: "password_resets"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "email_link"
-    name: magic_link
-    config:
-      name: "email_links"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "email_verification"
-    name: email_verification
-    config:
-      name: "email_verifications"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "oauth2"
-    name: oauth2
-    config:
-      name: "social_logins"
-      pk: id
-      fields_map:
-        id: "id"
-        social_id: "social_id"
-        email: "email"
-        provider: "provider"
-        user_data: "user_data"
-        user_id: "user_id"
 
 hashers:
   - type: "pbkdf2"

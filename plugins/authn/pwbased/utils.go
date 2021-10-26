@@ -3,10 +3,8 @@ package pwbased
 import (
 	"aureole/internal/identity"
 	ckeyTypes "aureole/internal/plugins/cryptokey/types"
-	storageT "aureole/internal/plugins/storage/types"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -21,34 +19,29 @@ func sendError(c *fiber.Ctx, statusCode int, message string) error {
 	})
 }
 
-func getCredField(i *identity.Identity, iData *storageT.IdentityData) (string, interface{}, error) {
-	var credName string
-	credVals := map[string]interface{}{}
-
-	if iData.Username != nil && isCredential(i.Username) {
-		credVals["username"] = iData.Username
-		credName = "username"
+func getCredential(i *identity.Identity) (*identity.Credential, error) {
+	if i.Username != "nil" {
+		return &identity.Credential{
+			Name:  "username",
+			Value: i.Username,
+		}, nil
 	}
 
-	if iData.Email != nil && isCredential(i.Email) {
-		credVals["email"] = iData.Email
-		credName = "email"
+	if i.Email != "nil" {
+		return &identity.Credential{
+			Name:  "email",
+			Value: i.Email,
+		}, nil
 	}
 
-	if iData.Phone != nil && isCredential(i.Phone) {
-		credVals["phone"] = iData.Phone
-		credName = "phone"
+	if i.Phone != "nil" {
+		return &identity.Credential{
+			Name:  "phone",
+			Value: i.Phone,
+		}, nil
 	}
 
-	if l := len(credVals); l != 1 {
-		return "", nil, fmt.Errorf("expects 1 credential, %d got", l)
-	}
-
-	return credName, credVals[credName], nil
-}
-
-func isCredential(trait identity.Trait) bool {
-	return trait.IsCredential && trait.IsUnique
+	return nil, errors.New("credential not found")
 }
 
 func createToken(p *pwBased, claims map[string]interface{}) (string, error) {

@@ -7,7 +7,6 @@ apps:
     host: "http://aureole:3000"
 
     identity:
-      collection: social_auth_identity
       email:
         enabled: true
 
@@ -15,7 +14,6 @@ apps:
       - type: "google"
         authz: social_auth_jwt
         config:
-          collection: social_auth_oauth2
           storage: social_auth_one_db
           client_id: "123456"
           client_secret: "123456"
@@ -26,7 +24,6 @@ apps:
       - type: "vk"
         authz: social_auth_jwt
         config:
-          collection: social_auth_oauth2
           storage: social_auth_one_db
           client_id: "123456"
           client_secret: "123456"
@@ -36,7 +33,6 @@ apps:
       - type: "facebook"
         authz: social_auth_jwt
         config:
-          collection: social_auth_oauth2
           storage: social_auth_one_db
           client_id: "123456"
           client_secret: "123456"
@@ -48,7 +44,6 @@ apps:
       - type: "apple"
         authz: social_auth_jwt
         config:
-          collection: social_auth_oauth2
           storage: social_auth_one_db
           secret_key: social_auth_jwk_file
           public_key: social_auth_jwk_file
@@ -71,35 +66,6 @@ apps:
           sign_key: social_auth_jwk_file
           verify_keys: [ social_auth_jwk_file ]
           payload: "${RES_PATH}/jwt_payload.json.tmpl"
-
-collections:
-  - type: "identity"
-    name: social_auth_identity
-    config:
-      name: "users"
-      pk: "id"
-      fields_map:
-        id: "id"
-        username: "username"
-        email: "email"
-        phone: "phone"
-        is_active: no
-        created: no
-        email_verified: "email_verified"
-        phone_verified: "phone_verified"
-
-  - type: "oauth2"
-    name: social_auth_oauth2
-    config:
-      name: "social_logins"
-      pk: id
-      fields_map:
-        id: "id"
-        social_id: "social_id"
-        email: "email"
-        provider: "provider"
-        user_data: "user_data"
-        user_id: "user_id"
 
 storages:
   - type: "postgresql"

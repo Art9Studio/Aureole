@@ -36,7 +36,7 @@ func newErrFieldTagValidation(field validator.FieldError, message string) *ErrVa
 }
 
 func newErrValidate(field string, err error) *ErrValidationFunc {
-	// TODO Get field name for extra context (need to update the recursive validate function to supply the path of the err)
+	// TODO GetData field name for extra context (need to update the recursive validate function to supply the path of the err)
 	return &ErrValidationFunc{
 		field: field,
 		err:   err,

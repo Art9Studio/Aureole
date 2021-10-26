@@ -1,7 +1,6 @@
 package phone
 
 import (
-	"aureole/internal/identity"
 	ckeyTypes "aureole/internal/plugins/cryptokey/types"
 	"context"
 	crand "crypto/rand"
@@ -19,10 +18,6 @@ func sendError(c *fiber.Ctx, statusCode int, message string) error {
 		"success": false,
 		"message": message,
 	})
-}
-
-func isCredential(trait *identity.Trait) bool {
-	return trait.IsCredential && trait.IsUnique
 }
 
 func createToken(p *phone, claims map[string]interface{}) (string, error) {

@@ -3,7 +3,6 @@ authN:
     authZ: jwt
     config:
       main_hasher: argon2
-      collection: pwbased
       storage: db
       password_reset:
         sender: email

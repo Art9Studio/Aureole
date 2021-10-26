@@ -7,7 +7,6 @@ import (
 	authzTypes "aureole/internal/plugins/authz/types"
 	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	senderTypes "aureole/internal/plugins/sender/types"
-	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"errors"
@@ -19,16 +18,18 @@ import (
 
 type (
 	email struct {
-		app      app.AppState
-		rawConf  *configs.Authn
-		conf     *config
-		identity *identity.Identity
-		storage  storageTypes.Storage
-		// coll       *collections.Collection
+		app        app.AppState
+		rawConf    *configs.Authn
+		conf       *config
+		manager    identity.ManagerI
 		authorizer authzTypes.Authorizer
 		serviceKey cKeyTypes.CryptoKey
 		sender     senderTypes.Sender
 		magicLink  *url.URL
+	}
+
+	input struct {
+		Email string `json:"email"`
 	}
 )
 
@@ -42,9 +43,9 @@ func (e *email) Init(app app.AppState) (err error) {
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	e.identity, err = app.GetIdentity()
+	e.manager, err = app.GetIdentityManager()
 	if err != nil {
-		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+		fmt.Printf("manager for app '%s' is not declared, the persist layer is not available", app.GetName())
 	}
 
 	e.serviceKey, err = pluginApi.Project.GetCryptoKey("service_internal_key")
@@ -52,34 +53,20 @@ func (e *email) Init(app app.AppState) (err error) {
 		return errors.New("cryptokey named 'service_internal_key' is not declared")
 	}
 
-	/*e.coll, err = pluginApi.Project.GetCollection(e.conf.Collection)
-	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", e.conf.Collection)
-	}
-
-	e.storage, err = pluginApi.Project.GetStorage(e.conf.Storage)
-	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared", e.conf.Storage)
-	}*/
-
 	e.sender, err = pluginApi.Project.GetSender(e.conf.Sender)
 	if err != nil {
 		return fmt.Errorf("sender named '%s' is not declared", e.conf.Sender)
 	}
 
-	e.authorizer, err = e.app.GetAuthorizer(e.rawConf.AuthzName)
+	e.authorizer, err = e.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named '%s' is not declared", e.rawConf.AuthzName)
+		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
 	}
 
 	e.magicLink, err = createMagicLink(e)
 	if err != nil {
 		return err
 	}
-
-	/*if err := e.storage.CheckFeaturesAvailable([]string{e.coll.Type}); err != nil {
-		return err
-	}*/
 
 	createRoutes(e)
 	return nil

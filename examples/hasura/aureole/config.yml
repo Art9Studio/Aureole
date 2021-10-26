@@ -5,7 +5,6 @@ apps:
     path_prefix: "/hasura-api"
 
     identity:
-      collection: identity
       username:
         unique: true
         required: true
@@ -15,7 +14,6 @@ apps:
         authZ: jwt
         config:
           main_hasher: django
-          collection: pwbased
           storage: one_db
 
     authZ:
@@ -37,27 +35,6 @@ storages:
     name: one_db
     config:
       url: "postgresql://root:password@postgres:5432/aureole"
-
-collections:
-  - type: "identity"
-    name: identity
-    config:
-      name: "users"
-      pk: "id"
-      fields_map:
-        id: "id"
-        username: "username"
-        email: "email"
-        phone: "phone"
-        is_active: no
-        created: no
-
-  - type: "pwbased"
-    name: pwbased
-    parent: identity
-    config:
-      fields_map:
-        password: "password"
 
 hashers:
   - type: "pbkdf2"

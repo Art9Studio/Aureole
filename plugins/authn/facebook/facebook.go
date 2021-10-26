@@ -5,7 +5,6 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
-	storageT "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"fmt"
@@ -15,15 +14,11 @@ import (
 	"path"
 )
 
-const Provider = "facebook"
-
 type facebook struct {
-	app      app.AppState
-	rawConf  *configs.Authn
-	conf     *config
-	identity *identity.Identity
-	// coll       *collections.Collection
-	storage    storageT.Storage
+	app        app.AppState
+	rawConf    *configs.Authn
+	conf       *config
+	manager    identity.ManagerI
 	provider   *oauth2.Config
 	authorizer authzTypes.Authorizer
 }
@@ -37,25 +32,14 @@ func (f *facebook) Init(app app.AppState) (err error) {
 		return err
 	}
 
-	// pluginApi := authn.Repository.PluginApi
-	f.identity, err = app.GetIdentity()
+	f.manager, err = app.GetIdentityManager()
 	if err != nil {
-		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", app.GetName())
 	}
 
-	/*f.coll, err = pluginApi.Project.GetCollection(f.conf.Coll)
+	f.authorizer, err = f.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", f.conf.Coll)
-	}
-
-	f.storage, err = pluginApi.Project.GetStorage(f.conf.Storage)
-	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared", f.conf.Storage)
-	}*/
-
-	f.authorizer, err = f.app.GetAuthorizer(f.rawConf.AuthzName)
-	if err != nil {
-		return fmt.Errorf("authorizer named '%s' is not declared", f.rawConf.AuthzName)
+		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
 	}
 
 	if err := initProvider(f); err != nil {

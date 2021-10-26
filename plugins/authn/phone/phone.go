@@ -8,7 +8,6 @@ import (
 	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
-	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"errors"
@@ -18,16 +17,20 @@ import (
 
 type (
 	phone struct {
-		app      app.AppState
-		rawConf  *configs.Authn
-		conf     *config
-		identity *identity.Identity
-		storage  storageTypes.Storage
-		hasher   types.PwHasher
-		// coll       *collections.Collection
+		app        app.AppState
+		rawConf    *configs.Authn
+		conf       *config
+		manager    identity.ManagerI
+		hasher     types.PwHasher
 		authorizer authzTypes.Authorizer
 		serviceKey cKeyTypes.CryptoKey
 		sender     senderTypes.Sender
+	}
+
+	input struct {
+		Phone string `json:"phone"`
+		Token string `json:"token"`
+		Otp   string `json:"otp"`
 	}
 )
 
@@ -41,9 +44,9 @@ func (p *phone) Init(app app.AppState) (err error) {
 	}
 
 	pluginApi := authn.Repository.PluginApi
-	p.identity, err = app.GetIdentity()
+	p.manager, err = app.GetIdentityManager()
 	if err != nil {
-		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+		fmt.Printf("manager for app '%s' is not declared, persis layer is not available", app.GetName())
 	}
 
 	p.hasher, err = pluginApi.Project.GetHasher(p.conf.Hasher)
@@ -56,29 +59,15 @@ func (p *phone) Init(app app.AppState) (err error) {
 		return errors.New("cryptokey named 'service_internal_key' is not declared")
 	}
 
-	/*p.coll, err = pluginApi.Project.GetCollection(p.conf.Collection)
-	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", p.conf.Collection)
-	}
-
-	p.storage, err = pluginApi.Project.GetStorage(p.conf.Storage)
-	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared", p.conf.Storage)
-	}*/
-
 	p.sender, err = pluginApi.Project.GetSender(p.conf.Sender)
 	if err != nil {
 		return fmt.Errorf("sender named '%s' is not declared", p.conf.Sender)
 	}
 
-	p.authorizer, err = p.app.GetAuthorizer(p.rawConf.AuthzName)
+	p.authorizer, err = p.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named '%s' is not declared", p.rawConf.AuthzName)
+		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
 	}
-
-	/*if err := p.storage.CheckFeaturesAvailable([]string{p.coll.Type}); err != nil {
-		return err
-	}*/
 
 	createRoutes(p)
 	return nil

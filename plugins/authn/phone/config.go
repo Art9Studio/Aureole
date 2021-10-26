@@ -8,8 +8,6 @@ import (
 type (
 	config struct {
 		Hasher      string `mapstructure:"hasher"`
-		Collection  string `mapstructure:"collection"`
-		Storage     string `mapstructure:"storage"`
 		MaxAttempts int    `mapstructure:"max_attempts"`
 		Sender      string `mapstructure:"sender"`
 		Template    string `mapstructure:"template"`

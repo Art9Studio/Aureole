@@ -24,27 +24,31 @@ type Payload struct {
 	NativeQ    func(queryName string, args ...interface{}) string
 }
 
-func NewPayload(authorizer Authorizer, storage storageT.Storage) *Payload {
-	p := &Payload{}
-	p.NativeQ = func(queryName string, args ...interface{}) string {
-		queries := authorizer.GetNativeQueries()
+func NewPayload(authorizer Authorizer, storage storageT.Storage, data interface{}) *Payload {
+	p := data.(*Payload)
 
-		q, ok := queries[queryName]
-		if !ok {
-			return "--an error occurred during render--"
+	if storage != nil {
+		p.NativeQ = func(queryName string, args ...interface{}) string {
+			queries := authorizer.GetNativeQueries()
+
+			q, ok := queries[queryName]
+			if !ok {
+				return "--an error occurred during render--"
+			}
+
+			rawRes, err := storage.NativeQuery(q, args...)
+			if err != nil {
+				return "--an error occurred during render--"
+			}
+
+			res, err := json.Marshal(rawRes)
+			if err != nil {
+				return "--an error occurred during render--"
+			}
+
+			return string(res)
 		}
-
-		rawRes, err := storage.NativeQuery(q, args...)
-		if err != nil {
-			return "--an error occurred during render--"
-		}
-
-		res, err := json.Marshal(rawRes)
-		if err != nil {
-			return "--an error occurred during render--"
-		}
-
-		return string(res)
 	}
+
 	return p
 }

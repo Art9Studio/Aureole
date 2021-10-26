@@ -37,8 +37,6 @@ module.exports = {
             ],
             '/config/': [
                         '/config/project.md',
-                        '/config/identity.md',
-                        '/config/collection.md',
                         '/config/authn.md',
                         '/config/authz.md',
                         '/config/storage.md',

@@ -17,9 +17,7 @@
       "uuid": "a54db23d-390a-4380-b0c4-d97eb489a45d",
       "additionalProperties": false,
       "required": [
-        "main_hasher",
-        "collection",
-        "storage"
+        "main_hasher"
       ],
       "properties": {
         "main_hasher": {
@@ -37,18 +35,6 @@
             "metatags": "@hasher_ref"
           },
           "uniqueItems": true
-        },
-        "collection": {
-          "type": "string",
-          "uuid": "55fb6977-b0f1-4b59-8491-e43c3a875b3a",
-          "minLength": 1,
-          "metatags": "@collection_ref"
-        },
-        "storage": {
-          "type": "string",
-          "uuid": "91e4f539-b916-4dfd-9374-1e53a4f34975",
-          "minLength": 1,
-          "metatags": "@storage_ref"
         },
         "register": {
           "type": "object",
@@ -130,40 +116,5 @@
       }
     }
   },
-  "example": "authn/pwbased",
-  "definitions": {
-    "PwbasedCollection": {
-      "properties": {
-        "type": {
-          "const": "pwbased",
-          "uuid": "86d81a58-87c0-4b4a-91b7-41ec3a8d9cec"
-        },
-        "config": {
-          "type": "object",
-          "uuid": "a427598d-1764-467d-baa4-d02ee8e90f0a",
-          "additionalProperties": false,
-          "required": [
-            "fields_map"
-          ],
-          "properties": {
-            "fields_map": {
-              "type": "object",
-              "uuid": "7bdfa9cd-d927-4153-afec-2b11baf729c5",
-              "additionalProperties": false,
-              "required": [
-                "password"
-              ],
-              "properties": {
-                "password": {
-                  "type": "string",
-                  "uuid": "c0c42510-25f7-4953-825a-30ba717e6b2f",
-                  "minLength": 1
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  "example": "authn/pwbased"
 }

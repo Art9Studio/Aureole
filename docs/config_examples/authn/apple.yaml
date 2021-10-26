@@ -2,7 +2,6 @@ authn:
   - type: "apple"
     authZ: jwt
     config:
-      collection: oauth2
       storage: db
       secret_key: apple_signin_key
       public_key: apple_keys

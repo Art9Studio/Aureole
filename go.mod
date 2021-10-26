@@ -9,8 +9,8 @@ require (
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofiber/fiber/v2 v2.20.2
-	github.com/gofrs/uuid v4.1.0+incompatible
-	github.com/huandu/go-sqlbuilder v1.13.0
+	github.com/gofrs/uuid v4.1.0+incompatible // indirect
+	github.com/huandu/go-sqlbuilder v1.13.0 // indirect
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/joho/godotenv v1.4.0

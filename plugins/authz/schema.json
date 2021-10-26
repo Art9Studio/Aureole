@@ -3,23 +3,9 @@
   "type": "object",
   "uuid": "eb4604cc-1a53-4532-859c-a07e18f9c188",
   "additionalProperties": false,
-  "properties": {
-    "name": {
-      "type": "string",
-      "uuid": "3054a2e3-22b0-4e2f-8204-88fdf6d13285",
-      "minLength": 1,
-      "metatags": "@plugin_name"
-    }
-  },
-  "required": [
-    "name"
-  ],
   "oneOf": [
     {
       "$ref": "jwt/schema.json"
-    },
-    {
-      "$ref": "session/schema.json"
     }
   ]
 }
