@@ -1,7 +1,6 @@
 package facebook
 
 import (
-	"aureole/internal/collections"
 	"aureole/internal/configs"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
@@ -19,11 +18,11 @@ import (
 const Provider = "facebook"
 
 type facebook struct {
-	app        app.AppState
-	rawConf    *configs.Authn
-	conf       *config
-	identity   *identity.Identity
-	coll       *collections.Collection
+	app      app.AppState
+	rawConf  *configs.Authn
+	conf     *config
+	identity *identity.Identity
+	// coll       *collections.Collection
 	storage    storageT.Storage
 	provider   *oauth2.Config
 	authorizer authzTypes.Authorizer
@@ -38,7 +37,7 @@ func (f *facebook) Init(app app.AppState) (err error) {
 		return err
 	}
 
-	//pluginApi := authn.Repository.PluginApi
+	// pluginApi := authn.Repository.PluginApi
 	f.identity, err = app.GetIdentity()
 	if err != nil {
 		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())

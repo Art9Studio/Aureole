@@ -3,13 +3,10 @@ package pwbased
 import (
 	"aureole/internal/plugins/authn/types"
 	storageT "aureole/internal/plugins/storage/types"
-	"encoding/base64"
-	"github.com/pkg/errors"
-	"strings"
+	"github.com/lestrrat-go/jwx/jwt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofrs/uuid"
 )
 
 func Login(p *pwBased) func(*fiber.Ctx) error {
@@ -152,35 +149,17 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 		}*/
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := uuid.NewV4()
-			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-
-			tokenHash := p.verif.hasher().Sum([]byte(token.String()))
-			verifData := &storageT.EmailVerifData{
-				Email:   identity.Email,
-				Token:   base64.StdEncoding.EncodeToString(tokenHash),
-				Expires: time.Now().Add(time.Duration(p.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
-				Invalid: false,
-			}
-
-			verifSpecs := &p.verif.coll.Spec
-			err = p.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
-				{Name: verifSpecs.FieldsMap["email"].Name, Value: identity.Email},
+			token, err := createToken(p, map[string]interface{}{
+				"email":           identity.Email,
+				jwt.ExpirationKey: time.Now().Add(time.Duration(p.conf.Verif.Exp) * time.Second).Unix(),
 			})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
-			_, err = p.storage.InsertEmailVerif(verifSpecs, verifData)
-			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-
-			link := initConfirmLink(p.verif.confirmLink, token.String())
-			err = p.verif.sender.Send(verifData.Email.(string),
-				"Verify your email",
+			link := attachToken(p.verif.confirmLink, token)
+			err = p.verif.sender.Send(identity.Email.(string),
+				"",
 				p.conf.Verif.Template,
 				map[string]interface{}{"link": link})
 			if err != nil {
@@ -248,36 +227,18 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
 		}*/
 
-		token, err := uuid.NewV4()
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		tokenHash := p.reset.hasher().Sum(token.Bytes())
-		resetData := &storageT.PwResetData{
-			Email:   identityData.Email,
-			Token:   base64.StdEncoding.EncodeToString(tokenHash),
-			Expires: time.Now().Add(time.Duration(p.conf.Reset.Token.Exp) * time.Second).Format(time.RFC3339),
-			Invalid: false,
-		}
-
-		collSpec := &p.reset.coll.Spec
-		err = p.storage.InvalidateReset(collSpec, []storageT.Filter{
-			{Name: collSpec.FieldsMap["email"].Name, Value: identityData.Email},
+		token, err := createToken(p, map[string]interface{}{
+			"email":           identityData.Email,
+			jwt.ExpirationKey: time.Now().Add(time.Duration(p.conf.Reset.Exp) * time.Second).Unix(),
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		_, err = p.storage.InsertReset(&p.reset.coll.Spec, resetData)
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		link := initConfirmLink(p.reset.confirmLink, token.String())
-		err = p.reset.sender.Send(resetData.Email.(string),
-			"Reset your password",
-			p.conf.Reset.Template,
+		link := attachToken(p.reset.confirmLink, token)
+		err = p.verif.sender.Send(identityData.Email.(string),
+			"",
+			p.conf.Verif.Template,
 			map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -289,41 +250,24 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 
 func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		t := c.Query("token")
-		if t == "" {
+		rawToken := c.Query("token")
+		if rawToken == "" {
 			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := uuid.FromString(strings.TrimRight(t, "\n"))
+		token, err := jwt.ParseString(
+			rawToken,
+			jwt.WithIssuer("Aureole Internal"),
+			jwt.WithAudience("Aureole Internal"),
+			jwt.WithValidate(true),
+			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
+		)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		tokenHash := p.verif.hasher().Sum(token.Bytes())
-
-		resetSpecs := &p.reset.coll.Spec
-		tokenName := p.reset.coll.Spec.FieldsMap["token"].Name
-		rawReset, err := p.storage.GetReset(resetSpecs, []storageT.Filter{
-			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		reset, ok := rawReset.(map[string]interface{})
+		email, ok := token.Get("email")
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "cannot get reset data from database")
-		}
-
-		if reset[resetSpecs.FieldsMap["invalid"].Name].(bool) {
-			return sendError(c, fiber.StatusUnauthorized, "invalid token")
-		}
-
-		expires, err := time.Parse(time.RFC3339, reset[resetSpecs.FieldsMap["expires"].Name].(string))
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-		if time.Now().After(expires) {
-			return sendError(c, fiber.StatusUnauthorized, "link expire")
+			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
 
 		input, err := types.NewInput(c)
@@ -350,14 +294,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}*/
 
-		err = p.storage.InvalidateReset(resetSpecs, []storageT.Filter{
-			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		err = p.reset.sender.SendRaw(reset[resetSpecs.FieldsMap["email"].Name].(string),
+		err = p.reset.sender.SendRaw(email.(string),
 			"Reset your password",
 			"Your password has been successfully changed")
 		if err != nil {
@@ -391,7 +328,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, "expects 1 credential, 0 got")
 		}
 
-		fieldName := p.coll.Parent.Spec.FieldsMap["email"].Name
+		/*fieldName := p.coll.Parent.Spec.FieldsMap["email"].Name
 		exist, err := p.storage.IsIdentityExist(p.identity, []storageT.Filter{
 			{Name: fieldName, Value: identity.Email},
 		})
@@ -400,37 +337,19 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		}
 		if !exist {
 			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
-		}
+		}*/
 
-		token, err := uuid.NewV4()
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		tokenHash := p.verif.hasher().Sum(token.Bytes())
-		verifData := &storageT.EmailVerifData{
-			Email:   identity.Email,
-			Token:   base64.StdEncoding.EncodeToString(tokenHash),
-			Expires: time.Now().Add(time.Duration(p.conf.Verif.Token.Exp) * time.Second).Format(time.RFC3339),
-			Invalid: false,
-		}
-
-		verifSpecs := &p.verif.coll.Spec
-		err = p.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
-			{Name: verifSpecs.FieldsMap["email"].Name, Value: identity.Email},
+		token, err := createToken(p, map[string]interface{}{
+			"email":           identity.Email,
+			jwt.ExpirationKey: time.Now().Add(time.Duration(p.conf.Verif.Exp) * time.Second).Unix(),
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		_, err = p.storage.InsertEmailVerif(verifSpecs, verifData)
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		link := initConfirmLink(p.verif.confirmLink, token.String())
-		err = p.verif.sender.Send(verifData.Email.(string),
-			"Verify your email",
+		link := attachToken(p.verif.confirmLink, token)
+		err = p.verif.sender.Send(identity.Email.(string),
+			"",
 			p.conf.Verif.Template,
 			map[string]interface{}{"link": link})
 		if err != nil {
@@ -443,48 +362,24 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 
 func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		t := c.Query("token")
-		if t == "" {
+		rawToken := c.Query("token")
+		if rawToken == "" {
 			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := uuid.FromString(strings.TrimRight(t, "\n"))
+		token, err := jwt.ParseString(
+			rawToken,
+			jwt.WithIssuer("Aureole Internal"),
+			jwt.WithAudience("Aureole Internal"),
+			jwt.WithValidate(true),
+			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
+		)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		tokenHash := p.verif.hasher().Sum(token.Bytes())
-
-		verifSpecs := &p.verif.coll.Spec
-		tokenName := p.verif.coll.Spec.FieldsMap["token"].Name
-		rawVerif, err := p.storage.GetEmailVerif(verifSpecs, []storageT.Filter{
-			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, errors.Wrap(err, "error get email verify").Error())
-		}
-
-		verif, ok := rawVerif.(map[string]interface{})
+		_, ok := token.Get("email")
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "cannot get magic link data from database")
-		}
-
-		if verif[verifSpecs.FieldsMap["invalid"].Name].(bool) {
-			return sendError(c, fiber.StatusUnauthorized, "invalid token")
-		}
-
-		expires, err := time.Parse(time.RFC3339, verif[verifSpecs.FieldsMap["expires"].Name].(string))
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-		if time.Now().After(expires) {
-			return sendError(c, fiber.StatusUnauthorized, "link expire")
-		}
-
-		err = p.storage.InvalidateEmailVerif(verifSpecs, []storageT.Filter{
-			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, errors.Wrap(err, "error invalidate email verify").Error())
+			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
 
 		/*iCollSpec := &p.identity.Collection.Spec

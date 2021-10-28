@@ -4,10 +4,8 @@ import (
 	authnTypes "aureole/internal/plugins/authn/types"
 	authzT "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
-	"encoding/json"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/lestrrat-go/jwx/jwt"
 )
 
 func SendOtp(p *phone) func(*fiber.Ctx) error {
@@ -23,7 +21,7 @@ func SendOtp(p *phone) func(*fiber.Ctx) error {
 		if input.Phone == nil {
 			return sendError(c, fiber.StatusBadRequest, "phone required")
 		}
-		identityData := &storageT.IdentityData{Email: input.Phone}
+		identityData := &storageT.IdentityData{Phone: input.Phone}
 
 		/*exist, err := p.storage.IsIdentityExist(p.identity, []storageT.Filter{
 			{Name: p.identity.Collection.Spec.FieldsMap["phone"].Name, Value: identityData.Phone},
@@ -35,51 +33,39 @@ func SendOtp(p *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusUnauthorized, "user doesn't exist")
 		}*/
 
-		v := p.conf.Verification
-		otp, err := getRandomString(v.Otp.Length, v.Otp.Alphabet)
+		randStr, err := getRandomString(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		otpHash, err := p.hasher.HashPw(v.Otp.Prefix + otp)
+		otp := p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix
+		otpHash, err := p.hasher.HashPw(otp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationData := &storageT.PhoneVerificationData{
-			Phone:    identityData.Phone,
-			Otp:      otpHash,
-			Attempts: 0,
-			Expires:  time.Now().Add(time.Duration(v.Otp.Exp) * time.Second).Format(time.RFC3339),
-			Invalid:  false,
-		}
-
-		vSpecs := &p.verification.coll.Spec
-		err = p.storage.InvalidateVerification(vSpecs, []storageT.Filter{
-			{Name: vSpecs.FieldsMap["phone"].Name, Value: identityData.Phone},
+		token, err := createToken(p, map[string]interface{}{
+			"otp":      otpHash,
+			"phone":    identityData.Phone,
+			"attempts": 0,
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationId, err := p.storage.InsertVerification(vSpecs, verificationData)
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		err = p.verification.sender.Send(verificationData.Phone.(string),
+		err = p.sender.Send(identityData.Phone.(string),
 			"",
-			p.conf.Verification.Template,
+			p.conf.Template,
 			map[string]interface{}{"otp": otp})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(&fiber.Map{"verification_id": verificationId})
+		return c.JSON(&fiber.Map{"token": token})
 	}
 }
 
-func Register(p *phone) func(*fiber.Ctx) error {
+/*func Register(p *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		input, err := authnTypes.NewInput(c)
 		if err != nil {
@@ -155,7 +141,7 @@ func Register(p *phone) func(*fiber.Ctx) error {
 
 		return c.JSON(&fiber.Map{"verification_id": verificationId})
 	}
-}
+}*/
 
 func Login(p *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
@@ -163,46 +149,38 @@ func Login(p *phone) func(*fiber.Ctx) error {
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		if input.Additional["id"] == nil || input.Additional["otp"] == nil {
-			return sendError(c, fiber.StatusBadRequest, "id and otp are required")
-		}
-		requestData := storageT.PhoneVerificationData{
-			Id:  input.Additional["id"],
-			Otp: input.Additional["otp"],
+		if input.Additional["token"] == nil || input.Additional["otp"] == nil {
+			return sendError(c, fiber.StatusBadRequest, "token and otp are required")
 		}
 
-		vSpecs := p.verification.coll.Spec
-		rawVerification, err := p.storage.GetVerification(&vSpecs, []storageT.Filter{
-			{Name: vSpecs.FieldsMap["id"].Name, Value: requestData.Id},
-		})
+		t, err := jwt.ParseString(
+			input.Additional["token"].(string),
+			jwt.WithIssuer("Aureole Internal"),
+			jwt.WithAudience("Aureole Internal"),
+			jwt.WithValidate(true),
+			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
+		)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-
-		verification, ok := rawVerification.(map[string]interface{})
+		phone, ok := t.Get("phone")
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "cannot get verification data from database")
+			return sendError(c, fiber.StatusBadRequest, "cannot get phone from token")
+		}
+		otpHash, ok := t.Get("otp")
+		if !ok {
+			return sendError(c, fiber.StatusBadRequest, "cannot get otp from token")
+		}
+		attempts, ok := t.Get("attempts")
+		if !ok {
+			return sendError(c, fiber.StatusBadRequest, "cannot get attempts from token")
 		}
 
-		if verification[vSpecs.FieldsMap["invalid"].Name].(bool) {
-			return sendError(c, fiber.StatusUnauthorized, "invalid verification")
-		}
-
-		expires, err := time.Parse(time.RFC3339, verification[vSpecs.FieldsMap["expires"].Name].(string))
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-		if time.Now().After(expires) {
-			return sendError(c, fiber.StatusUnauthorized, "verification otp expire")
-		}
-
-		// todo: fix type conversion
-		if int(verification[vSpecs.FieldsMap["attempts"].Name].(float64)) >= p.conf.Verification.MaxAttempts {
+		if int(attempts.(float64)) >= p.conf.MaxAttempts {
 			return sendError(c, fiber.StatusUnauthorized, "too much attempts")
 		}
 
-		otp := p.conf.Verification.Otp.Prefix + requestData.Otp.(string)
-		isMatch, err := p.hasher.ComparePw(otp, verification[vSpecs.FieldsMap["otp"].Name].(string))
+		isMatch, err := p.hasher.ComparePw(input.Additional["otp"].(string), otpHash.(string))
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -231,36 +209,19 @@ func Login(p *phone) func(*fiber.Ctx) error {
 			}
 
 			payload := authzT.NewPayload(identity, iCollSpec.FieldsMap)*/
-			// todo: refactor this
-			payload := &authzT.Payload{Phone: verification[vSpecs.FieldsMap["phone"].Name]}
-			payload.NativeQ = func(queryName string, args ...interface{}) string {
-				queries := p.authorizer.GetNativeQueries()
-
-				q, ok := queries[queryName]
-				if !ok {
-					return "--an error occurred during render--"
-				}
-
-				rawRes, err := p.storage.NativeQuery(q, args...)
-				if err != nil {
-					return "--an error occurred during render--"
-				}
-
-				res, err := json.Marshal(rawRes)
-				if err != nil {
-					return "--an error occurred during render--"
-				}
-
-				return string(res)
-			}
+			payload := authzT.NewPayload(p.authorizer, p.storage)
+			payload.Phone = phone
 			return p.authorizer.Authorize(c, payload)
 		} else {
-			if err := p.storage.IncrAttempts(&vSpecs, []storageT.Filter{
-				{Name: vSpecs.FieldsMap["id"].Name, Value: requestData.Id},
-			}); err != nil {
+			token, err := createToken(p, map[string]interface{}{
+				"otp":      otpHash,
+				"phone":    phone,
+				"attempts": int(attempts.(float64)) + 1,
+			})
+			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-			return sendError(c, fiber.StatusUnauthorized, "wrong otp")
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"token": token})
 		}
 	}
 }
@@ -271,63 +232,53 @@ func Resend(p *phone) func(*fiber.Ctx) error {
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		if input.Additional["id"] == nil {
-			return sendError(c, fiber.StatusBadRequest, "id is required")
+		if input.Additional["token"] == nil {
+			return sendError(c, fiber.StatusBadRequest, "token are required")
 		}
-		requestData := storageT.PhoneVerificationData{Id: input.Additional["id"]}
 
-		collSpec := p.verification.coll.Spec
-		rawVerification, err := p.storage.GetVerification(&collSpec, []storageT.Filter{
-			{Name: collSpec.FieldsMap["id"].Name, Value: requestData.Id},
-		})
+		t, err := jwt.ParseString(
+			input.Additional["token"].(string),
+			jwt.WithIssuer("Aureole Internal"),
+			jwt.WithAudience("Aureole Internal"),
+			jwt.WithValidate(true),
+			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
+		)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-
-		oldVerification, ok := rawVerification.(map[string]interface{})
+		phone, ok := t.Get("phone")
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "cannot get verification data from database")
+			return sendError(c, fiber.StatusBadRequest, "cannot get phone from token")
 		}
 
-		otp, err := getRandomString(p.conf.Verification.Otp.Length, p.conf.Verification.Otp.Alphabet)
+		randStr, err := getRandomString(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		otpHash, err := p.hasher.HashPw(p.conf.Verification.Otp.Prefix + otp)
+		otp := p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix
+		otpHash, err := p.hasher.HashPw(otp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verification := &storageT.PhoneVerificationData{
-			Phone:    oldVerification[collSpec.FieldsMap["phone"].Name],
-			Otp:      otpHash,
-			Attempts: 0,
-			Expires:  time.Now().Add(time.Duration(p.conf.Verification.Otp.Exp) * time.Second).Format(time.RFC3339),
-			Invalid:  false,
-		}
-
-		vSpecs := &p.verification.coll.Spec
-		err = p.storage.InvalidateVerification(vSpecs, []storageT.Filter{
-			{Name: vSpecs.FieldsMap["phone"].Name, Value: verification.Phone},
+		token, err := createToken(p, map[string]interface{}{
+			"otp":      otpHash,
+			"phone":    phone,
+			"attempts": 0,
 		})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		verificationId, err := p.storage.InsertVerification(vSpecs, verification)
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		err = p.verification.sender.Send(verification.Phone.(string),
+		err = p.sender.Send(phone.(string),
 			"",
-			p.conf.Verification.Template,
+			p.conf.Template,
 			map[string]interface{}{"otp": otp})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(&fiber.Map{"verification_id": verificationId})
+		return c.JSON(&fiber.Map{"token": token})
 	}
 }

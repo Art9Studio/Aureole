@@ -5,16 +5,13 @@ import (
 )
 
 func (c *config) setDefaults() {
-	c.Path = "/send"
-	c.Verification.setDefaults()
+	c.SendUrl = "/send"
+	c.ConfirmUrl = "/login"
+	c.ResendUrl = "/resend"
+	configs.SetDefault(&c.MaxAttempts, 3)
+	c.Otp.setDefaults()
 }
 
-func (v *verifConf) setDefaults() {
-	v.Path = "/login"
-	v.ResendUrl = "/resend"
-	configs.SetDefault(&v.MaxAttempts, 3)
-	v.Otp.setDefaults()
-}
 func (c *otp) setDefaults() {
 	configs.SetDefault(&c.Length, 1)
 	configs.SetDefault(&c.Alphabet, "1234567890")

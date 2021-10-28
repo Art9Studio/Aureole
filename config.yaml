@@ -91,20 +91,17 @@ apps:
           main_hasher: argon2
           collection: pwbased
           storage: one_db
+          register:
+            login_after: false
+            verify_after: false
           password_reset:
-            collection: reset
             sender: email
             template: reset
-            token:
-              exp: 3600
-              hash_func: "sha256"
+            exp: 3600
           verification:
-            collection: email_verification
             sender: email
             template: email_verification
-            token:
-              exp: 3600
-              hash_func: "sha256"
+            exp: 3600
 
       - type: "google"
         authZ: jwt
@@ -183,6 +180,8 @@ apps:
       username:
       phone:
         enabled: true
+        unique: true
+        credential: true
       email:
         enabled: true
 
@@ -192,13 +191,10 @@ apps:
         config:
           collection: identity
           storage: one_db
-          magic_link:
-            collection: magic_link
-            sender: email
-            template: magic_link
-            token:
-              exp: 3600
-              hash_func: "sha256"
+          sender: email
+          template: magic_link
+          exp: 3600
+
 
       - type: "phone"
         authZ: jwt
@@ -206,19 +202,15 @@ apps:
           hasher: django
           collection: identity
           storage: one_db
-          verification:
-            collection: phone_otp
-            max_attempts: 3
-            sender: twilio
-            template: phone_otp
-            otp:
-              length: 6
-              alphabet: "1234567890"
-              prefix: "A-"
-              exp: 300
-            fields_map:
-              id: "{$.otp_id}"
-              otp: "{$.otp}"
+          sender: twilio
+          template: phone_otp
+          max_attempts: 3
+          otp:
+            length: 6
+            alphabet: "1234567890"
+            prefix: "A-"
+            postfix: "-B"
+            exp: 300
 
     authZ:
       - type: "jwt"
@@ -297,55 +289,6 @@ collections:
         session_token: "session_id"
         expiration: "expiration"
 
-  - type: "phone_otp"
-    name: phone_otp
-    config:
-      name: "phone_verifications"
-      pk: "id"
-      fields_map:
-        id: "id"
-        phone: "phone"
-        otp: "otp"
-        attempts: "attempts"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "password_reset"
-    name: reset
-    config:
-      name: "password_resets"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "email_link"
-    name: magic_link
-    config:
-      name: "email_links"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "email_verification"
-    name: email_verification
-    config:
-      name: "email_verifications"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
-
   - type: "oauth2"
     name: oauth2
     config:
@@ -409,6 +352,11 @@ crypto_keys:
       kid: "SHA-256"
       path: "lab/keys/gen_keys.json"
 
+  - type: "jwk"
+    name: service_internal_key
+    config:
+      path: "lab/keys/service_key.json"
+
 senders:
   - type: "email"
     name: email
@@ -416,7 +364,7 @@ senders:
       host: "smtp.gmail.com:587"
       username: "test.aureole@gmail.com"
       password: "${SMTP_PASSWORD}"
-      insecure_skip_verify: false
+      #insecure_skip_verify: false
       from: "test.aureole@gmail.com"
       bcc: [ ]
       cc: [ ]

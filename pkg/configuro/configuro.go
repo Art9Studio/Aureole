@@ -195,7 +195,7 @@ func WithoutLoadFromConfigFile() ConfigOptions {
 	}
 }
 
-// WithEnvConfigPathOverload Allow to override Config file Path with an Env Variable
+// WithEnvConfigPathOverload Allow to override Config file SendUrl with an Env Variable
 func WithEnvConfigPathOverload(configFilepathENV string) ConfigOptions {
 	return func(h *Config) error {
 		h.configFilepathEnv = true
@@ -204,7 +204,7 @@ func WithEnvConfigPathOverload(configFilepathENV string) ConfigOptions {
 	}
 }
 
-// WithoutEnvConfigPathOverload Disallow overriding Config file Path with an Env Variable
+// WithoutEnvConfigPathOverload Disallow overriding Config file SendUrl with an Env Variable
 func WithoutEnvConfigPathOverload() ConfigOptions {
 	return func(h *Config) error {
 		h.configFilepathEnv = false

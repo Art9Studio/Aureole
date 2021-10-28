@@ -30,24 +30,17 @@ type (
 	resetConf struct {
 		Path       string
 		ConfirmUrl string
-		Collection string `mapstructure:"collection"`
 		Sender     string `mapstructure:"sender"`
 		Template   string `mapstructure:"template"`
-		Token      token  `mapstructure:"token"`
+		Exp        int    `mapstructure:"exp"`
 	}
 
 	verifConf struct {
 		Path       string
 		ConfirmUrl string
-		Collection string `mapstructure:"collection"`
 		Sender     string `mapstructure:"sender"`
 		Template   string `mapstructure:"template"`
-		Token      token  `mapstructure:"token"`
-	}
-
-	token struct {
-		Exp      int    `mapstructure:"exp"`
-		HashFunc string `mapstructure:"hash_func"`
+		Exp        int    `mapstructure:"exp"`
 	}
 )
 

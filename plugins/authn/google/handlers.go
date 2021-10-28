@@ -93,7 +93,7 @@ func Login(g *google) func(*fiber.Ctx) error {
 			}
 		}*/
 
-		payload, err := createAuthzPayload(socAuth, user)
+		payload, err := createAuthzPayload(g, socAuth, user)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -110,7 +110,7 @@ func getJwt(g *google, code string) (jwt.Token, error) {
 	return jwt.ParseString(idToken)
 }
 
-func createOrLink(g *google, socAuth *storageT.SocialAuthData) (*storageT.IdentityData, error) {
+/*func createOrLink(g *google, socAuth *storageT.SocialAuthData) (*storageT.IdentityData, error) {
 	var user *storageT.IdentityData
 	i := g.identity
 	s := &i.Collection.Spec
@@ -137,31 +137,25 @@ func createOrLink(g *google, socAuth *storageT.SocialAuthData) (*storageT.Identi
 
 	socAuth.Id, err = g.storage.InsertSocialAuth(&g.coll.Spec, socAuth)
 	return user, err
-}
+}*/
 
-func createAuthzPayload(socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
-	var payload *authzT.Payload
+func createAuthzPayload(g *google, socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
+	payload := authzT.NewPayload(g.authorizer, g.storage)
 	jsonUserData, err := json.Marshal(socAuth.UserData)
 	if err != nil {
 		return nil, err
 	}
 
+	payload.SocialId = socAuth.SocialId
+	payload.Email = socAuth.Email
+	payload.UserData = string(jsonUserData)
+
 	if user != nil {
-		payload = &authzT.Payload{
-			Id:         user.Id,
-			SocialId:   socAuth.SocialId,
-			Username:   user.Username,
-			Phone:      user.Phone,
-			Email:      user.Email,
-			UserData:   socAuth.UserData,
-			Additional: user.Additional,
-		}
-	} else {
-		payload = &authzT.Payload{
-			SocialId: socAuth.SocialId,
-			Email:    socAuth.Email,
-			UserData: string(jsonUserData),
-		}
+		payload.Id = user.Id
+		payload.Username = user.Username
+		payload.Phone = user.Phone
+		payload.Additional = user.Additional
 	}
+
 	return payload, nil
 }

@@ -12,10 +12,6 @@ type (
 		PwBased
 		Session
 		NativeQueries
-		PhoneVerification
-		PwReset
-		EmailLink
-		EmailVerification
 		SocialAuth
 	}
 

@@ -4,15 +4,8 @@ import (
 	authnTypes "aureole/internal/plugins/authn/types"
 	authzT "aureole/internal/plugins/authz/types"
 	storageT "aureole/internal/plugins/storage/types"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"github.com/mitchellh/mapstructure"
-	"strings"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofrs/uuid"
+	"github.com/lestrrat-go/jwx/jwt"
 )
 
 func SendMagicLink(e *email) func(*fiber.Ctx) error {
@@ -41,36 +34,15 @@ func SendMagicLink(e *email) func(*fiber.Ctx) error {
 			}
 		}*/
 
-		token, err := uuid.NewV4()
+		token, err := createToken(e, map[string]interface{}{"email": identity.Email})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		tokenHash := e.link.hasher().Sum(token.Bytes())
-		linkData := &storageT.EmailLinkData{
-			Email:   identity.Email,
-			Token:   base64.StdEncoding.EncodeToString(tokenHash),
-			Expires: time.Now().Add(time.Duration(e.conf.Link.Token.Exp) * time.Second).Format(time.RFC3339),
-			Invalid: false,
-		}
-
-		linkSpecs := &e.link.coll.Spec
-		err = e.storage.InvalidateEmailLink(linkSpecs, []storageT.Filter{
-			{Name: linkSpecs.FieldsMap["email"].Name, Value: identity.Email},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		_, err = e.storage.InsertEmailLink(linkSpecs, linkData)
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		link := initMagicLink(e.link.magicLink, token.String())
-		err = e.link.sender.Send(linkData.Email.(string),
+		link := attachToken(e.magicLink, token)
+		err = e.sender.Send(identity.Email.(string),
 			"",
-			e.conf.Link.Template,
+			e.conf.Template,
 			map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
@@ -80,7 +52,7 @@ func SendMagicLink(e *email) func(*fiber.Ctx) error {
 	}
 }
 
-func Register(e *email) func(*fiber.Ctx) error {
+/*func Register(e *email) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var (
 			rawInput interface{}
@@ -145,7 +117,7 @@ func Register(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := initMagicLink(e.link.magicLink, token.String())
+		link := attachToken(e.link.magicLink, token.String())
 		err = e.link.sender.Send(linkData.Email.(string),
 			"",
 			e.conf.Link.Template,
@@ -156,75 +128,32 @@ func Register(e *email) func(*fiber.Ctx) error {
 
 		return c.JSON(&fiber.Map{"user_id": userId})
 	}
-}
+}*/
 
 func Login(e *email) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		t := c.Query("token")
-		if t == "" {
+		rawToken := c.Query("token")
+		if rawToken == "" {
 			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := uuid.FromString(strings.TrimRight(t, "\n"))
+		token, err := jwt.ParseString(
+			rawToken,
+			jwt.WithIssuer("Aureole Internal"),
+			jwt.WithAudience("Aureole Internal"),
+			jwt.WithValidate(true),
+			jwt.WithKeySet(e.serviceKey.GetPublicSet()),
+		)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		tokenHash := e.link.hasher().Sum(token.Bytes())
-
-		linkSpecs := &e.link.coll.Spec
-		tokenName := e.link.coll.Spec.FieldsMap["token"].Name
-		rawEmailLink, err := e.storage.GetEmailLink(linkSpecs, []storageT.Filter{
-			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, fmt.Sprintf("%s: %s", err.Error(), token.String()))
-		}
-
-		emailLink, ok := rawEmailLink.(map[string]interface{})
+		email, ok := token.Get("email")
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "cannot get magic link data from database")
+			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
 
-		if emailLink[linkSpecs.FieldsMap["invalid"].Name].(bool) {
-			return sendError(c, fiber.StatusUnauthorized, "invalid token")
-		}
-
-		expires, err := time.Parse(time.RFC3339, emailLink[linkSpecs.FieldsMap["expires"].Name].(string))
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-		if time.Now().After(expires) {
-			return sendError(c, fiber.StatusUnauthorized, "link expire")
-		}
-
-		err = e.storage.InvalidateEmailLink(linkSpecs, []storageT.Filter{
-			{Name: tokenName, Value: base64.StdEncoding.EncodeToString(tokenHash)},
-		})
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		payload := &authzT.Payload{Email: emailLink[linkSpecs.FieldsMap["email"].Name]}
-		payload.NativeQ = func(queryName string, args ...interface{}) string {
-			queries := e.authorizer.GetNativeQueries()
-
-			q, ok := queries[queryName]
-			if !ok {
-				return "--an error occurred during render--"
-			}
-
-			rawRes, err := e.storage.NativeQuery(q, args...)
-			if err != nil {
-				return "--an error occurred during render--"
-			}
-
-			res, err := json.Marshal(rawRes)
-			if err != nil {
-				return "--an error occurred during render--"
-			}
-
-			return string(res)
-		}
+		payload := authzT.NewPayload(e.authorizer, e.storage)
+		payload.Email = email
 		return e.authorizer.Authorize(c, payload)
 	}
 }

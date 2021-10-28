@@ -23,7 +23,7 @@ type Pem struct {
 }
 
 func (p *Pem) Init() (err error) {
-	p.rawConf.PathPrefix = "/" + strings.Replace(p.rawConf.Name, "_", "-", -1)
+	p.rawConf.PathPrefix = "/" + strings.ReplaceAll(p.rawConf.Name, "_", "-")
 	if p.conf, err = initConfig(&p.rawConf.Config); err != nil {
 		return err
 	}

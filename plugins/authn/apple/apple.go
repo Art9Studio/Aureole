@@ -1,7 +1,6 @@
 package apple
 
 import (
-	"aureole/internal/collections"
 	"aureole/internal/configs"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
@@ -24,10 +23,10 @@ import (
 const Provider = "apple"
 
 type apple struct {
-	app        app.AppState
-	rawConf    *configs.Authn
-	conf       *config
-	coll       *collections.Collection
+	app     app.AppState
+	rawConf *configs.Authn
+	conf    *config
+	//coll       *collections.Collection
 	identity   *identity.Identity
 	storage    storageT.Storage
 	secretKey  cKeyT.CryptoKey

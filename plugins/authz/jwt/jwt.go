@@ -193,7 +193,7 @@ func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t
 			return nil, err
 		}
 
-		if conf.Sub {
+		if conf.Sub && payload.Id != nil {
 			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.Id))
 			if err != nil {
 				return nil, err
@@ -239,7 +239,7 @@ func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t
 			return nil, err
 		}
 
-		if conf.Sub {
+		if conf.Sub && payload.Id != nil {
 			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.Id))
 			if err != nil {
 				return nil, err

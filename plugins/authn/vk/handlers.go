@@ -35,11 +35,11 @@ func Login(v *vk) func(*fiber.Ctx) error {
 		}
 
 		var (
-			//filter  []storageT.Filter
+			// filter  []storageT.Filter
 			socAuth *storageT.SocialAuthData
 			user    *storageT.IdentityData
 		)
-		//s := &v.coll.Spec
+		// s := &v.coll.Spec
 		email, _ := userData["email"]
 		/*if ok {
 			filter = []storageT.Filter{
@@ -90,7 +90,7 @@ func Login(v *vk) func(*fiber.Ctx) error {
 			}
 		}*/
 
-		payload, err := createAuthzPayload(socAuth, user)
+		payload, err := createAuthzPayload(v, socAuth, user)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -142,7 +142,7 @@ func getUserInfoUrl(v *vk) (string, error) {
 	return u.String(), nil
 }
 
-func createOrLink(v *vk, socAuth *storageT.SocialAuthData) (user *storageT.IdentityData, err error) {
+/*func createOrLink(v *vk, socAuth *storageT.SocialAuthData) (user *storageT.IdentityData, err error) {
 	i := v.identity
 	s := &i.Collection.Spec
 
@@ -176,31 +176,25 @@ func createOrLink(v *vk, socAuth *storageT.SocialAuthData) (user *storageT.Ident
 
 	socAuth.Id, err = v.storage.InsertSocialAuth(&v.coll.Spec, socAuth)
 	return user, err
-}
+}*/
 
-func createAuthzPayload(socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
-	var payload *authzT.Payload
+func createAuthzPayload(v *vk, socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
+	payload := authzT.NewPayload(v.authorizer, v.storage)
 	jsonUserData, err := json.Marshal(socAuth.UserData)
 	if err != nil {
 		return nil, err
 	}
 
+	payload.SocialId = socAuth.SocialId
+	payload.Email = socAuth.Email
+	payload.UserData = string(jsonUserData)
+
 	if user != nil {
-		payload = &authzT.Payload{
-			Id:         user.Id,
-			SocialId:   socAuth.SocialId,
-			Username:   user.Username,
-			Phone:      user.Phone,
-			Email:      user.Email,
-			UserData:   socAuth.UserData,
-			Additional: user.Additional,
-		}
-	} else {
-		payload = &authzT.Payload{
-			SocialId: socAuth.SocialId,
-			Email:    socAuth.Email,
-			UserData: string(jsonUserData),
-		}
+		payload.Id = user.Id
+		payload.Username = user.Username
+		payload.Phone = user.Phone
+		payload.Additional = user.Additional
 	}
+
 	return payload, nil
 }

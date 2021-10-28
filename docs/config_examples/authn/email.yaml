@@ -4,7 +4,6 @@ authN:
     config:
       collection: identity
       storage: db
-      magic_link:
-        collection: magic_link
-        sender: email
-        template: magic_link
+      sender: email
+      template: magic_link
+      exp: 300

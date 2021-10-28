@@ -1,42 +1,34 @@
 package email
 
 import (
-	"aureole/internal/collections"
 	"aureole/internal/configs"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
+	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"hash"
 	"net/url"
 	"path"
 )
 
 type (
 	email struct {
-		app        app.AppState
-		rawConf    *configs.Authn
-		conf       *config
-		identity   *identity.Identity
-		storage    storageTypes.Storage
-		coll       *collections.Collection
+		app      app.AppState
+		rawConf  *configs.Authn
+		conf     *config
+		identity *identity.Identity
+		storage  storageTypes.Storage
+		// coll       *collections.Collection
 		authorizer authzTypes.Authorizer
-		link       magicLink
-	}
-
-	magicLink struct {
-		coll      *collections.Collection
-		sender    senderTypes.Sender
-		hasher    func() hash.Hash
-		magicLink *url.URL
+		serviceKey cKeyTypes.CryptoKey
+		sender     senderTypes.Sender
+		magicLink  *url.URL
 	}
 )
 
@@ -55,24 +47,24 @@ func (e *email) Init(app app.AppState) (err error) {
 		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
 	}
 
+	e.serviceKey, err = pluginApi.Project.GetCryptoKey("service_internal_key")
+	if err != nil {
+		return errors.New("cryptokey named 'service_internal_key' is not declared")
+	}
+
 	/*e.coll, err = pluginApi.Project.GetCollection(e.conf.Collection)
 	if err != nil {
 		return fmt.Errorf("collection named '%s' is not declared", e.conf.Collection)
-	}*/
-
-	e.link.coll, err = pluginApi.Project.GetCollection(e.conf.Link.Collection)
-	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", e.conf.Link.Collection)
 	}
 
 	e.storage, err = pluginApi.Project.GetStorage(e.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("storage named '%s' is not declared", e.conf.Storage)
-	}
+	}*/
 
-	e.link.sender, err = pluginApi.Project.GetSender(e.conf.Link.Sender)
+	e.sender, err = pluginApi.Project.GetSender(e.conf.Sender)
 	if err != nil {
-		return fmt.Errorf("sender named '%s' is not declared", e.conf.Link.Sender)
+		return fmt.Errorf("sender named '%s' is not declared", e.conf.Sender)
 	}
 
 	e.authorizer, err = e.app.GetAuthorizer(e.rawConf.AuthzName)
@@ -80,19 +72,14 @@ func (e *email) Init(app app.AppState) (err error) {
 		return fmt.Errorf("authorizer named '%s' is not declared", e.rawConf.AuthzName)
 	}
 
-	e.link.hasher, err = initHasher(e.conf.Link.Token.HashFunc)
+	e.magicLink, err = createMagicLink(e)
 	if err != nil {
 		return err
 	}
 
-	e.link.magicLink, err = createMagicLink(e)
-	if err != nil {
+	/*if err := e.storage.CheckFeaturesAvailable([]string{e.coll.Type}); err != nil {
 		return err
-	}
-
-	if err := e.storage.CheckFeaturesAvailable([]string{e.coll.Type}); err != nil {
-		return err
-	}
+	}*/
 
 	createRoutes(e)
 	return nil
@@ -108,32 +95,13 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func initHasher(hasherName string) (func() hash.Hash, error) {
-	var h func() hash.Hash
-	switch hasherName {
-	case "sha1":
-		h = sha1.New
-	case "sha224":
-		h = sha256.New224
-	case "sha256":
-		h = sha256.New
-	case "sha384":
-		h = sha512.New384
-	case "sha512":
-		h = sha512.New
-	default:
-		return nil, fmt.Errorf("email auth: hasher '%s' doesn't supported", hasherName)
-	}
-	return h, nil
-}
-
 func createMagicLink(e *email) (*url.URL, error) {
 	u, err := e.app.GetUrl()
 	if err != nil {
 		return nil, err
 	}
 
-	u.Path = path.Clean(u.Path + e.rawConf.PathPrefix + e.conf.Link.Path)
+	u.Path = path.Clean(u.Path + e.rawConf.PathPrefix + e.conf.ConfirmUrl)
 	return u, nil
 }
 
@@ -141,12 +109,12 @@ func createRoutes(e *email) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
-			Path:    e.rawConf.PathPrefix + e.conf.Path,
+			Path:    e.rawConf.PathPrefix + e.conf.SendUrl,
 			Handler: SendMagicLink(e),
 		},
 		{
 			Method:  "GET",
-			Path:    e.rawConf.PathPrefix + e.conf.Link.Path,
+			Path:    e.rawConf.PathPrefix + e.conf.ConfirmUrl,
 			Handler: Login(e),
 		},
 	}

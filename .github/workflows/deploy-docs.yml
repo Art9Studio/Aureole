@@ -23,10 +23,13 @@ jobs:
           python-version: '3.x'
 
       - name: Install Python dependencies
-        run: pip install PyYAML
+        run: pip install PyYAML ruamel.yaml
+
+      - name: Delete unused descriptions
+        run: cd docs && python3 scripts/cleanup_descriptions.py
 
       - name: Build MD docs
-        run: cd docs && python3 build_md_docs.py
+        run: cd docs && python3 scripts/build_md_docs.py
 
       - name: Setup Node.js
         uses: actions/setup-node@v1
