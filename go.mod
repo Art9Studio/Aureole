@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/gofiber/fiber/v2 v2.20.2
+	github.com/gofiber/fiber/v2 v2.21.0
 	github.com/gofrs/uuid v4.1.0+incompatible
 	github.com/huandu/go-sqlbuilder v1.13.0
 	github.com/jackc/pgx/v4 v4.13.0
