@@ -26,6 +26,6 @@ type (
 	}
 )
 
-func (p phoneAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (phoneAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
 	return &phone{rawConf: conf}
 }

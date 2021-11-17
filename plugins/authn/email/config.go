@@ -15,6 +15,6 @@ type (
 	}
 )
 
-func (e emailAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (emailAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
 	return &email{rawConf: conf}
 }

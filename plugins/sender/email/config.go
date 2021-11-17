@@ -16,6 +16,6 @@ type config struct {
 	Templates          map[string]string `mapstructure:"templates"`
 }
 
-func (e emailAdapter) Create(conf *configs.Sender) types.Sender {
+func (emailAdapter) Create(conf *configs.Sender) types.Sender {
 	return &Email{rawConf: conf}
 }

@@ -11,6 +11,6 @@ type config struct {
 	RefreshInterval int    `mapstructure:"refresh_interval"`
 }
 
-func (p pemAdapter) Create(conf *configs.CryptoKey) types.CryptoKey {
+func (pemAdapter) Create(conf *configs.CryptoKey) types.CryptoKey {
 	return &Pem{rawConf: conf}
 }

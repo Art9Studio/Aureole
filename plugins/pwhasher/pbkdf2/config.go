@@ -21,6 +21,6 @@ type config struct {
 }
 
 // Create returns Pbkdf2 hasher with the given settings
-func (a pbkdf2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
+func (pbkdf2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
 	return &Pbkdf2{rawConf: conf}
 }

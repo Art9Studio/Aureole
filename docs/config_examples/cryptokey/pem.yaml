@@ -2,6 +2,6 @@ crypto_keys:
   - type: "pem"
     name: pem_key
     config:
-      alg: "ES256"
+      alg: ES256
       refresh_interval: 3600
       storage: pem_keys_store

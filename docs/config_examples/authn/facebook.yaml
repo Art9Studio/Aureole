@@ -1,9 +1,9 @@
 authn:
   - type: "facebook"
     config:
-      client_id: "${FACEBOOK_CLIENT_ID}"
-      client_secret: "${FACEBOOK_SECRET}"
+      client_id: ${FACEBOOK_CLIENT_ID}
+      client_secret: ${FACEBOOK_SECRET}
       scopes:
-        - "email"
+        - email
       fields:
-        - "email"
+        - email

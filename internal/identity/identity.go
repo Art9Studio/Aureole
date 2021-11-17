@@ -44,7 +44,7 @@ func Create() (*Manager, error) {
 	return &Manager{}, nil
 }
 
-func (m *Manager) OnUserAuthenticated(cred *Credential, i *Identity, provider string, additional map[string]interface{}) (map[string]interface{}, error) {
+func (*Manager) OnUserAuthenticated(cred *Credential, i *Identity, _ string, additional map[string]interface{}) (map[string]interface{}, error) {
 
 	// check if user exists by cred
 	var exist = true
@@ -70,7 +70,7 @@ func (m *Manager) OnUserAuthenticated(cred *Credential, i *Identity, provider st
 	return nil, errors.New("user doesn't exists")
 }
 
-func (m *Manager) OnRegister(_ *Credential, i *Identity, provider string, additional map[string]interface{}) (map[string]interface{}, error) {
+func (*Manager) OnRegister(_ *Credential, i *Identity, _ string, additional map[string]interface{}) (map[string]interface{}, error) {
 
 	// check if user exists by cred
 	var exist bool
@@ -92,7 +92,7 @@ func (m *Manager) OnRegister(_ *Credential, i *Identity, provider string, additi
 	}, nil
 }
 
-func (m *Manager) GetData(cred *Credential, provider, output string) (interface{}, error) {
+func (*Manager) GetData(_ *Credential, _, output string) (interface{}, error) {
 
 	// check if user exists by cred
 	// get some data from db by cred
@@ -107,7 +107,7 @@ func (m *Manager) GetData(cred *Credential, provider, output string) (interface{
 	return nil, nil
 }
 
-func (m *Manager) Update(cred *Credential, provider string, fields map[string]interface{}) (map[string]interface{}, error) {
+func (*Manager) Update(_ *Credential, _ string, fields map[string]interface{}) (map[string]interface{}, error) {
 
 	// get entity by cred
 	// update entity and return it
@@ -115,11 +115,11 @@ func (m *Manager) Update(cred *Credential, provider string, fields map[string]in
 	return fields, errors.New("can't determine type of updated data")
 }
 
-func (m *Manager) Is2FactorAvailable(cred *Credential, provider string) (bool, error) {
-	panic("implement me")
+func (*Manager) Is2FactorAvailable(_ *Credential, _ string) (bool, error) {
+	return false, nil
 }
 
-func (m *Manager) CheckFeaturesAvailable(requiredFeatures []string) error {
+func (*Manager) CheckFeaturesAvailable(requiredFeatures []string) error {
 	for _, f := range requiredFeatures {
 		if available, ok := features[f]; !ok || !available {
 			return fmt.Errorf("feature %s hasn't implemented", f)

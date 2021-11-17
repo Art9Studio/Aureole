@@ -12,21 +12,22 @@ type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion   string      `config:"api_version"`
-		PingPath     string      `config:"-"`
-		TestRun      bool        `config:"test_run"`
-		Service      Service     `config:"service"`
-		Apps         []App       `config:"apps"`
-		StorageConfs []Storage   `config:"storages"`
-		HasherConfs  []PwHasher  `config:"hashers"`
-		CryptoKeys   []CryptoKey `config:"crypto_keys"`
-		Senders      []Sender    `config:"senders"`
-		AdminConfs   []Admin     `config:"admin_plugins"`
+		APIVersion  string       `config:"api_version"`
+		PingPath    string       `config:"-"`
+		TestRun     bool         `config:"test_run"`
+		Service     Service      `config:"service"`
+		Apps        []App        `config:"apps"`
+		KeyStorages []KeyStorage `config:"key_storages"`
+		Storages    []Storage    `config:"storages"`
+		HasherConfs []PwHasher   `config:"hashers"`
+		CryptoKeys  []CryptoKey  `config:"crypto_keys"`
+		Senders     []Sender     `config:"senders"`
+		AdminConfs  []Admin      `config:"admin_plugins"`
 	}
 
 	Service struct {
 		InternalKey string `config:"internal_key"`
-		Storage     string `config:"storage"`
+		Storage     string `config:"kstorage"`
 	}
 
 	App struct {
@@ -48,6 +49,12 @@ type (
 		Type       string    `config:"type"`
 		PathPrefix string    `config:"-"`
 		Config     RawConfig `config:"config"`
+	}
+
+	KeyStorage struct {
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
 	}
 
 	Storage struct {

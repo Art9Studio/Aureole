@@ -15,6 +15,6 @@ type (
 	}
 )
 
-func (v vkAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (vkAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
 	return &vk{rawConf: conf}
 }

@@ -1,0 +1,7 @@
+storages:
+  - type: "redis"
+    name: redis_store
+    config:
+      address: localhost:6379
+      password: ${REDIS_PASSWORD}
+      db: 0

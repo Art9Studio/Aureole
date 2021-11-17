@@ -109,6 +109,7 @@ def split_json_schema(project_schema):
         'authn': app_props_keys + ['authN', 'items'],
         'authz': app_props_keys + ['authZ'],
         'storage': props_keys + ['storages', 'items'],
+        'kstorage': props_keys + ['key_storages', 'items'],
         'hasher': props_keys + ['hashers', 'items'],
         'crypto_key': props_keys + ['crypto_keys', 'items'],
         'sender': props_keys + ['senders', 'items'],

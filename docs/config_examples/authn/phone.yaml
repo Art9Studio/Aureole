@@ -8,6 +8,6 @@ authn:
       otp:
         length: 6
         alphabet: "1234567890"
-        prefix: "A-"
-        postfix: "-B"
+        prefix: A-
+        postfix: -B
         exp: 300

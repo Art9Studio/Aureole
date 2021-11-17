@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "uuid": "dd81f956-67be-4fa3-b184-ff7bf993d9a3",
+  "uuid": "62de79cc-d897-401d-b70a-ad99060617df",
   "additionalProperties": false,
   "properties": {
     "name": {
       "type": "string",
-      "uuid": "fdbedc93-139d-4b5d-8a67-4ca6f478c22b",
+      "uuid": "717f36a0-4c39-4ac3-a3c5-4c279788af1a",
       "minLength": 1,
       "metatags": "@plugin_name"
     }
@@ -16,16 +16,13 @@
   ],
   "oneOf": [
     {
-      "$ref": "postgresql/schema.json"
+      "$ref": "etcd/schema.json"
     },
     {
-      "$ref": "file/schema.json"
+      "$ref": "redis/schema.json"
     },
     {
-      "$ref": "url/schema.json"
-    },
-    {
-      "$ref": "vault/schema.json"
+      "$ref": "memory/schema.json"
     }
   ]
 }

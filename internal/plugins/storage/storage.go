@@ -6,7 +6,6 @@ import (
 	"fmt"
 )
 
-// New returns desired storage depends on the given config
 func New(conf *configs.Storage) (types.Storage, error) {
 	a, err := Repository.Get(conf.Type)
 	if err != nil {

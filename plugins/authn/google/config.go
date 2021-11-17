@@ -14,6 +14,6 @@ type (
 	}
 )
 
-func (g googleAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (googleAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
 	return &google{rawConf: conf}
 }

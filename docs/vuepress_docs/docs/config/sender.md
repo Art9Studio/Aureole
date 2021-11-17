@@ -25,13 +25,13 @@
       - type: "email"
         name: email
         config:
-          host: "smtp.gmail.com:587"
-          username: "username@example.com"
-          password: "${SMTP_PASSWORD}"
-          from: "app@example.com"
+          host: smtp.gmail.com:587
+          username: username@example.com
+          password: ${SMTP_PASSWORD}
+          from: app@example.com
           templates:
-            txt_tmpl: "lab/templates/default.txt"
-            html_tmpl: "lab/templates/default.html"
+            txt_tmpl: lab/templates/default.txt
+            html_tmpl: lab/templates/default.html
     ```
   ## Конфигурация twilio отправителя.
   - Тип: **object**. Конфигурация twilio отправителя. Служит для задания свойств отправителя. Обязательны: `type`, `config`. Наличие дополнительных свойств: **Недопустимо**.
@@ -48,9 +48,9 @@
       - type: "twilio"
         name: twilio
         config:
-          account_sid: "${TEST_TWILIO_ACCOUNT_SID}"
-          auth_token: "${TEST_TWILIO_AUTH_TOKEN}"
-          from: "${TEST_TWILIO_PHONE_NUMBER}"
+          account_sid: ${TEST_TWILIO_ACCOUNT_SID}
+          auth_token: ${TEST_TWILIO_AUTH_TOKEN}
+          from: ${TEST_TWILIO_PHONE_NUMBER}
           templates:
-            phone_otp: "lab/templates/phone_otp.txt"
+            phone_otp: lab/templates/phone_otp.txt
     ```

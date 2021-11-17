@@ -3,9 +3,9 @@ authn:
     config:
       secret_key: apple_signin_key
       public_key: apple_keys
-      client_id: "${APPLE_CLIENT_ID}"
-      team_id: "${APPLE_TEAM_ID}"
-      key_id: "${APPLE_KEY_ID}"
+      client_id: ${APPLE_CLIENT_ID}
+      team_id: ${APPLE_TEAM_ID}
+      key_id: ${APPLE_KEY_ID}
       scopes:
-        - "email"
-        - "name"
+        - email
+        - name

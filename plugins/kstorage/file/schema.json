@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "1a198d05-6e18-47a4-8ef5-d70ea3e80404",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "file",
+      "uuid": "a0aa97dc-1472-4314-aa90-7d10cceaa683"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "a695ec45-8221-43d4-bb7a-02d52450498c",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "uuid": "4ebd5335-1995-47b6-9fa3-076e232ee1f5",
+          "metatags": "@file_path @f_ext:json"
+        }
+      }
+    }
+  },
+  "example": "keystorage/file"
+}

@@ -11,5 +11,5 @@
     ```yaml
     admin_plugins:
       - type: "urls"
-        name: "get-urls"
+        name: get-urls
     ```

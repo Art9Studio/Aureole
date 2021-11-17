@@ -1,0 +1,5 @@
+storages:
+  - type: "memory"
+    name: memory_store
+    config:
+      size: 100

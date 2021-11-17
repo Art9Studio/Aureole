@@ -23,12 +23,12 @@
         config:
           secret_key: apple_signin_key
           public_key: apple_keys
-          client_id: "${APPLE_CLIENT_ID}"
-          team_id: "${APPLE_TEAM_ID}"
-          key_id: "${APPLE_KEY_ID}"
+          client_id: ${APPLE_CLIENT_ID}
+          team_id: ${APPLE_TEAM_ID}
+          key_id: ${APPLE_KEY_ID}
           scopes:
-            - "email"
-            - "name"
+            - email
+            - name
     ```
   ## Конфигурация google аутентификатора.
   - Тип: **object**. Конфигурация google аутентификатора. Служит для задания свойств аутентификатора. Обязательны: `type`, `config`. Наличие дополнительных свойств: **Недопустимо**.
@@ -43,11 +43,11 @@
     authn:
       - type: "google"
         config:
-          client_id: "${GOOGLE_CLIENT_ID}"
-          client_secret: "${GOOGLE_SECRET}"
+          client_id: ${GOOGLE_CLIENT_ID}
+          client_secret: ${GOOGLE_SECRET}
           scopes:
-            - "https://www.googleapis.com/auth/userinfo.email"
-            - "https://www.googleapis.com/auth/userinfo.profile"
+            - https://www.googleapis.com/auth/userinfo.email
+            - https://www.googleapis.com/auth/userinfo.profile
     ```
   ## Конфигурация facebook аутентификатора.
   - Тип: **object**. Конфигурация facebook аутентификатора. Служит для задания свойств аутентификатора. Обязательны: `type`, `config`. Наличие дополнительных свойств: **Недопустимо**.
@@ -64,12 +64,12 @@
     authn:
       - type: "facebook"
         config:
-          client_id: "${FACEBOOK_CLIENT_ID}"
-          client_secret: "${FACEBOOK_SECRET}"
+          client_id: ${FACEBOOK_CLIENT_ID}
+          client_secret: ${FACEBOOK_SECRET}
           scopes:
-            - "email"
+            - email
           fields:
-            - "email"
+            - email
     ```
   ## Конфигурация vk аутентификатора.
   - Тип: **object**. Конфигурация vk аутентификатора. Служит для задания свойств аутентификатора. Обязательны: `type`, `config`. Наличие дополнительных свойств: **Недопустимо**.
@@ -86,10 +86,10 @@
     authn:
       - type: "vk"
         config:
-          client_id: "${VK_CLIENT_ID}"
-          client_secret: "${VK_SECRET}"
+          client_id: ${VK_CLIENT_ID}
+          client_secret: ${VK_SECRET}
           scopes:
-            - "email"
+            - email
     ```
   ## Конфигурация password based аутентификатора.
   - Тип: **object**. Конфигурация password based аутентификатора. Служит для задания свойств аутентификатора. Обязательны: `type`, `config`. Наличие дополнительных свойств: **Недопустимо**.
@@ -166,7 +166,7 @@
           otp:
             length: 6
             alphabet: "1234567890"
-            prefix: "A-"
-            postfix: "-B"
+            prefix: A-
+            postfix: -B
             exp: 300
     ```

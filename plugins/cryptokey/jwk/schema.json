@@ -27,7 +27,7 @@
               "type": "string",
               "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
               "minLength": 1,
-              "metatags": "@storage_ref"
+              "metatags": "@key_storage_ref"
             },
             "refresh_interval": {
               "type": "integer",
@@ -45,7 +45,7 @@
               "type": "string",
               "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
               "minLength": 1,
-              "metatags": "@storage_ref"
+              "metatags": "@key_storage_ref"
             },
             "refresh_interval": {
               "type": "integer",
@@ -89,7 +89,7 @@
               "type": "string",
               "uuid": "e1fef91b-99e2-4582-880a-0611f9e8834b",
               "minLength": 1,
-              "metatags": "@storage_ref"
+              "metatags": "@key_storage_ref"
             },
             "refresh_interval": {
               "type": "integer",

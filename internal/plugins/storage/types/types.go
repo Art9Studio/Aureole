@@ -1,38 +1,12 @@
 package types
 
 type (
-	Application interface {
-		NativeQueries
-		KeysReadWrite
-	}
-
-	// Storage is an interface that defines methods for database session
 	Storage interface {
 		Init() error
-
-		Application
-
-		// RelInfo returns information about tables relationships
-		RelInfo() map[CollPair]RelInfo
-
-		// Ping returns an error if the DBMS could not be reached
-		Ping() error
-
-		// RawExec executes the given sql query with no returning results
-		RawExec(string, ...interface{}) error
-
-		// RawQuery executes the given sql query and returns results
-		RawQuery(string, ...interface{}) (JSONCollResult, error)
-
-		// Read
-		// Read(string) (JSONCollResult, error)
-
-		// Close terminates the currently active connection to the DBMS
+		Set(k string, v interface{}, exp int) error
+		Get(k string, v interface{}) (ok bool, err error)
+		Delete(k string) error
+		Exists(k string) (found bool, err error)
 		Close() error
-	}
-
-	Filter struct {
-		Name  string
-		Value interface{}
 	}
 )
