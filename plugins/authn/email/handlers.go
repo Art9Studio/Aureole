@@ -2,9 +2,9 @@ package email
 
 import (
 	"aureole/internal/identity"
+	"aureole/internal/jwt"
 	authzT "aureole/internal/plugins/authz/types"
 	"github.com/gofiber/fiber/v2"
-	"github.com/lestrrat-go/jwx/jwt"
 )
 
 func SendMagicLink(e *email) func(*fiber.Ctx) error {
@@ -14,7 +14,7 @@ func SendMagicLink(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		token, err := createToken(e, map[string]interface{}{"email": i.Email})
+		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, e.conf.Exp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -36,19 +36,16 @@ func Login(e *email) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := jwt.ParseString(
-			rawToken,
-			jwt.WithIssuer("Aureole Internal"),
-			jwt.WithAudience("Aureole Internal"),
-			jwt.WithValidate(true),
-			jwt.WithKeySet(e.serviceKey.GetPublicSet()),
-		)
+		token, err := jwt.ParseJWT(rawToken)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
 			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
+		}
+		if err := jwt.InvalidateJWT(token); err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		var i = make(map[string]interface{})

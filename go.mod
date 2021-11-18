@@ -23,20 +23,20 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-test/deep v1.0.8 // indirect
-	github.com/gofiber/fiber/v2 v2.23.0
+	github.com/gofiber/fiber/v2 v2.20.2
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/vault/api v1.3.0
-	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/joho/godotenv v1.4.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lestrrat-go/jwx v1.2.13
-	github.com/mitchellh/mapstructure v1.4.3
+	github.com/lestrrat-go/jwx v1.2.8
+	github.com/matoous/go-nanoid/v2 v2.0.0 // indirect
+	github.com/mitchellh/mapstructure v1.4.2
 	github.com/pkg/errors v0.9.1
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/viper v1.9.0

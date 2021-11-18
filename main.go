@@ -1,6 +1,7 @@
 package main
 
 import (
+	"aureole/internal"
 	"aureole/internal/configs"
 	pluginCore "aureole/internal/plugins/core"
 	"aureole/internal/router"
@@ -15,6 +16,7 @@ func main() {
 	}
 
 	project := &state.Project{}
+	internal.InitCore(project)
 	pluginCore.InitApi(project, router.Init())
 	state.Init(projConf, project)
 	state.ListPluginStatus(project)

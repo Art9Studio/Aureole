@@ -27,7 +27,7 @@ type (
 
 	Service struct {
 		InternalKey string `config:"internal_key"`
-		Storage     string `config:"kstorage"`
+		Storage     string `config:"storage"`
 	}
 
 	App struct {
