@@ -2,6 +2,7 @@ package pbkdf2
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	"aureole/internal/plugins/core"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -48,8 +49,12 @@ func (p *pbkdf2) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*pbkdf2) GetPluginID() string {
-	return PluginID
+func (p *pbkdf2) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: p.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 // HashPw returns a pbkdf2 pwhasher of a plain-text password using the provided

@@ -1,7 +1,6 @@
 package router
 
 import (
-	routerT "aureole/internal/router/interface"
 	"aureole/internal/state/app"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"path"
@@ -12,10 +11,28 @@ import (
 )
 
 type (
-	Router struct {
-		AppRoutes     map[string][]*routerT.Route
-		ProjectRoutes []*routerT.Route
+	IRouter interface {
+		AddAppRoutes(appName string, routes []*Route)
+		AddProjectRoutes(routes []*Route)
+		GetAppRoutes() map[string][]*Route
+		GetProjectRoutes() []*Route
 	}
+
+	Router struct {
+		AppRoutes     map[string][]*Route
+		ProjectRoutes []*Route
+	}
+
+	Route struct {
+		Method  string
+		Path    string
+		Handler func(*fiber.Ctx) error
+	}
+)
+
+const (
+	MethodPOST = "POST"
+	MethodGET  = "GET"
 )
 
 var (
@@ -46,20 +63,20 @@ func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 	return r, nil
 }
 
-func GetRouter() routerT.Router {
+func GetRouter() IRouter {
 	if router == nil {
 		once.Do(
 			func() {
 				router = &Router{
-					AppRoutes:     make(map[string][]*routerT.Route),
-					ProjectRoutes: []*routerT.Route{},
+					AppRoutes:     make(map[string][]*Route),
+					ProjectRoutes: []*Route{},
 				}
 			})
 	}
 	return router
 }
 
-func (r *Router) AddAppRoutes(appName string, routes []*routerT.Route) {
+func (r *Router) AddAppRoutes(appName string, routes []*Route) {
 	for i := range routes {
 		routes[i].Path = path.Clean(routes[i].Path)
 	}
@@ -71,7 +88,7 @@ func (r *Router) AddAppRoutes(appName string, routes []*routerT.Route) {
 	}
 }
 
-func (r *Router) AddProjectRoutes(routes []*routerT.Route) {
+func (r *Router) AddProjectRoutes(routes []*Route) {
 	for i := range routes {
 		routes[i].Path = path.Clean(routes[i].Path)
 	}
@@ -79,11 +96,11 @@ func (r *Router) AddProjectRoutes(routes []*routerT.Route) {
 	r.ProjectRoutes = append(r.ProjectRoutes, routes...)
 }
 
-func (r *Router) GetAppRoutes() map[string][]*routerT.Route {
+func (r *Router) GetAppRoutes() map[string][]*Route {
 	return r.AppRoutes
 }
 
-func (r *Router) GetProjectRoutes() []*routerT.Route {
+func (r *Router) GetProjectRoutes() []*Route {
 	return r.ProjectRoutes
 }
 

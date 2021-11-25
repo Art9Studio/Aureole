@@ -6,54 +6,9 @@ import (
 	authzT "aureole/internal/plugins/authz/types"
 	"aureole/internal/router"
 	"errors"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/url"
 )
-
-func Login(p *pwBased) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		}
-		if input.Password == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "password required")
-		}
-
-		i := &identity.Identity{
-			Id:       input.Id,
-			Email:    input.Email,
-			Phone:    input.Phone,
-			Username: input.Username,
-		}
-		cred, err := getCredential(i)
-		if err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		}
-
-		pw, err := p.manager.GetData(cred, AdapterName, identity.Password)
-		if err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		}
-
-		isMatch, err := p.pwHasher.ComparePw(input.Password, pw.(string))
-		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		if isMatch {
-			userData, err := p.manager.OnUserAuthenticated(cred, i, AdapterName, nil)
-			if err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-
-			return p.authorizer.Authorize(c, authzT.NewPayload(p.authorizer, nil, userData))
-		} else {
-			return router.SendError(c, fiber.StatusUnauthorized, fmt.Sprintf("wrong password or %s", cred.Name))
-		}
-	}
-}
 
 func Register(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
@@ -99,7 +54,11 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		if p.conf.Register.IsLoginAfter {
-			return p.authorizer.Authorize(c, authzT.NewPayload(p.authorizer, nil, user))
+			payload, err := authzT.NewPayload(user)
+			if err != nil {
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			}
+			return p.authorizer.Authorize(c, payload)
 		} else {
 			return c.JSON(&fiber.Map{"status": "success"})
 		}

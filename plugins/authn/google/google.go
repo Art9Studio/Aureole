@@ -3,12 +3,17 @@ package google
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
+	"aureole/internal/plugins"
+	authnT "aureole/internal/plugins/authn/types"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	app "aureole/internal/state/interface"
+	"context"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
 	"path"
@@ -55,8 +60,60 @@ func (g *google) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*google) GetPluginID() string {
-	return PluginID
+func (*google) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		ID:   PluginID,
+	}
+}
+
+func (g *google) Login() authnT.AuthFunc {
+	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+		// todo: save state and compare later #2
+		state := c.Query("state")
+		if state != "state" {
+			return nil, nil, errors.New("invalid state")
+		}
+		code := c.Query("code")
+		if code == "" {
+			return nil, nil, errors.New("code not found")
+		}
+
+		jwtT, err := getJwt(g, code)
+		if err != nil {
+			return nil, nil, errors.New("error while exchange")
+		}
+
+		email, ok := jwtT.Get("email")
+		if !ok {
+			return nil, nil, errors.New("can't get 'email' from token")
+		}
+		socialId, ok := jwtT.Get("sub")
+		if !ok {
+			return nil, nil, errors.New("can't get 'social_id' from token")
+		}
+		userData, err := jwtT.AsMap(context.Background())
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if ok, err := g.app.Filter(convertUserData(userData), g.rawConf.Filter); err != nil {
+			return nil, nil, err
+		} else if !ok {
+			return nil, nil, errors.New("input data doesn't pass filters")
+		}
+
+		return &identity.Credential{
+				Name:  identity.Email,
+				Value: email.(string),
+			},
+			fiber.Map{
+				identity.Email:         email,
+				identity.AuthnProvider: AdapterName,
+				identity.SocialID:      socialId,
+				identity.UserData:      userData,
+			}, nil
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -86,17 +143,12 @@ func initProvider(g *google) error {
 }
 
 func createRoutes(g *google) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "GET",
+			Method:  router.MethodGET,
 			Path:    g.conf.PathPrefix,
 			Handler: GetAuthCode(g),
 		},
-		{
-			Method:  "GET",
-			Path:    g.conf.PathPrefix + g.conf.RedirectUri,
-			Handler: Login(g),
-		},
 	}
-	g.pluginApi.GetRouter().AddAppRoutes(g.app.GetName(), routes)
+	router.GetRouter().AddAppRoutes(g.app.GetName(), routes)
 }

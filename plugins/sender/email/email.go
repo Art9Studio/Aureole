@@ -2,6 +2,7 @@ package email
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	"aureole/internal/plugins/core"
 	"bytes"
 	"crypto/tls"
@@ -34,8 +35,12 @@ func (e *Email) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*Email) GetPluginID() string {
-	return PluginID
+func (e *Email) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: e.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 func (e *Email) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {

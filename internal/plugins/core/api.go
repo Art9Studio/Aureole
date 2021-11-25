@@ -9,14 +9,13 @@ import (
 	pwhasherT "aureole/internal/plugins/pwhasher/types"
 	senderT "aureole/internal/plugins/sender/types"
 	storageT "aureole/internal/plugins/storage/types"
-	routerT "aureole/internal/router/interface"
 	state "aureole/internal/state/interface"
 )
 
 type (
 	PluginAPI interface {
 		IsTestRun() bool
-		Is2FactorEnabled(credential *identity.Credential, provider string) (bool, error)
+		Is2FAEnabled(credential *identity.Credential, provider string) (ok bool, id string, err error)
 		SaveToService(k string, v interface{}, exp int) error
 		GetFromService(k string, v interface{}) (ok bool, err error)
 		GetApp(name string) (state.AppState, error)
@@ -27,20 +26,19 @@ type (
 		GetHasher(name string) (pwhasherT.PwHasher, error)
 		GetSender(name string) (senderT.Sender, error)
 		GetCryptoKey(name string) (cryptoKeyT.CryptoKey, error)
-		GetRouter() routerT.Router
 	}
 
 	pluginAPI struct {
+		app       state.AppState
 		project   state.ProjectState
-		router    routerT.Router
 		keyPrefix string
 	}
 
 	APIOption func(api *pluginAPI)
 )
 
-func InitAPI(p state.ProjectState, router routerT.Router, options ...APIOption) PluginAPI {
-	api := pluginAPI{project: p, router: router}
+func InitAPI(p state.ProjectState, options ...APIOption) PluginAPI {
+	api := pluginAPI{project: p}
 
 	for _, option := range options {
 		option(&api)
@@ -55,12 +53,32 @@ func WithKeyPrefix(prefix string) APIOption {
 	}
 }
 
+func WithAppState(app state.AppState) APIOption {
+	return func(api *pluginAPI) {
+		api.app = app
+	}
+}
+
 func (api pluginAPI) IsTestRun() bool {
 	return api.project.IsTestRun()
 }
 
-func (pluginAPI) Is2FactorEnabled(credential *identity.Credential, provider string) (bool, error) {
-	return true, nil
+func (api pluginAPI) Is2FAEnabled(cred *identity.Credential, provider string) (bool, string, error) {
+	manager, err := api.app.GetIdentityManager()
+	if err != nil {
+		return false, "", err
+	}
+
+	id, err := manager.GetData(cred, provider, identity.SecondFactorID)
+	if err != nil {
+		return false, "", err
+	}
+
+	if id != "" {
+		return true, id.(string), nil
+	} else {
+		return false, "", nil
+	}
 }
 
 func (api pluginAPI) SaveToService(k string, v interface{}, exp int) error {
@@ -109,8 +127,4 @@ func (api pluginAPI) GetSender(name string) (senderT.Sender, error) {
 
 func (api pluginAPI) GetCryptoKey(name string) (cryptoKeyT.CryptoKey, error) {
 	return api.project.GetCryptoKey(name)
-}
-
-func (api pluginAPI) GetRouter() routerT.Router {
-	return api.router
 }

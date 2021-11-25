@@ -4,8 +4,8 @@ import (
 	"aureole/internal"
 	"aureole/internal/configs"
 	"aureole/internal/identity"
-	factor2 "aureole/internal/plugins/2fa"
-	"aureole/internal/plugins/2fa/types"
+	mfa "aureole/internal/plugins/2fa"
+	mfaT "aureole/internal/plugins/2fa/types"
 	"aureole/internal/plugins/admin"
 	adminT "aureole/internal/plugins/admin/types"
 	"aureole/internal/plugins/authn"
@@ -24,7 +24,6 @@ import (
 	"aureole/internal/plugins/storage"
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/internal/router"
-	"aureole/internal/router/interface"
 	"aureole/internal/state/app"
 	"crypto/tls"
 	"fmt"
@@ -63,7 +62,7 @@ func Init(conf *configs.Project, p *Project) {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	router.GetRouter().AddProjectRoutes([]*_interface.Route{
+	router.GetRouter().AddProjectRoutes([]*router.Route{
 		{
 			Method: "GET",
 			Path:   p.PingPath,
@@ -100,16 +99,16 @@ func createAuthorizers(conf *configs.Project, p *Project) {
 }
 
 func createSecondFactors(conf *configs.Project, p *Project) {
-	p.SecondFactors = make(map[string]types.SecondFactor)
+	p.SecondFactors = make(map[string]mfaT.SecondFactor)
 
 	for i := range conf.SecondFactors {
-		fa2Conf := conf.SecondFactors[i]
-		fa2, err := factor2.New(&fa2Conf)
+		mfaConf := conf.SecondFactors[i]
+		secondFactor, err := mfa.New(&mfaConf)
 		if err != nil {
-			fmt.Printf("cannot create second factor '%s': %v\n", fa2Conf.Name, err)
+			fmt.Printf("cannot create second factor '%s': %v\n", mfaConf.Name, err)
 		}
 
-		p.SecondFactors[fa2Conf.Name] = fa2
+		p.SecondFactors[mfaConf.Name] = secondFactor
 	}
 }
 
@@ -160,12 +159,12 @@ func createStorages(conf *configs.Project, p *Project) {
 
 	for i := range conf.Storages {
 		storageConf := conf.Storages[i]
-		connSess, err := storage.New(&storageConf)
+		s, err := storage.New(&storageConf)
 		if err != nil {
 			fmt.Printf("open connection session to storage '%s': %v\n", storageConf.Name, err)
 		}
 
-		p.Storages[storageConf.Name] = connSess
+		p.Storages[storageConf.Name] = s
 	}
 }
 
@@ -174,12 +173,12 @@ func createKeyStorages(conf *configs.Project, p *Project) {
 
 	for i := range conf.KeyStorages {
 		storageConf := conf.KeyStorages[i]
-		connSess, err := kstorage.New(&storageConf)
+		s, err := kstorage.New(&storageConf)
 		if err != nil {
 			fmt.Printf("open connection session to key storage '%s': %v\n", storageConf.Name, err)
 		}
 
-		p.KeyStorages[storageConf.Name] = connSess
+		p.KeyStorages[storageConf.Name] = s
 	}
 }
 
@@ -208,9 +207,10 @@ func createApps(conf *configs.Project, p *Project) {
 		}
 
 		p.Apps[appConf.Name] = &app.App{
-			Name:       appConf.Name,
-			Url:        appUrl,
-			PathPrefix: appConf.PathPrefix,
+			Name:           appConf.Name,
+			Url:            appUrl,
+			PathPrefix:     appConf.PathPrefix,
+			AuthSessionExp: appConf.AuthSessionExp,
 		}
 	}
 }
@@ -267,7 +267,6 @@ func createAuthenticators(app *configs.App) map[string]authnT.Authenticator {
 			fmt.Printf("cannot create authenticator '%s' in app '%s': %v\n",
 				authnConf.Type, app.Name, err)
 		}
-
 		authenticators[authnConf.Type] = authenticator
 	}
 
@@ -304,7 +303,7 @@ func initGlobalPlugins(p *Project) {
 
 func initStorages(p *Project) {
 	for name, s := range p.Storages {
-		if err := s.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
+		if err := s.(core.PluginInitializer).Init(core.InitAPI(p)); err != nil {
 			fmt.Printf("cannot init storage '%s': %v\n", name, err)
 			p.Storages[name] = nil
 		}
@@ -313,7 +312,7 @@ func initStorages(p *Project) {
 
 func initKeyStorages(p *Project) {
 	for name, s := range p.KeyStorages {
-		if err := s.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
+		if err := s.(core.PluginInitializer).Init(core.InitAPI(p)); err != nil {
 			fmt.Printf("cannot init key storage '%s': %v\n", name, err)
 			p.KeyStorages[name] = nil
 		}
@@ -322,7 +321,7 @@ func initKeyStorages(p *Project) {
 
 func initPwHashers(p *Project) {
 	for name, h := range p.Hashers {
-		if err := h.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
+		if err := h.(core.PluginInitializer).Init(core.InitAPI(p)); err != nil {
 			fmt.Printf("cannot init hasher '%s': %v\n", name, err)
 			p.Hashers[name] = nil
 		}
@@ -331,7 +330,7 @@ func initPwHashers(p *Project) {
 
 func initSenders(p *Project) {
 	for name, s := range p.Senders {
-		if err := s.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
+		if err := s.(core.PluginInitializer).Init(core.InitAPI(p)); err != nil {
 			fmt.Printf("cannot init sender '%s': %v\n", name, err)
 			p.Senders[name] = nil
 		}
@@ -340,7 +339,7 @@ func initSenders(p *Project) {
 
 func initCryptoKeys(p *Project) {
 	for name, k := range p.CryptoKeys {
-		if err := k.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
+		if err := k.(core.PluginInitializer).Init(core.InitAPI(p)); err != nil {
 			fmt.Printf("cannot init kstorage '%s': %v\n", name, err)
 			p.CryptoKeys[name] = nil
 		}
@@ -349,7 +348,7 @@ func initCryptoKeys(p *Project) {
 
 func initAdmins(p *Project) {
 	for name, a := range p.Admins {
-		if err := a.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
+		if err := a.(core.PluginInitializer).Init(core.InitAPI(p)); err != nil {
 			fmt.Printf("cannot init admin plugin '%s': %v\n", name, err)
 			p.Admins[name] = nil
 		}
@@ -365,21 +364,31 @@ func initAppPlugins(p *Project) {
 }
 
 func initAuthenticators(app *app.App, p *Project) {
+	var routes []*router.Route
+
 	for name, authenticator := range app.Authenticators {
-		prefix := fmt.Sprintf("%s$%s$", app.Name, authenticator.GetPluginID())
-		api := core.InitAPI(p, router.GetRouter(), core.WithKeyPrefix(prefix))
+		prefix := fmt.Sprintf("%s$%s$", app.Name, authenticator.GetMetaData().ID)
+		api := core.InitAPI(p, core.WithKeyPrefix(prefix), core.WithAppState(app))
 
 		if err := authenticator.(core.AppPluginInitializer).Init(app.Name, api); err != nil {
 			fmt.Printf("cannot init authenticator '%s' in app '%s': %v\n",
 				name, app.Name, err)
 			app.Authenticators[name] = nil
+		} else {
+			pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Type, "_", "-")
+			routes = append(routes, &router.Route{
+				Method:  router.MethodPOST,
+				Path:    pathPrefix + "/login",
+				Handler: internal.HandleLogin(authenticator.Login(), p, app),
+			})
 		}
 	}
+	router.GetRouter().AddAppRoutes(app.Name, routes)
 }
 
 func initAuthorizer(app *app.App, p *Project) {
-	prefix := fmt.Sprintf("%s$%s$", app.Name, app.Authorizer.GetPluginID())
-	api := core.InitAPI(p, router.GetRouter(), core.WithKeyPrefix(prefix))
+	prefix := fmt.Sprintf("%s$%s$", app.Name, app.Authorizer.GetMetaData().ID)
+	api := core.InitAPI(p, core.WithKeyPrefix(prefix), core.WithAppState(app))
 
 	if err := app.Authorizer.(core.AppPluginInitializer).Init(app.Name, api); err != nil {
 		fmt.Printf("cannot init authorizer in app '%s': %v\n", app.Name, err)
@@ -388,13 +397,23 @@ func initAuthorizer(app *app.App, p *Project) {
 }
 
 func initSecondFactor(app *app.App, p *Project) {
+	var routes []*router.Route
+
 	if app.SecondFactor != nil {
-		prefix := fmt.Sprintf("%s$%s$", app.Name, app.SecondFactor.GetPluginID())
-		api := core.InitAPI(p, router.GetRouter(), core.WithKeyPrefix(prefix))
+		prefix := fmt.Sprintf("%s$%s$", app.Name, app.SecondFactor.GetMetaData().ID)
+		api := core.InitAPI(p, core.WithKeyPrefix(prefix), core.WithAppState(app))
 
 		if err := app.SecondFactor.(core.AppPluginInitializer).Init(app.Name, api); err != nil {
 			fmt.Printf("cannot init second factor in app '%s': %v\n", app.Name, err)
 			app.SecondFactor = nil
+		} else {
+			pathPrefix := "/2fa/" + strings.ReplaceAll(app.SecondFactor.GetMetaData().Type, "_", "-")
+			routes = append(routes, &router.Route{
+				Method:  router.MethodPOST,
+				Path:    pathPrefix + "/verify",
+				Handler: internal.Handle2FA(app.SecondFactor.Verify(), p, app),
+			})
 		}
 	}
+	router.GetRouter().AddAppRoutes(app.Name, routes)
 }

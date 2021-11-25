@@ -2,8 +2,9 @@ package urls
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	"aureole/internal/plugins/core"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -25,8 +26,12 @@ func (u *urls) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*urls) GetPluginID() string {
-	return PluginID
+func (u *urls) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: u.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -39,12 +44,12 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func createRoutes(u *urls) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "GET",
+			Method:  router.MethodGET,
 			Path:    u.conf.Path,
 			Handler: GetUrls(u),
 		},
 	}
-	u.pluginApi.GetRouter().AddProjectRoutes(routes)
+	router.GetRouter().AddProjectRoutes(routes)
 }

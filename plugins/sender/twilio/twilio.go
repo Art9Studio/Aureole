@@ -2,6 +2,7 @@ package twilio
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	"aureole/internal/plugins/core"
 	"bytes"
 	"context"
@@ -41,8 +42,12 @@ func (t *Twilio) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*Twilio) GetPluginID() string {
-	return PluginID
+func (t *Twilio) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: t.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 func (t *Twilio) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {

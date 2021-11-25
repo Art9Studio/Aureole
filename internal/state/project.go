@@ -1,7 +1,7 @@
 package state
 
 import (
-	"aureole/internal/plugins/2fa/types"
+	mfaT "aureole/internal/plugins/2fa/types"
 	adminT "aureole/internal/plugins/admin/types"
 	authzT "aureole/internal/plugins/authz/types"
 	cryptoKeyT "aureole/internal/plugins/cryptokey/types"
@@ -23,7 +23,7 @@ type (
 		Service       service
 		Apps          map[string]*app.App
 		Authorizers   map[string]authzT.Authorizer
-		SecondFactors map[string]types.SecondFactor
+		SecondFactors map[string]mfaT.SecondFactor
 		Storages      map[string]storageT.Storage
 		KeyStorages   map[string]kstorageT.KeyStorage
 		Hashers       map[string]pwhasherT.PwHasher
@@ -69,7 +69,7 @@ func (p *Project) GetAuthorizer(name string) (authzT.Authorizer, error) {
 	return a, nil
 }
 
-func (p *Project) GetSecondFactor(name string) (types.SecondFactor, error) {
+func (p *Project) GetSecondFactor(name string) (mfaT.SecondFactor, error) {
 	s, ok := p.SecondFactors[name]
 	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find second factor named '%s'", name)

@@ -2,7 +2,7 @@ package _interface
 
 import (
 	"aureole/internal/identity"
-	"aureole/internal/plugins/2fa/types"
+	mfaT "aureole/internal/plugins/2fa/types"
 	authzT "aureole/internal/plugins/authz/types"
 	cryptoKeyT "aureole/internal/plugins/cryptokey/types"
 	kstorageT "aureole/internal/plugins/kstorage/types"
@@ -19,7 +19,7 @@ type (
 		IsTestRun() bool
 		GetApp(name string) (AppState, error)
 		GetAuthorizer(name string) (authzT.Authorizer, error)
-		GetSecondFactor(name string) (types.SecondFactor, error)
+		GetSecondFactor(name string) (mfaT.SecondFactor, error)
 		GetStorage(name string) (storageT.Storage, error)
 		GetKeyStorage(name string) (kstorageT.KeyStorage, error)
 		GetHasher(name string) (pwhasherT.PwHasher, error)
@@ -34,9 +34,10 @@ type (
 		GetName() string
 		GetUrl() (url.URL, error)
 		GetPathPrefix() string
+		GetAuthSessionExp() int
 		GetIdentityManager() (identity.ManagerI, error)
 		GetAuthorizer() (authzT.Authorizer, error)
-		GetSecondFactor() (types.SecondFactor, error)
+		GetSecondFactor() (mfaT.SecondFactor, error)
 		Filter(data, filter map[string]string) (bool, error)
 	}
 )

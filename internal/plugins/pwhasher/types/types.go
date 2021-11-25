@@ -1,12 +1,9 @@
 package types
 
-// PwHasher is an interface that defined method for pwhasher implementation
+import "aureole/internal/plugins"
+
 type PwHasher interface {
-	GetPluginID() string
-
-	// HashPw returns hashed data encoded by base64
-	HashPw(string) (string, error)
-
-	// ComparePw compares plain data and hashed data encoded by base64
-	ComparePw(string, string) (bool, error)
+	plugins.MetaDataGetter
+	HashPw(pw string) (hashPw string, err error)
+	ComparePw(pw string, hashPw string) (match bool, err error)
 }

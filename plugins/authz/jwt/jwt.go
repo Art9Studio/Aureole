@@ -2,11 +2,11 @@ package jwt
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
 	ckeyT "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/router"
-	"aureole/internal/router/interface"
 	state "aureole/internal/state/interface"
 	"bytes"
 	"context"
@@ -102,8 +102,12 @@ func (j *jwtAuthz) Init(appName string, api core.PluginAPI) (err error) {
 	return err
 }
 
-func (*jwtAuthz) GetPluginID() string {
-	return PluginID
+func (j *jwtAuthz) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: j.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 func (j *jwtAuthz) GetNativeQueries() map[string]string {
@@ -171,14 +175,14 @@ func readNativeQueries(path string) (map[string]string, error) {
 }
 
 func createRoutes(j *jwtAuthz) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "POST",
+			Method:  router.MethodPOST,
 			Path:    j.conf.PathPrefix + j.conf.RefreshUrl,
 			Handler: Refresh(j),
 		},
 	}
-	j.pluginApi.GetRouter().AddAppRoutes(j.app.GetName(), routes)
+	router.GetRouter().AddAppRoutes(j.app.GetName(), routes)
 }
 
 func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t jwt.Token, err error) {
@@ -299,9 +303,11 @@ func renderPayload(tmplPath string, payload *authzTypes.Payload) (map[string]int
 
 	extension := path.Ext(tmplFile)
 	if extension == ".tmpl" {
-		tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
+		/*tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
 			"NativeQ": payload.NativeQ,
-		}).ParseFiles(tmplFile))
+		}).ParseFiles(tmplFile))*/
+
+		tmpl := txtTmpl.Must(txtTmpl.New(baseName).ParseFiles(tmplFile))
 		if err := tmpl.Execute(bufRawPayload, payload); err != nil {
 			return nil, err
 		}

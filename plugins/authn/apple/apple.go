@@ -3,14 +3,17 @@ package apple
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
+	"aureole/internal/plugins"
+	authnT "aureole/internal/plugins/authn/types"
 	authzT "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
 	cKeyT "aureole/internal/plugins/cryptokey/types"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	app "aureole/internal/state/interface"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -72,8 +75,64 @@ func (a *apple) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*apple) GetPluginID() string {
-	return PluginID
+func (*apple) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		ID:   PluginID,
+	}
+}
+
+func (a *apple) Login() authnT.AuthFunc {
+	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+		input := struct {
+			State string
+			Code  string
+		}{}
+		if err := c.BodyParser(&input); err != nil {
+			return nil, nil, err
+		}
+		if input.State != "state" {
+			return nil, nil, errors.New("invalid state")
+		}
+		if input.Code == "" {
+			return nil, nil, errors.New("code not found")
+		}
+
+		jwtT, err := getJwt(a, input.Code)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		email, ok := jwtT.Get("email")
+		if !ok {
+			return nil, nil, errors.New("can't get 'email' from token")
+		}
+		socialId, ok := jwtT.Get("sub")
+		if !ok {
+			return nil, nil, errors.New("can't get 'social_id' from token")
+		}
+		userData, err := jwtT.AsMap(context.Background())
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if ok, err := a.app.Filter(convertUserData(userData), a.rawConf.Filter); err != nil {
+			return nil, nil, err
+		} else if !ok {
+			return nil, nil, errors.New("input data doesn't pass filters")
+		}
+
+		return &identity.Credential{
+				Name:  identity.Email,
+				Value: email.(string),
+			},
+			fiber.Map{
+				identity.Email:         email,
+				identity.AuthnProvider: AdapterName,
+				identity.SocialID:      socialId,
+				identity.UserData:      userData,
+			}, nil
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -157,17 +216,12 @@ func signToken(signKey cKeyT.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func createRoutes(a *apple) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "GET",
+			Method:  router.MethodGET,
 			Path:    a.conf.PathPrefix,
 			Handler: GetAuthCode(a),
 		},
-		{
-			Method:  "POST",
-			Path:    a.conf.PathPrefix + a.conf.RedirectUri,
-			Handler: Login(a),
-		},
 	}
-	a.pluginApi.GetRouter().AddAppRoutes(a.app.GetName(), routes)
+	router.GetRouter().AddAppRoutes(a.app.GetName(), routes)
 }

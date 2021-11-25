@@ -2,6 +2,7 @@ package url
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	"aureole/internal/plugins/core"
 	"context"
 	"errors"
@@ -28,8 +29,12 @@ func (s *storage) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*storage) GetPluginID() string {
-	return PluginID
+func (s *storage) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: s.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 func (*storage) Write(_ []byte) error {

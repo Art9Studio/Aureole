@@ -1,12 +1,13 @@
 package types
 
 import (
-	storageT "aureole/internal/plugins/storage/types"
+	"aureole/internal/plugins"
 	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Authorizer interface {
-	GetPluginID() string
+	plugins.MetaDataGetter
 	GetNativeQueries() map[string]string
 	Authorize(*fiber.Ctx, *Payload) error
 }
@@ -19,41 +20,13 @@ type Payload struct {
 	Email      interface{}
 	UserData   interface{}
 	Additional map[string]interface{}
-	NativeQ    func(queryName string, args ...interface{}) string
+	// NativeQ    func(queryName string, args ...interface{}) string
 }
 
-func NewPayload(_ Authorizer, _ storageT.Storage, data map[string]interface{}) *Payload {
-	p := &Payload{
-		Id:       data["id"],
-		SocialId: data["social_id"],
-		Username: data["username"],
-		Phone:    data["phone"],
-		Email:    data["email"],
-		UserData: data["user_data"],
+func NewPayload(data map[string]interface{}) (*Payload, error) {
+	p := &Payload{}
+	if err := mapstructure.Decode(data, p); err != nil {
+		return nil, err
 	}
-
-	/*if storage != nil {
-		p.NativeQ = func(queryName string, args ...interface{}) string {
-			queries := authorizer.GetNativeQueries()
-
-			q, ok := queries[queryName]
-			if !ok {
-				return "--an error occurred during render--"
-			}
-
-			rawRes, err := storage.NativeQuery(q, args...)
-			if err != nil {
-				return "--an error occurred during render--"
-			}
-
-			res, err := json.Marshal(rawRes)
-			if err != nil {
-				return "--an error occurred during render--"
-			}
-
-			return string(res)
-		}
-	}*/
-
-	return p
+	return p, nil
 }

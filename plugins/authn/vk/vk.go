@@ -3,11 +3,15 @@ package vk
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
+	"aureole/internal/plugins"
+	authnT "aureole/internal/plugins/authn/types"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	app "aureole/internal/state/interface"
+	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
@@ -55,8 +59,46 @@ func (v *vk) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*vk) GetPluginID() string {
-	return PluginID
+func (*vk) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		ID:   PluginID,
+	}
+}
+
+func (v *vk) Login() authnT.AuthFunc {
+	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+		state := c.Query("state")
+		if state != "state" {
+			return nil, nil, errors.New("invalid state")
+		}
+		code := c.Query("code")
+		if code == "" {
+			return nil, nil, errors.New("code not found")
+		}
+
+		userData, err := getUserData(v, code)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if ok, err := v.app.Filter(convertUserData(userData), v.rawConf.Filter); err != nil {
+			return nil, nil, err
+		} else if !ok {
+			return nil, nil, errors.New("input data doesn't pass filters")
+		}
+
+		return &identity.Credential{
+				Name:  identity.Email,
+				Value: userData["email"].(string),
+			},
+			fiber.Map{
+				identity.Email:         userData["email"],
+				identity.AuthnProvider: AdapterName,
+				identity.SocialID:      userData["user_id"],
+				identity.UserData:      userData,
+			}, nil
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -86,17 +128,12 @@ func initProvider(v *vk) error {
 }
 
 func createRoutes(v *vk) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "GET",
+			Method:  router.MethodGET,
 			Path:    v.conf.PathPrefix,
 			Handler: GetAuthCode(v),
 		},
-		{
-			Method:  "GET",
-			Path:    v.conf.PathPrefix + v.conf.RedirectUri,
-			Handler: Login(v),
-		},
 	}
-	v.pluginApi.GetRouter().AddAppRoutes(v.app.GetName(), routes)
+	router.GetRouter().AddAppRoutes(v.app.GetName(), routes)
 }

@@ -2,10 +2,11 @@ package jwk
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/cryptokey/types"
 	kstorageT "aureole/internal/plugins/kstorage/types"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	"encoding/json"
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -58,8 +59,12 @@ func (j *Jwk) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*Jwk) GetPluginID() string {
-	return PluginID
+func (j *Jwk) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: j.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -121,19 +126,19 @@ func initKeySets(j *Jwk) (err error) {
 }
 
 func createRoutes(j *Jwk) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "GET",
+			Method:  router.MethodGET,
 			Path:    j.conf.PathPrefix + "/jwk",
 			Handler: GetJwkKeys(j),
 		},
 		{
-			Method:  "GET",
+			Method:  router.MethodGET,
 			Path:    j.conf.PathPrefix + "/pem",
 			Handler: GetPemKeys(j),
 		},
 	}
-	j.pluginApi.GetRouter().AddProjectRoutes(routes)
+	router.GetRouter().AddProjectRoutes(routes)
 }
 
 func refreshKeys(j *Jwk) {

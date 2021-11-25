@@ -1,5 +1,7 @@
 package types
 
+import "aureole/internal/plugins"
+
 type Admin interface {
-	GetPluginID() string
+	plugins.MetaDataGetter
 }

@@ -3,12 +3,17 @@ package email
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
+	"aureole/internal/jwt"
+	"aureole/internal/plugins"
+	authnT "aureole/internal/plugins/authn/types"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
 	senderTypes "aureole/internal/plugins/sender/types"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	app "aureole/internal/state/interface"
+	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"net/url"
 	"path"
@@ -69,8 +74,38 @@ func (e *email) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*email) GetPluginID() string {
-	return PluginID
+func (*email) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		ID:   PluginID,
+	}
+}
+
+func (*email) Login() authnT.AuthFunc {
+	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+		rawToken := c.Query("token")
+		if rawToken == "" {
+			return nil, nil, errors.New("token not found")
+		}
+
+		token, err := jwt.ParseJWT(rawToken)
+		if err != nil {
+			return nil, nil, errors.New(err.Error())
+		}
+		email, ok := token.Get("email")
+		if !ok {
+			return nil, nil, errors.New("cannot get email from token")
+		}
+		if err := jwt.InvalidateJWT(token); err != nil {
+			return nil, nil, errors.New(err.Error())
+		}
+
+		return &identity.Credential{
+				Name:  identity.Email,
+				Value: email.(string),
+			},
+			fiber.Map{identity.Email: email}, nil
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -94,17 +129,12 @@ func createMagicLink(e *email) (*url.URL, error) {
 }
 
 func createRoutes(e *email) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "POST",
+			Method:  router.MethodPOST,
 			Path:    e.conf.PathPrefix + e.conf.SendUrl,
 			Handler: SendMagicLink(e),
 		},
-		{
-			Method:  "GET",
-			Path:    e.conf.PathPrefix + e.conf.ConfirmUrl,
-			Handler: Login(e),
-		},
 	}
-	e.pluginApi.GetRouter().AddAppRoutes(e.app.GetName(), routes)
+	router.GetRouter().AddAppRoutes(e.app.GetName(), routes)
 }

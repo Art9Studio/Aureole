@@ -1,9 +1,6 @@
 package vk
 
 import (
-	"aureole/internal/identity"
-	authzT "aureole/internal/plugins/authz/types"
-	"aureole/internal/router"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,59 +13,6 @@ func GetAuthCode(v *vk) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		u := v.provider.AuthCodeURL("state")
 		return c.Redirect(u)
-	}
-}
-
-func Login(v *vk) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		state := c.Query("state")
-		if state != "state" {
-			return router.SendError(c, fiber.StatusBadRequest, "invalid state")
-		}
-		code := c.Query("code")
-		if code == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "code not found")
-		}
-
-		userData, err := getUserData(v, code)
-		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		if ok, err := v.app.Filter(convertUserData(userData), v.rawConf.Filter); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		} else if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
-		}
-
-		var i map[string]interface{}
-		if v.manager != nil {
-			i, err = v.manager.OnUserAuthenticated(
-				&identity.Credential{
-					Name:  identity.Email,
-					Value: userData["email"].(string),
-				},
-				&identity.Identity{
-					Email: userData["email"].(string),
-				},
-				AdapterName,
-				map[string]interface{}{
-					"social_id": userData["user_id"],
-					"user_data": userData,
-				})
-			if err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-		} else {
-			i = map[string]interface{}{
-				identity.Email: userData["email"],
-				"provider":     AdapterName,
-				"social_id":    userData["user_id"],
-				"user_data":    userData,
-			}
-		}
-
-		return v.authorizer.Authorize(c, authzT.NewPayload(v.authorizer, nil, i))
 	}
 }
 

@@ -34,12 +34,13 @@ type (
 	}
 
 	App struct {
-		Name         string  `config:"name"`
-		Host         string  `config:"host"`
-		PathPrefix   string  `config:"path_prefix"`
-		Authz        string  `config:"authZ"`
-		SecondFactor string  `config:"2fa"`
-		Authn        []Authn `config:"authN"`
+		Name           string  `config:"name"`
+		Host           string  `config:"host"`
+		PathPrefix     string  `config:"path_prefix"`
+		AuthSessionExp int     `config:"auth_session_exp"`
+		Authz          string  `config:"authZ"`
+		SecondFactor   string  `config:"2fa"`
+		Authn          []Authn `config:"authN"`
 	}
 
 	Authn struct {

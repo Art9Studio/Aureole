@@ -4,7 +4,6 @@ import (
 	"aureole/internal/encrypt"
 	"aureole/internal/identity"
 	"aureole/internal/jwt"
-	authzT "aureole/internal/plugins/authz/types"
 	"aureole/internal/router"
 	"github.com/gofiber/fiber/v2"
 )
@@ -26,14 +25,17 @@ func SendOtp(p *phone) func(*fiber.Ctx) error {
 		}
 
 		otp := p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix
-		otpHash, err := p.hasher.HashPw(otp)
+		encOtp, err := encrypt.Encrypt(p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix)
+		if err != nil {
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		}
+		err = p.pluginApi.SaveToService(input.Phone, encOtp, p.conf.Otp.Exp)
 		if err != nil {
 			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		token, err := jwt.CreateJWT(
 			map[string]interface{}{
-				"otp":      otpHash,
 				"phone":    i.Phone,
 				"attempts": 0,
 			},
@@ -47,84 +49,7 @@ func SendOtp(p *phone) func(*fiber.Ctx) error {
 			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(&fiber.Map{"token": token})
-	}
-}
-
-func Login(p *phone) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		}
-		if input.Token == "" || input.Otp == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "token and otp are required")
-		}
-
-		t, err := jwt.ParseJWT(input.Token)
-		if err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		}
-		phone, ok := t.Get("phone")
-		if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "cannot get phone from token")
-		}
-		otpHash, ok := t.Get("otp")
-		if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "cannot get otp from token")
-		}
-		attempts, ok := t.Get("attempts")
-		if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "cannot get attempts from token")
-		}
-		if err := jwt.InvalidateJWT(t); err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		if int(attempts.(float64)) >= p.conf.MaxAttempts {
-			return router.SendError(c, fiber.StatusUnauthorized, "too much attempts")
-		}
-
-		isMatch, err := p.hasher.ComparePw(input.Otp, otpHash.(string))
-		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		if isMatch {
-			var i = make(map[string]interface{})
-			if p.manager != nil {
-				i, err = p.manager.OnUserAuthenticated(
-					&identity.Credential{
-						Name:  identity.Phone,
-						Value: phone.(string),
-					},
-					&identity.Identity{
-						Phone:         phone.(string),
-						PhoneVerified: true,
-					},
-					AdapterName,
-					nil)
-				if err != nil {
-					return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-				}
-			} else {
-				i["phone"] = phone.(string)
-			}
-
-			return p.authorizer.Authorize(c, authzT.NewPayload(p.authorizer, nil, i))
-		} else {
-			token, err := jwt.CreateJWT(
-				map[string]interface{}{
-					"otp":      otpHash,
-					"phone":    phone,
-					"attempts": int(attempts.(float64)) + 1,
-				},
-				p.conf.Otp.Exp)
-			if err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"token": token})
-		}
+		return c.JSON(fiber.Map{"token": token})
 	}
 }
 

@@ -2,14 +2,20 @@ package phone
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/encrypt"
 	"aureole/internal/identity"
+	"aureole/internal/jwt"
+	"aureole/internal/plugins"
+	authnT "aureole/internal/plugins/authn/types"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	app "aureole/internal/state/interface"
+	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -70,8 +76,82 @@ func (p *phone) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*phone) GetPluginID() string {
-	return PluginID
+func (*phone) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		ID:   PluginID,
+	}
+}
+
+func (p *phone) Login() authnT.AuthFunc {
+	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+		var input *input
+		if err := c.BodyParser(input); err != nil {
+			return nil, nil, err
+		}
+		if input.Token == "" || input.Otp == "" {
+			return nil, nil, errors.New("token and otp are required")
+		}
+
+		t, err := jwt.ParseJWT(input.Token)
+		if err != nil {
+			return nil, nil, err
+		}
+		phone, ok := t.Get("phone")
+		if !ok {
+			return nil, nil, errors.New("cannot get phone from token")
+		}
+		attempts, ok := t.Get("attempts")
+		if !ok {
+			return nil, nil, errors.New("cannot get attempts from token")
+		}
+		if err := jwt.InvalidateJWT(t); err != nil {
+			return nil, nil, err
+		}
+
+		if int(attempts.(float64)) >= p.conf.MaxAttempts {
+			return nil, nil, errors.New("too much attempts")
+		}
+
+		var (
+			encOtp  []byte
+			decrOtp string
+		)
+		ok, err = p.pluginApi.GetFromService(phone.(string), &encOtp)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !ok {
+			return nil, nil, errors.New("otp has expired")
+		}
+		err = encrypt.Decrypt(encOtp, &decrOtp)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if decrOtp == input.Otp {
+			return &identity.Credential{
+					Name:  identity.Phone,
+					Value: phone.(string),
+				},
+				fiber.Map{
+					identity.Phone:         phone,
+					identity.PhoneVerified: true,
+					identity.AuthnProvider: AdapterName,
+				}, nil
+		} else {
+			token, err := jwt.CreateJWT(
+				map[string]interface{}{
+					"phone":    phone,
+					"attempts": int(attempts.(float64)) + 1,
+				},
+				p.conf.Otp.Exp)
+			if err != nil {
+				return nil, nil, err
+			}
+			return nil, fiber.Map{"token": token}, errors.New("wrong otp")
+		}
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -85,22 +165,17 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func createRoutes(p *phone) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "POST",
+			Method:  router.MethodGET,
 			Path:    p.conf.PathPrefix + p.conf.SendUrl,
 			Handler: SendOtp(p),
 		},
 		{
-			Method:  "POST",
-			Path:    p.conf.PathPrefix + p.conf.ConfirmUrl,
-			Handler: Login(p),
-		},
-		{
-			Method:  "POST",
+			Method:  router.MethodGET,
 			Path:    p.conf.PathPrefix + p.conf.ResendUrl,
 			Handler: Resend(p),
 		},
 	}
-	p.pluginApi.GetRouter().AddAppRoutes(p.app.GetName(), routes)
+	router.GetRouter().AddAppRoutes(p.app.GetName(), routes)
 }

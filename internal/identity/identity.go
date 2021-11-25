@@ -3,16 +3,17 @@ package identity
 import (
 	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 )
 
 type (
 	ManagerI interface {
-		OnUserAuthenticated(*Credential, *Identity, string, map[string]interface{}) (map[string]interface{}, error)
-		OnRegister(*Credential, *Identity, string, map[string]interface{}) (map[string]interface{}, error)
-		On2FA(*Credential, map[string]interface{}) error
-		GetData(*Credential, string, string) (interface{}, error) // описать поля, которые можем получить
-		Update(*Credential, string, map[string]interface{}) (map[string]interface{}, error)
-		CheckFeaturesAvailable([]string) error
+		OnUserAuthenticated(cred *Credential, identity *Identity, provider string, additional map[string]interface{}) (map[string]interface{}, error)
+		OnRegister(cred *Credential, identity *Identity, provider string, additional map[string]interface{}) (map[string]interface{}, error)
+		On2FA(cred *Credential, data map[string]interface{}) error
+		GetData(cred *Credential, provider string, name string) (interface{}, error) // описать поля, которые можем получить
+		Update(cred *Credential, provider string, data map[string]interface{}) (map[string]interface{}, error)
+		CheckFeaturesAvailable(features []string) error
 	}
 
 	Manager struct {
@@ -23,7 +24,6 @@ type (
 		Value string
 	}
 
-	// создать константы под все поля
 	Identity struct {
 		Id            interface{}
 		Email         string
@@ -35,13 +35,17 @@ type (
 )
 
 const (
-	ID            string = "id"
-	Email         string = "email"
-	Phone         string = "phone"
-	Username      string = "username"
-	EmailVerified string = "email_verified"
-	PhoneVerified string = "phone_verified"
-	Password      string = "password"
+	ID             = "id"
+	SocialID       = "social_id"
+	Email          = "email"
+	Phone          = "phone"
+	Username       = "username"
+	EmailVerified  = "email_verified"
+	PhoneVerified  = "phone_verified"
+	Password       = "password"
+	SecondFactorID = "2fa_id"
+	AuthnProvider  = "provider"
+	UserData       = "user_data"
 )
 
 var features = map[string]bool{
@@ -49,6 +53,14 @@ var features = map[string]bool{
 	"2fa":         true,
 	"get_data":    true,
 	"update":      true,
+}
+
+func NewIdentity(data map[string]interface{}) (*Identity, error) {
+	i := &Identity{}
+	if err := mapstructure.Decode(data, i); err != nil {
+		return nil, err
+	}
+	return i, nil
 }
 
 func Create() (*Manager, error) {

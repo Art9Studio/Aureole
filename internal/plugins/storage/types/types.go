@@ -1,8 +1,10 @@
 package types
 
+import "aureole/internal/plugins"
+
 type (
 	Storage interface {
-		GetPluginID() string
+		plugins.MetaDataGetter
 		Set(k string, v interface{}, exp int) error
 		Get(k string, v interface{}) (ok bool, err error)
 		Delete(k string) error

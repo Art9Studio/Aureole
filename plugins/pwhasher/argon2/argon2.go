@@ -2,6 +2,7 @@ package argon2
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins"
 	"aureole/internal/plugins/core"
 	"crypto/rand"
 	"crypto/subtle"
@@ -40,8 +41,12 @@ func (a *argon2) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*argon2) GetPluginID() string {
-	return PluginID
+func (a *argon2) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		Name: a.rawConf.Name,
+		ID:   PluginID,
+	}
 }
 
 // HashPw returns a argon2 pwhasher of a plain-text password using the provided algorithm

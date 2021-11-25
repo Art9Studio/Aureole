@@ -1,6 +1,7 @@
 package types
 
 import (
+	"aureole/internal/plugins"
 	"github.com/lestrrat-go/jwx/jwk"
 )
 
@@ -12,7 +13,7 @@ const (
 )
 
 type CryptoKey interface {
-	GetPluginID() string
+	plugins.MetaDataGetter
 	GetPrivateSet() jwk.Set
 	GetPublicSet() jwk.Set
 }

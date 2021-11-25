@@ -3,13 +3,17 @@ package pwbased
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
+	"aureole/internal/plugins"
+	authnT "aureole/internal/plugins/authn/types"
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
-	"aureole/internal/router/interface"
+	"aureole/internal/router"
 	app "aureole/internal/state/interface"
+	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"net/url"
 	"path"
@@ -116,8 +120,53 @@ func (p *pwBased) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*pwBased) GetPluginID() string {
-	return PluginID
+func (*pwBased) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: AdapterName,
+		ID:   PluginID,
+	}
+}
+
+func (p *pwBased) Login() authnT.AuthFunc {
+	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+		var input *input
+		if err := c.BodyParser(input); err != nil {
+			return nil, nil, err
+		}
+		if input.Password == "" {
+			return nil, nil, errors.New("password required")
+		}
+
+		i := &identity.Identity{
+			Id:       input.Id,
+			Email:    input.Email,
+			Phone:    input.Phone,
+			Username: input.Username,
+		}
+		cred, err := getCredential(i)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		pw, err := p.manager.GetData(cred, AdapterName, identity.Password)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		isMatch, err := p.pwHasher.ComparePw(input.Password, pw.(string))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if isMatch {
+			return cred, fiber.Map{
+				cred.Name:              cred.Value,
+				identity.AuthnProvider: AdapterName,
+			}, nil
+		} else {
+			return nil, nil, errors.New("wrong password")
+		}
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -155,28 +204,23 @@ func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
 }
 
 func createRoutes(p *pwBased) {
-	routes := []*_interface.Route{
+	routes := []*router.Route{
 		{
-			Method:  "POST",
-			Path:    p.conf.PathPrefix + p.conf.Login.Path,
-			Handler: Login(p),
-		},
-		{
-			Method:  "POST",
+			Method:  router.MethodPOST,
 			Path:    p.conf.PathPrefix + p.conf.Register.Path,
 			Handler: Register(p),
 		},
 	}
 
 	if pwResetEnable(p) {
-		resetRoutes := []*_interface.Route{
+		resetRoutes := []*router.Route{
 			{
-				Method:  "POST",
+				Method:  router.MethodPOST,
 				Path:    p.conf.PathPrefix + p.conf.Reset.Path,
 				Handler: Reset(p),
 			},
 			{
-				Method:  "POST",
+				Method:  router.MethodPOST,
 				Path:    p.conf.PathPrefix + p.conf.Reset.ConfirmUrl,
 				Handler: ResetConfirm(p),
 			},
@@ -185,14 +229,14 @@ func createRoutes(p *pwBased) {
 	}
 
 	if verifEnable(p) {
-		verifRoutes := []*_interface.Route{
+		verifRoutes := []*router.Route{
 			{
-				Method:  "POST",
+				Method:  router.MethodPOST,
 				Path:    p.conf.PathPrefix + p.conf.Verif.Path,
 				Handler: Verify(p),
 			},
 			{
-				Method:  "GET",
+				Method:  router.MethodGET,
 				Path:    p.conf.PathPrefix + p.conf.Verif.ConfirmUrl,
 				Handler: VerifyConfirm(p),
 			},
@@ -200,5 +244,5 @@ func createRoutes(p *pwBased) {
 		routes = append(routes, verifRoutes...)
 	}
 
-	p.pluginApi.GetRouter().AddAppRoutes(p.app.GetName(), routes)
+	router.GetRouter().AddAppRoutes(p.app.GetName(), routes)
 }

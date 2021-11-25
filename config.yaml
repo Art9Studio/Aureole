@@ -6,9 +6,10 @@ service:
   storage: service_store
 
 apps:
-  - name: one
-    path_prefix: /one
+  - name: aureole_app
+    path_prefix: /aureole-app
     host: http://localhost:3000
+    auth_session_exp: 86400
     
     authZ: jwt_authz
     2fa: google_auth_2fa

@@ -1,6 +1,7 @@
 package urls
 
 import (
+	"aureole/internal/router"
 	"bytes"
 	"github.com/gofiber/fiber/v2"
 	"html/template"
@@ -17,9 +18,9 @@ const tmpl = `
 {{ end }}
 `
 
-func GetUrls(u *urls) func(*fiber.Ctx) error {
+func GetUrls(*urls) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		r := u.pluginApi.GetRouter()
+		r := router.GetRouter()
 		routes := r.GetAppRoutes()
 		routes["Project"] = r.GetProjectRoutes()
 
