@@ -6,7 +6,7 @@ import (
 )
 
 type Authorizer interface {
-	Init(string) error
+	GetPluginID() string
 	GetNativeQueries() map[string]string
 	Authorize(*fiber.Ctx, *Payload) error
 }

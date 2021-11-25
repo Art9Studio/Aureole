@@ -2,7 +2,7 @@ package apple
 
 import (
 	"aureole/internal/configs"
-	authnTypes "aureole/internal/plugins/authn/types"
+	authnT "aureole/internal/plugins/authn/types"
 )
 
 type (
@@ -13,10 +13,11 @@ type (
 		TeamId      string   `mapstructure:"team_id"`
 		KeyId       string   `mapstructure:"key_id"`
 		Scopes      []string `mapstructure:"scopes"`
+		PathPrefix  string
 		RedirectUri string
 	}
 )
 
-func (appleAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (appleAdapter) Create(conf *configs.Authn) authnT.Authenticator {
 	return &apple{rawConf: conf}
 }

@@ -3,8 +3,8 @@ package phone
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
-	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
@@ -13,8 +13,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const PluginID = "6937"
+
 type (
 	phone struct {
+		pluginApi  core.PluginAPI
 		app        app.AppState
 		rawConf    *configs.Authn
 		conf       *config
@@ -31,38 +34,44 @@ type (
 	}
 )
 
-func (p *phone) Init(app app.AppState) (err error) {
-	p.app = app
-	p.rawConf.PathPrefix = "/" + AdapterName
-
+func (p *phone) Init(appName string, api core.PluginAPI) (err error) {
+	p.pluginApi = api
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	pluginApi := authn.Repository.PluginApi
-	p.manager, err = app.GetIdentityManager()
+	p.app, err = p.pluginApi.GetApp(appName)
 	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
-	p.hasher, err = pluginApi.Project.GetHasher(p.conf.Hasher)
+	p.manager, err = p.app.GetIdentityManager()
+	if err != nil {
+		fmt.Printf("manager for app '%s' is not declared", appName)
+	}
+
+	p.hasher, err = p.pluginApi.GetHasher(p.conf.Hasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.Hasher)
 	}
 
-	p.sender, err = pluginApi.Project.GetSender(p.conf.Sender)
+	p.sender, err = p.pluginApi.GetSender(p.conf.Sender)
 	if err != nil {
 		return fmt.Errorf("sender named '%s' is not declared", p.conf.Sender)
 	}
 
 	p.authorizer, err = p.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	createRoutes(p)
 	return nil
+}
+
+func (*phone) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -79,19 +88,19 @@ func createRoutes(p *phone) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.SendUrl,
+			Path:    p.conf.PathPrefix + p.conf.SendUrl,
 			Handler: SendOtp(p),
 		},
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.ConfirmUrl,
+			Path:    p.conf.PathPrefix + p.conf.ConfirmUrl,
 			Handler: Login(p),
 		},
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.ResendUrl,
+			Path:    p.conf.PathPrefix + p.conf.ResendUrl,
 			Handler: Resend(p),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(p.app.GetName(), routes)
+	p.pluginApi.GetRouter().AddAppRoutes(p.app.GetName(), routes)
 }

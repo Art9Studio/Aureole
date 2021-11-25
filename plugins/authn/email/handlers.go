@@ -52,8 +52,8 @@ func Login(e *email) func(*fiber.Ctx) error {
 		if e.manager != nil {
 			i, err = e.manager.OnUserAuthenticated(
 				&identity.Credential{
-					Name:  "email",
-					Value: email,
+					Name:  identity.Email,
+					Value: email.(string),
 				},
 				&identity.Identity{
 					Email:         email.(string),

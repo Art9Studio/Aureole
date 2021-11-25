@@ -57,7 +57,7 @@ func Login(g *google) func(*fiber.Ctx) error {
 		if g.manager != nil {
 			i, err = g.manager.OnUserAuthenticated(
 				&identity.Credential{
-					Name:  "email",
+					Name:  identity.Email,
 					Value: email.(string),
 				},
 				&identity.Identity{
@@ -73,10 +73,10 @@ func Login(g *google) func(*fiber.Ctx) error {
 			}
 		} else {
 			i = map[string]interface{}{
-				"email":     email,
-				"provider":  AdapterName,
-				"social_id": socialId,
-				"user_data": userData,
+				identity.Email: email,
+				"provider":     AdapterName,
+				"social_id":    socialId,
+				"user_data":    userData,
 			}
 		}
 

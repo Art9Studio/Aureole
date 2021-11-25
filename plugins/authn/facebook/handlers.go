@@ -43,8 +43,8 @@ func Login(f *facebook) func(*fiber.Ctx) error {
 		if f.manager != nil {
 			i, err = f.manager.OnUserAuthenticated(
 				&identity.Credential{
-					Name:  "email",
-					Value: userData["email"],
+					Name:  identity.Email,
+					Value: userData["email"].(string),
 				},
 				&identity.Identity{
 					Email: userData["email"].(string),
@@ -59,10 +59,10 @@ func Login(f *facebook) func(*fiber.Ctx) error {
 			}
 		} else {
 			i = map[string]interface{}{
-				"email":     userData["email"],
-				"provider":  AdapterName,
-				"social_id": userData["id"],
-				"user_data": userData,
+				identity.Email: userData["email"],
+				"provider":     AdapterName,
+				"social_id":    userData["id"],
+				"user_data":    userData,
 			}
 		}
 

@@ -27,7 +27,7 @@ type config struct {
 	Memory uint32 `mapstructure:"memory"`
 }
 
-// Create returns Argon2 hasher with the given settings
+// Create returns argon2 hasher with the given settings
 func (argon2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
-	return &Argon2{rawConf: conf}
+	return &argon2{rawConf: conf}
 }

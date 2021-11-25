@@ -2,7 +2,7 @@ package pwbased
 
 import (
 	"aureole/internal/configs"
-	authnTypes "aureole/internal/plugins/authn/types"
+	authnT "aureole/internal/plugins/authn/types"
 )
 
 type (
@@ -13,6 +13,7 @@ type (
 		Register      register  `mapstructure:"register"`
 		Reset         resetConf `mapstructure:"password_reset"`
 		Verif         verifConf `mapstructure:"verification"`
+		PathPrefix    string
 	}
 
 	login struct {
@@ -42,6 +43,6 @@ type (
 	}
 )
 
-func (pwBasedAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (pwBasedAdapter) Create(conf *configs.Authn) authnT.Authenticator {
 	return &pwBased{rawConf: conf}
 }

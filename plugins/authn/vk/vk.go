@@ -3,8 +3,8 @@ package vk
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
-	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"fmt"
@@ -14,7 +14,10 @@ import (
 	"path"
 )
 
+const PluginID = "3888"
+
 type vk struct {
+	pluginApi  core.PluginAPI
 	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
@@ -23,23 +26,26 @@ type vk struct {
 	authorizer authzTypes.Authorizer
 }
 
-func (v *vk) Init(app app.AppState) (err error) {
-	v.app = app
-	v.rawConf.PathPrefix = "/oauth2/" + AdapterName
-
+func (v *vk) Init(appName string, api core.PluginAPI) (err error) {
+	v.pluginApi = api
 	v.conf, err = initConfig(&v.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	v.manager, err = app.GetIdentityManager()
+	v.app, err = v.pluginApi.GetApp(appName)
 	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", app.GetName())
+		return fmt.Errorf("app named '%s' is not declared", appName)
+	}
+
+	v.manager, err = v.app.GetIdentityManager()
+	if err != nil {
+		fmt.Printf("manager for app '%s' is not declared", appName)
 	}
 
 	v.authorizer, err = v.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	if err := initProvider(v); err != nil {
@@ -47,6 +53,10 @@ func (v *vk) Init(app app.AppState) (err error) {
 	}
 	createRoutes(v)
 	return nil
+}
+
+func (*vk) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -64,7 +74,7 @@ func initProvider(v *vk) error {
 		return err
 	}
 
-	redirectUri.Path = path.Clean(redirectUri.Path + v.rawConf.PathPrefix + v.conf.RedirectUri)
+	redirectUri.Path = path.Clean(redirectUri.Path + v.conf.PathPrefix + v.conf.RedirectUri)
 	v.provider = &oauth2.Config{
 		ClientID:     v.conf.ClientId,
 		ClientSecret: v.conf.ClientSecret,
@@ -79,14 +89,14 @@ func createRoutes(v *vk) {
 	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    v.rawConf.PathPrefix,
+			Path:    v.conf.PathPrefix,
 			Handler: GetAuthCode(v),
 		},
 		{
 			Method:  "GET",
-			Path:    v.rawConf.PathPrefix + v.conf.RedirectUri,
+			Path:    v.conf.PathPrefix + v.conf.RedirectUri,
 			Handler: Login(v),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(v.app.GetName(), routes)
+	v.pluginApi.GetRouter().AddAppRoutes(v.app.GetName(), routes)
 }

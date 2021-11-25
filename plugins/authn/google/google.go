@@ -3,8 +3,8 @@ package google
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
-	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"fmt"
@@ -14,7 +14,10 @@ import (
 	"path"
 )
 
+const PluginID = "1010"
+
 type google struct {
+	pluginApi  core.PluginAPI
 	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
@@ -23,23 +26,26 @@ type google struct {
 	authorizer authzTypes.Authorizer
 }
 
-func (g *google) Init(app app.AppState) (err error) {
-	g.app = app
-	g.rawConf.PathPrefix = "/oauth2/" + AdapterName
-
+func (g *google) Init(appName string, api core.PluginAPI) (err error) {
+	g.pluginApi = api
 	g.conf, err = initConfig(&g.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	g.manager, err = app.GetIdentityManager()
+	g.app, err = g.pluginApi.GetApp(appName)
 	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", app.GetName())
+		return fmt.Errorf("app named '%s' is not declared", appName)
+	}
+
+	g.manager, err = g.app.GetIdentityManager()
+	if err != nil {
+		fmt.Printf("manager for app '%s' is not declared", appName)
 	}
 
 	g.authorizer, err = g.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	if err := initProvider(g); err != nil {
@@ -47,6 +53,10 @@ func (g *google) Init(app app.AppState) (err error) {
 	}
 	createRoutes(g)
 	return nil
+}
+
+func (*google) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -64,7 +74,7 @@ func initProvider(g *google) error {
 		return err
 	}
 
-	redirectUri.Path = path.Clean(redirectUri.Path + g.rawConf.PathPrefix + g.conf.RedirectUri)
+	redirectUri.Path = path.Clean(redirectUri.Path + g.conf.PathPrefix + g.conf.RedirectUri)
 	g.provider = &oauth2.Config{
 		ClientID:     g.conf.ClientId,
 		ClientSecret: g.conf.ClientSecret,
@@ -79,14 +89,14 @@ func createRoutes(g *google) {
 	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    g.rawConf.PathPrefix,
+			Path:    g.conf.PathPrefix,
 			Handler: GetAuthCode(g),
 		},
 		{
 			Method:  "GET",
-			Path:    g.rawConf.PathPrefix + g.conf.RedirectUri,
+			Path:    g.conf.PathPrefix + g.conf.RedirectUri,
 			Handler: Login(g),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(g.app.GetName(), routes)
+	g.pluginApi.GetRouter().AddAppRoutes(g.app.GetName(), routes)
 }

@@ -1,5 +1,5 @@
 package types
 
 type Admin interface {
-	Init() error
+	GetPluginID() string
 }

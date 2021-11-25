@@ -2,6 +2,7 @@ package email
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/core"
 	"bytes"
 	"crypto/tls"
 	htmlTmpl "html/template"
@@ -14,12 +15,16 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const PluginID = "5151"
+
 type Email struct {
-	rawConf *configs.Sender
-	conf    *config
+	pluginApi core.PluginAPI
+	rawConf   *configs.Sender
+	conf      *config
 }
 
-func (e *Email) Init() error {
+func (e *Email) Init(api core.PluginAPI) error {
+	e.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(e.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -27,6 +32,10 @@ func (e *Email) Init() error {
 	e.conf = adapterConf
 
 	return nil
+}
+
+func (*Email) GetPluginID() string {
+	return PluginID
 }
 
 func (e *Email) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {

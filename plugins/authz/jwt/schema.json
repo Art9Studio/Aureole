@@ -18,9 +18,7 @@
       "additionalProperties": false,
       "required": [
         "sign_key",
-        "verify_keys",
-        "jti",
-        "payload"
+        "verify_keys"
       ],
       "properties": {
         "iss": {
@@ -54,10 +52,6 @@
           "uuid": "82862fe1-738c-4949-941d-59eea4506d16",
           "default": false,
           "contentMediaType": ""
-        },
-        "jti": {
-          "type": "string",
-          "uuid": "9a979778-f986-4cda-bcd8-a08c53e8da2d"
         },
         "access_bearer": {
           "enum": [

@@ -3,6 +3,7 @@ package jwt
 import "aureole/internal/configs"
 
 func (c *config) setDefaults() {
+	c.PathPrefix = "/" + AdapterName
 	c.RefreshUrl = "/refresh"
 	configs.SetDefault(&c.Iss, "Aureole Server")
 	configs.SetDefault(&c.Aud, []string{})

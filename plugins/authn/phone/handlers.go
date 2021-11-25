@@ -56,7 +56,7 @@ func Login(p *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Token == "" || input.Otp == "" {
-			return sendError(c, fiber.StatusBadRequest, "t and otp are required")
+			return sendError(c, fiber.StatusBadRequest, "token and otp are required")
 		}
 
 		t, err := jwt.ParseJWT(input.Token)
@@ -93,8 +93,8 @@ func Login(p *phone) func(*fiber.Ctx) error {
 			if p.manager != nil {
 				i, err = p.manager.OnUserAuthenticated(
 					&identity.Credential{
-						Name:  "phone",
-						Value: phone,
+						Name:  identity.Phone,
+						Value: phone.(string),
 					},
 					&identity.Identity{
 						Phone:         phone.(string),

@@ -2,7 +2,7 @@ package facebook
 
 import (
 	"aureole/internal/configs"
-	authnTypes "aureole/internal/plugins/authn/types"
+	authnT "aureole/internal/plugins/authn/types"
 )
 
 type (
@@ -10,11 +10,12 @@ type (
 		ClientId     string   `mapstructure:"client_id"`
 		ClientSecret string   `mapstructure:"client_secret"`
 		Scopes       []string `mapstructure:"scopes"`
-		RedirectUri  string
 		Fields       []string `mapstructure:"fields"`
+		PathPrefix   string
+		RedirectUri  string
 	}
 )
 
-func (facebookAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (facebookAdapter) Create(conf *configs.Authn) authnT.Authenticator {
 	return &facebook{rawConf: conf}
 }

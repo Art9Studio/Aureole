@@ -2,16 +2,17 @@ package jwt
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/authn"
-	"aureole/internal/plugins/authz"
 	authzTypes "aureole/internal/plugins/authz/types"
-	ckeyTypes "aureole/internal/plugins/cryptokey/types"
-	_interface "aureole/internal/router/interface"
+	"aureole/internal/plugins/core"
+	ckeyT "aureole/internal/plugins/cryptokey/types"
+	"aureole/internal/router/interface"
+	state "aureole/internal/state/interface"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"os"
 	"path"
 	"regexp"
@@ -26,16 +27,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type jwtAuthz struct {
-	appName       string
-	rawConf       *configs.Authz
-	conf          *config
-	signKey       ckeyTypes.CryptoKey
-	verifyKeys    map[string]ckeyTypes.CryptoKey
-	nativeQueries map[string]string
-}
+const PluginID = "4844"
 
 type (
+	jwtAuthz struct {
+		pluginApi     core.PluginAPI
+		app           state.AppState
+		rawConf       *configs.Authz
+		conf          *config
+		signKey       ckeyT.CryptoKey
+		verifyKeys    map[string]ckeyT.CryptoKey
+		nativeQueries map[string]string
+	}
 	tokenType  string
 	bearerType string
 )
@@ -63,24 +66,26 @@ var keyMap = map[string]map[string]string{
 	},
 }
 
-func (j *jwtAuthz) Init(appName string) (err error) {
-	j.appName = appName
-	j.rawConf.PathPrefix = "/" + AdapterName
-
+func (j *jwtAuthz) Init(appName string, api core.PluginAPI) (err error) {
+	j.pluginApi = api
 	j.conf, err = initConfig(&j.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	pluginsApi := authz.Repository.PluginApi
-	j.signKey, err = pluginsApi.Project.GetCryptoKey(j.conf.SignKey)
+	j.app, err = j.pluginApi.GetApp(appName)
 	if err != nil {
 		return err
 	}
 
-	j.verifyKeys = make(map[string]ckeyTypes.CryptoKey)
+	j.signKey, err = j.pluginApi.GetCryptoKey(j.conf.SignKey)
+	if err != nil {
+		return err
+	}
+
+	j.verifyKeys = make(map[string]ckeyT.CryptoKey)
 	for _, keyName := range j.conf.VerifyKeys {
-		j.verifyKeys[keyName], err = pluginsApi.Project.GetCryptoKey(keyName)
+		j.verifyKeys[keyName], err = j.pluginApi.GetCryptoKey(keyName)
 		if err != nil {
 			return err
 		}
@@ -94,6 +99,10 @@ func (j *jwtAuthz) Init(appName string) (err error) {
 
 	createRoutes(j)
 	return err
+}
+
+func (*jwtAuthz) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -126,11 +135,11 @@ func createRoutes(j *jwtAuthz) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
-			Path:    j.rawConf.PathPrefix + j.conf.RefreshUrl,
+			Path:    j.conf.PathPrefix + j.conf.RefreshUrl,
 			Handler: Refresh(j),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(j.appName, routes)
+	j.pluginApi.GetRouter().AddAppRoutes(j.app.GetName(), routes)
 }
 
 func (j *jwtAuthz) GetNativeQueries() map[string]string {
@@ -176,7 +185,15 @@ func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t
 	case AccessToken:
 		token := jwt.New()
 		// todo: think about multiple errors handling
-		err := token.Set(jwt.IssuerKey, conf.Iss)
+		jti, err := gonanoid.New(16)
+		if err != nil {
+			return nil, err
+		}
+		err = token.Set(jwt.JwtIDKey, jti)
+		if err != nil {
+			return nil, err
+		}
+		err = token.Set(jwt.IssuerKey, conf.Iss)
 		if err != nil {
 			return nil, err
 		}
@@ -185,10 +202,6 @@ func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t
 			return nil, err
 		}
 		err = token.Set(jwt.NotBeforeKey, conf.Nbf)
-		if err != nil {
-			return nil, err
-		}
-		err = token.Set(jwt.JwtIDKey, conf.Jti)
 		if err != nil {
 			return nil, err
 		}
@@ -314,7 +327,7 @@ func defaultPayload(payload *authzTypes.Payload) (map[string]interface{}, error)
 	return p, nil
 }
 
-func signToken(signKey ckeyTypes.CryptoKey, token jwt.Token) ([]byte, error) {
+func signToken(signKey ckeyT.CryptoKey, token jwt.Token) ([]byte, error) {
 	keySet := signKey.GetPrivateSet()
 
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {

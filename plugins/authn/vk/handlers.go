@@ -44,8 +44,8 @@ func Login(v *vk) func(*fiber.Ctx) error {
 		if v.manager != nil {
 			i, err = v.manager.OnUserAuthenticated(
 				&identity.Credential{
-					Name:  "email",
-					Value: userData["email"],
+					Name:  identity.Email,
+					Value: userData["email"].(string),
 				},
 				&identity.Identity{
 					Email: userData["email"].(string),
@@ -60,10 +60,10 @@ func Login(v *vk) func(*fiber.Ctx) error {
 			}
 		} else {
 			i = map[string]interface{}{
-				"email":     userData["email"],
-				"provider":  AdapterName,
-				"social_id": userData["user_id"],
-				"user_data": userData,
+				identity.Email: userData["email"],
+				"provider":     AdapterName,
+				"social_id":    userData["user_id"],
+				"user_data":    userData,
 			}
 		}
 

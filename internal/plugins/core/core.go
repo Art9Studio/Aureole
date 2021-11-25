@@ -3,24 +3,25 @@ package core
 import (
 	"fmt"
 	"sync"
-
-	"github.com/gofiber/fiber/v2"
 )
 
-type Adapter interface {
-}
+type (
+	Adapter interface {
+	}
 
-type Route struct {
-	Method  string
-	Path    string
-	Handler func(*fiber.Ctx) error
-}
+	PluginInitializer interface {
+		Init(api PluginAPI) error
+	}
 
-type Repository struct {
-	adaptersMU sync.Mutex
-	adapters   map[string]Adapter
-	PluginApi  *PluginApi
-}
+	AppPluginInitializer interface {
+		Init(appName string, api PluginAPI) error
+	}
+
+	Repository struct {
+		adaptersMU sync.Mutex
+		adapters   map[string]Adapter
+	}
+)
 
 // Get returns kstorage adapter if it exists
 func (repo *Repository) Get(name string) (Adapter, error) {
@@ -41,7 +42,6 @@ func (repo *Repository) Register(name string, a Adapter) {
 	if name == "" {
 		panic("adapter Name can't be empty")
 	}
-
 	if _, ok := repo.adapters[name]; ok {
 		panic("multiply Register call for adapter " + name)
 	}
@@ -53,6 +53,5 @@ func CreateRepository() *Repository {
 	return &Repository{
 		adapters:   make(map[string]Adapter),
 		adaptersMU: sync.Mutex{},
-		PluginApi:  &pluginApi,
 	}
 }

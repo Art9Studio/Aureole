@@ -1,21 +1,27 @@
 package router
 
 import (
-	_interface "aureole/internal/router/interface"
+	routerT "aureole/internal/router/interface"
 	"aureole/internal/state/app"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"path"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
-type TRouter struct {
-	AppRoutes     map[string][]*_interface.Route
-	ProjectRoutes []*_interface.Route
-}
+type (
+	Router struct {
+		AppRoutes     map[string][]*routerT.Route
+		ProjectRoutes []*routerT.Route
+	}
+)
 
-var Router *TRouter
+var (
+	router *Router
+	once   sync.Once
+)
 
 // CreateServer initializes router and creates routes for each application
 func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
@@ -24,7 +30,7 @@ func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 	r.Use(logger.New())
 	v := r.Group("")
 
-	for appName, routes := range Router.AppRoutes {
+	for appName, routes := range router.AppRoutes {
 		pathPrefix := apps[appName].PathPrefix
 		appR := v.Group(pathPrefix)
 
@@ -33,22 +39,27 @@ func CreateServer(apps map[string]*app.App) (*fiber.App, error) {
 		}
 	}
 
-	for _, route := range Router.ProjectRoutes {
+	for _, route := range router.ProjectRoutes {
 		v.Add(route.Method, route.Path, route.Handler)
 	}
 
 	return r, nil
 }
 
-func Init() *TRouter {
-	Router = &TRouter{
-		AppRoutes:     make(map[string][]*_interface.Route),
-		ProjectRoutes: []*_interface.Route{},
+func GetRouter() routerT.Router {
+	if router == nil {
+		once.Do(
+			func() {
+				router = &Router{
+					AppRoutes:     make(map[string][]*routerT.Route),
+					ProjectRoutes: []*routerT.Route{},
+				}
+			})
 	}
-	return Router
+	return router
 }
 
-func (r *TRouter) AddAppRoutes(appName string, routes []*_interface.Route) {
+func (r *Router) AddAppRoutes(appName string, routes []*routerT.Route) {
 	for i := range routes {
 		routes[i].Path = path.Clean(routes[i].Path)
 	}
@@ -60,7 +71,7 @@ func (r *TRouter) AddAppRoutes(appName string, routes []*_interface.Route) {
 	}
 }
 
-func (r *TRouter) AddProjectRoutes(routes []*_interface.Route) {
+func (r *Router) AddProjectRoutes(routes []*routerT.Route) {
 	for i := range routes {
 		routes[i].Path = path.Clean(routes[i].Path)
 	}
@@ -68,10 +79,10 @@ func (r *TRouter) AddProjectRoutes(routes []*_interface.Route) {
 	r.ProjectRoutes = append(r.ProjectRoutes, routes...)
 }
 
-func (r *TRouter) GetAppRoutes() map[string][]*_interface.Route {
+func (r *Router) GetAppRoutes() map[string][]*routerT.Route {
 	return r.AppRoutes
 }
 
-func (r *TRouter) GetProjectRoutes() []*_interface.Route {
+func (r *Router) GetProjectRoutes() []*routerT.Route {
 	return r.ProjectRoutes
 }

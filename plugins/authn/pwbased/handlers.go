@@ -29,7 +29,7 @@ func Login(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		pw, err := p.manager.GetData(cred, AdapterName, "password")
+		pw, err := p.manager.GetData(cred, AdapterName, identity.Password)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -77,7 +77,7 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		user, err := p.manager.OnRegister(cred, i, AdapterName, map[string]interface{}{"password": pwHash})
+		user, err := p.manager.OnRegister(cred, i, AdapterName, map[string]interface{}{identity.Password: pwHash})
 		if err != nil {
 			return err
 		}
@@ -162,10 +162,11 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 
 		_, err = p.manager.Update(
 			&identity.Credential{
-				Name:  "email",
-				Value: email},
+				Name:  identity.Email,
+				Value: email.(string),
+			},
 			AdapterName,
-			map[string]interface{}{"password": pwHash})
+			map[string]interface{}{identity.Password: pwHash})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -231,11 +232,11 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 
 		_, err = p.manager.Update(
 			&identity.Credential{
-				Name:  "email",
-				Value: email,
+				Name:  identity.Email,
+				Value: email.(string),
 			},
 			AdapterName,
-			map[string]interface{}{"email_verified": true})
+			map[string]interface{}{identity.EmailVerified: true})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

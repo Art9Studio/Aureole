@@ -2,19 +2,24 @@ package memory
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/core"
 	"encoding/json"
 	"errors"
 	"github.com/coocood/freecache"
 	"github.com/mitchellh/mapstructure"
 )
 
+const PluginID = "7662"
+
 type Storage struct {
-	rawConf *configs.Storage
-	conf    *config
-	cache   *freecache.Cache
+	pluginApi core.PluginAPI
+	rawConf   *configs.Storage
+	conf      *config
+	cache     *freecache.Cache
 }
 
-func (s *Storage) Init() error {
+func (s *Storage) Init(api core.PluginAPI) error {
+	s.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -23,6 +28,10 @@ func (s *Storage) Init() error {
 	s.conf = adapterConf
 	s.cache = freecache.NewCache(s.conf.Size * 1024 * 1024)
 	return nil
+}
+
+func (*Storage) GetPluginID() string {
+	return PluginID
 }
 
 func (s *Storage) Set(k string, v interface{}, exp int) error {

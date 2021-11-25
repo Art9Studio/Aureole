@@ -5,6 +5,7 @@ import (
 )
 
 func (c *config) setDefaults() {
+	c.PathPrefix = "/"
 	configs.SetDefault(&c.CompatHashers, []string{})
 	c.Login.setDefaults()
 	c.Register.setDefaults()

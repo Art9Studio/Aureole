@@ -10,6 +10,10 @@ import _ "aureole/plugins/authn/apple"
 
 import _ "aureole/plugins/authz/jwt"
 
+import _ "aureole/plugins/2fa/authenticator"
+import _ "aureole/plugins/2fa/sms"
+import _ "aureole/plugins/2fa/yubikey"
+
 import _ "aureole/plugins/kstorage/file"
 import _ "aureole/plugins/kstorage/url"
 import _ "aureole/plugins/kstorage/vault"

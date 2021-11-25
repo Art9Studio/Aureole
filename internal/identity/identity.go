@@ -9,9 +9,9 @@ type (
 	ManagerI interface {
 		OnUserAuthenticated(*Credential, *Identity, string, map[string]interface{}) (map[string]interface{}, error)
 		OnRegister(*Credential, *Identity, string, map[string]interface{}) (map[string]interface{}, error)
-		GetData(*Credential, string, string) (interface{}, error)
+		On2FA(*Credential, map[string]interface{}) error
+		GetData(*Credential, string, string) (interface{}, error) // описать поля, которые можем получить
 		Update(*Credential, string, map[string]interface{}) (map[string]interface{}, error)
-		Is2FactorAvailable(*Credential, string) (bool, error)
 		CheckFeaturesAvailable([]string) error
 	}
 
@@ -20,9 +20,10 @@ type (
 
 	Credential struct {
 		Name  string
-		Value interface{}
+		Value string
 	}
 
+	// создать константы под все поля
 	Identity struct {
 		Id            interface{}
 		Email         string
@@ -33,9 +34,19 @@ type (
 	}
 )
 
+const (
+	ID            string = "id"
+	Email         string = "email"
+	Phone         string = "phone"
+	Username      string = "username"
+	EmailVerified string = "email_verified"
+	PhoneVerified string = "phone_verified"
+	Password      string = "password"
+)
+
 var features = map[string]bool{
 	"on_register": true,
-	"2factor":     true,
+	"2fa":         true,
 	"get_data":    true,
 	"update":      true,
 }
@@ -92,6 +103,10 @@ func (*Manager) OnRegister(_ *Credential, i *Identity, _ string, additional map[
 	}, nil
 }
 
+func (*Manager) On2FA(*Credential, map[string]interface{}) error {
+	return nil
+}
+
 func (*Manager) GetData(_ *Credential, _, output string) (interface{}, error) {
 
 	// check if user exists by cred
@@ -113,10 +128,6 @@ func (*Manager) Update(_ *Credential, _ string, fields map[string]interface{}) (
 	// update entity and return it
 
 	return fields, errors.New("can't determine type of updated data")
-}
-
-func (*Manager) Is2FactorAvailable(_ *Credential, _ string) (bool, error) {
-	return false, nil
 }
 
 func (*Manager) CheckFeaturesAvailable(requiredFeatures []string) error {

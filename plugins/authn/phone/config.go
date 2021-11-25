@@ -2,7 +2,7 @@ package phone
 
 import (
 	"aureole/internal/configs"
-	authnTypes "aureole/internal/plugins/authn/types"
+	authnT "aureole/internal/plugins/authn/types"
 )
 
 type (
@@ -12,6 +12,7 @@ type (
 		Sender      string `mapstructure:"sender"`
 		Template    string `mapstructure:"template"`
 		Otp         otp    `mapstructure:"otp"`
+		PathPrefix  string
 		SendUrl     string
 		ConfirmUrl  string
 		ResendUrl   string
@@ -26,6 +27,6 @@ type (
 	}
 )
 
-func (phoneAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (phoneAdapter) Create(conf *configs.Authn) authnT.Authenticator {
 	return &phone{rawConf: conf}
 }

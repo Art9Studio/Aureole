@@ -53,7 +53,7 @@
             "length": {
               "type": "integer",
               "uuid": "8db1e602-3d49-4645-9e73-c45eca7a54d9",
-              "default": 1,
+              "default": 6,
               "minimum": 1
             },
             "alphabet": {

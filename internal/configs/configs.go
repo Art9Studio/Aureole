@@ -12,43 +12,52 @@ type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion  string       `config:"api_version"`
-		PingPath    string       `config:"-"`
-		TestRun     bool         `config:"test_run"`
-		Service     Service      `config:"service"`
-		Apps        []App        `config:"apps"`
-		KeyStorages []KeyStorage `config:"key_storages"`
-		Storages    []Storage    `config:"storages"`
-		HasherConfs []PwHasher   `config:"hashers"`
-		CryptoKeys  []CryptoKey  `config:"crypto_keys"`
-		Senders     []Sender     `config:"senders"`
-		AdminConfs  []Admin      `config:"admin_plugins"`
+		APIVersion    string         `config:"api_version"`
+		PingPath      string         `config:"-"`
+		TestRun       bool           `config:"test_run"`
+		Service       Service        `config:"service"`
+		Apps          []App          `config:"apps"`
+		Authz         []Authz        `config:"authZ"`
+		SecondFactors []SecondFactor `config:"2fa"`
+		KeyStorages   []KeyStorage   `config:"key_storages"`
+		Storages      []Storage      `config:"storages"`
+		HasherConfs   []PwHasher     `config:"hashers"`
+		CryptoKeys    []CryptoKey    `config:"crypto_keys"`
+		Senders       []Sender       `config:"senders"`
+		AdminConfs    []Admin        `config:"admin_plugins"`
 	}
 
 	Service struct {
-		InternalKey string `config:"internal_key"`
-		Storage     string `config:"storage"`
+		SignKey string `config:"sign_key"`
+		EncKey  string `config:"enc_key"`
+		Storage string `config:"storage"`
 	}
 
 	App struct {
-		Name       string  `config:"name"`
-		Host       string  `config:"host"`
-		PathPrefix string  `config:"path_prefix"`
-		Authn      []Authn `config:"authN"`
-		Authz      Authz   `config:"authZ"`
+		Name         string  `config:"name"`
+		Host         string  `config:"host"`
+		PathPrefix   string  `config:"path_prefix"`
+		Authz        string  `config:"authZ"`
+		SecondFactor string  `config:"2fa"`
+		Authn        []Authn `config:"authN"`
 	}
 
 	Authn struct {
-		Type       string            `config:"type"`
-		PathPrefix string            `config:"-"`
-		Filter     map[string]string `config:"filter"`
-		Config     RawConfig         `config:"config"`
+		Type   string            `config:"type"`
+		Filter map[string]string `config:"filter"`
+		Config RawConfig         `config:"config"`
 	}
 
 	Authz struct {
-		Type       string    `config:"type"`
-		PathPrefix string    `config:"-"`
-		Config     RawConfig `config:"config"`
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
+	}
+
+	SecondFactor struct {
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
 	}
 
 	KeyStorage struct {
@@ -70,10 +79,9 @@ type (
 	}
 
 	CryptoKey struct {
-		Type       string    `config:"type"`
-		Name       string    `config:"name"`
-		PathPrefix string    `config:"-"`
-		Config     RawConfig `config:"config"`
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
 	}
 
 	Sender struct {

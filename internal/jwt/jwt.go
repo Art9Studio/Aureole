@@ -24,7 +24,7 @@ func CreateJWT(payload map[string]interface{}, exp int) (string, error) {
 		return "", err
 	}
 
-	keySet, err := project.GetServiceKey()
+	keySet, err := project.GetServiceSignKey()
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +36,7 @@ func CreateJWT(payload map[string]interface{}, exp int) (string, error) {
 }
 
 func ParseJWT(rawToken string) (jwt.Token, error) {
-	keySet, err := project.GetServiceKey()
+	keySet, err := project.GetServiceSignKey()
 	if err != nil {
 		return nil, err
 	}
