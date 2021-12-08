@@ -1,11 +1,15 @@
 api_version: "0.1"
 
+service:
+  internal_key: service
+  storage: vault_store
+
 apps:
   - name: app
     authn:
       # array of authenticators
     authz:
-      # array of authorizers
+      # authorizer config
 
 storages:
   # array of storages

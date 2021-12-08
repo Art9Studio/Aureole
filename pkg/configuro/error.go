@@ -48,7 +48,7 @@ func (e *ErrValidationTag) Error() string {
 }
 
 func (e *ErrValidationFunc) Error() string {
-	return fmt.Sprintf(`%s`, e.err)
+	return e.err.Error()
 }
 
 // Errors Return a list of Errors held inside ErrValidationErrors.

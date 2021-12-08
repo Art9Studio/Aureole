@@ -9,18 +9,18 @@ import (
 
 func SendMagicLink(e *email) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var i input
+		if err := c.BodyParser(&i); err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		token, err := createToken(e, map[string]interface{}{"email": input.Email})
+		token, err := createToken(e, map[string]interface{}{"email": i.Email})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		link := attachToken(e.magicLink, token)
 
-		err = e.sender.Send(input.Email, "", e.conf.Template, map[string]interface{}{"link": link})
+		err = e.sender.Send(i.Email, "", e.conf.Template, map[string]interface{}{"link": link})
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}

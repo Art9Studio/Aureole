@@ -9,7 +9,6 @@ import (
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
-	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"net/url"
@@ -48,9 +47,9 @@ func (e *email) Init(app app.AppState) (err error) {
 		fmt.Printf("manager for app '%s' is not declared, the persist layer is not available", app.GetName())
 	}
 
-	e.serviceKey, err = pluginApi.Project.GetCryptoKey("service_internal_key")
+	e.serviceKey, err = pluginApi.Project.GetServiceKey()
 	if err != nil {
-		return errors.New("cryptokey named 'service_internal_key' is not declared")
+		return err
 	}
 
 	e.sender, err = pluginApi.Project.GetSender(e.conf.Sender)
@@ -89,7 +88,7 @@ func createMagicLink(e *email) (*url.URL, error) {
 	}
 
 	u.Path = path.Clean(u.Path + e.rawConf.PathPrefix + e.conf.ConfirmUrl)
-	return u, nil
+	return &u, nil
 }
 
 func createRoutes(e *email) {

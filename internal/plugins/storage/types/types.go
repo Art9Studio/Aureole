@@ -3,6 +3,7 @@ package types
 type (
 	Application interface {
 		NativeQueries
+		KeysReadWrite
 	}
 
 	// Storage is an interface that defines methods for database session
@@ -24,7 +25,7 @@ type (
 		RawQuery(string, ...interface{}) (JSONCollResult, error)
 
 		// Read
-		Read(string) (JSONCollResult, error)
+		// Read(string) (JSONCollResult, error)
 
 		// Close terminates the currently active connection to the DBMS
 		Close() error

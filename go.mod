@@ -10,6 +10,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofiber/fiber/v2 v2.23.0
 	github.com/gofrs/uuid v4.1.0+incompatible // indirect
+	github.com/hashicorp/vault/api v1.3.0
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/joho/godotenv v1.4.0

@@ -10,7 +10,6 @@ import (
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
-	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"net/url"
@@ -79,9 +78,9 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
-	p.serviceKey, err = pluginApi.Project.GetCryptoKey("service_internal_key")
+	p.serviceKey, err = pluginApi.Project.GetServiceKey()
 	if err != nil {
-		return errors.New("cryptokey named 'service_internal_key' is not declared")
+		return err
 	}
 
 	p.authorizer, err = p.app.GetAuthorizer()
@@ -150,7 +149,7 @@ func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
 		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Verif.ConfirmUrl)
 	}
 
-	return u, nil
+	return &u, nil
 }
 
 func createRoutes(p *pwBased) {

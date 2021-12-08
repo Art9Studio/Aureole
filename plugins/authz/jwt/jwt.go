@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"regexp"
 	txtTmpl "text/template"
@@ -109,7 +109,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 func readNativeQueries(path string) (map[string]string, error) {
 	q := map[string]string{}
 
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

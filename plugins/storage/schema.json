@@ -17,6 +17,15 @@
   "oneOf": [
     {
       "$ref": "postgresql/schema.json"
+    },
+    {
+      "$ref": "file/schema.json"
+    },
+    {
+      "$ref": "url/schema.json"
+    },
+    {
+      "$ref": "vault/schema.json"
     }
   ]
 }

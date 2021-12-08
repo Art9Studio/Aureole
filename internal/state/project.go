@@ -7,6 +7,7 @@ import (
 	senderTypes "aureole/internal/plugins/sender/types"
 	storageTypes "aureole/internal/plugins/storage/types"
 	"aureole/internal/state/app"
+	"errors"
 	"fmt"
 )
 
@@ -15,6 +16,7 @@ type (
 		APIVersion string
 		TestRun    bool
 		PingPath   string
+		Service    service
 		Apps       map[string]*app.App
 		Storages   map[string]storageTypes.Storage
 		Hashers    map[string]pwhasherTypes.PwHasher
@@ -22,10 +24,29 @@ type (
 		CryptoKeys map[string]cryptoKeyTypes.CryptoKey
 		Admins     map[string]adminTypes.Admin
 	}
+
+	service struct {
+		internalKey cryptoKeyTypes.CryptoKey
+		storage     storageTypes.Storage
+	}
 )
 
 func (p *Project) IsTestRun() bool {
 	return p.TestRun
+}
+
+func (p *Project) GetServiceKey() (cryptoKeyTypes.CryptoKey, error) {
+	if p.Service.internalKey == nil {
+		return nil, errors.New("cannot find service key")
+	}
+	return p.Service.internalKey, nil
+}
+
+func (p *Project) GetServiceStorage() (storageTypes.Storage, error) {
+	if p.Service.storage == nil {
+		return nil, errors.New("cannot find service storage")
+	}
+	return p.Service.storage, nil
 }
 
 func (p *Project) GetApp(name string) (*app.App, error) {

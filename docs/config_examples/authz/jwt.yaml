@@ -1,6 +1,5 @@
 authZ:
   - type: "jwt"
-    name: jwt
     config:
       jti: "0"
       sign_key: jwk_file

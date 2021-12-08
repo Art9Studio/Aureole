@@ -18,7 +18,7 @@ func ListPluginStatus(p *Project) {
 			printStatus(name, authn)
 		}
 
-		printStatus("identity manager", p.Apps[appName].Authorizer)
+		printStatus("authorizer", p.Apps[appName].Authorizer)
 	}
 
 	if len(p.Storages) != 0 {

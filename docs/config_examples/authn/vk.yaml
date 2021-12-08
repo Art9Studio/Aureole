@@ -1,8 +1,6 @@
 authn:
   - type: "vk"
-    authZ: jwt
     config:
-      storage: db
       client_id: "${VK_CLIENT_ID}"
       client_secret: "${VK_SECRET}"
       scopes:

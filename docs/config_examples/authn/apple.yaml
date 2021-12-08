@@ -1,8 +1,6 @@
 authn:
   - type: "apple"
-    authZ: jwt
     config:
-      storage: db
       secret_key: apple_signin_key
       public_key: apple_keys
       client_id: "${APPLE_CLIENT_ID}"

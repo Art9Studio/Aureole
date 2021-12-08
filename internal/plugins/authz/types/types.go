@@ -24,8 +24,15 @@ type Payload struct {
 	NativeQ    func(queryName string, args ...interface{}) string
 }
 
-func NewPayload(authorizer Authorizer, storage storageT.Storage, data interface{}) *Payload {
-	p := data.(*Payload)
+func NewPayload(authorizer Authorizer, storage storageT.Storage, data map[string]interface{}) *Payload {
+	p := &Payload{
+		Id:       data["id"],
+		SocialId: data["social_id"],
+		Username: data["username"],
+		Phone:    data["phone"],
+		Email:    data["email"],
+		UserData: data["user_data"],
+	}
 
 	if storage != nil {
 		p.NativeQ = func(queryName string, args ...interface{}) string {

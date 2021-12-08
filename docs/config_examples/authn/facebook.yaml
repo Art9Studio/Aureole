@@ -1,8 +1,6 @@
 authn:
   - type: "facebook"
-    authZ: jwt
     config:
-      storage: db
       client_id: "${FACEBOOK_CLIENT_ID}"
       client_secret: "${FACEBOOK_SECRET}"
       scopes:

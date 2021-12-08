@@ -12,7 +12,7 @@ const tmpl = `
 	<h1>{{ $name }} </h1>
 	<ul>
 	{{ range $routes }}
-		<li>{{ .Method }} - {{ .SendUrl }}</li>
+		<li>{{ .Method }} - {{ .Path }}</li>
 	{{ end }}
 	</ul>
 {{ end }}

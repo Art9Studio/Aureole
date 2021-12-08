@@ -3,4 +3,5 @@ crypto_keys:
     name: pem_key
     config:
       alg: "ES256"
-      path: "keys/key.p8"
+      refresh_interval: 3600
+      storage: pem_keys_store

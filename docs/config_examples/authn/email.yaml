@@ -1,8 +1,6 @@
 authN:
   - type: "email"
-    authZ: jwt
     config:
-      storage: db
       sender: email
       template: magic_link
       exp: 300

@@ -18,7 +18,7 @@
       "additionalProperties": false,
       "required": [
         "alg",
-        "path"
+        "storage"
       ],
       "properties": {
         "alg": {
@@ -26,11 +26,18 @@
           "uuid": "2b554885-b634-4a0e-984e-8c508f837506",
           "minLength": 1
         },
-        "path": {
+        "storage": {
           "type": "string",
           "uuid": "9ea68918-2fa2-46e7-a0e4-0187feeae8e6",
           "minLength": 1,
-          "metatags": "@file_path"
+          "metatags": "@storage_ref"
+        },
+        "refresh_interval": {
+          "type": "integer",
+          "uuid": "44932b13-fa61-41fc-8db5-d44865e03464",
+          "minimum": 0,
+          "default": 86400,
+          "metatags": "@unit:s"
         }
       }
     }
