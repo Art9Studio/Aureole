@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/gofiber/fiber/v2 v2.20.2
+	github.com/gofiber/fiber/v2 v2.23.0
 	github.com/gofrs/uuid v4.1.0+incompatible // indirect
 	github.com/hashicorp/vault/api v1.3.0
 	github.com/jackc/pgx/v4 v4.13.0
@@ -17,7 +17,7 @@ require (
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.8
-	github.com/mitchellh/mapstructure v1.4.2
+	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.7.0
