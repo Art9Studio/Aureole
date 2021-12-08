@@ -2,7 +2,6 @@ authN:
   - type: "email"
     authZ: jwt
     config:
-      collection: identity
       storage: db
       sender: email
       template: magic_link

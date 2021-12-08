@@ -1,7 +1,6 @@
 package state
 
 import (
-	"aureole/internal/collections"
 	"aureole/internal/configs"
 	"aureole/internal/identity"
 	"aureole/internal/plugins/admin"
@@ -52,13 +51,8 @@ func Init(conf *configs.Project, p *Project) {
 	createApps(conf, p)
 	createAppPlugins(conf, p)
 
-	createCollections(conf, p)
-	createIdentities(conf, p)
-
 	initGlobalPlugins(p)
 	initAppPlugins(p)
-
-	initCollections(p)
 }
 
 func createGlobalPlugins(conf *configs.Project, p *Project) {
@@ -67,90 +61,6 @@ func createGlobalPlugins(conf *configs.Project, p *Project) {
 	createCryptoKeys(conf, p)
 	createStorages(conf, p)
 	createAdmins(conf, p)
-}
-
-func createAppPlugins(conf *configs.Project, p *Project) {
-	for appName := range p.Apps {
-		appState := p.Apps[appName]
-
-		var appConf configs.App
-		for _, a := range conf.Apps {
-			if a.Name == appName {
-				appConf = a
-			}
-		}
-
-		appState.Authenticators = createAuthenticators(&appConf)
-		appState.Authorizers = createAuthorizers(&appConf)
-	}
-}
-
-func createStorages(conf *configs.Project, p *Project) {
-	p.Storages = make(map[string]types.Storage)
-
-	for i := range conf.StorageConfs {
-		storageConf := conf.StorageConfs[i]
-		connSess, err := storage.New(&storageConf)
-		if err != nil {
-			fmt.Printf("open connection session to storage '%s': %v\n", storageConf.Name, err)
-		}
-
-		p.Storages[storageConf.Name] = connSess
-	}
-
-	cleanupStorages(conf, p)
-}
-
-func cleanupStorages(conf *configs.Project, p *Project) {
-	isUsedStorage := make(map[string]bool)
-
-	for storageName := range p.Storages {
-		isUsedStorage[storageName] = false
-
-		for _, appConf := range conf.Apps {
-			for _, authzItem := range appConf.Authz {
-				if storageName == authzItem.Config["storage"] {
-					isUsedStorage[storageName] = true
-					break
-				}
-			}
-
-			for _, authnItem := range appConf.Authn {
-				if storageName == authnItem.Config["storage"] {
-					isUsedStorage[storageName] = true
-					break
-				}
-			}
-		}
-	}
-}
-
-func createAdmins(conf *configs.Project, p *Project) {
-	p.Admins = make(map[string]adminTypes.Admin)
-
-	for i := range conf.AdminConfs {
-		adminConf := conf.AdminConfs[i]
-		a, err := admin.New(&adminConf)
-		if err != nil {
-			fmt.Printf("cannot create admin plugin '%s': %v\n", adminConf.Name, err)
-		}
-
-		p.Admins[adminConf.Name] = a
-	}
-
-	cleanupStorages(conf, p)
-}
-
-func createCollections(conf *configs.Project, p *Project) {
-	p.Collections = make(map[string]*collections.Collection)
-
-	for _, collConf := range conf.CollConfs {
-		coll, err := collections.Create(&collConf)
-		if err != nil {
-			fmt.Printf("cannot create collection '%s': %v\n", coll.Name, err)
-		}
-		p.Collections[collConf.Name] = coll
-	}
 }
 
 func createPwHashers(conf *configs.Project, p *Project) {
@@ -195,6 +105,55 @@ func createCryptoKeys(conf *configs.Project, p *Project) {
 	}
 }
 
+func createStorages(conf *configs.Project, p *Project) {
+	p.Storages = make(map[string]types.Storage)
+
+	for i := range conf.StorageConfs {
+		storageConf := conf.StorageConfs[i]
+		connSess, err := storage.New(&storageConf)
+		if err != nil {
+			fmt.Printf("open connection session to storage '%s': %v\n", storageConf.Name, err)
+		}
+
+		p.Storages[storageConf.Name] = connSess
+	}
+
+	cleanupStorages(conf, p)
+}
+
+func cleanupStorages(conf *configs.Project, p *Project) {
+	isUsedStorage := make(map[string]bool)
+
+	for storageName := range p.Storages {
+		isUsedStorage[storageName] = false
+
+		for _, appConf := range conf.Apps {
+			for _, authnItem := range appConf.Authn {
+				if storageName == authnItem.Config["storage"] {
+					isUsedStorage[storageName] = true
+					break
+				}
+			}
+		}
+	}
+}
+
+func createAdmins(conf *configs.Project, p *Project) {
+	p.Admins = make(map[string]adminTypes.Admin)
+
+	for i := range conf.AdminConfs {
+		adminConf := conf.AdminConfs[i]
+		a, err := admin.New(&adminConf)
+		if err != nil {
+			fmt.Printf("cannot create admin plugin '%s': %v\n", adminConf.Name, err)
+		}
+
+		p.Admins[adminConf.Name] = a
+	}
+
+	cleanupStorages(conf, p)
+}
+
 func createApps(conf *configs.Project, p *Project) {
 	p.Apps = make(map[string]*app.App, len(conf.Apps))
 
@@ -226,7 +185,7 @@ func createAppUrl(app *configs.App) (*url.URL, error) {
 	return appUrl, nil
 }
 
-func createIdentities(conf *configs.Project, p *Project) {
+func createAppPlugins(conf *configs.Project, p *Project) {
 	for appName := range p.Apps {
 		appState := p.Apps[appName]
 
@@ -237,13 +196,9 @@ func createIdentities(conf *configs.Project, p *Project) {
 			}
 		}
 
-		i, err := identity.Create(&appConf.Identity, p.Collections)
-		if err != nil {
-			fmt.Printf("cannot create idetity for app '%s'", appName)
-			appState.Identity = nil
-		} else {
-			appState.Identity = i
-		}
+		appState.Authenticators = createAuthenticators(&appConf)
+		appState.Authorizer = createAuthorizer(&appConf)
+		appState.IdentityManager = createIdentityManager(&appConf)
 	}
 }
 
@@ -264,32 +219,29 @@ func createAuthenticators(app *configs.App) map[string]authnTypes.Authenticator 
 	return authenticators
 }
 
-func createAuthorizers(app *configs.App) map[string]authzTypes.Authorizer {
-	authorizers := make(map[string]authzTypes.Authorizer, len(app.Authz))
-
-	for i := range app.Authz {
-		authzConf := app.Authz[i]
-		authorizer, err := authz.New(&authzConf)
-		if err != nil {
-			fmt.Printf("cannot create authorizer '%s' in app '%s': %v\n",
-				authzConf.Name, app.Name, err)
-		}
-
-		authorizers[authzConf.Name] = authorizer
+func createAuthorizer(app *configs.App) authzTypes.Authorizer {
+	authorizer, err := authz.New(&app.Authz)
+	if err != nil {
+		fmt.Printf("cannot create authorizer in app '%s': %v\n", app.Name, err)
 	}
 
-	return authorizers
+	return authorizer
 }
 
-func initCollections(p *Project) {
-	for collName := range p.Collections {
-		coll := p.Collections[collName]
-		err := coll.Init(p.Collections)
-		if err != nil {
-			fmt.Printf("cannot init collection '%s': %v\n", collName, err)
-			p.Collections[collName] = nil
-		}
+func createIdentityManager(app *configs.App) identity.ManagerI {
+	i, err := identity.Create()
+	if err != nil {
+		fmt.Printf("cannot create idetity manager for app '%s'", app.Name)
 	}
+	return i
+}
+
+func initGlobalPlugins(p *Project) {
+	initStorages(p)
+	initPwHashers(p)
+	initSenders(p)
+	initCryptoKeys(p)
+	initAdmins(p)
 }
 
 func initStorages(p *Project) {
@@ -340,18 +292,10 @@ func initAdmins(p *Project) {
 	}
 }
 
-func initGlobalPlugins(p *Project) {
-	initStorages(p)
-	initPwHashers(p)
-	initSenders(p)
-	initCryptoKeys(p)
-	initAdmins(p)
-}
-
 func initAppPlugins(p *Project) {
 	for name, a := range p.Apps {
 		initAuthenticators(a)
-		initAuthorizers(name, a)
+		initAuthorizer(name, a)
 	}
 }
 
@@ -365,12 +309,9 @@ func initAuthenticators(app *app.App) {
 	}
 }
 
-func initAuthorizers(appName string, app *app.App) {
-	for name, authorizer := range app.Authorizers {
-		if err := authorizer.Init(appName); err != nil {
-			fmt.Printf("cannot init authorizer '%s' in app '%s': %v\n",
-				name, app.Name, err)
-			app.Authorizers[name] = nil
-		}
+func initAuthorizer(appName string, app *app.App) {
+	if err := app.Authorizer.Init(appName); err != nil {
+		fmt.Printf("cannot init authorizer in app '%s': %v\n", app.Name, err)
+		app.Authorizer = nil
 	}
 }

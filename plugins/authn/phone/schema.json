@@ -17,8 +17,6 @@
       "uuid": "d1957b86-8589-424f-a172-1f31c6d158ed",
       "additionalProperties": false,
       "required": [
-        "collection",
-        "storage",
         "sender",
         "template"
       ],
@@ -28,18 +26,6 @@
           "uuid": "cfb7c269-6b59-47be-85d3-f565153c1062",
           "minLength": 1,
           "metatags": "@hasher_ref"
-        },
-        "collection": {
-          "type": "string",
-          "uuid": "8cdb29cb-a37a-42a9-b90d-cd7f79ca16e0",
-          "minLength": 1,
-          "metatags": "@collection_ref"
-        },
-        "storage": {
-          "type": "string",
-          "uuid": "c6de299b-39e0-4f45-b16c-fc317d5915c7",
-          "minLength": 1,
-          "metatags": "@storage_ref"
         },
         "sender": {
           "type": "string",

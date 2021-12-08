@@ -6,7 +6,6 @@ apps:
     host: "http://aureole:3000"
 
     identity:
-      collection: pwbased_identity
       email:
         enabled: true
 
@@ -15,17 +14,14 @@ apps:
         authZ: pwbased_jwt
         config:
           main_hasher: pwbased_argon2
-          collection: pwbased_pwbased
           storage: pwbased_one_db
           password_reset:
-            collection: pwbased_reset
             sender: pwbased_email
             template: pwbased_reset
             token:
               exp: 3600
               hash_func: "sha256"
           verification:
-            collection: pwbased_email_verification
             sender: pwbased_email
             template: pwbased_email_verification
             token:
@@ -46,52 +42,6 @@ apps:
           sign_key: pwbased_gen_keys
           verify_keys: [ pwbased_gen_keys ]
           payload: "${RES_PATH}/jwt_payload.json.tmpl"
-
-collections:
-  - type: "identity"
-    name: pwbased_identity
-    config:
-      name: "users"
-      pk: "id"
-      fields_map:
-        id: "id"
-        username: "username"
-        email: "email"
-        phone: "phone"
-        is_active: no
-        created: no
-        email_verified: "email_verified"
-
-  - type: "pwbased"
-    name: pwbased_pwbased
-    parent: pwbased_identity
-    config:
-      fields_map:
-        password: "password"
-
-  - type: "password_reset"
-    name: pwbased_reset
-    config:
-      name: "password_resets"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
-
-  - type: "email_verification"
-    name: pwbased_email_verification
-    config:
-      name: "email_verifications"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
 
 hashers:
   - type: "argon2"

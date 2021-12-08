@@ -40,41 +40,4 @@ func isZero(v reflect.Value) bool {
 // todo: run all setDefaults recursively with reflect
 func (p *Project) setDefaults() {
 	p.PingPath = "/ping"
-
-	for i := range p.Apps {
-		a := p.Apps[i]
-		a.setDefaults()
-		p.Apps[i] = a
-	}
-}
-
-func (a *App) setDefaults() {
-	a.Identity.setDefaults()
-}
-
-func (i *Identity) setDefaults() {
-	SetDefault(&i.Collection, "identity")
-
-	keys := []string{"enabled", "unique", "required", "credential"}
-
-	i.Id = setDefaultTrait(i.Id, keys, []bool{true, true, true, false})
-	i.Username = setDefaultTrait(i.Username, keys, []bool{true, false, false, true})
-	i.Email = setDefaultTrait(i.Email, keys, []bool{false, true, true, true})
-	i.Phone = setDefaultTrait(i.Phone, keys, []bool{false, true, false, true})
-}
-
-func setDefaultTrait(trait map[string]bool, keys []string, vals []bool) map[string]bool {
-	if trait == nil {
-		trait = map[string]bool{}
-		for i, key := range keys {
-			trait[key] = vals[i]
-		}
-	} else {
-		for i, key := range keys {
-			if _, ok := trait[key]; !ok {
-				trait[key] = vals[i]
-			}
-		}
-	}
-	return trait
 }

@@ -9,7 +9,7 @@ from md_parser import MDParser
 
 BASE_DIR = Path(__file__).parent.parent.resolve()
 JSON_SCHEMAS_DIR = BASE_DIR / 'json_schemas'
-DESCRIPTIONS_DIR = BASE_DIR / 'descriptions'
+DESCRIPTIONS_DIR = BASE_DIR / 'descriptions/ru'
 EXAMPLES_DIR = BASE_DIR / 'config_examples'
 MD_DIR = BASE_DIR / 'vuepress_docs/docs/config'
 
@@ -56,8 +56,7 @@ def assemble_json_schema(schema_path):
                 definition_ref = definition_name.lower().replace(' ', '-')
 
                 if definition_path:
-                    plugin_names = [d.name for d in Path('../plugins').iterdir() if d.is_dir()] + ['collection',
-                                                                                                      'identity']
+                    plugin_names = [d.name for d in Path('../plugins').iterdir() if d.is_dir()]
                     plugin_name = list(set(plugin_names) & set(p.name for p in Path(definition_path).parents))[0]
                     obj['$ref'] = f'[{definition_name}](./{plugin_name}.md#{definition_ref})'
                 else:
@@ -72,7 +71,7 @@ def assemble_json_schema(schema_path):
 
 
 def load_descriptions():
-    with open(DESCRIPTIONS_DIR / 'ru.yaml', 'r', encoding='utf-8') as descriptions_f:
+    with open(DESCRIPTIONS_DIR / 'schema.yaml', 'r', encoding='utf-8') as descriptions_f:
         descriptions = yaml.load(descriptions_f, Loader=yaml.BaseLoader)
     return descriptions
 
@@ -81,7 +80,7 @@ def load_metatags():
     with open(JSON_SCHEMAS_DIR / 'metatags.yaml', 'r', encoding='utf-8') as metatags_f:
         metatags = yaml.load(metatags_f, Loader=yaml.BaseLoader)['metatags']
 
-    with open(DESCRIPTIONS_DIR / 'ru_meta.yaml', 'r', encoding='utf-8') as descriptions_f:
+    with open(DESCRIPTIONS_DIR / 'metatags.yaml', 'r', encoding='utf-8') as descriptions_f:
         meta_descriptions = yaml.load(descriptions_f, Loader=yaml.BaseLoader)
 
     for tag, uuid in metatags.items():
@@ -109,9 +108,7 @@ def split_json_schema(project_schema):
     plugin_keys = {
         'authn': app_props_keys + ['authN', 'items'],
         'authz': app_props_keys + ['authZ', 'items'],
-        'identity': app_props_keys + ['identity'],
         'storage': props_keys + ['storages', 'items'],
-        'collection': props_keys + ['collections', 'items'],
         'hasher': props_keys + ['hashers', 'items'],
         'crypto_key': props_keys + ['crypto_keys', 'items'],
         'sender': props_keys + ['senders', 'items'],
@@ -137,6 +134,12 @@ def set_by_path(root, keys, value):
 
 
 if __name__ == '__main__':
+    for f in Path(MD_DIR).glob('*.md'):
+        try:
+            f.unlink()
+        except OSError as e:
+            print("Error: %s : %s" % (f, e.strerror))
+
     project_schema = load_json_schema()
     plugin_schemas = split_json_schema(project_schema)
 
@@ -147,9 +150,6 @@ if __name__ == '__main__':
 
     for plugin_name, plugin_schema in plugin_schemas.items():
         plugin_md = parser.parse_schema(plugin_schema)
-
-        if plugin_name == 'collection':
-            plugin_md.insert(0, '---\nsidebarDepth: 0\n---\n')
 
         with open(MD_DIR / f'{plugin_name}.md', 'w', encoding='utf-8') as plugin_md_f:
             plugin_md_f.writelines(plugin_md)

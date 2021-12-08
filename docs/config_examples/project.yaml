@@ -2,8 +2,6 @@ api_version: "0.1"
 
 apps:
   - name: app
-    identity:
-      # identity config
     authn:
       # array of authenticators
     authz:
@@ -11,8 +9,6 @@ apps:
 
 storages:
   # array of storages
-collections:
-  # array of collections
 hashers:
   # array of hashers
 crypo_keys:

@@ -9,8 +9,6 @@ type (
 	config struct {
 		MainHasher    string    `mapstructure:"main_hasher"`
 		CompatHashers []string  `mapstructure:"compat_hashers"`
-		Collection    string    `mapstructure:"collection"`
-		Storage       string    `mapstructure:"storage"`
 		Login         login     `mapstructure:"login"`
 		Register      register  `mapstructure:"register"`
 		Reset         resetConf `mapstructure:"password_reset"`

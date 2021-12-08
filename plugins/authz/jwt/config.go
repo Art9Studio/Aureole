@@ -18,9 +18,9 @@ type config struct {
 	VerifyKeys    []string   `mapstructure:"verify_keys"`
 	AccessExp     int        `mapstructure:"access_exp"`
 	RefreshExp    int        `mapstructure:"refresh_exp"`
+	TmplPath      string     `mapstructure:"payload"`
+	NativeQueries string     `mapstructure:"native_queries"`
 	RefreshUrl    string
-	TmplPath      string `mapstructure:"payload"`
-	NativeQueries string `mapstructure:"native_queries"`
 }
 
 func (j jwtAdapter) Create(conf *configs.Authz) types.Authorizer {

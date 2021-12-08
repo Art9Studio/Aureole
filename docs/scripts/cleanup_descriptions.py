@@ -17,7 +17,7 @@ def get_unused_descriptions(descriptions, json_schema):
 
 
 def load_descriptions():
-    with open(DESCRIPTIONS_DIR / 'ru.yaml', 'r', encoding='utf-8') as descriptions_f:
+    with open(DESCRIPTIONS_DIR / 'schema.yaml', 'r', encoding='utf-8') as descriptions_f:
         yaml = ruamel.yaml.YAML()
         descriptions = yaml.load(descriptions_f)
     return descriptions
@@ -71,6 +71,6 @@ if __name__ == '__main__':
     for uuid in unused:
         del descriptions[uuid]
 
-    with open(DESCRIPTIONS_DIR / 'ru.yaml', 'w', encoding='utf-8') as descriptions_f:
+    with open(DESCRIPTIONS_DIR / 'schema.yaml', 'w', encoding='utf-8') as descriptions_f:
         yaml = ruamel.yaml.YAML()
         data = yaml.dump(descriptions, descriptions_f)

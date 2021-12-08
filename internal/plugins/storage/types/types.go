@@ -1,18 +1,8 @@
 package types
 
-import (
-	"aureole/internal/collections"
-)
-
 type (
 	Application interface {
-		// IsCollExists checks whether the given collection exists
-		IsCollExists(collections.Spec) (bool, error)
-		Identity
-		PwBased
-		Session
 		NativeQueries
-		SocialAuth
 	}
 
 	// Storage is an interface that defines methods for database session
@@ -20,8 +10,6 @@ type (
 		Init() error
 
 		Application
-
-		CheckFeaturesAvailable([]string) error
 
 		// RelInfo returns information about tables relationships
 		RelInfo() map[CollPair]RelInfo

@@ -1,7 +1,0 @@
-authZ:
-  - type: "session"
-    name: session
-    config:
-      collection: session
-      storage: db
-      domain: "localhost"

@@ -2,7 +2,6 @@ authn:
   - type: "vk"
     authZ: jwt
     config:
-      collection: oauth2
       storage: db
       client_id: "${VK_CLIENT_ID}"
       client_secret: "${VK_SECRET}"

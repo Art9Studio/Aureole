@@ -17,24 +17,10 @@
       "uuid": "2d5afb20-e623-440b-ae0f-2c7b52194dbd",
       "additionalProperties": false,
       "required": [
-        "collection",
-        "storage",
         "client_id",
         "client_secret"
       ],
       "properties": {
-        "collection": {
-          "type": "string",
-          "uuid": "03805493-b0b6-4fde-80ec-fdc0ef8dccb7",
-          "minLength": 1,
-          "metatags": "@collection_ref"
-        },
-        "storage": {
-          "type": "string",
-          "uuid": "849be0c4-b429-4505-9759-418f299eacda",
-          "minLength": 1,
-          "metatags": "@storage_ref"
-        },
         "client_id": {
           "type": "string",
           "uuid": "9b839e77-0c00-4f89-a7a4-cd187a7977a7",

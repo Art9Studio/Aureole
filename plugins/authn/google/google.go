@@ -5,7 +5,6 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
-	storageT "aureole/internal/plugins/storage/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"fmt"
@@ -15,15 +14,11 @@ import (
 	"path"
 )
 
-const Provider = "google"
-
 type google struct {
-	app      app.AppState
-	rawConf  *configs.Authn
-	conf     *config
-	identity *identity.Identity
-	// coll       *collections.Collection
-	storage    storageT.Storage
+	app        app.AppState
+	rawConf    *configs.Authn
+	conf       *config
+	manager    identity.ManagerI
 	provider   *oauth2.Config
 	authorizer authzTypes.Authorizer
 }
@@ -37,25 +32,14 @@ func (g *google) Init(app app.AppState) (err error) {
 		return err
 	}
 
-	// pluginApi := authn.Repository.PluginApi
-	g.identity, err = app.GetIdentity()
+	g.manager, err = app.GetIdentityManager()
 	if err != nil {
-		return fmt.Errorf("identity for app '%s' is not declared", app.GetName())
+		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", app.GetName())
 	}
 
-	/*g.coll, err = pluginApi.Project.GetCollection(g.conf.Coll)
+	g.authorizer, err = g.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("collection named '%s' is not declared", g.conf.Coll)
-	}
-
-	g.storage, err = pluginApi.Project.GetStorage(g.conf.Storage)
-	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared", g.conf.Storage)
-	}*/
-
-	g.authorizer, err = g.app.GetAuthorizer(g.rawConf.AuthzName)
-	if err != nil {
-		return fmt.Errorf("authorizer named '%s' is not declared", g.rawConf.AuthzName)
+		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
 	}
 
 	if err := initProvider(g); err != nil {

@@ -17,8 +17,6 @@
       "uuid": "2ff386b1-1f0f-4596-85be-e4433f0c7c97",
       "additionalProperties": false,
       "required": [
-        "collection",
-        "storage",
         "secret_key",
         "public_key",
         "client_id",
@@ -26,18 +24,6 @@
         "key_id"
       ],
       "properties": {
-        "collection": {
-          "type": "string",
-          "uuid": "67338693-1c94-4931-9085-3fdc73a0f29c",
-          "minLength": 1,
-          "metatags": "@collection_ref"
-        },
-        "storage": {
-          "type": "string",
-          "uuid": "50759058-8a26-4c7c-9c85-0fde0535a30b",
-          "minLength": 1,
-          "metatags": "@storage_ref"
-        },
         "secret_key": {
           "type": "string",
           "uuid": "76cb35c6-c81b-4486-8c71-a40a87aae590",

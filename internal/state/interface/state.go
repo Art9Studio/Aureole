@@ -1,7 +1,6 @@
 package _interface
 
 import (
-	"aureole/internal/collections"
 	"aureole/internal/identity"
 	authzTypes "aureole/internal/plugins/authz/types"
 	cryptoKeyTypes "aureole/internal/plugins/cryptokey/types"
@@ -14,7 +13,6 @@ import (
 type (
 	ProjectState interface {
 		IsTestRun() bool
-		GetCollection(name string) (*collections.Collection, error)
 		GetStorage(name string) (storageTypes.Storage, error)
 		GetHasher(name string) (pwhasherTypes.PwHasher, error)
 		GetSender(name string) (senderTypes.Sender, error)
@@ -25,7 +23,8 @@ type (
 		GetName() string
 		GetUrl() (*url.URL, error)
 		GetPathPrefix() string
-		GetIdentity() (*identity.Identity, error)
-		GetAuthorizer(name string) (authzTypes.Authorizer, error)
+		GetIdentityManager() (identity.ManagerI, error)
+		GetAuthorizer() (authzTypes.Authorizer, error)
+		Filter(data, filter map[string]string) (bool, error)
 	}
 )

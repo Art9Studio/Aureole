@@ -1,7 +1,6 @@
 package state
 
 import (
-	"aureole/internal/collections"
 	adminTypes "aureole/internal/plugins/admin/types"
 	cryptoKeyTypes "aureole/internal/plugins/cryptokey/types"
 	pwhasherTypes "aureole/internal/plugins/pwhasher/types"
@@ -13,16 +12,15 @@ import (
 
 type (
 	Project struct {
-		APIVersion  string
-		TestRun     bool
-		PingPath    string
-		Apps        map[string]*app.App
-		Collections map[string]*collections.Collection
-		Storages    map[string]storageTypes.Storage
-		Hashers     map[string]pwhasherTypes.PwHasher
-		Senders     map[string]senderTypes.Sender
-		CryptoKeys  map[string]cryptoKeyTypes.CryptoKey
-		Admins      map[string]adminTypes.Admin
+		APIVersion string
+		TestRun    bool
+		PingPath   string
+		Apps       map[string]*app.App
+		Storages   map[string]storageTypes.Storage
+		Hashers    map[string]pwhasherTypes.PwHasher
+		Senders    map[string]senderTypes.Sender
+		CryptoKeys map[string]cryptoKeyTypes.CryptoKey
+		Admins     map[string]adminTypes.Admin
 	}
 )
 
@@ -37,15 +35,6 @@ func (p *Project) GetApp(name string) (*app.App, error) {
 	}
 
 	return a, nil
-}
-
-func (p *Project) GetCollection(name string) (*collections.Collection, error) {
-	c, ok := p.Collections[name]
-	if !ok || c == nil {
-		return nil, fmt.Errorf("can't find collection named '%s'", name)
-	}
-
-	return c, nil
 }
 
 func (p *Project) GetStorage(name string) (storageTypes.Storage, error) {

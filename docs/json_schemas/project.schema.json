@@ -6,7 +6,6 @@
   "required": [
     "api_version",
     "apps",
-    "collections",
     "storages"
   ],
   "properties": {
@@ -32,14 +31,6 @@
       "uuid": "5d2ef815-0404-45ab-abf2-f28257205f22",
       "items": {
         "$ref": "../../plugins/storage/schema.json"
-      },
-      "minItems": 1
-    },
-    "collections": {
-      "type": "array",
-      "uuid": "a8b52a9e-92ec-44dd-9bbd-02adb9a66e1a",
-      "items": {
-        "$ref": "collection.schema.json"
       },
       "minItems": 1
     },

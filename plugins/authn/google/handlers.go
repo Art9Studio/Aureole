@@ -1,10 +1,9 @@
 package google
 
 import (
+	"aureole/internal/identity"
 	authzT "aureole/internal/plugins/authz/types"
-	storageT "aureole/internal/plugins/storage/types"
 	"context"
-	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
@@ -35,69 +34,53 @@ func Login(g *google) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, errors.Wrap(err, "error while exchange").Error())
 		}
 
-		var (
-			socAuth *storageT.SocialAuthData
-			user    *storageT.IdentityData
-		)
-		email, _ := jwtT.Get("email")
-		/*s := &g.coll.Spec
-		filter := []storageT.Filter{
-			{Name: s.FieldsMap["email"].Name, Value: email},
-			{Name: s.FieldsMap["provider"].Name, Value: Provider},
+		email, ok := jwtT.Get("email")
+		if !ok {
+			return sendError(c, fiber.StatusInternalServerError, "can't get 'email' from token")
 		}
-		exist, err := g.storage.IsSocialAuthExist(s, filter)
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+		socialId, ok := jwtT.Get("sub")
+		if !ok {
+			return sendError(c, fiber.StatusInternalServerError, "can't get 'social_id' from token")
 		}
-
-		if exist {
-			rawSocAuth, err := g.storage.GetSocialAuth(s, filter)
-			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-			socAuth = storageT.NewSocialAuthData(rawSocAuth, s.FieldsMap)
-
-			if socAuth.UserId != nil {
-				iSpecs := &g.identity.Collection.Spec
-				rawUser, err := g.storage.GetIdentity(g.identity, []storageT.Filter{
-					{Name: iSpecs.FieldsMap["id"].Name, Value: socAuth.UserId},
-				})
-				if err != nil {
-					return sendError(c, fiber.StatusInternalServerError, err.Error())
-				}
-				user = storageT.NewIdentityData(rawUser, iSpecs.FieldsMap)
-			}
-		} else {*/
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		socAuth = &storageT.SocialAuthData{
-			Email:    email,
-			Provider: Provider,
-			UserData: userData,
+		if ok, err := g.app.Filter(convertUserData(userData), g.rawConf.Filter); err != nil {
+			return sendError(c, fiber.StatusBadRequest, err.Error())
+		} else if !ok {
+			return sendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
 		}
-		socAuth.SocialId, _ = jwtT.Get("sub")
-		/*user, err = createOrLink(g, socAuth)
+
+		var i map[string]interface{}
+		if g.manager != nil {
+			i, err = g.manager.OnUserAuthenticated(
+				&identity.Credential{
+					Name:  "email",
+					Value: email.(string),
+				},
+				&identity.Identity{
+					Email: email.(string),
+				},
+				AdapterName,
+				map[string]interface{}{
+					"social_id": socialId,
+					"user_data": userData,
+				})
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-
-			if verified, ok := jwtT.Get("email_verified"); ok && verified.(bool) {
-				if err = g.storage.SetEmailVerified(&g.identity.Collection.Spec, []storageT.Filter{
-					{Name: s.FieldsMap["email"].Name, Value: socAuth.Email},
-				}); err != nil {
-					return sendError(c, fiber.StatusInternalServerError, err.Error())
-				}
+		} else {
+			i = map[string]interface{}{
+				"email":     email,
+				"provider":  AdapterName,
+				"social_id": socialId,
+				"user_data": userData,
 			}
-		}*/
-
-		payload, err := createAuthzPayload(g, socAuth, user)
-		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		return g.authorizer.Authorize(c, payload)
+
+		return g.authorizer.Authorize(c, authzT.NewPayload(g.authorizer, nil, i))
 	}
 }
 
@@ -108,54 +91,4 @@ func getJwt(g *google, code string) (jwt.Token, error) {
 	}
 	idToken := t.Extra("id_token").(string)
 	return jwt.ParseString(idToken)
-}
-
-/*func createOrLink(g *google, socAuth *storageT.SocialAuthData) (*storageT.IdentityData, error) {
-	var user *storageT.IdentityData
-	i := g.identity
-	s := &i.Collection.Spec
-	filter := []storageT.Filter{{Name: s.FieldsMap["email"].Name, Value: socAuth.Email}}
-	exist, err := g.storage.IsIdentityExist(i, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	if exist {
-		rawUser, err := g.storage.GetIdentity(i, filter)
-		if err != nil {
-			return nil, err
-		}
-		user := storageT.NewIdentityData(rawUser, s.FieldsMap)
-		socAuth.UserId = user.Id
-	} else {
-		newUser := &storageT.IdentityData{Email: socAuth.Email}
-		socAuth.UserId, err = g.storage.InsertIdentity(i, newUser)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	socAuth.Id, err = g.storage.InsertSocialAuth(&g.coll.Spec, socAuth)
-	return user, err
-}*/
-
-func createAuthzPayload(g *google, socAuth *storageT.SocialAuthData, user *storageT.IdentityData) (*authzT.Payload, error) {
-	payload := authzT.NewPayload(g.authorizer, g.storage)
-	jsonUserData, err := json.Marshal(socAuth.UserData)
-	if err != nil {
-		return nil, err
-	}
-
-	payload.SocialId = socAuth.SocialId
-	payload.Email = socAuth.Email
-	payload.UserData = string(jsonUserData)
-
-	if user != nil {
-		payload.Id = user.Id
-		payload.Username = user.Username
-		payload.Phone = user.Phone
-		payload.Additional = user.Additional
-	}
-
-	return payload, nil
 }

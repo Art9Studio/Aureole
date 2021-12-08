@@ -7,8 +7,6 @@ import (
 
 type (
 	config struct {
-		Collection string `mapstructure:"collection"`
-		Storage    string `mapstructure:"storage"`
 		Sender     string `mapstructure:"sender"`
 		Template   string `mapstructure:"template"`
 		Exp        int    `mapstructure:"exp"`

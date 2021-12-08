@@ -7,7 +7,6 @@ apps:
     host: "http://aureole:3000"
 
     identity:
-      collection: email_pwless_identity
       email:
         enabled: true
 
@@ -15,10 +14,8 @@ apps:
       - type: "email"
         authz: email_pwless_jwt
         config:
-          collection: email_pwless_identity
           storage: email_pwless_one_db
           magic_link:
-            collection: email_pwless_magic_link
             sender: email_pwless_email
             template: email_pwless_magic_link
             token:
@@ -37,33 +34,6 @@ apps:
           sign_key: email_pwless_jwk_file
           verify_keys: [ email_pwless_jwk_file ]
           payload: "${RES_PATH}/jwt_payload.json.tmpl"
-
-collections:
-  - type: "identity"
-    name: email_pwless_identity
-    config:
-      name: "users"
-      pk: "id"
-      fields_map:
-        id: "id"
-        username: "username"
-        email: "email"
-        phone: "phone"
-        is_active: no
-        created: no
-        email_verified: "email_verified"
-
-  - type: "email_link"
-    name: email_pwless_magic_link
-    config:
-      name: "email_links"
-      pk: "id"
-      fields_map:
-        id: "id"
-        email: "email"
-        token: "token"
-        expires: "expires"
-        invalid: "invalid"
 
 storages:
   - type: "postgresql"
