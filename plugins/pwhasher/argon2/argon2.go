@@ -2,8 +2,8 @@ package argon2
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/plugins"
-	"aureole/internal/plugins/core"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
@@ -15,7 +15,7 @@ import (
 	a2 "golang.org/x/crypto/argon2"
 )
 
-const PluginID = "7416"
+const pluginID = "7416"
 
 // argon2 represents argon2 hasher
 type argon2 struct {
@@ -23,11 +23,6 @@ type argon2 struct {
 	rawConf   *configs.PwHasher
 	conf      *config
 }
-
-var (
-	ErrInvalidHash         = errors.New("argon2: the encoded pwhasher is not in the correct format")
-	ErrIncompatibleVersion = errors.New("argon2: incompatible version of argon2")
-)
 
 func (a *argon2) Init(api core.PluginAPI) error {
 	a.pluginApi = api
@@ -43,9 +38,9 @@ func (a *argon2) Init(api core.PluginAPI) error {
 
 func (a *argon2) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
+		Type: adapterName,
 		Name: a.rawConf.Name,
-		ID:   PluginID,
+		ID:   pluginID,
 	}
 }
 
@@ -115,7 +110,7 @@ func (*argon2) ComparePw(pw, hash string) (bool, error) {
 func decodePwHash(hash string) (*config, []byte, []byte, error) {
 	vals := strings.Split(hash, "$")
 	if len(vals) != 6 {
-		return nil, nil, nil, ErrInvalidHash
+		return nil, nil, nil, errors.New("argon2: the encoded pwhasher is not in the correct format")
 	}
 
 	var v int
@@ -125,7 +120,7 @@ func decodePwHash(hash string) (*config, []byte, []byte, error) {
 	}
 
 	if v != a2.Version {
-		return nil, nil, nil, ErrIncompatibleVersion
+		return nil, nil, nil, errors.New("argon2: incompatible version of argon2")
 	}
 
 	conf := &config{}

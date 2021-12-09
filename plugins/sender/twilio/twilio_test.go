@@ -43,7 +43,7 @@ func TestTwilio_Send(test *testing.T) {
 		{
 			name:     "fail send",
 			respCode: 400,
-			response: &Exception{
+			response: &exception{
 				Status:  400,
 				Message: "Bad request",
 			},
@@ -74,7 +74,7 @@ func TestTwilio_Send(test *testing.T) {
 				httpmock.NewJsonResponderOrPanic(tt.respCode, tt.response),
 			)
 
-			t := &Twilio{
+			t := &twilio{
 				conf: tt.conf,
 			}
 			if err := t.Send(tt.args.recipient, tt.args.subject, tt.args.tmplName, tt.args.tmplCtx); (err != nil) != tt.wantErr {
@@ -117,7 +117,7 @@ func TestTwilio_SendRaw(test *testing.T) {
 		{
 			name:     "fail raw send",
 			respCode: 400,
-			response: &Exception{
+			response: &exception{
 				Status:  400,
 				Message: "Bad request",
 			},
@@ -146,7 +146,7 @@ func TestTwilio_SendRaw(test *testing.T) {
 				httpmock.NewJsonResponderOrPanic(tt.respCode, tt.response),
 			)
 
-			t := &Twilio{
+			t := &twilio{
 				conf: tt.conf,
 			}
 			if err := t.SendRaw(tt.args.recipient, tt.args.subject, tt.args.message); (err != nil) != tt.wantErr {

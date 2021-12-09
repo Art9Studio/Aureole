@@ -1,7 +1,7 @@
 package jwk
 
 import (
-	"aureole/internal/plugins/cryptokey/types"
+	"aureole/internal/plugins"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -14,20 +14,20 @@ import (
 	"errors"
 	"fmt"
 	"github.com/decred/dcrd/dcrec/secp256k1/v3"
-	"github.com/lestrrat-go/jwx/jwk"
+	jwx "github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/x25519"
 	"golang.org/x/crypto/ed25519"
 	"hash"
 	"math/big"
 )
 
-func generateKey(conf *config) (keySet jwk.Set, err error) {
+func generateKey(conf *config) (keySet jwx.Set, err error) {
 	pubRawKey, privRawKey, err := generateRawKey(conf)
 	if err != nil {
 		return nil, err
 	}
 
-	key, err := jwk.New(privRawKey)
+	key, err := jwx.New(privRawKey)
 	if err != nil {
 		return nil, err
 	}
@@ -36,17 +36,17 @@ func generateKey(conf *config) (keySet jwk.Set, err error) {
 		return nil, err
 	}
 
-	if err := key.Set(jwk.KeyIDKey, kid); err != nil {
+	if err := key.Set(jwx.KeyIDKey, kid); err != nil {
 		return nil, err
 	}
-	if err := key.Set(jwk.AlgorithmKey, conf.Alg); err != nil {
+	if err := key.Set(jwx.AlgorithmKey, conf.Alg); err != nil {
 		return nil, err
 	}
-	if err := key.Set(jwk.KeyUsageKey, conf.Use); err != nil {
+	if err := key.Set(jwx.KeyUsageKey, conf.Use); err != nil {
 		return nil, err
 	}
 
-	keySet = jwk.NewSet()
+	keySet = jwx.NewSet()
 	keySet.Add(key)
 	return keySet, nil
 }
@@ -152,13 +152,13 @@ func generateRandomBytes(length int) ([]byte, error) {
 	return ret, nil
 }
 
-func getKeySetType(keySet jwk.Set) (types.KeyType, error) {
+func getKeySetType(keySet jwx.Set) (plugins.KeyType, error) {
 	isPrivate, err := isPrivateSet(keySet)
 	if err != nil {
 		return "", err
 	}
 	if isPrivate {
-		return types.Private, nil
+		return plugins.Private, nil
 	}
 
 	isPublic, err := isPublicSet(keySet)
@@ -166,16 +166,16 @@ func getKeySetType(keySet jwk.Set) (types.KeyType, error) {
 		return "", err
 	}
 	if isPublic {
-		return types.Public, nil
+		return plugins.Public, nil
 	}
 
 	return "", errors.New("public and private keys in the same key set")
 }
 
-func isPrivateSet(keySet jwk.Set) (bool, error) {
+func isPrivateSet(keySet jwx.Set) (bool, error) {
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
 		pair := it.Pair()
-		key := pair.Value.(jwk.Key)
+		key := pair.Value.(jwx.Key)
 
 		var rawKey interface{}
 		if err := key.Raw(&rawKey); err != nil {
@@ -195,10 +195,10 @@ func isPrivateSet(keySet jwk.Set) (bool, error) {
 	return true, nil
 }
 
-func isPublicSet(keySet jwk.Set) (bool, error) {
+func isPublicSet(keySet jwx.Set) (bool, error) {
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
 		pair := it.Pair()
-		key := pair.Value.(jwk.Key)
+		key := pair.Value.(jwx.Key)
 
 		var rawKey interface{}
 		if err := key.Raw(&rawKey); err != nil {

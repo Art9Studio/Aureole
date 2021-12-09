@@ -1,15 +1,15 @@
 package sms
 
 import (
-	factor2 "aureole/internal/plugins/2fa"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "sms"
+// adapterName is the internal name of the adapter
+const adapterName = "sms"
 
 // init initializes package by register adapter
 func init() {
-	factor2.Repository.Register(AdapterName, smsAdapter{})
+	plugins.SecondFactorRepo.Register(adapterName, smsAdapter{})
 }
 
 type smsAdapter struct {

@@ -141,7 +141,6 @@ func (c *OTPConfig) Authenticate(password string) (bool, error) {
 		break
 	case len(password) == 8:
 		scratch = true
-		break
 	default:
 		return false, ErrInvalidCode
 	}
@@ -181,7 +180,7 @@ func (c *OTPConfig) ProvisionURI(user string) string {
 // on how to avoid conflicting accounts.
 //
 // See https://github.com/google/google-authenticator/wiki/Conflicting-Accounts
-func (c *OTPConfig) ProvisionURIWithIssuer(user string, issuer string) string {
+func (c *OTPConfig) ProvisionURIWithIssuer(user, issuer string) string {
 	auth := "totp/"
 	q := make(url.Values)
 	if c.HotpCounter > 0 {

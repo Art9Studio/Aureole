@@ -1,13 +1,13 @@
 package file
 
 import (
-	"aureole/internal/plugins/kstorage"
+	"aureole/internal/plugins"
 )
 
-const AdapterName = "file"
+const adapterName = "file"
 
 func init() {
-	kstorage.Repository.Register(AdapterName, fileAdapter{})
+	plugins.KeyStorageRepo.Register(adapterName, fileAdapter{})
 }
 
 type fileAdapter struct {

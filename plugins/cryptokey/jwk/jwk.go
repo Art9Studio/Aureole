@@ -2,37 +2,35 @@ package jwk
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/plugins"
-	"aureole/internal/plugins/core"
-	"aureole/internal/plugins/cryptokey/types"
-	kstorageT "aureole/internal/plugins/kstorage/types"
-	"aureole/internal/router"
 	"encoding/json"
 	"fmt"
-	"github.com/lestrrat-go/jwx/jwk"
+	jwx "github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
 )
 
-const PluginID = "7851"
+const pluginID = "7851"
 
 type (
-	Jwk struct {
+	jwk struct {
 		pluginApi       core.PluginAPI
 		rawConf         *configs.CryptoKey
 		conf            *config
-		keyStorage      kstorageT.KeyStorage
+		keyStorage      plugins.KeyStorage
 		refreshInterval time.Duration
 		muSet           sync.RWMutex
-		privateSet      jwk.Set
-		publicSet       jwk.Set
+		privateSet      jwx.Set
+		publicSet       jwx.Set
 		refreshDone     chan struct{}
 	}
 )
 
-func (j *Jwk) Init(api core.PluginAPI) (err error) {
+func (j *jwk) Init(api core.PluginAPI) (err error) {
 	j.pluginApi = api
 	if j.conf, err = initConfig(&j.rawConf.Config); err != nil {
 		return err
@@ -59,11 +57,11 @@ func (j *Jwk) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (j *Jwk) GetMetaData() plugins.Meta {
+func (j *jwk) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
+		Type: adapterName,
 		Name: j.rawConf.Name,
-		ID:   PluginID,
+		ID:   pluginID,
 	}
 }
 
@@ -77,10 +75,24 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func initKeySets(j *Jwk) (err error) {
+func (j *jwk) GetPrivateSet() jwx.Set {
+	j.muSet.RLock()
+	privSet := j.privateSet
+	j.muSet.RUnlock()
+	return privSet
+}
+
+func (j *jwk) GetPublicSet() jwx.Set {
+	j.muSet.RLock()
+	pubSet := j.publicSet
+	j.muSet.RUnlock()
+	return pubSet
+}
+
+func initKeySets(j *jwk) (err error) {
 	var (
 		rawKeys []byte
-		keySet  jwk.Set
+		keySet  jwx.Set
 	)
 
 	found, err := j.keyStorage.Read(&rawKeys)
@@ -89,7 +101,7 @@ func initKeySets(j *Jwk) (err error) {
 	}
 
 	if found {
-		keySet, err = jwk.Parse(rawKeys)
+		keySet, err = jwx.Parse(rawKeys)
 		if err != nil {
 			return err
 		}
@@ -113,9 +125,9 @@ func initKeySets(j *Jwk) (err error) {
 		return err
 	}
 
-	if setType == types.Private {
+	if setType == plugins.Private {
 		j.privateSet = keySet
-		if j.publicSet, err = jwk.PublicSetOf(j.privateSet); err != nil {
+		if j.publicSet, err = jwx.PublicSetOf(j.privateSet); err != nil {
 			return err
 		}
 	} else {
@@ -125,23 +137,23 @@ func initKeySets(j *Jwk) (err error) {
 	return nil
 }
 
-func createRoutes(j *Jwk) {
-	routes := []*router.Route{
+func createRoutes(j *jwk) {
+	routes := []*core.Route{
 		{
-			Method:  router.MethodGET,
+			Method:  http.MethodGet,
 			Path:    j.conf.PathPrefix + "/jwk",
-			Handler: GetJwkKeys(j),
+			Handler: getJwkKeys(j),
 		},
 		{
-			Method:  router.MethodGET,
+			Method:  http.MethodGet,
 			Path:    j.conf.PathPrefix + "/pem",
-			Handler: GetPemKeys(j),
+			Handler: getPemKeys(j),
 		},
 	}
-	router.GetRouter().AddProjectRoutes(routes)
+	j.pluginApi.AddProjectRoutes(routes)
 }
 
-func refreshKeys(j *Jwk) {
+func refreshKeys(j *jwk) {
 	ticker := time.NewTicker(j.refreshInterval)
 	defer ticker.Stop()
 	for {
@@ -151,7 +163,7 @@ func refreshKeys(j *Jwk) {
 		case <-ticker.C:
 			var (
 				rawKeys []byte
-				keySet  jwk.Set
+				keySet  jwx.Set
 			)
 
 			ok, err := j.keyStorage.Read(&rawKeys)
@@ -160,7 +172,7 @@ func refreshKeys(j *Jwk) {
 			}
 
 			if ok {
-				keySet, err = jwk.Parse(rawKeys)
+				keySet, err = jwx.Parse(rawKeys)
 				if err != nil {
 					fmt.Printf("jwk '%s': an error occured while refreshing keys: %v", j.rawConf.Name, err)
 				}
@@ -170,8 +182,8 @@ func refreshKeys(j *Jwk) {
 					fmt.Printf("jwk '%s': an error occured while refreshing keys: %v", j.rawConf.Name, err)
 				}
 
-				if setType == types.Private {
-					pubSet, err := jwk.PublicSetOf(keySet)
+				if setType == plugins.Private {
+					pubSet, err := jwx.PublicSetOf(keySet)
 					if err != nil {
 						fmt.Printf("jwk '%s': an error occured while refreshing keys: %v", j.rawConf.Name, err)
 					}
@@ -191,18 +203,4 @@ func refreshKeys(j *Jwk) {
 			}
 		}
 	}
-}
-
-func (j *Jwk) GetPrivateSet() jwk.Set {
-	j.muSet.RLock()
-	privSet := j.privateSet
-	j.muSet.RUnlock()
-	return privSet
-}
-
-func (j *Jwk) GetPublicSet() jwk.Set {
-	j.muSet.RLock()
-	pubSet := j.publicSet
-	j.muSet.RUnlock()
-	return pubSet
 }

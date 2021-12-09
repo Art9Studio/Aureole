@@ -2,7 +2,7 @@ package twilio
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/sender/types"
+	"aureole/internal/plugins"
 )
 
 type config struct {
@@ -12,6 +12,6 @@ type config struct {
 	Templates  map[string]string `mapstructure:"templates"`
 }
 
-func (twilioAdapter) Create(conf *configs.Sender) types.Sender {
-	return &Twilio{rawConf: conf}
+func (twilioAdapter) Create(conf *configs.Sender) plugins.Sender {
+	return &twilio{rawConf: conf}
 }

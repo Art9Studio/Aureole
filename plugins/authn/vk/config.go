@@ -2,7 +2,12 @@ package vk
 
 import (
 	"aureole/internal/configs"
-	authnT "aureole/internal/plugins/authn/types"
+	"aureole/internal/plugins"
+)
+
+const (
+	pathPrefix  = "/oauth2/vk"
+	redirectUrl = "/login"
 )
 
 type (
@@ -11,11 +16,9 @@ type (
 		ClientSecret string   `mapstructure:"client_secret"`
 		Scopes       []string `mapstructure:"scopes"`
 		Fields       []string `mapstructure:"fields"`
-		PathPrefix   string
-		RedirectUri  string
 	}
 )
 
-func (vkAdapter) Create(conf *configs.Authn) authnT.Authenticator {
+func (vkAdapter) Create(conf *configs.Authn) plugins.Authenticator {
 	return &vk{rawConf: conf}
 }

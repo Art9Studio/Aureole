@@ -2,13 +2,9 @@ package google
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/identity"
 	"aureole/internal/plugins"
-	authnT "aureole/internal/plugins/authn/types"
-	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
-	"aureole/internal/router"
-	app "aureole/internal/state/interface"
 	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -16,19 +12,18 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
+	"net/http"
 	"path"
 )
 
-const PluginID = "1010"
+const pluginID = "1010"
 
 type google struct {
-	pluginApi  core.PluginAPI
-	app        app.AppState
-	rawConf    *configs.Authn
-	conf       *config
-	manager    identity.ManagerI
-	provider   *oauth2.Config
-	authorizer authzTypes.Authorizer
+	pluginApi core.PluginAPI
+	app       *core.App
+	rawConf   *configs.Authn
+	conf      *config
+	provider  *oauth2.Config
 }
 
 func (g *google) Init(appName string, api core.PluginAPI) (err error) {
@@ -43,16 +38,6 @@ func (g *google) Init(appName string, api core.PluginAPI) (err error) {
 		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
-	g.manager, err = g.app.GetIdentityManager()
-	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared", appName)
-	}
-
-	g.authorizer, err = g.app.GetAuthorizer()
-	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
-	}
-
 	if err := initProvider(g); err != nil {
 		return err
 	}
@@ -62,12 +47,12 @@ func (g *google) Init(appName string, api core.PluginAPI) (err error) {
 
 func (*google) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
-		ID:   PluginID,
+		Type: adapterName,
+		ID:   pluginID,
 	}
 }
 
-func (g *google) Login() authnT.AuthFunc {
+func (g *google) Login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
 		// todo: save state and compare later #2
 		state := c.Query("state")
@@ -109,7 +94,7 @@ func (g *google) Login() authnT.AuthFunc {
 			},
 			fiber.Map{
 				identity.Email:         email,
-				identity.AuthnProvider: AdapterName,
+				identity.AuthnProvider: adapterName,
 				identity.SocialID:      socialId,
 				identity.UserData:      userData,
 			}, nil
@@ -131,7 +116,7 @@ func initProvider(g *google) error {
 		return err
 	}
 
-	redirectUri.Path = path.Clean(redirectUri.Path + g.conf.PathPrefix + g.conf.RedirectUri)
+	redirectUri.Path = path.Clean(redirectUri.Path + pathPrefix + redirectUrl)
 	g.provider = &oauth2.Config{
 		ClientID:     g.conf.ClientId,
 		ClientSecret: g.conf.ClientSecret,
@@ -143,12 +128,12 @@ func initProvider(g *google) error {
 }
 
 func createRoutes(g *google) {
-	routes := []*router.Route{
+	routes := []*core.Route{
 		{
-			Method:  router.MethodGET,
-			Path:    g.conf.PathPrefix,
-			Handler: GetAuthCode(g),
+			Method:  http.MethodGet,
+			Path:    pathPrefix,
+			Handler: getAuthCode(g),
 		},
 	}
-	router.GetRouter().AddAppRoutes(g.app.GetName(), routes)
+	g.pluginApi.AddAppRoutes(g.app.GetName(), routes)
 }

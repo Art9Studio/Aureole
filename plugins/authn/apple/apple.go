@@ -2,14 +2,9 @@ package apple
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/identity"
 	"aureole/internal/plugins"
-	authnT "aureole/internal/plugins/authn/types"
-	authzT "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
-	cKeyT "aureole/internal/plugins/cryptokey/types"
-	"aureole/internal/router"
-	app "aureole/internal/state/interface"
 	"context"
 	"errors"
 	"fmt"
@@ -18,22 +13,21 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 	"path"
 	"time"
 )
 
-const PluginID = "5771"
+const pluginID = "5771"
 
 type apple struct {
-	pluginApi  core.PluginAPI
-	app        app.AppState
-	rawConf    *configs.Authn
-	conf       *config
-	manager    identity.ManagerI
-	secretKey  cKeyT.CryptoKey
-	publicKey  cKeyT.CryptoKey
-	provider   *Config
-	authorizer authzT.Authorizer
+	pluginApi core.PluginAPI
+	app       *core.App
+	rawConf   *configs.Authn
+	conf      *config
+	secretKey plugins.CryptoKey
+	publicKey plugins.CryptoKey
+	provider  *providerConfig
 }
 
 func (a *apple) Init(appName string, api core.PluginAPI) (err error) {
@@ -48,11 +42,6 @@ func (a *apple) Init(appName string, api core.PluginAPI) (err error) {
 		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
-	a.manager, err = a.app.GetIdentityManager()
-	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared", appName)
-	}
-
 	a.secretKey, err = a.pluginApi.GetCryptoKey(a.conf.SecretKey)
 	if err != nil {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.SecretKey)
@@ -61,11 +50,6 @@ func (a *apple) Init(appName string, api core.PluginAPI) (err error) {
 	a.publicKey, err = a.pluginApi.GetCryptoKey(a.conf.PublicKey)
 	if err != nil {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.PublicKey)
-	}
-
-	a.authorizer, err = a.app.GetAuthorizer()
-	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	if err := initProvider(a); err != nil {
@@ -77,12 +61,12 @@ func (a *apple) Init(appName string, api core.PluginAPI) (err error) {
 
 func (*apple) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
-		ID:   PluginID,
+		Type: adapterName,
+		ID:   pluginID,
 	}
 }
 
-func (a *apple) Login() authnT.AuthFunc {
+func (a *apple) Login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
 		input := struct {
 			State string
@@ -128,7 +112,7 @@ func (a *apple) Login() authnT.AuthFunc {
 			},
 			fiber.Map{
 				identity.Email:         email,
-				identity.AuthnProvider: AdapterName,
+				identity.AuthnProvider: adapterName,
 				identity.SocialID:      socialId,
 				identity.UserData:      userData,
 			}, nil
@@ -145,39 +129,39 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initProvider(a *apple) error {
-	redirectUrl, err := a.app.GetUrl()
+	url, err := a.app.GetUrl()
 	if err != nil {
 		return err
 	}
 
-	redirectUrl.Path = path.Clean(redirectUrl.Path + a.conf.RedirectUri)
-	a.provider = &Config{
-		ClientId: a.conf.ClientId,
-		TeamId:   a.conf.TeamId,
-		KeyId:    a.conf.KeyId,
-		Endpoint: Endpoint{
-			AuthUrl:  AuthUrl,
-			TokenUrl: TokenUrl,
+	url.Path = path.Clean(url.Path + pathPrefix + redirectUrl)
+	a.provider = &providerConfig{
+		clientId: a.conf.ClientId,
+		teamId:   a.conf.TeamId,
+		keyId:    a.conf.KeyId,
+		endpoint: endpoint{
+			authUrl:  authUrl,
+			tokenUrl: tokenUrl,
 		},
-		RedirectUrl: redirectUrl.String(),
-		Scopes:      a.conf.Scopes,
+		redirectUrl: url.String(),
+		scopes:      a.conf.Scopes,
 	}
 
 	return createSecret(a.provider, a.secretKey)
 }
 
-func createSecret(p *Config, key cKeyT.CryptoKey) error {
+func createSecret(p *providerConfig, key plugins.CryptoKey) error {
 	t := jwt.New()
 	claims := []struct {
 		Name string
 		Val  interface{}
 	}{
-		{Name: jwt.IssuerKey, Val: p.TeamId},
+		{Name: jwt.IssuerKey, Val: p.teamId},
 		{Name: jwt.AudienceKey, Val: "https://appleid.apple.com"},
-		{Name: jwt.SubjectKey, Val: p.ClientId},
+		{Name: jwt.SubjectKey, Val: p.clientId},
 		{Name: jwt.IssuedAtKey, Val: time.Now().Unix()},
 		{Name: jwt.ExpirationKey, Val: time.Now().Add(time.Hour * 24 * 180).Unix()},
-		{Name: jwk.KeyIDKey, Val: p.KeyId},
+		{Name: jwk.KeyIDKey, Val: p.keyId},
 	}
 
 	for _, claim := range claims {
@@ -191,11 +175,11 @@ func createSecret(p *Config, key cKeyT.CryptoKey) error {
 		return err
 	}
 
-	p.ClientSecret = string(signedT)
+	p.clientSecret = string(signedT)
 	return nil
 }
 
-func signToken(signKey cKeyT.CryptoKey, token jwt.Token) ([]byte, error) {
+func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
 	keySet := signKey.GetPrivateSet()
 
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
@@ -216,12 +200,12 @@ func signToken(signKey cKeyT.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func createRoutes(a *apple) {
-	routes := []*router.Route{
+	routes := []*core.Route{
 		{
-			Method:  router.MethodGET,
-			Path:    a.conf.PathPrefix,
-			Handler: GetAuthCode(a),
+			Method:  http.MethodGet,
+			Path:    pathPrefix,
+			Handler: getAuthCode(a),
 		},
 	}
-	router.GetRouter().AddAppRoutes(a.app.GetName(), routes)
+	a.pluginApi.AddAppRoutes(a.app.GetName(), routes)
 }

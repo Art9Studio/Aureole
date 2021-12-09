@@ -12,52 +12,52 @@ import (
 )
 
 const (
-	AuthUrl  string = "https://appleid.apple.com/auth/authorize"
-	TokenUrl string = "https://appleid.apple.com/auth/token"
+	authUrl  string = "https://appleid.apple.com/auth/authorize"
+	tokenUrl string = "https://appleid.apple.com/auth/token"
 )
 
 type (
-	Config struct {
-		ClientId     string
-		TeamId       string
-		KeyId        string
-		ClientSecret string
-		Endpoint     Endpoint
-		RedirectUrl  string
-		Scopes       []string
+	providerConfig struct {
+		clientId     string
+		teamId       string
+		keyId        string
+		clientSecret string
+		endpoint     endpoint
+		redirectUrl  string
+		scopes       []string
 	}
 
-	Endpoint struct {
-		AuthUrl  string
-		TokenUrl string
+	endpoint struct {
+		authUrl  string
+		tokenUrl string
 	}
 )
 
-func (c *Config) AuthCodeURL(state string) string {
-	u, _ := url.Parse(c.Endpoint.AuthUrl)
+func (c *providerConfig) authCodeURL(state string) string {
+	u, _ := url.Parse(c.endpoint.authUrl)
 	v := u.Query()
 	v.Set("response_type", "code")
 	v.Set("state", state)
-	v.Set("client_id", c.ClientId)
+	v.Set("client_id", c.clientId)
 	v.Set("response_mode", "form_post")
-	v.Set("redirect_uri", c.RedirectUrl)
-	v.Set("scope", strings.Join(c.Scopes, " "))
+	v.Set("redirect_uri", c.redirectUrl)
+	v.Set("scope", strings.Join(c.scopes, " "))
 	u.RawQuery = v.Encode()
 	return u.String()
 }
 
-func (c *Config) Exchange(code string) (map[string]interface{}, error) {
+func (c *providerConfig) exchange(code string) (map[string]interface{}, error) {
 	v := url.Values{}
-	v.Set("client_id", c.ClientId)
-	v.Set("client_secret", c.ClientSecret)
+	v.Set("client_id", c.clientId)
+	v.Set("client_secret", c.clientSecret)
 	v.Set("code", code)
 	v.Set("grant_type", "authorization_code")
 	return doRequest(c, v)
 }
 
-func doRequest(c *Config, v url.Values) (map[string]interface{}, error) {
+func doRequest(c *providerConfig, v url.Values) (map[string]interface{}, error) {
 	ctx := context.Background()
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Endpoint.TokenUrl, strings.NewReader(v.Encode()))
+	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint.tokenUrl, strings.NewReader(v.Encode()))
 	if err != nil {
 		return nil, err
 	}

@@ -1,15 +1,15 @@
 package jwt
 
 import (
-	"aureole/internal/plugins/authz/types"
-	"aureole/internal/router"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
+func refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawRefreshT, err := getRawToken(c, j.conf.RefreshBearer, keyMap["refresh"])
 		if err != nil {
@@ -25,12 +25,12 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 		)
 
 		if err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
 		id, ok := refreshT.Get("id")
 		if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "can't access user_id from token")
+			return core.SendError(c, fiber.StatusBadRequest, "can't access user_id from token")
 		}
 
 		// todo: add identity support
@@ -39,19 +39,19 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 		// 	return router.SendError(c, fiber.StatusBadRequest, "can't access username from token")
 		// }
 
-		payload := &types.Payload{
+		payload := &plugins.Payload{
 			// Username: username.(string),
-			Id: int(id.(float64)),
+			ID: int(id.(float64)),
 		}
 
-		accessT, err := newToken(AccessToken, j.conf, payload)
+		accessT, err := newToken(accessToken, j.conf, payload)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		signedAccessT, err := signToken(j.signKey, accessT)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		return attachTokens(c,
@@ -63,13 +63,13 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 
 func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (token string, err error) {
 	switch bearer {
-	case Cookie:
+	case cookie:
 		rawToken := c.Cookies(names["cookie"])
 		if rawToken == "" {
-			return "", router.SendError(c, fiber.StatusBadRequest, fmt.Sprintf("cookie '%s' doesn't exist", names["cookie"]))
+			return "", core.SendError(c, fiber.StatusBadRequest, fmt.Sprintf("cookie '%s' doesn't exist", names["cookie"]))
 		}
 		token = rawToken
-	case Both, Body:
+	case both, body:
 		var input map[string]string
 		if err := c.BodyParser(&input); err != nil {
 			return "", err

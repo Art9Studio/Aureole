@@ -2,32 +2,29 @@ package vk
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/identity"
 	"aureole/internal/plugins"
-	authnT "aureole/internal/plugins/authn/types"
-	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
-	"aureole/internal/router"
-	app "aureole/internal/state/interface"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
+	"net/http"
 	"path"
 )
 
-const PluginID = "3888"
+const pluginID = "3888"
 
 type vk struct {
 	pluginApi  core.PluginAPI
-	app        app.AppState
+	app        *core.App
 	rawConf    *configs.Authn
 	conf       *config
 	manager    identity.ManagerI
 	provider   *oauth2.Config
-	authorizer authzTypes.Authorizer
+	authorizer plugins.Authorizer
 }
 
 func (v *vk) Init(appName string, api core.PluginAPI) (err error) {
@@ -61,12 +58,12 @@ func (v *vk) Init(appName string, api core.PluginAPI) (err error) {
 
 func (*vk) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
-		ID:   PluginID,
+		Type: adapterName,
+		ID:   pluginID,
 	}
 }
 
-func (v *vk) Login() authnT.AuthFunc {
+func (v *vk) Login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
 		state := c.Query("state")
 		if state != "state" {
@@ -94,7 +91,7 @@ func (v *vk) Login() authnT.AuthFunc {
 			},
 			fiber.Map{
 				identity.Email:         userData["email"],
-				identity.AuthnProvider: AdapterName,
+				identity.AuthnProvider: adapterName,
 				identity.SocialID:      userData["user_id"],
 				identity.UserData:      userData,
 			}, nil
@@ -116,7 +113,7 @@ func initProvider(v *vk) error {
 		return err
 	}
 
-	redirectUri.Path = path.Clean(redirectUri.Path + v.conf.PathPrefix + v.conf.RedirectUri)
+	redirectUri.Path = path.Clean(redirectUri.Path + pathPrefix + redirectUrl)
 	v.provider = &oauth2.Config{
 		ClientID:     v.conf.ClientId,
 		ClientSecret: v.conf.ClientSecret,
@@ -128,12 +125,12 @@ func initProvider(v *vk) error {
 }
 
 func createRoutes(v *vk) {
-	routes := []*router.Route{
+	routes := []*core.Route{
 		{
-			Method:  router.MethodGET,
-			Path:    v.conf.PathPrefix,
-			Handler: GetAuthCode(v),
+			Method:  http.MethodGet,
+			Path:    pathPrefix,
+			Handler: getAuthCode(v),
 		},
 	}
-	router.GetRouter().AddAppRoutes(v.app.GetName(), routes)
+	v.pluginApi.AddAppRoutes(v.app.GetName(), routes)
 }

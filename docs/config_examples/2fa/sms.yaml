@@ -1,9 +1,9 @@
 2fa:
   - type: "sms"
-    name: sms_2fa
+    name: sms
     config:
       sender: twilio
-      template: 2fa_tmpl
+      template: sms_2fa_tmpl
       max_attempts: 5
       otp:
         length: 6

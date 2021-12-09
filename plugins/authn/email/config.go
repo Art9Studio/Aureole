@@ -2,20 +2,22 @@ package email
 
 import (
 	"aureole/internal/configs"
-	authnT "aureole/internal/plugins/authn/types"
+	"aureole/internal/plugins"
+)
+
+const (
+	sendUrl  = "/email/send"
+	loginUrl = "/email/login"
 )
 
 type (
 	config struct {
-		Sender     string `mapstructure:"sender"`
-		Template   string `mapstructure:"template"`
-		Exp        int    `mapstructure:"exp"`
-		PathPrefix string
-		SendUrl    string
-		ConfirmUrl string
+		Sender   string `mapstructure:"sender"`
+		Template string `mapstructure:"template"`
+		Exp      int    `mapstructure:"exp"`
 	}
 )
 
-func (emailAdapter) Create(conf *configs.Authn) authnT.Authenticator {
+func (emailAdapter) Create(conf *configs.Authn) plugins.Authenticator {
 	return &email{rawConf: conf}
 }

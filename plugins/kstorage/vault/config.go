@@ -2,7 +2,7 @@ package vault
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/kstorage/types"
+	"aureole/internal/plugins"
 )
 
 type config struct {
@@ -11,6 +11,6 @@ type config struct {
 	Address string `mapstructure:"address"`
 }
 
-func (vaultAdapter) Create(conf *configs.KeyStorage) types.KeyStorage {
+func (vaultAdapter) Create(conf *configs.KeyStorage) plugins.KeyStorage {
 	return &storage{rawConf: conf}
 }

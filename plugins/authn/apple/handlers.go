@@ -6,15 +6,15 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func GetAuthCode(a *apple) func(*fiber.Ctx) error {
+func getAuthCode(a *apple) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		u := a.provider.AuthCodeURL("state")
+		u := a.provider.authCodeURL("state")
 		return c.Redirect(u)
 	}
 }
 
 func getJwt(a *apple, code string) (jwt.Token, error) {
-	t, err := a.provider.Exchange(code)
+	t, err := a.provider.exchange(code)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func getJwt(a *apple, code string) (jwt.Token, error) {
 
 	return jwt.ParseString(
 		idToken.(string),
-		jwt.WithAudience(a.provider.ClientId),
+		jwt.WithAudience(a.provider.clientId),
 		jwt.WithKeySet(keySet))
 }
 

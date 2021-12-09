@@ -1,15 +1,15 @@
 package authenticator
 
 import (
-	factor2 "aureole/internal/plugins/2fa"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "google_authenticator"
+// adapterName is the internal name of the adapter
+const adapterName = "google_authenticator"
 
 // init initializes package by register adapter
 func init() {
-	factor2.Repository.Register(AdapterName, gauthAdapter{})
+	plugins.SecondFactorRepo.Register(adapterName, gauthAdapter{})
 }
 
 type gauthAdapter struct {

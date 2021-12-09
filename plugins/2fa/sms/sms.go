@@ -2,30 +2,25 @@ package sms
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/encrypt"
+	"aureole/internal/core"
 	"aureole/internal/identity"
-	"aureole/internal/jwt"
 	"aureole/internal/plugins"
-	mfaT "aureole/internal/plugins/2fa/types"
-	"aureole/internal/plugins/core"
-	senderT "aureole/internal/plugins/sender/types"
-	"aureole/internal/router"
-	app "aureole/internal/state/interface"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 )
 
-const PluginID = "0509"
+const pluginID = "0509"
 
 type (
 	sms struct {
 		pluginApi core.PluginAPI
-		app       app.AppState
+		app       *core.App
 		rawConf   *configs.SecondFactor
 		conf      *config
-		sender    senderT.Sender
+		sender    plugins.Sender
 	}
 
 	input struct {
@@ -53,9 +48,9 @@ func (s *sms) Init(appName string, api core.PluginAPI) (err error) {
 
 func (s *sms) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
+		Type: adapterName,
 		Name: s.rawConf.Name,
-		ID:   PluginID,
+		ID:   pluginID,
 	}
 }
 
@@ -67,19 +62,19 @@ func (s *sms) IsEnabled(cred *identity.Credential, provider string) (bool, error
 	if !enabled {
 		return false, nil
 	}
-	if id != PluginID {
+	if id != pluginID {
 		return false, errors.New("another 2FA is enabled")
 	}
 	return true, nil
 }
 
 func (s *sms) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx) (fiber.Map, error) {
-	otp, err := encrypt.GetRandomString(s.conf.Otp.Length, s.conf.Otp.Alphabet)
+	otp, err := core.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := jwt.CreateJWT(
+	token, err := core.CreateJWT(
 		map[string]interface{}{
 			"phone":    cred.Value,
 			"provider": provider,
@@ -90,7 +85,7 @@ func (s *sms) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx) (
 		return nil, err
 	}
 
-	encOtp, err := encrypt.Encrypt(otp)
+	encOtp, err := core.Encrypt(otp)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +102,7 @@ func (s *sms) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx) (
 	return fiber.Map{"token": token}, nil
 }
 
-func (s *sms) Verify() mfaT.MFAFunc {
+func (s *sms) Verify() plugins.MFAVerifyFunc {
 	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
@@ -117,7 +112,7 @@ func (s *sms) Verify() mfaT.MFAFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := jwt.ParseJWT(input.Token)
+		t, err := core.ParseJWT(input.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -129,7 +124,7 @@ func (s *sms) Verify() mfaT.MFAFunc {
 		if !ok {
 			return nil, nil, errors.New("cannot get attempts from token")
 		}
-		if err := jwt.InvalidateJWT(t); err != nil {
+		if err := core.InvalidateJWT(t); err != nil {
 			return nil, nil, err
 		}
 
@@ -148,7 +143,7 @@ func (s *sms) Verify() mfaT.MFAFunc {
 		if !ok {
 			return nil, nil, errors.New("otp has expired")
 		}
-		err = encrypt.Decrypt(encOtp, &decrOtp)
+		err = core.Decrypt(encOtp, &decrOtp)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -159,7 +154,7 @@ func (s *sms) Verify() mfaT.MFAFunc {
 				Value: phone.(string),
 			}, nil, nil
 		} else {
-			token, err := jwt.CreateJWT(
+			token, err := core.CreateJWT(
 				map[string]interface{}{
 					"phone":    phone,
 					"attempts": int(attempts.(float64)) + 1,
@@ -183,12 +178,12 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func createRoutes(s *sms) {
-	routes := []*router.Route{
+	routes := []*core.Route{
 		{
-			Method:  router.MethodPOST,
-			Path:    s.conf.PathPrefix + s.conf.ResendUrl,
-			Handler: Resend(s),
+			Method:  http.MethodPost,
+			Path:    resendUrl,
+			Handler: resend(s),
 		},
 	}
-	router.GetRouter().AddAppRoutes(s.app.GetName(), routes)
+	s.pluginApi.AddAppRoutes(s.app.GetName(), routes)
 }

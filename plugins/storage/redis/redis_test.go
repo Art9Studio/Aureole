@@ -1,12 +1,12 @@
 package redis
 
 import (
-	storageT "aureole/internal/plugins/storage/types"
+	"aureole/internal/plugins"
 	"aureole/plugins/storage"
 	"context"
 	"testing"
 
-	"github.com/go-redis/redis/v8"
+	redisv8 "github.com/go-redis/redis/v8"
 )
 
 func TestStorage(t *testing.T) {
@@ -19,7 +19,7 @@ func TestStorage(t *testing.T) {
 	storage.TestTypes(s, t)
 }
 
-func createStorage() (storageT.Storage, error) {
-	s := &Storage{client: redis.NewClient(&redis.Options{DB: 15})}
+func createStorage() (plugins.Storage, error) {
+	s := &redis{client: redisv8.NewClient(&redisv8.Options{DB: 15})}
 	return s, s.client.Ping(context.Background()).Err()
 }

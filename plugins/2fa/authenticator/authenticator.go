@@ -2,28 +2,25 @@ package authenticator
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/identity"
-	"aureole/internal/jwt"
 	"aureole/internal/plugins"
-	mfaT "aureole/internal/plugins/2fa/types"
-	"aureole/internal/plugins/core"
-	"aureole/internal/router"
-	app "aureole/internal/state/interface"
 	"aureole/pkg/dgoogauth"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 	"strconv"
 	"strings"
 )
 
-const PluginID = "1799"
+const pluginID = "1799"
 
 type (
 	gauth struct {
 		pluginApi core.PluginAPI
-		app       app.AppState
+		app       *core.App
 		rawConf   *configs.SecondFactor
 		conf      *config
 		manager   identity.ManagerI
@@ -53,9 +50,9 @@ func (g *gauth) Init(appName string, api core.PluginAPI) (err error) {
 
 func (g *gauth) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
+		Type: adapterName,
 		Name: g.rawConf.Name,
-		ID:   PluginID,
+		ID:   pluginID,
 	}
 }
 
@@ -67,14 +64,14 @@ func (g *gauth) IsEnabled(cred *identity.Credential, provider string) (bool, err
 	if !enabled {
 		return false, nil
 	}
-	if id != PluginID {
+	if id != pluginID {
 		return false, errors.New("another 2FA is enabled")
 	}
 	return true, nil
 }
 
 func (g *gauth) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx) (fiber.Map, error) {
-	token, err := jwt.CreateJWT(
+	token, err := core.CreateJWT(
 		map[string]interface{}{
 			"credential": map[string]string{
 				cred.Name: cred.Value,
@@ -88,7 +85,7 @@ func (g *gauth) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx)
 	return fiber.Map{"token": token}, nil
 }
 
-func (g *gauth) Verify() mfaT.MFAFunc {
+func (g *gauth) Verify() plugins.MFAVerifyFunc {
 	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
@@ -98,7 +95,7 @@ func (g *gauth) Verify() mfaT.MFAFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := jwt.ParseJWT(input.Token)
+		t, err := core.ParseJWT(input.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -110,7 +107,7 @@ func (g *gauth) Verify() mfaT.MFAFunc {
 		if !ok {
 			return nil, nil, errors.New("cannot get credential from token")
 		}
-		if err := jwt.InvalidateJWT(t); err != nil {
+		if err := core.InvalidateJWT(t); err != nil {
 			return nil, nil, err
 		}
 
@@ -193,17 +190,17 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func createRoutes(g *gauth) {
-	routes := []*router.Route{
+	routes := []*core.Route{
 		{
-			Method:  router.MethodPOST,
-			Path:    g.conf.PathPrefix + g.conf.GetQRUrl,
-			Handler: GetQR(g),
+			Method:  http.MethodPost,
+			Path:    getQRUrl,
+			Handler: getQR(g),
 		},
 		{
-			Method:  router.MethodPOST,
-			Path:    g.conf.PathPrefix + g.conf.GetScratchesUrl,
-			Handler: GetScratchCodes(g),
+			Method:  http.MethodPost,
+			Path:    getScratchesUrl,
+			Handler: getScratchCodes(g),
 		},
 	}
-	router.GetRouter().AddAppRoutes(g.app.GetName(), routes)
+	g.pluginApi.AddAppRoutes(g.app.GetName(), routes)
 }

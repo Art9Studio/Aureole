@@ -1,7 +1,7 @@
 package pem
 
 import (
-	"aureole/internal/plugins/cryptokey/types"
+	"aureole/internal/plugins"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -69,13 +69,13 @@ func generateKid(rawKey interface{}) (string, error) {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
 }
 
-func getKeySetType(keySet jwk.Set) (types.KeyType, error) {
+func getKeySetType(keySet jwk.Set) (plugins.KeyType, error) {
 	isPrivate, err := isPrivateSet(keySet)
 	if err != nil {
 		return "", err
 	}
 	if isPrivate {
-		return types.Private, nil
+		return plugins.Private, nil
 	}
 
 	isPublic, err := isPublicSet(keySet)
@@ -83,7 +83,7 @@ func getKeySetType(keySet jwk.Set) (types.KeyType, error) {
 		return "", err
 	}
 	if isPublic {
-		return types.Public, nil
+		return plugins.Public, nil
 	}
 
 	return "", errors.New("public and private keys in the same key set")

@@ -1,15 +1,15 @@
 package jwk
 
 import (
-	"aureole/internal/plugins/cryptokey"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "jwk"
+// adapterName is the internal name of the adapter
+const adapterName = "jwk"
 
 // init initializes package by register adapter
 func init() {
-	cryptokey.Repository.Register(AdapterName, jwkAdapter{})
+	plugins.CryptoKeyRepo.Register(adapterName, jwkAdapter{})
 }
 
 // jwkAdapter represents adapter for jwk

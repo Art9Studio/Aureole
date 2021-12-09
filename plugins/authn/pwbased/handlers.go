@@ -1,67 +1,67 @@
 package pwbased
 
 import (
+	"aureole/internal/core"
 	"aureole/internal/identity"
-	"aureole/internal/jwt"
-	authzT "aureole/internal/plugins/authz/types"
-	"aureole/internal/router"
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"net/url"
 )
 
-func Register(p *pwBased) func(*fiber.Ctx) error {
+func register(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Password == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "password required")
+			return core.SendError(c, fiber.StatusBadRequest, "password required")
+		}
+
+		pwHash, err := p.pwHasher.HashPw(input.Password)
+		if err != nil {
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		i := &identity.Identity{
-			Id:       input.Id,
-			Username: input.Username,
-			Phone:    input.Phone,
-			Email:    input.Email,
+			ID:         input.Id,
+			Username:   input.Username,
+			Phone:      input.Phone,
+			Email:      input.Email,
+			Additional: map[string]interface{}{identity.Password: pwHash},
 		}
-		pwHash, err := p.pwHasher.HashPw(input.Password)
-		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
 		cred, err := getCredential(i)
 		if err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		user, err := p.manager.OnRegister(cred, i, AdapterName, map[string]interface{}{identity.Password: pwHash})
+		user, err := p.manager.Register(cred, i, adapterName)
 		if err != nil {
 			return err
 		}
+		_ = user
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := jwt.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verif.Exp)
+			token, err := core.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verif.Exp)
 			if err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-			link := attachToken(p.verif.confirmLink, token)
+			link := attachToken(p.verifyConfirmLink, token)
 
-			err = p.verif.sender.Send(input.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
+			err = p.verifySender.Send(input.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
 			if err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 		}
 
-		if p.conf.Register.IsLoginAfter {
+		/*if p.conf.register.IsLoginAfter {
 			payload, err := authzT.NewPayload(user)
 			if err != nil {
 				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 			return p.authorizer.Authorize(c, payload)
-		} else {
-			return c.JSON(&fiber.Map{"status": "success"})
-		}
+		} else {*/
+		return c.JSON(fiber.Map{"success": true})
+		//}
 	}
 }
 
@@ -69,24 +69,24 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Email == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "email required")
+			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
 		i := &identity.Identity{Email: input.Email}
 
-		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
+		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := attachToken(p.reset.confirmLink, token)
-		err = p.verif.sender.Send(i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
+		link := attachToken(p.resetConfirmLink, token)
+		err = p.resetSender.Send(i.Email, "", p.conf.Reset.Template, map[string]interface{}{"link": link})
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&fiber.Map{"status": "success"})
+		return c.JSON(fiber.Map{"success": true})
 	}
 }
 
@@ -94,32 +94,32 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
-			return router.SendError(c, fiber.StatusNotFound, "token not found")
+			return core.SendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := jwt.ParseJWT(rawToken)
+		token, err := core.ParseJWT(rawToken)
 		if err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
+			return core.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
-		if err := jwt.InvalidateJWT(token); err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		if err := core.InvalidateJWT(token); err != nil {
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Password == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "password required")
+			return core.SendError(c, fiber.StatusBadRequest, "password required")
 		}
 
 		pwHash, err := p.pwHasher.HashPw(input.Password)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		_, err = p.manager.Update(
@@ -127,16 +127,18 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 				Name:  identity.Email,
 				Value: email.(string),
 			},
-			AdapterName,
-			map[string]interface{}{identity.Password: pwHash})
+			&identity.Identity{
+				Additional: map[string]interface{}{identity.Password: pwHash},
+			},
+			adapterName)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = p.reset.sender.SendRaw(email.(string), "Reset your password",
+		err = p.resetSender.SendRaw(email.(string), "Reset your password",
 			"Your password has been successfully changed")
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		// todo: add expiring any current user session
@@ -144,7 +146,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if redirectUrl != "" {
 			return c.Redirect(redirectUrl)
 		}
-		return c.JSON(&fiber.Map{"status": "success"})
+		return c.JSON(fiber.Map{"success": true})
 	}
 }
 
@@ -152,24 +154,24 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Email == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "email required")
+			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
 		i := &identity.Identity{Email: input.Email}
 
-		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
+		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := attachToken(p.verif.confirmLink, token)
-		err = p.verif.sender.Send(i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
+		link := attachToken(p.verifyConfirmLink, token)
+		err = p.verifySender.Send(i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&fiber.Map{"status": "success"})
+		return c.JSON(fiber.Map{"success": true})
 	}
 }
 
@@ -177,19 +179,19 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
-			return router.SendError(c, fiber.StatusNotFound, "token not found")
+			return core.SendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := jwt.ParseJWT(rawToken)
+		token, err := core.ParseJWT(rawToken)
 		if err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
+			return core.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
-		if err := jwt.InvalidateJWT(token); err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		if err := core.InvalidateJWT(token); err != nil {
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		_, err = p.manager.Update(
@@ -197,17 +199,17 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 				Name:  identity.Email,
 				Value: email.(string),
 			},
-			AdapterName,
-			map[string]interface{}{identity.EmailVerified: true})
+			&identity.Identity{EmailVerified: true},
+			adapterName)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		redirectUrl := c.Query("redirect_url")
 		if redirectUrl != "" {
 			return c.Redirect(redirectUrl)
 		}
-		return c.JSON(&fiber.Map{"status": "success"})
+		return c.JSON(fiber.Map{"success": true})
 	}
 }
 

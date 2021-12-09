@@ -2,7 +2,7 @@ package etcd
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/storage/types"
+	"aureole/internal/plugins"
 )
 
 type config struct {
@@ -11,6 +11,6 @@ type config struct {
 	DialTimeout float32  `mapstructure:"dial_timeout"`
 }
 
-func (etcdAdapter) Create(conf *configs.Storage) types.Storage {
-	return &Storage{rawConf: conf}
+func (etcdAdapter) Create(conf *configs.Storage) plugins.Storage {
+	return &etcd{rawConf: conf}
 }

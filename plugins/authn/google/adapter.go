@@ -1,15 +1,15 @@
 package google
 
 import (
-	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "google"
+// adapterName is the internal name of the adapter
+const adapterName = "google"
 
 // init initializes package by register adapter
 func init() {
-	authn.Repository.Register(AdapterName, googleAdapter{})
+	plugins.AuthNRepo.Register(adapterName, googleAdapter{})
 }
 
 type googleAdapter struct {

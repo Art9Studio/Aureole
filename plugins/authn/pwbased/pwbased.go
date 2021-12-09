@@ -2,46 +2,32 @@ package pwbased
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/identity"
 	"aureole/internal/plugins"
-	authnT "aureole/internal/plugins/authn/types"
-	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
-	"aureole/internal/plugins/pwhasher/types"
-	senderTypes "aureole/internal/plugins/sender/types"
-	"aureole/internal/router"
-	app "aureole/internal/state/interface"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 	"net/url"
 	"path"
 )
 
-const PluginID = "7157"
+const pluginID = "7157"
 
 type (
 	pwBased struct {
-		pluginApi  core.PluginAPI
-		app        app.AppState
-		rawConf    *configs.Authn
-		conf       *config
-		manager    identity.ManagerI
-		pwHasher   types.PwHasher
-		authorizer authzTypes.Authorizer
-		reset      *reset
-		verif      *verification
-	}
-
-	reset struct {
-		sender      senderTypes.Sender
-		confirmLink *url.URL
-	}
-
-	verification struct {
-		sender      senderTypes.Sender
-		confirmLink *url.URL
+		pluginApi         core.PluginAPI
+		app               *core.App
+		rawConf           *configs.Authn
+		conf              *config
+		manager           identity.ManagerI
+		pwHasher          plugins.PWHasher
+		resetSender       plugins.Sender
+		resetConfirmLink  *url.URL
+		verifySender      plugins.Sender
+		verifyConfirmLink *url.URL
 	}
 
 	input struct {
@@ -85,32 +71,23 @@ func (p *pwBased) Init(appName string, api core.PluginAPI) (err error) {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
-	p.authorizer, err = p.app.GetAuthorizer()
-	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
-	}
-
-	if pwResetEnable(p) {
-		p.reset = &reset{}
-		p.reset.sender, err = p.pluginApi.GetSender(p.conf.Reset.Sender)
+	if resetEnabled(p) {
+		p.resetSender, err = p.pluginApi.GetSender(p.conf.Reset.Sender)
 		if err != nil {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
 		}
-
-		p.reset.confirmLink, err = createConfirmLink(ResetLink, p)
+		p.resetConfirmLink, err = createConfirmLink(ResetLink, p)
 		if err != nil {
 			return err
 		}
 	}
 
-	if verifEnable(p) {
-		p.verif = &verification{}
-		p.verif.sender, err = p.pluginApi.GetSender(p.conf.Verif.Sender)
+	if verifyEnabled(p) {
+		p.verifySender, err = p.pluginApi.GetSender(p.conf.Verif.Sender)
 		if err != nil {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verif.Sender)
 		}
-
-		p.verif.confirmLink, err = createConfirmLink(VerifyLink, p)
+		p.verifyConfirmLink, err = createConfirmLink(VerifyLink, p)
 		if err != nil {
 			return err
 		}
@@ -122,12 +99,12 @@ func (p *pwBased) Init(appName string, api core.PluginAPI) (err error) {
 
 func (*pwBased) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
-		ID:   PluginID,
+		Type: adapterName,
+		ID:   pluginID,
 	}
 }
 
-func (p *pwBased) Login() authnT.AuthFunc {
+func (p *pwBased) Login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
@@ -138,7 +115,7 @@ func (p *pwBased) Login() authnT.AuthFunc {
 		}
 
 		i := &identity.Identity{
-			Id:       input.Id,
+			ID:       input.Id,
 			Email:    input.Email,
 			Phone:    input.Phone,
 			Username: input.Username,
@@ -148,7 +125,7 @@ func (p *pwBased) Login() authnT.AuthFunc {
 			return nil, nil, err
 		}
 
-		pw, err := p.manager.GetData(cred, AdapterName, identity.Password)
+		pw, err := p.manager.GetData(cred, adapterName, identity.Password)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -161,7 +138,7 @@ func (p *pwBased) Login() authnT.AuthFunc {
 		if isMatch {
 			return cred, fiber.Map{
 				cred.Name:              cred.Value,
-				identity.AuthnProvider: AdapterName,
+				identity.AuthnProvider: adapterName,
 			}, nil
 		} else {
 			return nil, nil, errors.New("wrong password")
@@ -179,11 +156,11 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func pwResetEnable(p *pwBased) bool {
+func resetEnabled(p *pwBased) bool {
 	return p.conf.Reset.Sender != "" && p.conf.Reset.Template != ""
 }
 
-func verifEnable(p *pwBased) bool {
+func verifyEnabled(p *pwBased) bool {
 	return p.conf.Verif.Sender != "" && p.conf.Verif.Template != ""
 }
 
@@ -195,54 +172,54 @@ func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
 
 	switch linkType {
 	case ResetLink:
-		u.Path = path.Clean(u.Path + p.conf.PathPrefix + p.conf.Reset.ConfirmUrl)
+		u.Path = path.Clean(u.Path + resetConfirmUrl)
 	case VerifyLink:
-		u.Path = path.Clean(u.Path + p.conf.PathPrefix + p.conf.Verif.ConfirmUrl)
+		u.Path = path.Clean(u.Path + verifyConfirmUrl)
 	}
 
 	return &u, nil
 }
 
 func createRoutes(p *pwBased) {
-	routes := []*router.Route{
+	routes := []*core.Route{
 		{
-			Method:  router.MethodPOST,
-			Path:    p.conf.PathPrefix + p.conf.Register.Path,
-			Handler: Register(p),
+			Method:  http.MethodPost,
+			Path:    pathPrefix + registerUrl,
+			Handler: register(p),
 		},
 	}
 
-	if pwResetEnable(p) {
-		resetRoutes := []*router.Route{
+	if resetEnabled(p) {
+		resetRoutes := []*core.Route{
 			{
-				Method:  router.MethodPOST,
-				Path:    p.conf.PathPrefix + p.conf.Reset.Path,
+				Method:  http.MethodPost,
+				Path:    pathPrefix + resetUrl,
 				Handler: Reset(p),
 			},
 			{
-				Method:  router.MethodPOST,
-				Path:    p.conf.PathPrefix + p.conf.Reset.ConfirmUrl,
+				Method:  http.MethodPost,
+				Path:    pathPrefix + resetConfirmUrl,
 				Handler: ResetConfirm(p),
 			},
 		}
 		routes = append(routes, resetRoutes...)
 	}
 
-	if verifEnable(p) {
-		verifRoutes := []*router.Route{
+	if verifyEnabled(p) {
+		verifRoutes := []*core.Route{
 			{
-				Method:  router.MethodPOST,
-				Path:    p.conf.PathPrefix + p.conf.Verif.Path,
+				Method:  http.MethodPost,
+				Path:    pathPrefix + verifyUrl,
 				Handler: Verify(p),
 			},
 			{
-				Method:  router.MethodGET,
-				Path:    p.conf.PathPrefix + p.conf.Verif.ConfirmUrl,
+				Method:  http.MethodGet,
+				Path:    pathPrefix + verifyConfirmUrl,
 				Handler: VerifyConfirm(p),
 			},
 		}
 		routes = append(routes, verifRoutes...)
 	}
 
-	router.GetRouter().AddAppRoutes(p.app.GetName(), routes)
+	p.pluginApi.AddAppRoutes(p.app.GetName(), routes)
 }

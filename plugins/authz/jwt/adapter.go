@@ -1,15 +1,15 @@
 package jwt
 
 import (
-	"aureole/internal/plugins/authz"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "jwt"
+// adapterName is the internal name of the adapter
+const adapterName = "jwt"
 
 // init initializes package by register adapter
 func init() {
-	authz.Repository.Register(AdapterName, jwtAdapter{})
+	plugins.AuthZRepo.Register(adapterName, jwtAdapter{})
 }
 
 // jwtAdapter represents adapter for jwtAuthz authorization

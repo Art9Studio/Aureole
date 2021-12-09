@@ -2,7 +2,7 @@ package pbkdf2
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/pwhasher/types"
+	"aureole/internal/plugins"
 )
 
 // config represents parsed pwhasher config from the config file
@@ -21,6 +21,6 @@ type config struct {
 }
 
 // Create returns pbkdf2 hasher with the given settings
-func (pbkdf2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
+func (pbkdf2Adapter) Create(conf *configs.PwHasher) plugins.PWHasher {
 	return &pbkdf2{rawConf: conf}
 }

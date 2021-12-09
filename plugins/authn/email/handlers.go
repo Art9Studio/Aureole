@@ -1,31 +1,30 @@
 package email
 
 import (
-	"aureole/internal/jwt"
-	"aureole/internal/router"
+	"aureole/internal/core"
 	"github.com/gofiber/fiber/v2"
 	"net/url"
 )
 
-func SendMagicLink(e *email) func(*fiber.Ctx) error {
+func sendMagicLink(e *email) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var i input
 		if err := c.BodyParser(&i); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, e.conf.Exp)
+		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, e.conf.Exp)
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		link := attachToken(e.magicLink, token)
 
 		err = e.sender.Send(i.Email, "", e.conf.Template, map[string]interface{}{"link": link})
 		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(&fiber.Map{"status": "success"})
+		return c.JSON(&fiber.Map{"success": true})
 	}
 }
 

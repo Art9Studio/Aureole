@@ -8,11 +8,11 @@ import (
 
 type (
 	ManagerI interface {
-		OnUserAuthenticated(cred *Credential, identity *Identity, provider string, additional map[string]interface{}) (map[string]interface{}, error)
-		OnRegister(cred *Credential, identity *Identity, provider string, additional map[string]interface{}) (map[string]interface{}, error)
+		OnUserAuthenticated(cred *Credential, identity *Identity, provider string) (*Identity, error)
+		Register(cred *Credential, identity *Identity, provider string) (*Identity, error)
 		On2FA(cred *Credential, data map[string]interface{}) error
 		GetData(cred *Credential, provider string, name string) (interface{}, error) // описать поля, которые можем получить
-		Update(cred *Credential, provider string, data map[string]interface{}) (map[string]interface{}, error)
+		Update(cred *Credential, identity *Identity, provider string) (*Identity, error)
 		CheckFeaturesAvailable(features []string) error
 	}
 
@@ -25,12 +25,13 @@ type (
 	}
 
 	Identity struct {
-		Id            interface{}
+		ID            interface{}
 		Email         string
 		Phone         string
 		Username      string
 		EmailVerified bool
 		PhoneVerified bool
+		Additional    map[string]interface{}
 	}
 )
 
@@ -63,37 +64,47 @@ func NewIdentity(data map[string]interface{}) (*Identity, error) {
 	return i, nil
 }
 
+func (i *Identity) AsMap() map[string]interface{} {
+	identityMap := map[string]interface{}{
+		ID:            i.ID,
+		Email:         i.Email,
+		Phone:         i.Phone,
+		Username:      i.Username,
+		EmailVerified: i.EmailVerified,
+		PhoneVerified: i.PhoneVerified,
+	}
+
+	for k, v := range i.Additional {
+		identityMap[k] = v
+	}
+
+	return identityMap
+}
+
 func Create() (*Manager, error) {
 	return &Manager{}, nil
 }
 
-func (*Manager) OnUserAuthenticated(cred *Credential, i *Identity, _ string, additional map[string]interface{}) (map[string]interface{}, error) {
+func (*Manager) OnUserAuthenticated(cred *Credential, i *Identity, _ string) (*Identity, error) {
 
 	// check if user exists by cred
 	var exist = true
 	if exist {
 		// get all data from db by cred
-		return map[string]interface{}{}, nil
+		return &Identity{}, nil
 	} else if (cred.Name == "email" && i.EmailVerified) || (cred.Name == "phone" && i.PhoneVerified) {
 
 		fmt.Printf("OnUserAuthenticated\n Identity -  %#v\n", i)
-		fmt.Printf("Additional %#v\n", additional)
 
 		// insert new user in db
 
-		return map[string]interface{}{
-			"id":         i.Id,
-			"username":   i.Username,
-			"email":      i.Email,
-			"phone":      i.Phone,
-			"additional": additional,
-		}, nil
+		return i, nil
 	}
 
 	return nil, errors.New("user doesn't exists")
 }
 
-func (*Manager) OnRegister(_ *Credential, i *Identity, _ string, additional map[string]interface{}) (map[string]interface{}, error) {
+func (*Manager) Register(_ *Credential, i *Identity, _ string) (*Identity, error) {
 
 	// check if user exists by cred
 	var exist bool
@@ -101,18 +112,11 @@ func (*Manager) OnRegister(_ *Credential, i *Identity, _ string, additional map[
 		return nil, errors.New("user already exists")
 	}
 
-	fmt.Printf("OnRegister\n Identity -  %#v\n", i)
-	fmt.Printf("Additional %#v\n", additional)
+	fmt.Printf("Register\n Identity -  %#v\n", i)
 
 	// save all data to db and return entity
 
-	return map[string]interface{}{
-		"id":         i.Id,
-		"username":   i.Username,
-		"email":      i.Email,
-		"phone":      i.Phone,
-		"additional": additional,
-	}, nil
+	return i, nil
 }
 
 func (*Manager) On2FA(*Credential, map[string]interface{}) error {
@@ -134,12 +138,12 @@ func (*Manager) GetData(_ *Credential, _, output string) (interface{}, error) {
 	return nil, nil
 }
 
-func (*Manager) Update(_ *Credential, _ string, fields map[string]interface{}) (map[string]interface{}, error) {
+func (*Manager) Update(_ *Credential, i *Identity, _ string) (*Identity, error) {
 
 	// get entity by cred
 	// update entity and return it
 
-	return fields, errors.New("can't determine type of updated data")
+	return i, errors.New("can't determine type of updated data")
 }
 
 func (*Manager) CheckFeaturesAvailable(requiredFeatures []string) error {

@@ -1,15 +1,15 @@
 package argon2
 
 import (
-	"aureole/internal/plugins/pwhasher"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "argon2"
+// adapterName is the internal name of the adapter
+const adapterName = "argon2"
 
 // init initializes package by register adapter
 func init() {
-	pwhasher.Repository.Register(AdapterName, argon2Adapter{})
+	plugins.PWHasherRepo.Register(adapterName, argon2Adapter{})
 }
 
 // argon2Adapter represents adapter for argon2 pwhasher algorithm

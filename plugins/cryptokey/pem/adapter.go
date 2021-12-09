@@ -1,15 +1,15 @@
 package pem
 
 import (
-	"aureole/internal/plugins/cryptokey"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "pem"
+// adapterName is the internal name of the adapter
+const adapterName = "pem"
 
 // init initializes package by register adapter
 func init() {
-	cryptokey.Repository.Register(AdapterName, pemAdapter{})
+	plugins.CryptoKeyRepo.Register(adapterName, pemAdapter{})
 }
 
 // pemAdapter represents adapter for jwk

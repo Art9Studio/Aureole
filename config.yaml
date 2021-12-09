@@ -11,8 +11,8 @@ apps:
     host: http://localhost:3000
     auth_session_exp: 86400
     
-    authZ: jwt_authz
-    2fa: google_auth_2fa
+    authZ: jwt
+    2fa: google_authenticator
 
     authN:
       - type: "password_based"
@@ -44,7 +44,7 @@ apps:
           max_attempts: 3
           otp:
             length: 6
-            alphabet: "1234567890"
+            alphabet: num
             prefix: A-
             postfix: -B
             exp: 300
@@ -78,8 +78,8 @@ apps:
 
       - type: "apple"
         config:
-          secret_key: apple_signin_key
-          public_key: apple_keys
+          secret_key: apple_private_keys
+          public_key: apple_public_keys
           client_id: ${APPLE_CLIENT_ID}
           team_id: ${APPLE_TEAM_ID}
           key_id: ${APPLE_KEY_ID}
@@ -89,7 +89,7 @@ apps:
 
 authZ:
   - type: "jwt"
-    name: jwt_authz
+    name: jwt
     config:
       iss: Aureole Server
       sub: true
@@ -100,18 +100,19 @@ authZ:
       iat: true
       access_bearer: cookie # [cookie, header, both]
       refresh_bearer: body # [cookie, body, both]
-      sign_key: jwk_file
-      verify_keys: [ jwk_file ]
+      sign_key: local_jwk_keys
+      verify_keys:
+        - local_jwk_keys
       access_exp: 900
       refresh_exp: 7890000
       payload: lab/templates/jwt_payload.json.tmpl
 
 2fa:
   - type: "sms"
-    name: sms_2fa
+    name: sms
     config:
       sender: twilio
-      template: 2fa_tmpl
+      template: sms_2fa_tmpl
       max_attempts: 5
       otp:
         length: 6
@@ -123,7 +124,7 @@ authZ:
 #    config:
 
   - type: "google_authenticator"
-    name: google_auth_2fa
+    name: google_authenticator
     config:
       alg: hotp
       iss: Company Name
@@ -163,45 +164,40 @@ storages:
       size: 100
 
 key_storages:
-  - type: "url"
-    name: google_keys_store
-    config:
-      path: https://www.googleapis.com/oauth2/v3/certs
-
-  - type: "url"
-    name: apple_keys_store
-    config:
-      path: https://appleid.apple.com/auth/keys
-
   - type: "file"
-    name: jwk_keys_store
+    name: local_jwk_keys_store
     config:
       path: lab/keys/keys.json
-
-  - type: "file"
-    name: apple_signin_keys_store
-    config:
-      path: lab/keys/apple_private_key.p8
 
   - type: "file"
     name: gen_keys_store
     config:
       path: lab/keys/gen_keys.json
 
+  - type: "url"
+    name: apple_public_keys_store
+    config:
+      path: https://appleid.apple.com/auth/keys
+
+  - type: "file"
+    name: apple_private_keys_store
+    config:
+      path: lab/keys/apple_private_key.p8
+
   - type: "vault"
-    name: vault_store
+    name: vault_keys_store
     config:
       token: s.5qhJ1R3VcvwwCJQpdAjY7Lw0
       address: http://127.0.0.1:8200
       path: /secret/keys
 
   - type: "file"
-    name: service_sign_store
+    name: service_sign_keys_store
     config:
       path: lab/keys/service_sign_key.json
 
   - type: "file"
-    name: service_enc_store
+    name: service_enc_keys_store
     config:
       path: lab/keys/service_enc_key.json
 
@@ -226,26 +222,21 @@ hashers:
 
 crypto_keys:
   - type: "jwk"
-    name: jwk_file
+    name: local_jwk_keys
     config:
       refresh_interval: 20
-      storage: jwk_keys_store
-
-  - type: "jwk"
-    name: jwk_url
-    config:
-      storage: google_keys_store
+      storage: local_jwk_keys_store
 
   - type: "pem"
-    name: apple_signin_key
+    name: apple_private_keys
     config:
       alg: ES256
-      storage: apple_signin_keys_store
+      storage: apple_private_keys_store
 
   - type: "jwk"
-    name: apple_keys
+    name: apple_public_keys
     config:
-      storage: apple_keys_store
+      storage: apple_public_keys_store
 
   - type: "jwk"
     name: gen_keys
@@ -263,7 +254,7 @@ crypto_keys:
       alg: RS256
       size: 2048
       kid: SHA-256
-      storage: service_sign_store
+      storage: service_sign_keys_store
 
   - type: "jwk"
     name: service_enc_key
@@ -273,14 +264,14 @@ crypto_keys:
       use: enc
       curve: P-256
       kid: SHA-256
-      storage: service_enc_store
+      storage: service_enc_keys_store
 
 senders:
   - type: "email"
     name: email
     config:
-      host: smtp.gmail.com:587
-      username: test.aureole@gmail.com
+      host: ${SMTP_HOST}
+      username: ${SMTP_USERNAME}
       password: ${SMTP_PASSWORD}
       from: test.aureole@gmail.com
       bcc: [ ]
@@ -300,6 +291,7 @@ senders:
       from: ${TEST_TWILIO_PHONE_NUMBER}
       templates:
         phone_otp: lab/templates/phone_otp.txt
+        sms_2fa_tmpl: lab/templates/sms_2fa.txt
 
 admin_plugins:
   - type: "urls"

@@ -57,10 +57,18 @@
               "minimum": 1
             },
             "alphabet": {
-              "type": "string",
-              "uuid": "126af1c7-fd76-4bb2-a154-e643e081526a",
-              "default": "1234567890",
-              "minLength": 1
+              "anyOf": [
+                {
+                  "enum": ["num", "alpha", "alphanum"],
+                  "uuid": "a830e48e-2941-48ce-bc3c-47208bde4b6c"
+                },
+                {
+                  "type": "string",
+                  "uuid": "126af1c7-fd76-4bb2-a154-e643e081526a",
+                  "minLength": 1
+                }
+              ],
+              "default": "num"
             },
             "prefix": {
               "type": "string",

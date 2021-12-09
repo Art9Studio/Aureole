@@ -2,8 +2,7 @@ package main
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/router"
-	"aureole/internal/state"
+	"aureole/internal/core"
 	"log"
 )
 
@@ -13,16 +12,8 @@ func main() {
 		log.Panic(err)
 	}
 
-	project := &state.Project{}
-	state.Init(conf, project)
-	state.ListPluginStatus(project)
-
-	server, err := router.CreateServer(project.Apps)
-	if err != nil {
-		log.Panicf("router init: %v", err)
-	}
-
-	if err := server.Listen(":3000"); err != nil {
-		log.Panicf("router start: %v", err)
+	core.Init(conf)
+	if err := core.RunServer(); err != nil {
+		log.Panic(err)
 	}
 }

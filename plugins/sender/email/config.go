@@ -2,7 +2,7 @@ package email
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/sender/types"
+	"aureole/internal/plugins"
 )
 
 type config struct {
@@ -16,6 +16,6 @@ type config struct {
 	Templates          map[string]string `mapstructure:"templates"`
 }
 
-func (emailAdapter) Create(conf *configs.Sender) types.Sender {
-	return &Email{rawConf: conf}
+func (emailAdapter) Create(conf *configs.Sender) plugins.Sender {
+	return &email{rawConf: conf}
 }

@@ -2,21 +2,22 @@ package authenticator
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/2fa/types"
+	"aureole/internal/plugins"
+)
+
+const (
+	getQRUrl        = "/2fa/google-authenticator/send"
+	getScratchesUrl = "/2fa/google-authenticator/scratch"
 )
 
 type (
 	config struct {
-		Alg             string      `mapstructure:"alg"`
-		Iss             string      `mapstructure:"iss"`
-		WindowSize      int         `mapstructure:"window_size"`
-		DisallowReuse   bool        `mapstructure:"disallow_reuse"`
-		MaxAttempts     int         `mapstructure:"max_attempts"`
-		ScratchCode     scratchCode `mapstructure:"scratch_code"`
-		PathPrefix      string
-		GetQRUrl        string
-		VerifyUrl       string
-		GetScratchesUrl string
+		Alg           string      `mapstructure:"alg"`
+		Iss           string      `mapstructure:"iss"`
+		WindowSize    int         `mapstructure:"window_size"`
+		DisallowReuse bool        `mapstructure:"disallow_reuse"`
+		MaxAttempts   int         `mapstructure:"max_attempts"`
+		ScratchCode   scratchCode `mapstructure:"scratch_code"`
 	}
 
 	scratchCode struct {
@@ -25,6 +26,6 @@ type (
 	}
 )
 
-func (gauthAdapter) Create(conf *configs.SecondFactor) types.SecondFactor {
+func (gauthAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
 	return &gauth{rawConf: conf}
 }

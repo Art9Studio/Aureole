@@ -3,10 +3,6 @@ package authenticator
 import "aureole/internal/configs"
 
 func (c *config) setDefaults() {
-	c.PathPrefix = "/2fa/google-authenticator"
-	c.GetQRUrl = "/send"
-	c.VerifyUrl = "/verify"
-	c.GetScratchesUrl = "/scratch"
 	configs.SetDefault(&c.Alg, "totp")
 	configs.SetDefault(&c.Iss, "Aureole")
 	configs.SetDefault(&c.WindowSize, 10)

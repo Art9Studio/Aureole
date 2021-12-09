@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 	"net/url"
 	"strings"
 )
 
-func GetAuthCode(v *vk) func(*fiber.Ctx) error {
+func getAuthCode(v *vk) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		u := v.provider.AuthCodeURL("state")
 		return c.Redirect(u)
@@ -28,11 +29,17 @@ func getUserData(v *vk, code string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	client := v.provider.Client(ctx, t)
-	resp, err := client.Get(u)
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
+
+	client := v.provider.Client(ctx, t)
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
 	var data map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {

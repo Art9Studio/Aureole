@@ -2,27 +2,25 @@ package pem
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/plugins"
-	"aureole/internal/plugins/core"
-	"aureole/internal/plugins/cryptokey/types"
-	kstorageT "aureole/internal/plugins/kstorage/types"
-	"aureole/internal/router"
 	"encoding/json"
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
 )
 
-const PluginID = "6374"
+const pluginID = "6374"
 
-type Pem struct {
+type pem struct {
 	pluginApi       core.PluginAPI
 	rawConf         *configs.CryptoKey
 	conf            *config
-	keyStorage      kstorageT.KeyStorage
+	keyStorage      plugins.KeyStorage
 	refreshDone     chan struct{}
 	refreshInterval time.Duration
 	muSet           sync.RWMutex
@@ -30,7 +28,7 @@ type Pem struct {
 	publicSet       jwk.Set
 }
 
-func (p *Pem) Init(api core.PluginAPI) (err error) {
+func (p *pem) Init(api core.PluginAPI) (err error) {
 	p.pluginApi = api
 	if p.conf, err = initConfig(&p.rawConf.Config); err != nil {
 		return err
@@ -57,12 +55,26 @@ func (p *Pem) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (p *Pem) GetMetaData() plugins.Meta {
+func (p *pem) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
+		Type: adapterName,
 		Name: p.rawConf.Name,
-		ID:   PluginID,
+		ID:   pluginID,
 	}
+}
+
+func (p *pem) GetPrivateSet() jwk.Set {
+	p.muSet.RLock()
+	privSet := p.privateSet
+	p.muSet.RUnlock()
+	return privSet
+}
+
+func (p *pem) GetPublicSet() jwk.Set {
+	p.muSet.RLock()
+	pubSet := p.publicSet
+	p.muSet.RUnlock()
+	return pubSet
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -74,7 +86,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func initKeySets(p *Pem) (err error) {
+func initKeySets(p *pem) (err error) {
 	var (
 		rawKeys []byte
 		keySet  jwk.Set
@@ -113,7 +125,7 @@ func initKeySets(p *Pem) (err error) {
 		return err
 	}
 
-	if setType == types.Private {
+	if setType == plugins.Private {
 		p.privateSet = keySet
 		if p.publicSet, err = jwk.PublicSetOf(p.privateSet); err != nil {
 			return err
@@ -125,23 +137,23 @@ func initKeySets(p *Pem) (err error) {
 	return nil
 }
 
-func createRoutes(p *Pem) {
-	routes := []*router.Route{
+func createRoutes(p *pem) {
+	routes := []*core.Route{
 		{
-			Method:  router.MethodGET,
+			Method:  http.MethodGet,
 			Path:    p.conf.PathPrefix + "/jwk",
-			Handler: GetJwkKeys(p),
+			Handler: getJwkKeys(p),
 		},
 		{
-			Method:  router.MethodGET,
+			Method:  http.MethodGet,
 			Path:    p.conf.PathPrefix + "/pem",
-			Handler: GetPemKeys(p),
+			Handler: getPemKeys(p),
 		},
 	}
-	router.GetRouter().AddProjectRoutes(routes)
+	p.pluginApi.AddProjectRoutes(routes)
 }
 
-func refreshKeys(p *Pem) {
+func refreshKeys(p *pem) {
 	ticker := time.NewTicker(p.refreshInterval)
 	defer ticker.Stop()
 	for {
@@ -170,7 +182,7 @@ func refreshKeys(p *Pem) {
 					fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
 				}
 
-				if setType == types.Private {
+				if setType == plugins.Private {
 					pubSet, err := jwk.PublicSetOf(keySet)
 					if err != nil {
 						fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
@@ -191,18 +203,4 @@ func refreshKeys(p *Pem) {
 			}
 		}
 	}
-}
-
-func (p *Pem) GetPrivateSet() jwk.Set {
-	p.muSet.RLock()
-	privSet := p.privateSet
-	p.muSet.RUnlock()
-	return privSet
-}
-
-func (p *Pem) GetPublicSet() jwk.Set {
-	p.muSet.RLock()
-	pubSet := p.publicSet
-	p.muSet.RUnlock()
-	return pubSet
 }

@@ -2,35 +2,25 @@ package phone
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/encrypt"
+	"aureole/internal/core"
 	"aureole/internal/identity"
-	"aureole/internal/jwt"
 	"aureole/internal/plugins"
-	authnT "aureole/internal/plugins/authn/types"
-	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
-	"aureole/internal/plugins/pwhasher/types"
-	senderTypes "aureole/internal/plugins/sender/types"
-	"aureole/internal/router"
-	app "aureole/internal/state/interface"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 )
 
-const PluginID = "6937"
+const pluginID = "6937"
 
 type (
 	phone struct {
-		pluginApi  core.PluginAPI
-		app        app.AppState
-		rawConf    *configs.Authn
-		conf       *config
-		manager    identity.ManagerI
-		hasher     types.PwHasher
-		authorizer authzTypes.Authorizer
-		sender     senderTypes.Sender
+		pluginApi core.PluginAPI
+		appName   string
+		rawConf   *configs.Authn
+		conf      *config
+		sender    plugins.Sender
 	}
 
 	input struct {
@@ -42,34 +32,15 @@ type (
 
 func (p *phone) Init(appName string, api core.PluginAPI) (err error) {
 	p.pluginApi = api
+	p.appName = appName
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	p.app, err = p.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
-	}
-
-	p.manager, err = p.app.GetIdentityManager()
-	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared", appName)
-	}
-
-	p.hasher, err = p.pluginApi.GetHasher(p.conf.Hasher)
-	if err != nil {
-		return fmt.Errorf("hasher named '%s' is not declared", p.conf.Hasher)
-	}
-
 	p.sender, err = p.pluginApi.GetSender(p.conf.Sender)
 	if err != nil {
 		return fmt.Errorf("sender named '%s' is not declared", p.conf.Sender)
-	}
-
-	p.authorizer, err = p.app.GetAuthorizer()
-	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	createRoutes(p)
@@ -78,12 +49,12 @@ func (p *phone) Init(appName string, api core.PluginAPI) (err error) {
 
 func (*phone) GetMetaData() plugins.Meta {
 	return plugins.Meta{
-		Type: AdapterName,
-		ID:   PluginID,
+		Type: adapterName,
+		ID:   pluginID,
 	}
 }
 
-func (p *phone) Login() authnT.AuthFunc {
+func (p *phone) Login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
@@ -93,7 +64,7 @@ func (p *phone) Login() authnT.AuthFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := jwt.ParseJWT(input.Token)
+		t, err := core.ParseJWT(input.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -105,7 +76,7 @@ func (p *phone) Login() authnT.AuthFunc {
 		if !ok {
 			return nil, nil, errors.New("cannot get attempts from token")
 		}
-		if err := jwt.InvalidateJWT(t); err != nil {
+		if err := core.InvalidateJWT(t); err != nil {
 			return nil, nil, err
 		}
 
@@ -124,7 +95,7 @@ func (p *phone) Login() authnT.AuthFunc {
 		if !ok {
 			return nil, nil, errors.New("otp has expired")
 		}
-		err = encrypt.Decrypt(encOtp, &decrOtp)
+		err = core.Decrypt(encOtp, &decrOtp)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -137,10 +108,10 @@ func (p *phone) Login() authnT.AuthFunc {
 				fiber.Map{
 					identity.Phone:         phone,
 					identity.PhoneVerified: true,
-					identity.AuthnProvider: AdapterName,
+					identity.AuthnProvider: adapterName,
 				}, nil
 		} else {
-			token, err := jwt.CreateJWT(
+			token, err := core.CreateJWT(
 				map[string]interface{}{
 					"phone":    phone,
 					"attempts": int(attempts.(float64)) + 1,
@@ -165,17 +136,17 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func createRoutes(p *phone) {
-	routes := []*router.Route{
+	routes := []*core.Route{
 		{
-			Method:  router.MethodGET,
-			Path:    p.conf.PathPrefix + p.conf.SendUrl,
-			Handler: SendOtp(p),
+			Method:  http.MethodGet,
+			Path:    sendUrl,
+			Handler: sendOTP(p),
 		},
 		{
-			Method:  router.MethodGET,
-			Path:    p.conf.PathPrefix + p.conf.ResendUrl,
-			Handler: Resend(p),
+			Method:  http.MethodGet,
+			Path:    resendUrl,
+			Handler: resendOTP(p),
 		},
 	}
-	router.GetRouter().AddAppRoutes(p.app.GetName(), routes)
+	p.pluginApi.AddAppRoutes(p.appName, routes)
 }
