@@ -2,6 +2,7 @@ package redis
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/core"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,13 +11,17 @@ import (
 	"time"
 )
 
+const PluginID = "5979"
+
 type Storage struct {
-	rawConf *configs.Storage
-	conf    *config
-	client  *redis.Client
+	pluginApi core.PluginAPI
+	rawConf   *configs.Storage
+	conf      *config
+	client    *redis.Client
 }
 
-func (s *Storage) Init() error {
+func (s *Storage) Init(api core.PluginAPI) error {
+	s.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -30,6 +35,10 @@ func (s *Storage) Init() error {
 		DB:       s.conf.DB,
 	})
 	return s.client.Ping(context.Background()).Err()
+}
+
+func (*Storage) GetPluginID() string {
+	return PluginID
 }
 
 func (s *Storage) Set(k string, v interface{}, exp int) error {

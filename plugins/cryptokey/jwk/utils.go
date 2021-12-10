@@ -42,7 +42,7 @@ func generateKey(conf *config) (keySet jwk.Set, err error) {
 	if err := key.Set(jwk.AlgorithmKey, conf.Alg); err != nil {
 		return nil, err
 	}
-	if err := key.Set(jwk.KeyUsageKey, "sig"); err != nil {
+	if err := key.Set(jwk.KeyUsageKey, conf.Use); err != nil {
 		return nil, err
 	}
 

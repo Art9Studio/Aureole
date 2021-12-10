@@ -6,7 +6,7 @@ import (
 )
 
 // todo: remove when default config will exist in plugin
-var DefaultConfig = &config{
+var defaultConfig = &config{
 	Iterations: 4096,
 	SaltLen:    16,
 	KeyLen:     32,
@@ -25,7 +25,7 @@ func TestPbkdf2_HashPw(t *testing.T) {
 	}{
 		{
 			name:    "pbkdf2 sha1",
-			conf:    DefaultConfig,
+			conf:    defaultConfig,
 			args:    args{pw: "qwerty"},
 			wantErr: false,
 		},
@@ -76,12 +76,16 @@ func TestPbkdf2_HashPw(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a, err := initAdapter(nil, tt.conf)
+			hashFunc, err := initFunc(tt.conf.FuncName)
 			if err != nil {
-				t.Errorf("initAdapter() error = %v", err)
-				return
+				t.Fatal(err)
 			}
-			got, err := a.HashPw(tt.args.pw)
+
+			p := pbkdf2{
+				conf:     tt.conf,
+				function: hashFunc,
+			}
+			got, err := p.HashPw(tt.args.pw)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HashPw() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -106,7 +110,7 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 	}{
 		{
 			name: "pbkdf2 sha1",
-			conf: DefaultConfig,
+			conf: defaultConfig,
 			args: args{
 				pw:   "qwerty",
 				hash: "pbkdf2_sha1$4096$c9Bp0I0FRcXSBmuOPrcD2w$dTCHD12APSrk1gToimJV5Qiz2jactN6vMgDF64tuALg",
@@ -177,12 +181,16 @@ func TestPbkdf2_ComparePw(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a, err := initAdapter(nil, tt.conf)
+			hashFunc, err := initFunc(tt.conf.FuncName)
 			if err != nil {
-				t.Errorf("initAdapter() error = %v", err)
-				return
+				t.Fatal(err)
 			}
-			got, err := a.ComparePw(tt.args.pw, tt.args.hash)
+
+			p := pbkdf2{
+				conf:     tt.conf,
+				function: hashFunc,
+			}
+			got, err := p.ComparePw(tt.args.pw, tt.args.hash)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ComparePw() error = %v, wantErr %v", err, tt.wantErr)
 				return

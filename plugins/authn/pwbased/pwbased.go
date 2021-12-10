@@ -3,8 +3,8 @@ package pwbased
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
-	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
@@ -15,8 +15,11 @@ import (
 	"path"
 )
 
+const PluginID = "7157"
+
 type (
 	pwBased struct {
+		pluginApi  core.PluginAPI
 		app        app.AppState
 		rawConf    *configs.Authn
 		conf       *config
@@ -53,37 +56,39 @@ const (
 	VerifyLink linkType = "verify"
 )
 
-func (p *pwBased) Init(app app.AppState) (err error) {
-	p.app = app
-	p.rawConf.PathPrefix = "/"
-
+func (p *pwBased) Init(appName string, api core.PluginAPI) (err error) {
+	p.pluginApi = api
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	pluginApi := authn.Repository.PluginApi
-	p.manager, err = app.GetIdentityManager()
+	p.app, err = p.pluginApi.GetApp(appName)
 	if err != nil {
-		return fmt.Errorf("manager for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("app named '%s' is not declared", appName)
+	}
+
+	p.manager, err = p.app.GetIdentityManager()
+	if err != nil {
+		return fmt.Errorf("manager for app '%s' is not declared", appName)
 	}
 	if err := p.manager.CheckFeaturesAvailable([]string{"on_register", "get_data", "update"}); err != nil {
 		return err
 	}
 
-	p.pwHasher, err = pluginApi.Project.GetHasher(p.conf.MainHasher)
+	p.pwHasher, err = p.pluginApi.GetHasher(p.conf.MainHasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
 	p.authorizer, err = p.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	if pwResetEnable(p) {
 		p.reset = &reset{}
-		p.reset.sender, err = pluginApi.Project.GetSender(p.conf.Reset.Sender)
+		p.reset.sender, err = p.pluginApi.GetSender(p.conf.Reset.Sender)
 		if err != nil {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
 		}
@@ -96,7 +101,7 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 
 	if verifEnable(p) {
 		p.verif = &verification{}
-		p.verif.sender, err = pluginApi.Project.GetSender(p.conf.Verif.Sender)
+		p.verif.sender, err = p.pluginApi.GetSender(p.conf.Verif.Sender)
 		if err != nil {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verif.Sender)
 		}
@@ -109,6 +114,10 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 
 	createRoutes(p)
 	return nil
+}
+
+func (*pwBased) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -137,9 +146,9 @@ func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
 
 	switch linkType {
 	case ResetLink:
-		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl)
+		u.Path = path.Clean(u.Path + p.conf.PathPrefix + p.conf.Reset.ConfirmUrl)
 	case VerifyLink:
-		u.Path = path.Clean(u.Path + p.rawConf.PathPrefix + p.conf.Verif.ConfirmUrl)
+		u.Path = path.Clean(u.Path + p.conf.PathPrefix + p.conf.Verif.ConfirmUrl)
 	}
 
 	return &u, nil
@@ -149,12 +158,12 @@ func createRoutes(p *pwBased) {
 	routes := []*_interface.Route{
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Login.Path,
+			Path:    p.conf.PathPrefix + p.conf.Login.Path,
 			Handler: Login(p),
 		},
 		{
 			Method:  "POST",
-			Path:    p.rawConf.PathPrefix + p.conf.Register.Path,
+			Path:    p.conf.PathPrefix + p.conf.Register.Path,
 			Handler: Register(p),
 		},
 	}
@@ -163,12 +172,12 @@ func createRoutes(p *pwBased) {
 		resetRoutes := []*_interface.Route{
 			{
 				Method:  "POST",
-				Path:    p.rawConf.PathPrefix + p.conf.Reset.Path,
+				Path:    p.conf.PathPrefix + p.conf.Reset.Path,
 				Handler: Reset(p),
 			},
 			{
 				Method:  "POST",
-				Path:    p.rawConf.PathPrefix + p.conf.Reset.ConfirmUrl,
+				Path:    p.conf.PathPrefix + p.conf.Reset.ConfirmUrl,
 				Handler: ResetConfirm(p),
 			},
 		}
@@ -179,17 +188,17 @@ func createRoutes(p *pwBased) {
 		verifRoutes := []*_interface.Route{
 			{
 				Method:  "POST",
-				Path:    p.rawConf.PathPrefix + p.conf.Verif.Path,
+				Path:    p.conf.PathPrefix + p.conf.Verif.Path,
 				Handler: Verify(p),
 			},
 			{
 				Method:  "GET",
-				Path:    p.rawConf.PathPrefix + p.conf.Verif.ConfirmUrl,
+				Path:    p.conf.PathPrefix + p.conf.Verif.ConfirmUrl,
 				Handler: VerifyConfirm(p),
 			},
 		}
 		routes = append(routes, verifRoutes...)
 	}
 
-	authn.Repository.PluginApi.Router.AddAppRoutes(p.app.GetName(), routes)
+	p.pluginApi.GetRouter().AddAppRoutes(p.app.GetName(), routes)
 }

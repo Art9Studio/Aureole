@@ -12,5 +12,5 @@ type config struct {
 }
 
 func (vaultAdapter) Create(conf *configs.KeyStorage) types.KeyStorage {
-	return &Storage{rawConf: conf}
+	return &storage{rawConf: conf}
 }

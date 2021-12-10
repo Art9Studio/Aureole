@@ -2,25 +2,30 @@ package vault
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/core"
 	"encoding/json"
-	"github.com/hashicorp/vault/api"
+	vaultAPI "github.com/hashicorp/vault/api"
 	"github.com/mitchellh/mapstructure"
 )
 
-type Storage struct {
-	rawConf *configs.KeyStorage
-	conf    *config
-	client  *api.Client
+const PluginID = "3521"
+
+type storage struct {
+	pluginApi core.PluginAPI
+	rawConf   *configs.KeyStorage
+	conf      *config
+	client    *vaultAPI.Client
 }
 
-func (s *Storage) Init() error {
+func (s *storage) Init(api core.PluginAPI) error {
+	s.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err
 	}
 	s.conf = adapterConf
 
-	client, err := api.NewClient(&api.Config{Address: s.conf.Address})
+	client, err := vaultAPI.NewClient(&vaultAPI.Config{Address: s.conf.Address})
 	if err != nil {
 		return err
 	}
@@ -30,12 +35,16 @@ func (s *Storage) Init() error {
 	return nil
 }
 
-func (s *Storage) Write(v []byte) error {
+func (*storage) GetPluginID() string {
+	return PluginID
+}
+
+func (s *storage) Write(v []byte) error {
 	_, err := s.client.Logical().WriteBytes(s.conf.Path, v)
 	return err
 }
 
-func (s *Storage) Read(v *[]byte) (ok bool, err error) {
+func (s *storage) Read(v *[]byte) (ok bool, err error) {
 	scr, err := s.client.Logical().Read(s.conf.Path)
 	if err != nil {
 		return false, err

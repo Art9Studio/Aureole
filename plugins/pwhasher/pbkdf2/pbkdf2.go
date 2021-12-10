@@ -2,7 +2,7 @@ package pbkdf2
 
 import (
 	"aureole/internal/configs"
-	crand "crypto/rand"
+	"aureole/internal/plugins/core"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -11,38 +11,27 @@ import (
 	"errors"
 	"fmt"
 	"hash"
-	"math/big"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	"golang.org/x/crypto/pbkdf2"
+	pbkdf "golang.org/x/crypto/pbkdf2"
 )
 
-func GetRandomString(length int) (string, error) {
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	ret := make([]byte, length)
-	for i := 0; i < length; i++ {
-		num, err := crand.Int(crand.Reader, big.NewInt(int64(len(letters))))
-		if err != nil {
-			return "", err
-		}
-		ret[i] = letters[num.Int64()]
-	}
+const PluginID = "6628"
 
-	return string(ret), nil
-}
-
-// Pbkdf2 represents pbkdf2 hasher
-type Pbkdf2 struct {
-	rawConf *configs.PwHasher
-	conf    *config
+// pbkdf2 represents pbkdf2 hasher
+type pbkdf2 struct {
+	pluginApi core.PluginAPI
+	rawConf   *configs.PwHasher
+	conf      *config
 	// Pseudorandom function used to derive a secure encryption key based on the password
 	function func() hash.Hash
 }
 
 var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhasher is not in the correct format")
 
-func (p *Pbkdf2) Init() error {
+func (p *pbkdf2) Init(api core.PluginAPI) error {
+	p.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(p.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -59,20 +48,24 @@ func (p *Pbkdf2) Init() error {
 	return nil
 }
 
-// HashPw returns a Pbkdf2 pwhasher of a plain-text password using the provided
+func (*pbkdf2) GetPluginID() string {
+	return PluginID
+}
+
+// HashPw returns a pbkdf2 pwhasher of a plain-text password using the provided
 // algorithm parameters. The returned pwhasher follows the format used by the
-// Django and contains the base64-encoded Pbkdf2 derived key prefixed by the
+// Django and contains the base64-encoded pbkdf2 derived key prefixed by the
 // salt and parameters. It looks like this:
 //
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
-func (p *Pbkdf2) HashPw(pw string) (string, error) {
-	salt, err := GetRandomString(p.conf.SaltLen)
+func (p *pbkdf2) HashPw(pw string) (string, error) {
+	salt, err := getRandomString(p.conf.SaltLen)
 	if err != nil {
 		return "", err
 	}
 
-	key := pbkdf2.Key([]byte(pw), []byte(salt), p.conf.Iterations, p.conf.KeyLen, p.function)
+	key := pbkdf.Key([]byte(pw), []byte(salt), p.conf.Iterations, p.conf.KeyLen, p.function)
 
 	hashed := fmt.Sprintf("pbkdf2_%s$%d$%s$%s",
 		p.conf.FuncName,
@@ -85,15 +78,15 @@ func (p *Pbkdf2) HashPw(pw string) (string, error) {
 }
 
 // ComparePw performs a constant-time comparison between a plain-text password and
-// Pbkdf2 pwhasher, using the parameters and salt contained in the pwhasher
+// pbkdf2 pwhasher, using the parameters and salt contained in the pwhasher
 // It returns true if they match, otherwise it returns false
-func (p *Pbkdf2) ComparePw(pw, hash string) (bool, error) {
+func (*pbkdf2) ComparePw(pw, hash string) (bool, error) {
 	conf, function, salt, key, err := decodePwHash(hash)
 	if err != nil {
 		return false, err
 	}
 
-	otherKey := pbkdf2.Key([]byte(pw), salt, conf.Iterations, conf.KeyLen, function)
+	otherKey := pbkdf.Key([]byte(pw), salt, conf.Iterations, conf.KeyLen, function)
 
 	if subtle.ConstantTimeCompare(key, otherKey) == 1 {
 		return true, nil

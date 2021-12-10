@@ -2,6 +2,7 @@ package url
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/core"
 	"context"
 	"errors"
 	"github.com/mitchellh/mapstructure"
@@ -9,12 +10,16 @@ import (
 	"net/http"
 )
 
-type Storage struct {
-	rawConf *configs.KeyStorage
-	conf    *config
+const PluginID = "4896"
+
+type storage struct {
+	pluginApi core.PluginAPI
+	rawConf   *configs.KeyStorage
+	conf      *config
 }
 
-func (s *Storage) Init() error {
+func (s *storage) Init(api core.PluginAPI) error {
+	s.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -23,11 +28,15 @@ func (s *Storage) Init() error {
 	return nil
 }
 
-func (*Storage) Write(_ []byte) error {
+func (*storage) GetPluginID() string {
+	return PluginID
+}
+
+func (*storage) Write(_ []byte) error {
 	return errors.New("url key key storage: Write method is redundant and not allowed")
 }
 
-func (s *Storage) Read(v *[]byte) (ok bool, err error) {
+func (s *storage) Read(v *[]byte) (ok bool, err error) {
 	request, err := http.NewRequestWithContext(context.Background(), "GET", s.conf.Path, http.NoBody)
 	if err != nil {
 		return false, err

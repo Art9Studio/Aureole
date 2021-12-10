@@ -10,5 +10,5 @@ type config struct {
 }
 
 func (urlAdapter) Create(conf *configs.KeyStorage) types.KeyStorage {
-	return &Storage{rawConf: conf}
+	return &storage{rawConf: conf}
 }

@@ -4,18 +4,21 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/jwt"
 	authzT "aureole/internal/plugins/authz/types"
+	"aureole/internal/router"
+	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"net/url"
 )
 
 func Login(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Password == "" {
-			return sendError(c, fiber.StatusBadRequest, "password required")
+			return router.SendError(c, fiber.StatusBadRequest, "password required")
 		}
 
 		i := &identity.Identity{
@@ -26,28 +29,28 @@ func Login(p *pwBased) func(*fiber.Ctx) error {
 		}
 		cred, err := getCredential(i)
 		if err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		pw, err := p.manager.GetData(cred, AdapterName, "password")
+		pw, err := p.manager.GetData(cred, AdapterName, identity.Password)
 		if err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
 		isMatch, err := p.pwHasher.ComparePw(input.Password, pw.(string))
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		if isMatch {
 			userData, err := p.manager.OnUserAuthenticated(cred, i, AdapterName, nil)
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
 			return p.authorizer.Authorize(c, authzT.NewPayload(p.authorizer, nil, userData))
 		} else {
-			return sendError(c, fiber.StatusUnauthorized, fmt.Sprintf("wrong password or %s", cred.Name))
+			return router.SendError(c, fiber.StatusUnauthorized, fmt.Sprintf("wrong password or %s", cred.Name))
 		}
 	}
 }
@@ -56,10 +59,10 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Password == "" {
-			return sendError(c, fiber.StatusBadRequest, "password required")
+			return router.SendError(c, fiber.StatusBadRequest, "password required")
 		}
 
 		i := &identity.Identity{
@@ -70,14 +73,14 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 		}
 		pwHash, err := p.pwHasher.HashPw(input.Password)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		cred, err := getCredential(i)
 		if err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		user, err := p.manager.OnRegister(cred, i, AdapterName, map[string]interface{}{"password": pwHash})
+		user, err := p.manager.OnRegister(cred, i, AdapterName, map[string]interface{}{identity.Password: pwHash})
 		if err != nil {
 			return err
 		}
@@ -85,13 +88,13 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 		if p.conf.Register.IsVerifyAfter {
 			token, err := jwt.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verif.Exp)
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 			link := attachToken(p.verif.confirmLink, token)
 
 			err = p.verif.sender.Send(input.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 		}
 
@@ -107,22 +110,22 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Email == "" {
-			return sendError(c, fiber.StatusBadRequest, "email required")
+			return router.SendError(c, fiber.StatusBadRequest, "email required")
 		}
 		i := &identity.Identity{Email: input.Email}
 
 		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		link := attachToken(p.reset.confirmLink, token)
 		err = p.verif.sender.Send(i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(&fiber.Map{"status": "success"})
 	}
@@ -132,48 +135,49 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
-			return sendError(c, fiber.StatusNotFound, "token not found")
+			return router.SendError(c, fiber.StatusNotFound, "token not found")
 		}
 
 		token, err := jwt.ParseJWT(rawToken)
 		if err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
-			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
+			return router.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
 		if err := jwt.InvalidateJWT(token); err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Password == "" {
-			return sendError(c, fiber.StatusBadRequest, "password required")
+			return router.SendError(c, fiber.StatusBadRequest, "password required")
 		}
 
 		pwHash, err := p.pwHasher.HashPw(input.Password)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		_, err = p.manager.Update(
 			&identity.Credential{
-				Name:  "email",
-				Value: email},
+				Name:  identity.Email,
+				Value: email.(string),
+			},
 			AdapterName,
-			map[string]interface{}{"password": pwHash})
+			map[string]interface{}{identity.Password: pwHash})
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		err = p.reset.sender.SendRaw(email.(string), "Reset your password",
 			"Your password has been successfully changed")
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		// todo: add expiring any current user session
@@ -189,22 +193,22 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Email == "" {
-			return sendError(c, fiber.StatusBadRequest, "email required")
+			return router.SendError(c, fiber.StatusBadRequest, "email required")
 		}
 		i := &identity.Identity{Email: input.Email}
 
 		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		link := attachToken(p.verif.confirmLink, token)
 		err = p.verif.sender.Send(i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(&fiber.Map{"status": "success"})
 	}
@@ -214,30 +218,30 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
-			return sendError(c, fiber.StatusNotFound, "token not found")
+			return router.SendError(c, fiber.StatusNotFound, "token not found")
 		}
 
 		token, err := jwt.ParseJWT(rawToken)
 		if err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
-			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
+			return router.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
 		if err := jwt.InvalidateJWT(token); err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		_, err = p.manager.Update(
 			&identity.Credential{
-				Name:  "email",
-				Value: email,
+				Name:  identity.Email,
+				Value: email.(string),
 			},
 			AdapterName,
-			map[string]interface{}{"email_verified": true})
+			map[string]interface{}{identity.EmailVerified: true})
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		redirectUrl := c.Query("redirect_url")
@@ -246,4 +250,37 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 		return c.JSON(&fiber.Map{"status": "success"})
 	}
+}
+
+func getCredential(i *identity.Identity) (*identity.Credential, error) {
+	if i.Username != "nil" {
+		return &identity.Credential{
+			Name:  "username",
+			Value: i.Username,
+		}, nil
+	}
+
+	if i.Email != "nil" {
+		return &identity.Credential{
+			Name:  "email",
+			Value: i.Email,
+		}, nil
+	}
+
+	if i.Phone != "nil" {
+		return &identity.Credential{
+			Name:  "phone",
+			Value: i.Phone,
+		}, nil
+	}
+
+	return nil, errors.New("credential not found")
+}
+
+func attachToken(u *url.URL, token string) string {
+	q := u.Query()
+	q.Set("token", token)
+	u.RawQuery = q.Encode()
+
+	return u.String()
 }

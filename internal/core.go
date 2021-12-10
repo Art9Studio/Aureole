@@ -1,10 +1,12 @@
 package internal
 
 import (
+	"aureole/internal/encrypt"
 	"aureole/internal/jwt"
-	_interface "aureole/internal/state/interface"
+	state "aureole/internal/state/interface"
 )
 
-func InitCore(p _interface.ProjectState) {
+func InitCore(p state.ProjectState) {
 	jwt.Init(p)
+	encrypt.Init(p)
 }

@@ -17,8 +17,20 @@ func ListPluginStatus(p *Project) {
 		for name, authn := range app.Authenticators {
 			printStatus(name, authn)
 		}
+	}
 
-		printStatus("authorizer", p.Apps[appName].Authorizer)
+	if len(p.Authorizers) != 0 {
+		fmt.Println("\nAUTHORIZERS")
+		for name, plugin := range p.Authorizers {
+			printStatus(name, plugin)
+		}
+	}
+
+	if len(p.SecondFactors) != 0 {
+		fmt.Println("\n2FA")
+		for name, plugin := range p.SecondFactors {
+			printStatus(name, plugin)
+		}
 	}
 
 	if len(p.Storages) != 0 {

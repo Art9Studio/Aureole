@@ -20,7 +20,7 @@ type config struct {
 	FuncName string `mapstructure:"func"`
 }
 
-// Create returns Pbkdf2 hasher with the given settings
+// Create returns pbkdf2 hasher with the given settings
 func (pbkdf2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
-	return &Pbkdf2{rawConf: conf}
+	return &pbkdf2{rawConf: conf}
 }

@@ -1,14 +1,18 @@
 package state
 
 import (
+	"aureole/internal"
 	"aureole/internal/configs"
 	"aureole/internal/identity"
+	factor2 "aureole/internal/plugins/2fa"
+	"aureole/internal/plugins/2fa/types"
 	"aureole/internal/plugins/admin"
 	adminT "aureole/internal/plugins/admin/types"
 	"aureole/internal/plugins/authn"
 	authnT "aureole/internal/plugins/authn/types"
 	"aureole/internal/plugins/authz"
 	authzT "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/cryptokey"
 	cryptoKeyT "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/plugins/kstorage"
@@ -20,7 +24,7 @@ import (
 	"aureole/internal/plugins/storage"
 	storageT "aureole/internal/plugins/storage/types"
 	"aureole/internal/router"
-	_interface "aureole/internal/router/interface"
+	"aureole/internal/router/interface"
 	"aureole/internal/state/app"
 	"crypto/tls"
 	"fmt"
@@ -31,23 +35,11 @@ import (
 )
 
 func Init(conf *configs.Project, p *Project) {
+	internal.InitCore(p)
+
 	p.APIVersion = conf.APIVersion
 	p.TestRun = conf.TestRun
 	p.PingPath = conf.PingPath
-
-	if p.TestRun {
-		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
-
-	router.Router.AddProjectRoutes([]*_interface.Route{
-		{
-			Method: "GET",
-			Path:   p.PingPath,
-			Handler: func(c *fiber.Ctx) error {
-				return c.SendStatus(fiber.StatusOK)
-			},
-		},
-	})
 
 	createGlobalPlugins(conf, p)
 	createApps(conf, p)
@@ -57,21 +49,68 @@ func Init(conf *configs.Project, p *Project) {
 	initAppPlugins(p)
 
 	var err error
-	if p.Service.internalKey, err = p.GetCryptoKey(conf.Service.InternalKey); err != nil {
+	if p.Service.signKey, err = p.GetCryptoKey(conf.Service.SignKey); err != nil {
+		fmt.Printf("cannot init service key: %v\n", err)
+	}
+	if p.Service.encKey, err = p.GetCryptoKey(conf.Service.EncKey); err != nil {
 		fmt.Printf("cannot init service key: %v\n", err)
 	}
 	if p.Service.storage, err = p.GetStorage(conf.Service.Storage); err != nil {
 		fmt.Printf("cannot init service storage: %v\n", err)
 	}
+
+	if p.TestRun {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+
+	router.GetRouter().AddProjectRoutes([]*_interface.Route{
+		{
+			Method: "GET",
+			Path:   p.PingPath,
+			Handler: func(c *fiber.Ctx) error {
+				return c.SendStatus(fiber.StatusOK)
+			},
+		},
+	})
 }
 
 func createGlobalPlugins(conf *configs.Project, p *Project) {
+	createAuthorizers(conf, p)
+	createSecondFactors(conf, p)
 	createPwHashers(conf, p)
 	createSenders(conf, p)
 	createCryptoKeys(conf, p)
 	createStorages(conf, p)
 	createKeyStorages(conf, p)
 	createAdmins(conf, p)
+}
+
+func createAuthorizers(conf *configs.Project, p *Project) {
+	p.Authorizers = make(map[string]authzT.Authorizer)
+
+	for i := range conf.Authz {
+		authzConf := conf.Authz[i]
+		a, err := authz.New(&authzConf)
+		if err != nil {
+			fmt.Printf("cannot create authorizator '%s': %v\n", authzConf.Name, err)
+		}
+
+		p.Authorizers[authzConf.Name] = a
+	}
+}
+
+func createSecondFactors(conf *configs.Project, p *Project) {
+	p.SecondFactors = make(map[string]types.SecondFactor)
+
+	for i := range conf.SecondFactors {
+		fa2Conf := conf.SecondFactors[i]
+		fa2, err := factor2.New(&fa2Conf)
+		if err != nil {
+			fmt.Printf("cannot create second factor '%s': %v\n", fa2Conf.Name, err)
+		}
+
+		p.SecondFactors[fa2Conf.Name] = fa2
+	}
 }
 
 func createPwHashers(conf *configs.Project, p *Project) {
@@ -201,12 +240,24 @@ func createAppPlugins(conf *configs.Project, p *Project) {
 		}
 
 		appState.Authenticators = createAuthenticators(&appConf)
-		appState.Authorizer = createAuthorizer(&appConf)
 		appState.IdentityManager = createIdentityManager(&appConf)
+
+		var err error
+		appState.Authorizer, err = p.GetAuthorizer(appConf.Authz)
+		if err != nil {
+			fmt.Printf("app '%s': %v", appState.Name, err)
+		}
+		if appConf.SecondFactor != "" {
+			appState.SecondFactor, err = p.GetSecondFactor(appConf.SecondFactor)
+			if err != nil {
+				fmt.Printf("app '%s': %v", appState.Name, err)
+			}
+		}
 	}
 }
 
 func createAuthenticators(app *configs.App) map[string]authnT.Authenticator {
+	clearAuthnDuplicate(app)
 	authenticators := make(map[string]authnT.Authenticator, len(app.Authn))
 
 	for i := range app.Authn {
@@ -223,13 +274,15 @@ func createAuthenticators(app *configs.App) map[string]authnT.Authenticator {
 	return authenticators
 }
 
-func createAuthorizer(app *configs.App) authzT.Authorizer {
-	authorizer, err := authz.New(&app.Authz)
-	if err != nil {
-		fmt.Printf("cannot create authorizer in app '%s': %v\n", app.Name, err)
+func clearAuthnDuplicate(app *configs.App) {
+	for i := 0; i < len(app.Authn)-1; i++ {
+		for j := i + 1; j < len(app.Authn); j++ {
+			if app.Authn[i].Type == app.Authn[j].Type {
+				copy(app.Authn[j:], app.Authn[j+1:])
+				app.Authn = app.Authn[:len(app.Authn)-1]
+			}
+		}
 	}
-
-	return authorizer
 }
 
 func createIdentityManager(app *configs.App) identity.ManagerI {
@@ -251,7 +304,7 @@ func initGlobalPlugins(p *Project) {
 
 func initStorages(p *Project) {
 	for name, s := range p.Storages {
-		if err := s.Init(); err != nil {
+		if err := s.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
 			fmt.Printf("cannot init storage '%s': %v\n", name, err)
 			p.Storages[name] = nil
 		}
@@ -260,7 +313,7 @@ func initStorages(p *Project) {
 
 func initKeyStorages(p *Project) {
 	for name, s := range p.KeyStorages {
-		if err := s.Init(); err != nil {
+		if err := s.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
 			fmt.Printf("cannot init key storage '%s': %v\n", name, err)
 			p.KeyStorages[name] = nil
 		}
@@ -269,7 +322,7 @@ func initKeyStorages(p *Project) {
 
 func initPwHashers(p *Project) {
 	for name, h := range p.Hashers {
-		if err := h.Init(); err != nil {
+		if err := h.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
 			fmt.Printf("cannot init hasher '%s': %v\n", name, err)
 			p.Hashers[name] = nil
 		}
@@ -278,7 +331,7 @@ func initPwHashers(p *Project) {
 
 func initSenders(p *Project) {
 	for name, s := range p.Senders {
-		if err := s.Init(); err != nil {
+		if err := s.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
 			fmt.Printf("cannot init sender '%s': %v\n", name, err)
 			p.Senders[name] = nil
 		}
@@ -287,7 +340,7 @@ func initSenders(p *Project) {
 
 func initCryptoKeys(p *Project) {
 	for name, k := range p.CryptoKeys {
-		if err := k.Init(); err != nil {
+		if err := k.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
 			fmt.Printf("cannot init kstorage '%s': %v\n", name, err)
 			p.CryptoKeys[name] = nil
 		}
@@ -296,7 +349,7 @@ func initCryptoKeys(p *Project) {
 
 func initAdmins(p *Project) {
 	for name, a := range p.Admins {
-		if err := a.Init(); err != nil {
+		if err := a.(core.PluginInitializer).Init(core.InitAPI(p, router.GetRouter())); err != nil {
 			fmt.Printf("cannot init admin plugin '%s': %v\n", name, err)
 			p.Admins[name] = nil
 		}
@@ -304,15 +357,19 @@ func initAdmins(p *Project) {
 }
 
 func initAppPlugins(p *Project) {
-	for name, a := range p.Apps {
-		initAuthenticators(a)
-		initAuthorizer(name, a)
+	for _, a := range p.Apps {
+		initAuthenticators(a, p)
+		initAuthorizer(a, p)
+		initSecondFactor(a, p)
 	}
 }
 
-func initAuthenticators(app *app.App) {
+func initAuthenticators(app *app.App, p *Project) {
 	for name, authenticator := range app.Authenticators {
-		if err := authenticator.Init(app); err != nil {
+		prefix := fmt.Sprintf("%s$%s$", app.Name, authenticator.GetPluginID())
+		api := core.InitAPI(p, router.GetRouter(), core.WithKeyPrefix(prefix))
+
+		if err := authenticator.(core.AppPluginInitializer).Init(app.Name, api); err != nil {
 			fmt.Printf("cannot init authenticator '%s' in app '%s': %v\n",
 				name, app.Name, err)
 			app.Authenticators[name] = nil
@@ -320,9 +377,24 @@ func initAuthenticators(app *app.App) {
 	}
 }
 
-func initAuthorizer(appName string, app *app.App) {
-	if err := app.Authorizer.Init(appName); err != nil {
+func initAuthorizer(app *app.App, p *Project) {
+	prefix := fmt.Sprintf("%s$%s$", app.Name, app.Authorizer.GetPluginID())
+	api := core.InitAPI(p, router.GetRouter(), core.WithKeyPrefix(prefix))
+
+	if err := app.Authorizer.(core.AppPluginInitializer).Init(app.Name, api); err != nil {
 		fmt.Printf("cannot init authorizer in app '%s': %v\n", app.Name, err)
 		app.Authorizer = nil
+	}
+}
+
+func initSecondFactor(app *app.App, p *Project) {
+	if app.SecondFactor != nil {
+		prefix := fmt.Sprintf("%s$%s$", app.Name, app.SecondFactor.GetPluginID())
+		api := core.InitAPI(p, router.GetRouter(), core.WithKeyPrefix(prefix))
+
+		if err := app.SecondFactor.(core.AppPluginInitializer).Init(app.Name, api); err != nil {
+			fmt.Printf("cannot init second factor in app '%s': %v\n", app.Name, err)
+			app.SecondFactor = nil
+		}
 	}
 }

@@ -107,7 +107,8 @@ def split_json_schema(project_schema):
     app_props_keys = props_keys + ['apps', 'items', 'properties']
     plugin_keys = {
         'authn': app_props_keys + ['authN', 'items'],
-        'authz': app_props_keys + ['authZ'],
+        'authz': props_keys + ['authZ', 'items'],
+        '2fa': props_keys + ['2fa', 'items'],
         'storage': props_keys + ['storages', 'items'],
         'kstorage': props_keys + ['key_storages', 'items'],
         'hasher': props_keys + ['hashers', 'items'],

@@ -1,0 +1,12 @@
+2fa:
+  - type: "google_authenticator"
+    name: google_auth_2fa
+    config:
+      alg: "hotp"
+      iss: "Company Name"
+      window_size: 15
+      disallow_reuse: true
+      max_attempts: 5
+      scratch_code:
+        num: 5
+        alphabet: "alphanum"

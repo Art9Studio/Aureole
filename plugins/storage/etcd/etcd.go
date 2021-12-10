@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/core"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,14 +11,18 @@ import (
 	"time"
 )
 
+const PluginID = "4109"
+
 type Storage struct {
-	rawConf *configs.Storage
-	conf    *config
-	client  *clientv3.Client
-	timeout time.Duration
+	pluginApi core.PluginAPI
+	rawConf   *configs.Storage
+	conf      *config
+	client    *clientv3.Client
+	timeout   time.Duration
 }
 
-func (s *Storage) Init() (err error) {
+func (s *Storage) Init(api core.PluginAPI) (err error) {
+	s.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -43,6 +48,10 @@ func (s *Storage) Init() (err error) {
 		return errors.New("the status response from etcd was nil")
 	}
 	return nil
+}
+
+func (*Storage) GetPluginID() string {
+	return PluginID
 }
 
 func (s *Storage) Set(k string, v interface{}, exp int) error {

@@ -58,6 +58,10 @@
               "enum": ["RSA", "oct"],
               "uuid": "357fac72-8bbd-451f-8bf0-9ecec3805f4c"
             },
+            "use": {
+              "enum": ["enc", "sig"],
+              "uuid": "8ef5b483-3d74-4c8f-b76f-777d1fd0d4ff"
+            },
             "alg": {
               "enum": ["RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "HS256", "HS384", "HS512"],
               "uuid": "a8a9fc3a-aa88-4eb5-93ef-b0e984082760"
@@ -101,6 +105,10 @@
             "kty": {
               "enum": ["EC", "OKP"],
               "uuid": "357fac72-8bbd-451f-8bf0-9ecec3805f4c"
+            },
+            "use": {
+              "enum": ["enc", "sig"],
+              "uuid": "8ef5b483-3d74-4c8f-b76f-777d1fd0d4ff"
             },
             "alg": {
               "enum": ["ES256", "ES384", "ES512", "ES256K", "EdDSA"],

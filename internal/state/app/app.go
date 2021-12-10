@@ -2,8 +2,9 @@ package app
 
 import (
 	"aureole/internal/identity"
-	authnTypes "aureole/internal/plugins/authn/types"
-	authzTypes "aureole/internal/plugins/authz/types"
+	fa2T "aureole/internal/plugins/2fa/types"
+	auhnT "aureole/internal/plugins/authn/types"
+	authzT "aureole/internal/plugins/authz/types"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -14,8 +15,9 @@ type App struct {
 	Url             *url.URL
 	PathPrefix      string
 	IdentityManager identity.ManagerI
-	Authenticators  map[string]authnTypes.Authenticator
-	Authorizer      authzTypes.Authorizer
+	Authenticators  map[string]auhnT.Authenticator
+	Authorizer      authzT.Authorizer
+	SecondFactor    fa2T.SecondFactor
 }
 
 func (a *App) GetName() string {
@@ -40,11 +42,18 @@ func (a *App) GetIdentityManager() (identity.ManagerI, error) {
 	return a.IdentityManager, nil
 }
 
-func (a *App) GetAuthorizer() (authzTypes.Authorizer, error) {
+func (a *App) GetAuthorizer() (authzT.Authorizer, error) {
 	if a.Authorizer == nil {
 		return nil, fmt.Errorf("can't find authorizer for app '%s'", a.Name)
 	}
 	return a.Authorizer, nil
+}
+
+func (a *App) GetSecondFactor() (fa2T.SecondFactor, error) {
+	if a.SecondFactor == nil {
+		return nil, fmt.Errorf("can't find second factor for app '%s'", a.Name)
+	}
+	return a.SecondFactor, nil
 }
 
 func (*App) Filter(fields, filters map[string]string) (bool, error) {

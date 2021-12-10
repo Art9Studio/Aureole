@@ -12,7 +12,7 @@ const (
 )
 
 type CryptoKey interface {
-	Init() error
+	GetPluginID() string
 	GetPrivateSet() jwk.Set
 	GetPublicSet() jwk.Set
 }

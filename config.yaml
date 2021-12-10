@@ -1,13 +1,17 @@
 api_version: "0.1"
 
 service:
-  internal_key: service_keys
+  enc_key: service_enc_key
+  sign_key: service_sign_key
   storage: service_store
 
 apps:
   - name: one
     path_prefix: /one
     host: http://localhost:3000
+    
+    authZ: jwt_authz
+    2fa: google_auth_2fa
 
     authN:
       - type: "password_based"
@@ -82,24 +86,52 @@ apps:
             - email
             - name
 
-    authZ:
-      type: "jwt"
-      config:
-        iss: Aureole Server
-        sub: true
-        aud:
-          - app1
-          - app2
-        nbf: 0
-        iat: true
-        jti: "0" # todo: implement jti
-        access_bearer: cookie # [cookie, header, both]
-        refresh_bearer: body # [cookie, body, both]
-        sign_key: jwk_file
-        verify_keys: [ jwk_file ]
-        access_exp: 900
-        refresh_exp: 7890000
-        payload: lab/templates/jwt_payload.json.tmpl
+authZ:
+  - type: "jwt"
+    name: jwt_authz
+    config:
+      iss: Aureole Server
+      sub: true
+      aud:
+        - app1
+        - app2
+      nbf: 0
+      iat: true
+      access_bearer: cookie # [cookie, header, both]
+      refresh_bearer: body # [cookie, body, both]
+      sign_key: jwk_file
+      verify_keys: [ jwk_file ]
+      access_exp: 900
+      refresh_exp: 7890000
+      payload: lab/templates/jwt_payload.json.tmpl
+
+2fa:
+  - type: "sms"
+    name: sms_2fa
+    config:
+      sender: twilio
+      template: 2fa_tmpl
+      max_attempts: 5
+      otp:
+        length: 6
+        alphabet: alphanum
+        exp: 60
+
+#  - type: "yubikey"
+#    name: yubikey_2fa
+#    config:
+
+  - type: "google_authenticator"
+    name: google_auth_2fa
+    config:
+      alg: hotp
+      iss: Company Name
+      window_size: 15
+      disallow_reuse: false
+      max_attempts: 5
+      scratch_code:
+        num: 5
+        alphabet: alphanum # todo: support regex range syntax '[a-z1-9]'
 
 storages:
   - type: "etcd"
@@ -146,11 +178,6 @@ key_storages:
       path: lab/keys/keys.json
 
   - type: "file"
-    name: service_store
-    config:
-      path: lab/keys/service_keys.json
-
-  - type: "file"
     name: apple_signin_keys_store
     config:
       path: lab/keys/apple_private_key.p8
@@ -166,6 +193,16 @@ key_storages:
       token: s.5qhJ1R3VcvwwCJQpdAjY7Lw0
       address: http://127.0.0.1:8200
       path: /secret/keys
+
+  - type: "file"
+    name: service_sign_store
+    config:
+      path: lab/keys/service_sign_key.json
+
+  - type: "file"
+    name: service_enc_store
+    config:
+      path: lab/keys/service_enc_key.json
 
 hashers:
   - type: "argon2"
@@ -219,13 +256,23 @@ crypto_keys:
       storage: gen_keys_store
 
   - type: "jwk"
-    name: service_keys
+    name: service_sign_key
     config:
       kty: RSA
       alg: RS256
       size: 2048
       kid: SHA-256
-      storage: service_store
+      storage: service_sign_store
+
+  - type: "jwk"
+    name: service_enc_key
+    config:
+      kty: EC
+      alg: ES256
+      use: enc
+      curve: P-256
+      kid: SHA-256
+      storage: service_enc_store
 
 senders:
   - type: "email"

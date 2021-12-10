@@ -39,6 +39,7 @@ module.exports = {
                         '/config/project.md',
                         '/config/authn.md',
                         '/config/authz.md',
+                        '/config/2fa.md',
                         '/config/storage.md',
                         '/config/kstorage.md',
                         '/config/hasher.md',

@@ -2,6 +2,7 @@ package twilio
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/plugins/core"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -16,17 +17,21 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const PluginID = "5116"
+
 type Exception struct {
 	Status  int
 	Message string
 }
 
 type Twilio struct {
-	rawConf *configs.Sender
-	conf    *config
+	pluginApi core.PluginAPI
+	rawConf   *configs.Sender
+	conf      *config
 }
 
-func (t *Twilio) Init() error {
+func (t *Twilio) Init(api core.PluginAPI) error {
+	t.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(t.rawConf.Config, adapterConf); err != nil {
 		return err
@@ -34,6 +39,10 @@ func (t *Twilio) Init() error {
 	t.conf = adapterConf
 
 	return nil
+}
+
+func (*Twilio) GetPluginID() string {
+	return PluginID
 }
 
 func (t *Twilio) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {

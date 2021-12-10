@@ -2,10 +2,10 @@ package pem
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/cryptokey"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/cryptokey/types"
 	kstorageT "aureole/internal/plugins/kstorage/types"
-	_interface "aureole/internal/router/interface"
+	"aureole/internal/router/interface"
 	"encoding/json"
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -15,7 +15,10 @@ import (
 	"time"
 )
 
+const PluginID = "6374"
+
 type Pem struct {
+	pluginApi       core.PluginAPI
 	rawConf         *configs.CryptoKey
 	conf            *config
 	keyStorage      kstorageT.KeyStorage
@@ -26,14 +29,14 @@ type Pem struct {
 	publicSet       jwk.Set
 }
 
-func (p *Pem) Init() (err error) {
-	p.rawConf.PathPrefix = "/" + strings.ReplaceAll(p.rawConf.Name, "_", "-")
+func (p *Pem) Init(api core.PluginAPI) (err error) {
+	p.pluginApi = api
 	if p.conf, err = initConfig(&p.rawConf.Config); err != nil {
 		return err
 	}
+	p.conf.PathPrefix = "/" + strings.ReplaceAll(p.rawConf.Name, "_", "-")
 
-	pluginApi := cryptokey.Repository.PluginApi
-	p.keyStorage, err = pluginApi.Project.GetKeyStorage(p.conf.Storage)
+	p.keyStorage, err = p.pluginApi.GetKeyStorage(p.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("key keyStorage named '%s' is not declared", p.conf.Storage)
 	}
@@ -51,6 +54,10 @@ func (p *Pem) Init() (err error) {
 	}
 
 	return nil
+}
+
+func (*Pem) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -117,16 +124,16 @@ func createRoutes(p *Pem) {
 	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    p.rawConf.PathPrefix + "/jwk",
+			Path:    p.conf.PathPrefix + "/jwk",
 			Handler: GetJwkKeys(p),
 		},
 		{
 			Method:  "GET",
-			Path:    p.rawConf.PathPrefix + "/pem",
+			Path:    p.conf.PathPrefix + "/pem",
 			Handler: GetPemKeys(p),
 		},
 	}
-	cryptokey.Repository.PluginApi.Router.AddProjectRoutes(routes)
+	p.pluginApi.GetRouter().AddProjectRoutes(routes)
 }
 
 func refreshKeys(p *Pem) {

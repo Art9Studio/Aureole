@@ -23,9 +23,15 @@
       "additionalProperties": false,
       "required": ["storage"],
       "properties": {
-        "internal_key": {
+        "sign_key": {
           "type": "string",
           "uuid": "06b81c7e-725f-473a-9a07-7be0d33efe39",
+          "minLength": 1,
+          "metatags": "@crypto_key_ref"
+        },
+        "enc_key": {
+          "type": "string",
+          "uuid": "8b92b740-f909-4246-8ce5-4c80cbb9e90f" ,
           "minLength": 1,
           "metatags": "@crypto_key_ref"
         },
@@ -44,6 +50,20 @@
         "$ref": "app.schema.json"
       },
       "minItems": 1
+    },
+    "authZ": {
+      "type": "array",
+      "uuid": "a2d2ea5b-1269-49d4-b758-70f8af9d0f6f",
+      "items": {
+        "$ref": "../../plugins/authz/schema.json"
+      }
+    },
+    "2fa": {
+      "type": "array",
+      "uuid": "fb0e66dd-e1c7-45f3-a635-4875fcd0b9ce",
+      "items": {
+        "$ref": "../../plugins/2fa/schema.json"
+      }
     },
     "storages": {
       "type": "array",

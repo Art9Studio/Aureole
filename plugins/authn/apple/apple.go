@@ -3,10 +3,10 @@ package apple
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
-	"aureole/internal/plugins/authn"
 	authzT "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	cKeyT "aureole/internal/plugins/cryptokey/types"
-	router "aureole/internal/router/interface"
+	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"context"
 	"errors"
@@ -19,7 +19,10 @@ import (
 	"time"
 )
 
+const PluginID = "5771"
+
 type apple struct {
+	pluginApi  core.PluginAPI
 	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
@@ -30,34 +33,36 @@ type apple struct {
 	authorizer authzT.Authorizer
 }
 
-func (a *apple) Init(app app.AppState) (err error) {
-	a.app = app
-	a.rawConf.PathPrefix = "/oauth2/" + AdapterName
-
+func (a *apple) Init(appName string, api core.PluginAPI) (err error) {
+	a.pluginApi = api
 	a.conf, err = initConfig(&a.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	pluginApi := authn.Repository.PluginApi
-	a.manager, err = app.GetIdentityManager()
+	a.app, err = a.pluginApi.GetApp(appName)
 	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", app.GetName())
+		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
-	a.secretKey, err = pluginApi.Project.GetCryptoKey(a.conf.SecretKey)
+	a.manager, err = a.app.GetIdentityManager()
+	if err != nil {
+		fmt.Printf("manager for app '%s' is not declared", appName)
+	}
+
+	a.secretKey, err = a.pluginApi.GetCryptoKey(a.conf.SecretKey)
 	if err != nil {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.SecretKey)
 	}
 
-	a.publicKey, err = pluginApi.Project.GetCryptoKey(a.conf.PublicKey)
+	a.publicKey, err = a.pluginApi.GetCryptoKey(a.conf.PublicKey)
 	if err != nil {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.PublicKey)
 	}
 
 	a.authorizer, err = a.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	if err := initProvider(a); err != nil {
@@ -65,6 +70,10 @@ func (a *apple) Init(app app.AppState) (err error) {
 	}
 	createRoutes(a)
 	return nil
+}
+
+func (*apple) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -82,7 +91,7 @@ func initProvider(a *apple) error {
 		return err
 	}
 
-	redirectUrl.Path = path.Clean(redirectUrl.Path + a.rawConf.PathPrefix + a.conf.RedirectUri)
+	redirectUrl.Path = path.Clean(redirectUrl.Path + a.conf.RedirectUri)
 	a.provider = &Config{
 		ClientId: a.conf.ClientId,
 		TeamId:   a.conf.TeamId,
@@ -148,17 +157,17 @@ func signToken(signKey cKeyT.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func createRoutes(a *apple) {
-	routes := []*router.Route{
+	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    a.rawConf.PathPrefix,
+			Path:    a.conf.PathPrefix,
 			Handler: GetAuthCode(a),
 		},
 		{
 			Method:  "POST",
-			Path:    a.rawConf.PathPrefix + a.conf.RedirectUri,
+			Path:    a.conf.PathPrefix + a.conf.RedirectUri,
 			Handler: Login(a),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(a.app.GetName(), routes)
+	a.pluginApi.GetRouter().AddAppRoutes(a.app.GetName(), routes)
 }

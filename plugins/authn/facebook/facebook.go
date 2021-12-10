@@ -3,8 +3,8 @@ package facebook
 import (
 	"aureole/internal/configs"
 	"aureole/internal/identity"
-	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins/core"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
 	"fmt"
@@ -14,7 +14,10 @@ import (
 	"path"
 )
 
+const PluginID = "3030"
+
 type facebook struct {
+	pluginApi  core.PluginAPI
 	app        app.AppState
 	rawConf    *configs.Authn
 	conf       *config
@@ -23,23 +26,26 @@ type facebook struct {
 	authorizer authzTypes.Authorizer
 }
 
-func (f *facebook) Init(app app.AppState) (err error) {
-	f.app = app
-	f.rawConf.PathPrefix = "/oauth2/" + AdapterName
-
+func (f *facebook) Init(appName string, api core.PluginAPI) (err error) {
+	f.pluginApi = api
 	f.conf, err = initConfig(&f.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	f.manager, err = app.GetIdentityManager()
+	f.app, err = f.pluginApi.GetApp(appName)
 	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", app.GetName())
+		return fmt.Errorf("app named '%s' is not declared", appName)
+	}
+
+	f.manager, err = f.app.GetIdentityManager()
+	if err != nil {
+		fmt.Printf("manager for app '%s' is not declared, persist layer is not available", appName)
 	}
 
 	f.authorizer, err = f.app.GetAuthorizer()
 	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", app.GetName())
+		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	if err := initProvider(f); err != nil {
@@ -47,6 +53,10 @@ func (f *facebook) Init(app app.AppState) (err error) {
 	}
 	createRoutes(f)
 	return nil
+}
+
+func (*facebook) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -64,7 +74,7 @@ func initProvider(f *facebook) error {
 		return err
 	}
 
-	redirectUri.Path = path.Clean(redirectUri.Path + f.rawConf.PathPrefix + f.conf.RedirectUri)
+	redirectUri.Path = path.Clean(redirectUri.Path + f.conf.PathPrefix + f.conf.RedirectUri)
 	f.provider = &oauth2.Config{
 		ClientID:     f.conf.ClientId,
 		ClientSecret: f.conf.ClientSecret,
@@ -79,14 +89,14 @@ func createRoutes(f *facebook) {
 	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    f.rawConf.PathPrefix,
+			Path:    f.conf.PathPrefix,
 			Handler: GetAuthCode(f),
 		},
 		{
 			Method:  "GET",
-			Path:    f.rawConf.PathPrefix + f.conf.RedirectUri,
+			Path:    f.conf.PathPrefix + f.conf.RedirectUri,
 			Handler: Login(f),
 		},
 	}
-	authn.Repository.PluginApi.Router.AddAppRoutes(f.app.GetName(), routes)
+	f.pluginApi.GetRouter().AddAppRoutes(f.app.GetName(), routes)
 }

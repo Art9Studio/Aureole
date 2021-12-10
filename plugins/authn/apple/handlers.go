@@ -3,6 +3,7 @@ package apple
 import (
 	"aureole/internal/identity"
 	authzT "aureole/internal/plugins/authz/types"
+	"aureole/internal/router"
 	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
@@ -26,41 +27,41 @@ func Login(a *apple) func(*fiber.Ctx) error {
 			return err
 		}
 		if input.State != "state" {
-			return sendError(c, fiber.StatusBadRequest, "invalid state")
+			return router.SendError(c, fiber.StatusBadRequest, "invalid state")
 		}
 		if input.Code == "" {
-			return sendError(c, fiber.StatusBadRequest, "code not found")
+			return router.SendError(c, fiber.StatusBadRequest, "code not found")
 		}
 
 		jwtT, err := getJwt(a, input.Code)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		email, ok := jwtT.Get("email")
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "can't get 'email' from token")
+			return router.SendError(c, fiber.StatusInternalServerError, "can't get 'email' from token")
 		}
 		socialId, ok := jwtT.Get("sub")
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "can't get 'social_id' from token")
+			return router.SendError(c, fiber.StatusInternalServerError, "can't get 'social_id' from token")
 		}
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		if ok, err := a.app.Filter(convertUserData(userData), a.rawConf.Filter); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		} else if !ok {
-			return sendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
+			return router.SendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
 		}
 
 		var i map[string]interface{}
 		if a.manager != nil {
 			i, err = a.manager.OnUserAuthenticated(
 				&identity.Credential{
-					Name:  "email",
+					Name:  identity.Email,
 					Value: email.(string),
 				},
 				&identity.Identity{
@@ -72,14 +73,14 @@ func Login(a *apple) func(*fiber.Ctx) error {
 					"user_data": userData,
 				})
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 		} else {
 			i = map[string]interface{}{
-				"email":     email,
-				"provider":  AdapterName,
-				"social_id": socialId,
-				"user_data": userData,
+				identity.Email: email,
+				"provider":     AdapterName,
+				"social_id":    socialId,
+				"user_data":    userData,
 			}
 		}
 
@@ -103,4 +104,12 @@ func getJwt(a *apple, code string) (jwt.Token, error) {
 		idToken.(string),
 		jwt.WithAudience(a.provider.ClientId),
 		jwt.WithKeySet(keySet))
+}
+
+func convertUserData(mapIntr map[string]interface{}) map[string]string {
+	mapStr := make(map[string]string, len(mapIntr))
+	for key, value := range mapIntr {
+		mapStr[key] = fmt.Sprintf("%v", value)
+	}
+	return mapStr
 }

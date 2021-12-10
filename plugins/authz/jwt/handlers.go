@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"aureole/internal/plugins/authz/types"
+	"aureole/internal/router"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,18 +25,18 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 		)
 
 		if err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
 		id, ok := refreshT.Get("id")
 		if !ok {
-			return sendError(c, fiber.StatusBadRequest, "can't access user_id from token")
+			return router.SendError(c, fiber.StatusBadRequest, "can't access user_id from token")
 		}
 
 		// todo: add identity support
 		// username, ok := refreshT.GetData("username")
 		// if !ok {
-		// 	return sendError(c, fiber.StatusBadRequest, "can't access username from token")
+		// 	return router.SendError(c, fiber.StatusBadRequest, "can't access username from token")
 		// }
 
 		payload := &types.Payload{
@@ -45,12 +46,12 @@ func Refresh(j *jwtAuthz) func(*fiber.Ctx) error {
 
 		accessT, err := newToken(AccessToken, j.conf, payload)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		signedAccessT, err := signToken(j.signKey, accessT)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		return attachTokens(c,
@@ -65,7 +66,7 @@ func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (toke
 	case Cookie:
 		rawToken := c.Cookies(names["cookie"])
 		if rawToken == "" {
-			return "", sendError(c, fiber.StatusBadRequest, fmt.Sprintf("cookie '%s' doesn't exist", names["cookie"]))
+			return "", router.SendError(c, fiber.StatusBadRequest, fmt.Sprintf("cookie '%s' doesn't exist", names["cookie"]))
 		}
 		token = rawToken
 	case Both, Body:

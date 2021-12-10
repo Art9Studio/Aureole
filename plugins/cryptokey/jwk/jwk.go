@@ -2,10 +2,10 @@ package jwk
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/cryptokey"
+	"aureole/internal/plugins/core"
 	"aureole/internal/plugins/cryptokey/types"
 	kstorageT "aureole/internal/plugins/kstorage/types"
-	_interface "aureole/internal/router/interface"
+	"aureole/internal/router/interface"
 	"encoding/json"
 	"fmt"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -15,27 +15,30 @@ import (
 	"time"
 )
 
+const PluginID = "7851"
+
 type (
 	Jwk struct {
+		pluginApi       core.PluginAPI
 		rawConf         *configs.CryptoKey
 		conf            *config
 		keyStorage      kstorageT.KeyStorage
-		refreshDone     chan struct{}
 		refreshInterval time.Duration
 		muSet           sync.RWMutex
 		privateSet      jwk.Set
 		publicSet       jwk.Set
+		refreshDone     chan struct{}
 	}
 )
 
-func (j *Jwk) Init() (err error) {
-	j.rawConf.PathPrefix = "/" + strings.ReplaceAll(j.rawConf.Name, "_", "-")
+func (j *Jwk) Init(api core.PluginAPI) (err error) {
+	j.pluginApi = api
 	if j.conf, err = initConfig(&j.rawConf.Config); err != nil {
 		return err
 	}
+	j.conf.PathPrefix = "/" + strings.ReplaceAll(j.rawConf.Name, "_", "-")
 
-	pluginApi := cryptokey.Repository.PluginApi
-	j.keyStorage, err = pluginApi.Project.GetKeyStorage(j.conf.Storage)
+	j.keyStorage, err = j.pluginApi.GetKeyStorage(j.conf.Storage)
 	if err != nil {
 		return fmt.Errorf("key storage named '%s' is not declared", j.conf.Storage)
 	}
@@ -53,6 +56,10 @@ func (j *Jwk) Init() (err error) {
 	}
 
 	return nil
+}
+
+func (*Jwk) GetPluginID() string {
+	return PluginID
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -117,16 +124,16 @@ func createRoutes(j *Jwk) {
 	routes := []*_interface.Route{
 		{
 			Method:  "GET",
-			Path:    j.rawConf.PathPrefix + "/jwk",
+			Path:    j.conf.PathPrefix + "/jwk",
 			Handler: GetJwkKeys(j),
 		},
 		{
 			Method:  "GET",
-			Path:    j.rawConf.PathPrefix + "/pem",
+			Path:    j.conf.PathPrefix + "/pem",
 			Handler: GetPemKeys(j),
 		},
 	}
-	cryptokey.Repository.PluginApi.Router.AddProjectRoutes(routes)
+	j.pluginApi.GetRouter().AddProjectRoutes(routes)
 }
 
 func refreshKeys(j *Jwk) {

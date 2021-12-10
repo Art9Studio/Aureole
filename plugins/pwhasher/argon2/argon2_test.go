@@ -99,11 +99,7 @@ func TestArgon2_Hash(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a, err := initAdapter(nil, tt.conf)
-			if err != nil {
-				t.Errorf("initAdapter() error = %v", err)
-				return
-			}
+			a := argon2{conf: tt.conf}
 			got, err := a.HashPw(tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HashPw() error = %v, wantErr %v", err, tt.wantErr)
@@ -213,11 +209,7 @@ func TestArgon2_Compare(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a, err := initAdapter(nil, tt.conf)
-			if err != nil {
-				t.Errorf("initAdapter() error = %v", err)
-				return
-			}
+			a := argon2{conf: tt.conf}
 			got, err := a.ComparePw(tt.args.data, tt.args.hash)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ComparePw() error = %v, wantErr %v", err, tt.wantErr)
