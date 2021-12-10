@@ -2,11 +2,9 @@ package pwbased
 
 import (
 	"aureole/internal/identity"
+	"aureole/internal/jwt"
 	authzT "aureole/internal/plugins/authz/types"
 	"fmt"
-	"github.com/lestrrat-go/jwx/jwt"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -85,10 +83,7 @@ func Register(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := createToken(p, map[string]interface{}{
-				"email":           input.Email,
-				jwt.ExpirationKey: time.Now().Add(time.Duration(p.conf.Verif.Exp) * time.Second).Unix(),
-			})
+			token, err := jwt.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verif.Exp)
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -119,10 +114,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 		}
 		i := &identity.Identity{Email: input.Email}
 
-		token, err := createToken(p, map[string]interface{}{
-			"email":           i.Email,
-			jwt.ExpirationKey: time.Now().Add(time.Duration(p.conf.Reset.Exp) * time.Second).Unix(),
-		})
+		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -143,19 +135,16 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := jwt.ParseString(
-			rawToken,
-			jwt.WithIssuer("Aureole Internal"),
-			jwt.WithAudience("Aureole Internal"),
-			jwt.WithValidate(true),
-			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
-		)
+		token, err := jwt.ParseJWT(rawToken)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
 			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
+		}
+		if err := jwt.InvalidateJWT(token); err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		var input *input
@@ -207,10 +196,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		}
 		i := &identity.Identity{Email: input.Email}
 
-		token, err := createToken(p, map[string]interface{}{
-			"email":           i.Email,
-			jwt.ExpirationKey: time.Now().Add(time.Duration(p.conf.Verif.Exp) * time.Second).Unix(),
-		})
+		token, err := jwt.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -231,19 +217,16 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := jwt.ParseString(
-			rawToken,
-			jwt.WithIssuer("Aureole Internal"),
-			jwt.WithAudience("Aureole Internal"),
-			jwt.WithValidate(true),
-			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
-		)
+		token, err := jwt.ParseJWT(rawToken)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
 			return sendError(c, fiber.StatusBadRequest, "cannot get email from token")
+		}
+		if err := jwt.InvalidateJWT(token); err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		_, err = p.manager.Update(

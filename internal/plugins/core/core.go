@@ -17,8 +17,8 @@ type Route struct {
 }
 
 type Repository struct {
-	adapters   map[string]Adapter
 	adaptersMU sync.Mutex
+	adapters   map[string]Adapter
 	PluginApi  *PluginApi
 }
 

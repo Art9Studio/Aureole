@@ -1,8 +1,8 @@
 api_version: "0.1"
 
 service:
-  internal_key: service # ключ, которым подписываем промежуточные токены
-  storage: vault_store # хранилище, куда сохраняем токены
+  internal_key: service_keys
+  storage: service_store
 
 apps:
   - name: one
@@ -117,6 +117,13 @@ storages:
       password: ${REDIS_PASSWORD}
       db: 0
 
+  - type: "redis"
+    name: service_store
+    config:
+      address: localhost:6379
+      password: ${REDIS_PASSWORD}
+      db: 1
+
   - type: "memory"
     name: memory_store
     config:
@@ -137,6 +144,11 @@ key_storages:
     name: jwk_keys_store
     config:
       path: lab/keys/keys.json
+
+  - type: "file"
+    name: service_store
+    config:
+      path: lab/keys/service_keys.json
 
   - type: "file"
     name: apple_signin_keys_store
@@ -207,13 +219,13 @@ crypto_keys:
       storage: gen_keys_store
 
   - type: "jwk"
-    name: service
+    name: service_keys
     config:
       kty: RSA
       alg: RS256
       size: 2048
       kid: SHA-256
-      storage: vault_store
+      storage: service_store
 
 senders:
   - type: "email"

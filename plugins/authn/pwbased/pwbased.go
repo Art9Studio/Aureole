@@ -5,7 +5,6 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
-	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
@@ -24,7 +23,6 @@ type (
 		manager    identity.ManagerI
 		pwHasher   types.PwHasher
 		authorizer authzTypes.Authorizer
-		serviceKey cKeyTypes.CryptoKey
 		reset      *reset
 		verif      *verification
 	}
@@ -76,11 +74,6 @@ func (p *pwBased) Init(app app.AppState) (err error) {
 	p.pwHasher, err = pluginApi.Project.GetHasher(p.conf.MainHasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
-	}
-
-	p.serviceKey, err = pluginApi.Project.GetServiceKey()
-	if err != nil {
-		return err
 	}
 
 	p.authorizer, err = p.app.GetAuthorizer()

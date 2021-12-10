@@ -5,7 +5,6 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
-	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	"aureole/internal/plugins/pwhasher/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
@@ -22,7 +21,6 @@ type (
 		manager    identity.ManagerI
 		hasher     types.PwHasher
 		authorizer authzTypes.Authorizer
-		serviceKey cKeyTypes.CryptoKey
 		sender     senderTypes.Sender
 	}
 
@@ -45,17 +43,12 @@ func (p *phone) Init(app app.AppState) (err error) {
 	pluginApi := authn.Repository.PluginApi
 	p.manager, err = app.GetIdentityManager()
 	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared, persis layer is not available", app.GetName())
+		fmt.Printf("manager for app '%s' is not declared", app.GetName())
 	}
 
 	p.hasher, err = pluginApi.Project.GetHasher(p.conf.Hasher)
 	if err != nil {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.Hasher)
-	}
-
-	p.serviceKey, err = pluginApi.Project.GetServiceKey()
-	if err != nil {
-		return err
 	}
 
 	p.sender, err = pluginApi.Project.GetSender(p.conf.Sender)

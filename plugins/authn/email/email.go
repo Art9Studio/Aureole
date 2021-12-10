@@ -5,7 +5,6 @@ import (
 	"aureole/internal/identity"
 	"aureole/internal/plugins/authn"
 	authzTypes "aureole/internal/plugins/authz/types"
-	cKeyTypes "aureole/internal/plugins/cryptokey/types"
 	senderTypes "aureole/internal/plugins/sender/types"
 	"aureole/internal/router/interface"
 	app "aureole/internal/state/interface"
@@ -22,7 +21,6 @@ type (
 		conf       *config
 		manager    identity.ManagerI
 		authorizer authzTypes.Authorizer
-		serviceKey cKeyTypes.CryptoKey
 		sender     senderTypes.Sender
 		magicLink  *url.URL
 	}
@@ -45,11 +43,6 @@ func (e *email) Init(app app.AppState) (err error) {
 	e.manager, err = app.GetIdentityManager()
 	if err != nil {
 		fmt.Printf("manager for app '%s' is not declared, the persist layer is not available", app.GetName())
-	}
-
-	e.serviceKey, err = pluginApi.Project.GetServiceKey()
-	if err != nil {
-		return err
 	}
 
 	e.sender, err = pluginApi.Project.GetSender(e.conf.Sender)

@@ -33,10 +33,6 @@ type (
 	}
 )
 
-func (p *Project) IsTestRun() bool {
-	return p.TestRun
-}
-
 func (p *Project) GetServiceKey() (cryptoKeyT.CryptoKey, error) {
 	if p.Service.internalKey == nil {
 		return nil, errors.New("cannot find service key")
@@ -46,9 +42,13 @@ func (p *Project) GetServiceKey() (cryptoKeyT.CryptoKey, error) {
 
 func (p *Project) GetServiceStorage() (storageT.Storage, error) {
 	if p.Service.storage == nil {
-		return nil, errors.New("cannot find service kstorage")
+		return nil, errors.New("cannot find service storage")
 	}
 	return p.Service.storage, nil
+}
+
+func (p *Project) IsTestRun() bool {
+	return p.TestRun
 }
 
 func (p *Project) GetApp(name string) (*app.App, error) {

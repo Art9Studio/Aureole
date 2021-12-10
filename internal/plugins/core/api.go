@@ -6,12 +6,12 @@ import (
 )
 
 type PluginApi struct {
-	Project state.ProjectState
+	Project state.PluginsState
 	Router  _interface.IRouter
 }
 
 var pluginApi PluginApi
 
-func InitApi(p state.ProjectState, router _interface.IRouter) {
+func InitApi(p state.PluginsState, router _interface.IRouter) {
 	pluginApi = PluginApi{Project: p, Router: router}
 }

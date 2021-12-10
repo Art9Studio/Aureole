@@ -28,6 +28,13 @@ func ListPluginStatus(p *Project) {
 		}
 	}
 
+	if len(p.KeyStorages) != 0 {
+		fmt.Println("\nKEY STORAGE PLUGINS")
+		for name, plugin := range p.KeyStorages {
+			printStatus(name, plugin)
+		}
+	}
+
 	if len(p.Hashers) != 0 {
 		fmt.Println("\nHASHER PLUGINS")
 		for name, plugin := range p.Hashers {

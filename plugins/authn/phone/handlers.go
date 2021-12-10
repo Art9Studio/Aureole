@@ -2,9 +2,9 @@ package phone
 
 import (
 	"aureole/internal/identity"
+	"aureole/internal/jwt"
 	authzT "aureole/internal/plugins/authz/types"
 	"github.com/gofiber/fiber/v2"
-	"github.com/lestrrat-go/jwx/jwt"
 )
 
 func SendOtp(p *phone) func(*fiber.Ctx) error {
@@ -29,11 +29,13 @@ func SendOtp(p *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		token, err := createToken(p, map[string]interface{}{
-			"otp":      otpHash,
-			"phone":    i.Phone,
-			"attempts": 0,
-		})
+		token, err := jwt.CreateJWT(
+			map[string]interface{}{
+				"otp":      otpHash,
+				"phone":    i.Phone,
+				"attempts": 0,
+			},
+			p.conf.Otp.Exp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -54,16 +56,10 @@ func Login(p *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Token == "" || input.Otp == "" {
-			return sendError(c, fiber.StatusBadRequest, "token and otp are required")
+			return sendError(c, fiber.StatusBadRequest, "t and otp are required")
 		}
 
-		t, err := jwt.ParseString(
-			input.Token,
-			jwt.WithIssuer("Aureole Internal"),
-			jwt.WithAudience("Aureole Internal"),
-			jwt.WithValidate(true),
-			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
-		)
+		t, err := jwt.ParseJWT(input.Token)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -78,6 +74,9 @@ func Login(p *phone) func(*fiber.Ctx) error {
 		attempts, ok := t.Get("attempts")
 		if !ok {
 			return sendError(c, fiber.StatusBadRequest, "cannot get attempts from token")
+		}
+		if err := jwt.InvalidateJWT(t); err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		if int(attempts.(float64)) >= p.conf.MaxAttempts {
@@ -112,11 +111,13 @@ func Login(p *phone) func(*fiber.Ctx) error {
 
 			return p.authorizer.Authorize(c, authzT.NewPayload(p.authorizer, nil, i))
 		} else {
-			token, err := createToken(p, map[string]interface{}{
-				"otp":      otpHash,
-				"phone":    phone,
-				"attempts": int(attempts.(float64)) + 1,
-			})
+			token, err := jwt.CreateJWT(
+				map[string]interface{}{
+					"otp":      otpHash,
+					"phone":    phone,
+					"attempts": int(attempts.(float64)) + 1,
+				},
+				p.conf.Otp.Exp)
 			if err != nil {
 				return sendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -135,19 +136,16 @@ func Resend(p *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusBadRequest, "token are required")
 		}
 
-		t, err := jwt.ParseString(
-			input.Token,
-			jwt.WithIssuer("Aureole Internal"),
-			jwt.WithAudience("Aureole Internal"),
-			jwt.WithValidate(true),
-			jwt.WithKeySet(p.serviceKey.GetPublicSet()),
-		)
+		t, err := jwt.ParseJWT(input.Token)
 		if err != nil {
 			return sendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		phone, ok := t.Get("phone")
 		if !ok {
 			return sendError(c, fiber.StatusBadRequest, "cannot get phone from token")
+		}
+		if err := jwt.InvalidateJWT(t); err != nil {
+			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		randStr, err := getRandomString(p.conf.Otp.Length, p.conf.Otp.Alphabet)
@@ -161,11 +159,13 @@ func Resend(p *phone) func(*fiber.Ctx) error {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		token, err := createToken(p, map[string]interface{}{
-			"otp":      otpHash,
-			"phone":    phone,
-			"attempts": 0,
-		})
+		token, err := jwt.CreateJWT(
+			map[string]interface{}{
+				"otp":      otpHash,
+				"phone":    phone,
+				"attempts": 0,
+			},
+			p.conf.Otp.Exp)
 		if err != nil {
 			return sendError(c, fiber.StatusInternalServerError, err.Error())
 		}
