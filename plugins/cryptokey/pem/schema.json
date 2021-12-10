@@ -30,7 +30,7 @@
           "type": "string",
           "uuid": "9ea68918-2fa2-46e7-a0e4-0187feeae8e6",
           "minLength": 1,
-          "metatags": "@storage_ref"
+          "metatags": "@key_storage_ref"
         },
         "refresh_interval": {
           "type": "integer",

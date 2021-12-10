@@ -17,6 +17,6 @@ type (
 	}
 )
 
-func (a appleAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (appleAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
 	return &apple{rawConf: conf}
 }

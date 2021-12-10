@@ -15,6 +15,6 @@ type config struct {
 	RefreshInterval int    `mapstructure:"refresh_interval"`
 }
 
-func (j jwkAdapter) Create(conf *configs.CryptoKey) types.CryptoKey {
+func (jwkAdapter) Create(conf *configs.CryptoKey) types.CryptoKey {
 	return &Jwk{rawConf: conf}
 }

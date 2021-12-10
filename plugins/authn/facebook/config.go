@@ -15,6 +15,6 @@ type (
 	}
 )
 
-func (f facebookAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
+func (facebookAdapter) Create(conf *configs.Authn) authnTypes.Authenticator {
 	return &facebook{rawConf: conf}
 }

@@ -23,6 +23,6 @@ type config struct {
 	RefreshUrl    string
 }
 
-func (j jwtAdapter) Create(conf *configs.Authz) types.Authorizer {
+func (jwtAdapter) Create(conf *configs.Authz) types.Authorizer {
 	return &jwtAuthz{rawConf: conf}
 }

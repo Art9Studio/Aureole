@@ -5,8 +5,7 @@
   "additionalProperties": false,
   "required": [
     "api_version",
-    "apps",
-    "storages"
+    "apps"
   ],
   "properties": {
     "api_version": {
@@ -34,7 +33,7 @@
           "type": "string",
           "uuid": "7d900d80-53fa-488c-9541-4e0ca8b5af60",
           "minLength": 1,
-          "metatags": "@storage_ref"
+          "metatags": "@key_storage_ref"
         }
       }
     },
@@ -48,11 +47,18 @@
     },
     "storages": {
       "type": "array",
-      "uuid": "5d2ef815-0404-45ab-abf2-f28257205f22",
+      "uuid": "df361f60-1628-40ed-b24f-e1a947154e95",
       "items": {
         "$ref": "../../plugins/storage/schema.json"
       },
       "minItems": 1
+    },
+    "key_storages": {
+      "type": "array",
+      "uuid": "5d2ef815-0404-45ab-abf2-f28257205f22",
+      "items": {
+        "$ref": "../../plugins/kstorage/schema.json"
+      }
     },
     "hashers": {
       "type": "array",

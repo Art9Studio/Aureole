@@ -1,5 +1,0 @@
-storages:
-  - type: "url"
-    name: google_keys_store
-    config:
-      path: "https://www.googleapis.com/oauth2/v3/certs"

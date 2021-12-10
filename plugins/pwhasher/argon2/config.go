@@ -28,6 +28,6 @@ type config struct {
 }
 
 // Create returns Argon2 hasher with the given settings
-func (a argon2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
+func (argon2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
 	return &Argon2{rawConf: conf}
 }

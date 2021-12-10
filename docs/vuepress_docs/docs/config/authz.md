@@ -32,5 +32,5 @@
           jti: "0"
           sign_key: jwk_file
           verify_keys: [ jwk_file ]
-          payload: "lab/templates/jwt_payload.json"
+          payload: lab/templates/jwt_payload.json
     ```

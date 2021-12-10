@@ -20,7 +20,7 @@
       - type: "argon2"
         name: argon2
         config:
-          kind: "argon2i"
+          kind: argon2i
           iterations: 1
           parallelism: 1
           salt_length: 16
@@ -41,7 +41,7 @@
       - type: "pbkdf2"
         name: django
         config:
-          func: "sha256"
+          func: sha256
           iterations: 260000
           salt_length: 22
           key_length: 32

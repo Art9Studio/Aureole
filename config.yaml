@@ -6,8 +6,8 @@ service:
 
 apps:
   - name: one
-    path_prefix: "/one"
-    host: "http://localhost:3000"
+    path_prefix: /one
+    host: http://localhost:3000
 
     authN:
       - type: "password_based"
@@ -40,120 +40,126 @@ apps:
           otp:
             length: 6
             alphabet: "1234567890"
-            prefix: "A-"
-            postfix: "-B"
+            prefix: A-
+            postfix: -B
             exp: 300
 
       - type: "google"
         filter:
           email: ".*\\.aureole.cloud"
         config:
-          client_id: "${GOOGLE_CLIENT_ID}"
-          client_secret: "${GOOGLE_SECRET}"
+          client_id: ${GOOGLE_CLIENT_ID}
+          client_secret: ${GOOGLE_SECRET}
           scopes:
-            - "https://www.googleapis.com/auth/userinfo.email"
-            - "https://www.googleapis.com/auth/userinfo.profile"
+            - https://www.googleapis.com/auth/userinfo.email
+            - https://www.googleapis.com/auth/userinfo.profile
 
       - type: "vk"
         config:
-          client_id: "${VK_CLIENT_ID}"
-          client_secret: "${VK_SECRET}"
+          client_id: ${VK_CLIENT_ID}
+          client_secret: ${VK_SECRET}
           scopes:
-            - "email"
+            - email
           fields: [ ]
 
       - type: "facebook"
         config:
-          client_id: "${FACEBOOK_CLIENT_ID}"
-          client_secret: "${FACEBOOK_SECRET}"
+          client_id: ${FACEBOOK_CLIENT_ID}
+          client_secret: ${FACEBOOK_SECRET}
           scopes:
-            - "email"
+            - email
           fields:
-            - "email"
+            - email
 
       - type: "apple"
         config:
           secret_key: apple_signin_key
           public_key: apple_keys
-          client_id: "${APPLE_CLIENT_ID}"
-          team_id: "${APPLE_TEAM_ID}"
-          key_id: "${APPLE_KEY_ID}"
+          client_id: ${APPLE_CLIENT_ID}
+          team_id: ${APPLE_TEAM_ID}
+          key_id: ${APPLE_KEY_ID}
           scopes:
-            - "email"
-            - "name"
+            - email
+            - name
 
     authZ:
       type: "jwt"
       config:
-        iss: "Aureole Server"
+        iss: Aureole Server
         sub: true
-        aud: [ "app1", "app2" ]
+        aud:
+          - app1
+          - app2
         nbf: 0
         iat: true
         jti: "0" # todo: implement jti
-        access_bearer: "cookie" # [cookie, header, both]
-        refresh_bearer: "body" # [cookie, body, both]
+        access_bearer: cookie # [cookie, header, both]
+        refresh_bearer: body # [cookie, body, both]
         sign_key: jwk_file
         verify_keys: [ jwk_file ]
         access_exp: 900
         refresh_exp: 7890000
-        payload: "lab/templates/jwt_payload.json.tmpl"
+        payload: lab/templates/jwt_payload.json.tmpl
 
 storages:
-  - type: "postgresql"
-    name: one_db
+  - type: "etcd"
+    name: etcd_store
     config:
-      url: "postgresql://root:password@localhost:5432/aureole"
+      endpoints:
+        - localhost:2379
+      timeout: 0.2
+      dial_timeout: 3
 
-  - type: "postgresql"
-    name: two_db
+  - type: "redis"
+    name: redis_store
     config:
-      username: "root"
-      password: "password"
-      host: "localhost"
-      port: "5432"
-      db_name: "aureole"
-      options:
-        sslmode: "disable"
-        search_path: "public"
+      address: localhost:6379
+      password: ${REDIS_PASSWORD}
+      db: 0
 
+  - type: "memory"
+    name: memory_store
+    config:
+      size: 100
+
+key_storages:
   - type: "url"
     name: google_keys_store
     config:
-      path: "https://www.googleapis.com/oauth2/v3/certs"
+      path: https://www.googleapis.com/oauth2/v3/certs
 
   - type: "url"
     name: apple_keys_store
     config:
-      path: "https://appleid.apple.com/auth/keys"
+      path: https://appleid.apple.com/auth/keys
 
   - type: "file"
     name: jwk_keys_store
     config:
-      path: "lab/keys/keys.json"
+      path: lab/keys/keys.json
 
   - type: "file"
     name: apple_signin_keys_store
     config:
-      path: "lab/keys/apple_private_key.p8"
+      path: lab/keys/apple_private_key.p8
 
   - type: "file"
     name: gen_keys_store
     config:
-      path: "lab/keys/gen_keys.json"
+      path: lab/keys/gen_keys.json
 
   - type: "vault"
     name: vault_store
     config:
-      token: "s.5qhJ1R3VcvwwCJQpdAjY7Lw0"
-      address: "http://127.0.0.1:8200"
-      path: "/secret/keys"
+      token: s.5qhJ1R3VcvwwCJQpdAjY7Lw0
+      address: http://127.0.0.1:8200
+      path: /secret/keys
 
 hashers:
   - type: "argon2"
     name: argon2
     config:
-      kind: "argon2i"
+      kind: argon2i
       iterations: 1
       parallelism: 1
       salt_length: 16
@@ -163,7 +169,7 @@ hashers:
   - type: "pbkdf2"
     name: django
     config:
-      func: "sha256"
+      func: sha256
       iterations: 260000
       salt_length: 22
       key_length: 32
@@ -183,7 +189,7 @@ crypto_keys:
   - type: "pem"
     name: apple_signin_key
     config:
-      alg: "ES256"
+      alg: ES256
       storage: apple_signin_keys_store
 
   - type: "jwk"
@@ -194,48 +200,47 @@ crypto_keys:
   - type: "jwk"
     name: gen_keys
     config:
-      kty: "RSA"
-      alg: "RS256"
+      kty: RSA
+      alg: RS256
       size: 2048
-      kid: "SHA-256"
+      kid: SHA-256
       storage: gen_keys_store
 
   - type: "jwk"
     name: service
     config:
-      kty: "RSA"
-      alg: "RS256"
+      kty: RSA
+      alg: RS256
       size: 2048
-      kid: "SHA-256"
+      kid: SHA-256
       storage: vault_store
-
 
 senders:
   - type: "email"
     name: email
     config:
-      host: "smtp.gmail.com:587"
-      username: "test.aureole@gmail.com"
-      password: "${SMTP_PASSWORD}"
-      from: "test.aureole@gmail.com"
+      host: smtp.gmail.com:587
+      username: test.aureole@gmail.com
+      password: ${SMTP_PASSWORD}
+      from: test.aureole@gmail.com
       bcc: [ ]
       cc: [ ]
       templates:
-        default_text: "lab/templates/default.txt"
-        default_html: "lab/templates/default.html"
-        reset: "lab/templates/password_reset.txt"
-        magic_link: "lab/templates/magic_link.txt"
-        email_verification: "lab/templates/email_verification.txt"
+        default_text: lab/templates/default.txt
+        default_html: lab/templates/default.html
+        reset: lab/templates/password_reset.txt
+        magic_link: lab/templates/magic_link.txt
+        email_verification: lab/templates/email_verification.txt
 
   - type: "twilio"
     name: twilio
     config:
-      account_sid: "${TEST_TWILIO_ACCOUNT_SID}"
-      auth_token: "${TEST_TWILIO_AUTH_TOKEN}"
-      from: "${TEST_TWILIO_PHONE_NUMBER}"
+      account_sid: ${TEST_TWILIO_ACCOUNT_SID}
+      auth_token: ${TEST_TWILIO_AUTH_TOKEN}
+      from: ${TEST_TWILIO_PHONE_NUMBER}
       templates:
-        phone_otp: "lab/templates/phone_otp.txt"
+        phone_otp: lab/templates/phone_otp.txt
 
 admin_plugins:
   - type: "urls"
-    name: "get-urls"
+    name: get-urls

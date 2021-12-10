@@ -22,7 +22,7 @@ type Repository struct {
 	PluginApi  *PluginApi
 }
 
-// Get returns storage adapter if it exists
+// Get returns kstorage adapter if it exists
 func (repo *Repository) Get(name string) (Adapter, error) {
 	repo.adaptersMU.Lock()
 	defer repo.adaptersMU.Unlock()

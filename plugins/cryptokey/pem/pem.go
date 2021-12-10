@@ -4,7 +4,7 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/plugins/cryptokey"
 	"aureole/internal/plugins/cryptokey/types"
-	storageT "aureole/internal/plugins/storage/types"
+	kstorageT "aureole/internal/plugins/kstorage/types"
 	_interface "aureole/internal/router/interface"
 	"encoding/json"
 	"fmt"
@@ -18,7 +18,7 @@ import (
 type Pem struct {
 	rawConf         *configs.CryptoKey
 	conf            *config
-	storage         storageT.Storage
+	keyStorage      kstorageT.KeyStorage
 	refreshDone     chan struct{}
 	refreshInterval time.Duration
 	muSet           sync.RWMutex
@@ -33,9 +33,9 @@ func (p *Pem) Init() (err error) {
 	}
 
 	pluginApi := cryptokey.Repository.PluginApi
-	p.storage, err = pluginApi.Project.GetStorage(p.conf.Storage)
+	p.keyStorage, err = pluginApi.Project.GetKeyStorage(p.conf.Storage)
 	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared\n", p.conf.Storage)
+		return fmt.Errorf("key keyStorage named '%s' is not declared", p.conf.Storage)
 	}
 
 	err = initKeySets(p)
@@ -63,14 +63,17 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initKeySets(p *Pem) (err error) {
-	var keySet jwk.Set
+	var (
+		rawKeys []byte
+		keySet  jwk.Set
+	)
 
-	rawKeys, err := p.storage.Read()
+	ok, err := p.keyStorage.Read(&rawKeys)
 	if err != nil {
 		return err
 	}
 
-	if len(rawKeys) != 0 {
+	if ok {
 		keySet, err = jwk.Parse(rawKeys, jwk.WithPEM(true))
 		if err != nil {
 			return err
@@ -88,7 +91,7 @@ func initKeySets(p *Pem) (err error) {
 		if err != nil {
 			return err
 		}
-		if err := p.storage.Write(b); err != nil {
+		if err := p.keyStorage.Write(b); err != nil {
 			return err
 		}
 	}
@@ -134,14 +137,17 @@ func refreshKeys(p *Pem) {
 		case <-p.refreshDone:
 			return
 		case <-ticker.C:
-			var keySet jwk.Set
+			var (
+				rawKeys []byte
+				keySet  jwk.Set
+			)
 
-			rawKeys, err := p.storage.Read()
+			ok, err := p.keyStorage.Read(&rawKeys)
 			if err != nil {
 				fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
 			}
 
-			if len(rawKeys) != 0 {
+			if ok {
 				keySet, err = jwk.Parse(rawKeys)
 				if err != nil {
 					fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)

@@ -1,0 +1,8 @@
+storages:
+  - type: "etcd"
+    name: etcd_store
+    config:
+      endpoints:
+        - localhost:2379
+      timeout: 0.2
+      dial_timeout: 3

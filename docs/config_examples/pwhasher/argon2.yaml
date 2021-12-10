@@ -2,7 +2,7 @@ hashers:
   - type: "argon2"
     name: argon2
     config:
-      kind: "argon2i"
+      kind: argon2i
       iterations: 1
       parallelism: 1
       salt_length: 16

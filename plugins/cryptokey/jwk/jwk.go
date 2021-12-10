@@ -4,7 +4,7 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/plugins/cryptokey"
 	"aureole/internal/plugins/cryptokey/types"
-	storageT "aureole/internal/plugins/storage/types"
+	kstorageT "aureole/internal/plugins/kstorage/types"
 	_interface "aureole/internal/router/interface"
 	"encoding/json"
 	"fmt"
@@ -19,7 +19,7 @@ type (
 	Jwk struct {
 		rawConf         *configs.CryptoKey
 		conf            *config
-		storage         storageT.Storage
+		keyStorage      kstorageT.KeyStorage
 		refreshDone     chan struct{}
 		refreshInterval time.Duration
 		muSet           sync.RWMutex
@@ -35,9 +35,9 @@ func (j *Jwk) Init() (err error) {
 	}
 
 	pluginApi := cryptokey.Repository.PluginApi
-	j.storage, err = pluginApi.Project.GetStorage(j.conf.Storage)
+	j.keyStorage, err = pluginApi.Project.GetKeyStorage(j.conf.Storage)
 	if err != nil {
-		return fmt.Errorf("storage named '%s' is not declared\n", j.conf.Storage)
+		return fmt.Errorf("key storage named '%s' is not declared", j.conf.Storage)
 	}
 
 	err = initKeySets(j)
@@ -66,14 +66,17 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initKeySets(j *Jwk) (err error) {
-	var keySet jwk.Set
+	var (
+		rawKeys []byte
+		keySet  jwk.Set
+	)
 
-	rawKeys, err := j.storage.Read()
+	found, err := j.keyStorage.Read(&rawKeys)
 	if err != nil {
 		return err
 	}
 
-	if len(rawKeys) != 0 {
+	if found {
 		keySet, err = jwk.Parse(rawKeys)
 		if err != nil {
 			return err
@@ -84,11 +87,11 @@ func initKeySets(j *Jwk) (err error) {
 			return err
 		}
 
-		b, err := json.MarshalIndent(keySet, "", "  ")
+		b, err := json.Marshal(keySet)
 		if err != nil {
 			return err
 		}
-		if err := j.storage.Write(b); err != nil {
+		if err := j.keyStorage.Write(b); err != nil {
 			return err
 		}
 	}
@@ -134,14 +137,17 @@ func refreshKeys(j *Jwk) {
 		case <-j.refreshDone:
 			return
 		case <-ticker.C:
-			var keySet jwk.Set
+			var (
+				rawKeys []byte
+				keySet  jwk.Set
+			)
 
-			rawKeys, err := j.storage.Read()
+			ok, err := j.keyStorage.Read(&rawKeys)
 			if err != nil {
 				fmt.Printf("jwk '%s': an error occured while refreshing keys: %v", j.rawConf.Name, err)
 			}
 
-			if len(rawKeys) != 0 {
+			if ok {
 				keySet, err = jwk.Parse(rawKeys)
 				if err != nil {
 					fmt.Printf("jwk '%s': an error occured while refreshing keys: %v", j.rawConf.Name, err)
@@ -169,7 +175,7 @@ func refreshKeys(j *Jwk) {
 				}
 
 			} else {
-				fmt.Printf("jwk '%s': an error occured while refreshing keys: key is empty", j.rawConf.Name)
+				fmt.Printf("jwk '%s': an error occured while refreshing keys: key not ok", j.rawConf.Name)
 			}
 		}
 	}

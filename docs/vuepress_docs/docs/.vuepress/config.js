@@ -40,6 +40,7 @@ module.exports = {
                         '/config/authn.md',
                         '/config/authz.md',
                         '/config/storage.md',
+                        '/config/kstorage.md',
                         '/config/hasher.md',
                         '/config/crypto_key.md',
                         '/config/sender.md',

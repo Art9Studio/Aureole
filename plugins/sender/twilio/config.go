@@ -12,6 +12,6 @@ type config struct {
 	Templates  map[string]string `mapstructure:"templates"`
 }
 
-func (e twilioAdapter) Create(conf *configs.Sender) types.Sender {
+func (twilioAdapter) Create(conf *configs.Sender) types.Sender {
 	return &Twilio{rawConf: conf}
 }

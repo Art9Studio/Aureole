@@ -10,6 +10,6 @@ type config struct {
 }
 
 // Create returns urls hasher with the given settings
-func (a urlsAdapter) Create(conf *configs.Admin) adminTypes.Admin {
+func (urlsAdapter) Create(conf *configs.Admin) adminTypes.Admin {
 	return &urls{rawConf: conf}
 }

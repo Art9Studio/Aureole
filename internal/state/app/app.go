@@ -47,7 +47,7 @@ func (a *App) GetAuthorizer() (authzTypes.Authorizer, error) {
 	return a.Authorizer, nil
 }
 
-func (a *App) Filter(fields, filters map[string]string) (bool, error) {
+func (*App) Filter(fields, filters map[string]string) (bool, error) {
 	for fieldName, pattern := range filters {
 		re, err := regexp.Compile(pattern)
 		if err != nil {

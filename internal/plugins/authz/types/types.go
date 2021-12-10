@@ -2,8 +2,6 @@ package types
 
 import (
 	storageT "aureole/internal/plugins/storage/types"
-	"encoding/json"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,7 +22,7 @@ type Payload struct {
 	NativeQ    func(queryName string, args ...interface{}) string
 }
 
-func NewPayload(authorizer Authorizer, storage storageT.Storage, data map[string]interface{}) *Payload {
+func NewPayload(_ Authorizer, _ storageT.Storage, data map[string]interface{}) *Payload {
 	p := &Payload{
 		Id:       data["id"],
 		SocialId: data["social_id"],
@@ -34,7 +32,7 @@ func NewPayload(authorizer Authorizer, storage storageT.Storage, data map[string
 		UserData: data["user_data"],
 	}
 
-	if storage != nil {
+	/*if storage != nil {
 		p.NativeQ = func(queryName string, args ...interface{}) string {
 			queries := authorizer.GetNativeQueries()
 
@@ -55,7 +53,7 @@ func NewPayload(authorizer Authorizer, storage storageT.Storage, data map[string
 
 			return string(res)
 		}
-	}
+	}*/
 
 	return p
 }
