@@ -2,6 +2,7 @@ package authenticator
 
 import (
 	"aureole/internal/identity"
+	"aureole/internal/router"
 	"aureole/pkg/dgoogauth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/skip2/go-qrcode"
@@ -22,15 +23,15 @@ func GetQR(g *gauth) func(*fiber.Ctx) error {
 		cred := &identity.Credential{Name: identity.Email, Value: "www@example.com"}
 		ok, err := g.pluginApi.Is2FactorEnabled(cred, "pwbased")
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		if ok {
-			return sendError(c, fiber.StatusInternalServerError, "two factor auth is already enabled")
+			return router.SendError(c, fiber.StatusInternalServerError, "two factor auth is already enabled")
 		}
 
 		secret, err := generateSecret()
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		fa2Data["secret"] = secret
 
@@ -42,7 +43,7 @@ func GetQR(g *gauth) func(*fiber.Ctx) error {
 		if g.conf.ScratchCode.Num != 0 {
 			scratchCodes, err := generateScratchCodes(g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 			fa2Data["scratch_codes"] = scratchCodes
 			responseJson["scratch_code"] = scratchCodes
@@ -50,12 +51,12 @@ func GetQR(g *gauth) func(*fiber.Ctx) error {
 
 		qr, err := qrcode.Encode(otp.ProvisionURIWithIssuer(cred.Value, g.conf.Iss), qrcode.Low, 256)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		responseJson["qr"] = qr
 
 		if err := g.manager.On2FA(cred, fa2Data); err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(&responseJson)
 	}
@@ -68,34 +69,34 @@ func VerifyOTP(g *gauth) func(*fiber.Ctx) error {
 
 		ok, err := g.pluginApi.Is2FactorEnabled(cred, provider)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		if !ok {
-			return sendError(c, fiber.StatusInternalServerError, "two factor auth doesn't enabled")
+			return router.SendError(c, fiber.StatusInternalServerError, "two factor auth doesn't enabled")
 		}
 
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Otp == "" {
-			return sendError(c, fiber.StatusBadRequest, "otp is required")
+			return router.SendError(c, fiber.StatusBadRequest, "otp is required")
 		}
 
 		secret, err := g.manager.GetData(cred, provider, "secret")
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		scratchCodes, err := g.manager.GetData(cred, provider, "scratch_codes")
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		var counter int
 		if g.conf.Alg == "hotp" {
 			rawCounter, err := g.manager.GetData(cred, provider, "counter")
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 			counter = rawCounter.(int)
 		}
@@ -103,7 +104,7 @@ func VerifyOTP(g *gauth) func(*fiber.Ctx) error {
 		var usedOtp []int
 		_, err = g.pluginApi.GetFromService(cred.Value, &usedOtp)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		otp := &dgoogauth.OTPConfig{
@@ -115,15 +116,15 @@ func VerifyOTP(g *gauth) func(*fiber.Ctx) error {
 		}
 		ok, err = otp.Authenticate(strings.TrimSpace(input.Otp))
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		if !ok {
-			return sendError(c, fiber.StatusUnauthorized, "wrong otp")
+			return router.SendError(c, fiber.StatusUnauthorized, "wrong otp")
 		}
 		if err := g.manager.On2FA(cred, map[string]interface{}{
 			"counter": otp.HotpCounter, "scratch_code": otp.ScratchCodes,
 		}); err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		if g.conf.DisallowReuse {
@@ -132,12 +133,12 @@ func VerifyOTP(g *gauth) func(*fiber.Ctx) error {
 			}
 			intOtp, err := strconv.Atoi(input.Otp)
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
 			usedOtp = append(usedOtp, intOtp)
 			if err := g.pluginApi.SaveToService(cred.Value, usedOtp, 1); err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 		}
 
@@ -152,10 +153,10 @@ func GetScratchCodes(g *gauth) func(*fiber.Ctx) error {
 
 		scratchCodes, err := generateScratchCodes(g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		if err := g.manager.On2FA(cred, map[string]interface{}{"scratch_codes": scratchCodes}); err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		return c.JSON(&fiber.Map{"scratch_codes": scratchCodes})

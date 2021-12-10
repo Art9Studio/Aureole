@@ -1,6 +1,7 @@
 package jwk
 
 import (
+	"aureole/internal/router"
 	"context"
 	"crypto/x509"
 	"encoding/pem"
@@ -25,7 +26,7 @@ func GetPemKeys(j *Jwk) func(*fiber.Ctx) error {
 
 			var rawKey interface{}
 			if err := key.Raw(&rawKey); err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
 			var (
@@ -37,7 +38,7 @@ func GetPemKeys(j *Jwk) func(*fiber.Ctx) error {
 			} else {
 				pemData, err = x509.MarshalPKIXPublicKey(rawKey)
 				if err != nil {
-					return sendError(c, fiber.StatusInternalServerError, err.Error())
+					return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 				}
 			}
 
@@ -46,7 +47,7 @@ func GetPemKeys(j *Jwk) func(*fiber.Ctx) error {
 				Bytes: pemData,
 			})
 			if pemKey == nil {
-				return sendError(c, fiber.StatusInternalServerError, "cannot get pem from jwk")
+				return router.SendError(c, fiber.StatusInternalServerError, "cannot get pem from jwk")
 			}
 
 			pemKeySet[key.KeyID()] = string(pemKey)
@@ -54,11 +55,4 @@ func GetPemKeys(j *Jwk) func(*fiber.Ctx) error {
 
 		return c.Status(fiber.StatusOK).JSON(pemKeySet)
 	}
-}
-
-func sendError(c *fiber.Ctx, statusCode int, message string) error {
-	return c.Status(statusCode).JSON(&fiber.Map{
-		"success": false,
-		"message": message,
-	})
 }

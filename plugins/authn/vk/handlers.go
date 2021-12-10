@@ -3,6 +3,7 @@ package vk
 import (
 	"aureole/internal/identity"
 	authzT "aureole/internal/plugins/authz/types"
+	"aureole/internal/router"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,22 +23,22 @@ func Login(v *vk) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		state := c.Query("state")
 		if state != "state" {
-			return sendError(c, fiber.StatusBadRequest, "invalid state")
+			return router.SendError(c, fiber.StatusBadRequest, "invalid state")
 		}
 		code := c.Query("code")
 		if code == "" {
-			return sendError(c, fiber.StatusBadRequest, "code not found")
+			return router.SendError(c, fiber.StatusBadRequest, "code not found")
 		}
 
 		userData, err := getUserData(v, code)
 		if err != nil {
-			return sendError(c, fiber.StatusInternalServerError, err.Error())
+			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		if ok, err := v.app.Filter(convertUserData(userData), v.rawConf.Filter); err != nil {
-			return sendError(c, fiber.StatusBadRequest, err.Error())
+			return router.SendError(c, fiber.StatusBadRequest, err.Error())
 		} else if !ok {
-			return sendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
+			return router.SendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
 		}
 
 		var i map[string]interface{}
@@ -56,7 +57,7 @@ func Login(v *vk) func(*fiber.Ctx) error {
 					"user_data": userData,
 				})
 			if err != nil {
-				return sendError(c, fiber.StatusInternalServerError, err.Error())
+				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 		} else {
 			i = map[string]interface{}{
@@ -113,4 +114,12 @@ func getUserInfoUrl(v *vk) (string, error) {
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil
+}
+
+func convertUserData(mapIntr map[string]interface{}) map[string]string {
+	mapStr := make(map[string]string, len(mapIntr))
+	for key, value := range mapIntr {
+		mapStr[key] = fmt.Sprintf("%v", value)
+	}
+	return mapStr
 }

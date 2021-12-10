@@ -3,16 +3,8 @@ package authenticator
 import (
 	crand "crypto/rand"
 	"encoding/base32"
-	"github.com/gofiber/fiber/v2"
 	"math/big"
 )
-
-func sendError(c *fiber.Ctx, statusCode int, message string) error {
-	return c.Status(statusCode).JSON(&fiber.Map{
-		"success": false,
-		"message": message,
-	})
-}
 
 func generateSecret() (string, error) {
 	randStr, err := getRandomString(8, "alphanum")

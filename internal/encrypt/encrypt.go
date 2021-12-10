@@ -3,9 +3,11 @@ package encrypt
 import (
 	state "aureole/internal/state/interface"
 	"crypto/ecdsa"
+	crand "crypto/rand"
 	"encoding/json"
 	"errors"
 	eciesgo "github.com/ecies/go"
+	"math/big"
 )
 
 var project state.ProjectState
@@ -72,4 +74,26 @@ func getKey() (*eciesgo.PrivateKey, error) {
 		},
 		D: ecKey.D,
 	}, nil
+}
+
+func GetRandomString(length int, alphabet string) (string, error) {
+	switch alphabet {
+	case "alpha":
+		alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	case "num":
+		alphabet = "0123456789"
+	case "alphanum":
+		alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	}
+
+	ret := make([]byte, length)
+	for i := 0; i < length; i++ {
+		num, err := crand.Int(crand.Reader, big.NewInt(int64(len(alphabet))))
+		if err != nil {
+			return "", err
+		}
+		ret[i] = alphabet[num.Int64()]
+	}
+
+	return string(ret), nil
 }

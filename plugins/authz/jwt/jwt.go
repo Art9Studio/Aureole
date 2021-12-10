@@ -5,6 +5,7 @@ import (
 	authzTypes "aureole/internal/plugins/authz/types"
 	"aureole/internal/plugins/core"
 	ckeyT "aureole/internal/plugins/cryptokey/types"
+	"aureole/internal/router"
 	"aureole/internal/router/interface"
 	state "aureole/internal/state/interface"
 	"bytes"
@@ -105,6 +106,44 @@ func (*jwtAuthz) GetPluginID() string {
 	return PluginID
 }
 
+func (j *jwtAuthz) GetNativeQueries() map[string]string {
+	return j.nativeQueries
+}
+
+func (j *jwtAuthz) Authorize(c *fiber.Ctx, payload *authzTypes.Payload) error {
+	accessT, err := newToken(AccessToken, j.conf, payload)
+	if err != nil {
+		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+	}
+	refreshT, err := newToken(RefreshToken, j.conf, payload)
+	if err != nil {
+		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	signedAccessT, err := signToken(j.signKey, accessT)
+	if err != nil {
+		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+	}
+	signedRefreshT, err := signToken(j.signKey, refreshT)
+	if err != nil {
+		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	bearers := map[string]bearerType{
+		"access":  j.conf.AccessBearer,
+		"refresh": j.conf.RefreshBearer,
+	}
+	tokens := map[string][]byte{
+		"access":  signedAccessT,
+		"refresh": signedRefreshT,
+	}
+	if err := attachTokens(c, bearers, keyMap, tokens); err != nil {
+		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return nil
+}
+
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	adapterConf := &config{}
 	if err := mapstructure.Decode(rawConf, adapterConf); err != nil {
@@ -140,44 +179,6 @@ func createRoutes(j *jwtAuthz) {
 		},
 	}
 	j.pluginApi.GetRouter().AddAppRoutes(j.app.GetName(), routes)
-}
-
-func (j *jwtAuthz) GetNativeQueries() map[string]string {
-	return j.nativeQueries
-}
-
-func (j *jwtAuthz) Authorize(c *fiber.Ctx, payload *authzTypes.Payload) error {
-	accessT, err := newToken(AccessToken, j.conf, payload)
-	if err != nil {
-		return sendError(c, fiber.StatusInternalServerError, err.Error())
-	}
-	refreshT, err := newToken(RefreshToken, j.conf, payload)
-	if err != nil {
-		return sendError(c, fiber.StatusInternalServerError, err.Error())
-	}
-
-	signedAccessT, err := signToken(j.signKey, accessT)
-	if err != nil {
-		return sendError(c, fiber.StatusInternalServerError, err.Error())
-	}
-	signedRefreshT, err := signToken(j.signKey, refreshT)
-	if err != nil {
-		return sendError(c, fiber.StatusInternalServerError, err.Error())
-	}
-
-	bearers := map[string]bearerType{
-		"access":  j.conf.AccessBearer,
-		"refresh": j.conf.RefreshBearer,
-	}
-	tokens := map[string][]byte{
-		"access":  signedAccessT,
-		"refresh": signedRefreshT,
-	}
-	if err := attachTokens(c, bearers, keyMap, tokens); err != nil {
-		return sendError(c, fiber.StatusInternalServerError, err.Error())
-	}
-
-	return nil
 }
 
 func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t jwt.Token, err error) {
@@ -380,11 +381,4 @@ func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string
 		}
 	}
 	return c.JSON(jsonBody)
-}
-
-func sendError(c *fiber.Ctx, statusCode int, message string) error {
-	return c.Status(statusCode).JSON(&fiber.Map{
-		"success": false,
-		"message": message,
-	})
 }
