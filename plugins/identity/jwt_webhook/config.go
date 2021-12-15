@@ -7,7 +7,7 @@ import (
 
 type config struct {
 	Address       string            `mapstructure:"address"`
-	RetriesNum    uint              `mapstructure:"retries_num"`
+	RetriesNum    int               `mapstructure:"retries_num"`
 	RetryInterval int               `mapstructure:"retry_interval"`
 	Timeout       int               `mapstructure:"timeout"`
 	Headers       map[string]string `mapstructure:"headers"`

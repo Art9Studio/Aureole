@@ -36,8 +36,19 @@
           "type": "integer",
           "uuid": "44932b13-fa61-41fc-8db5-d44865e03464",
           "minimum": 0,
-          "default": 86400,
-          "metatags": "@unit:s"
+          "default": 3600000,
+          "metatags": "@unit:ms"
+        },
+        "retries_num": {
+          "type": "integer",
+          "uuid": "aeb14548-dc28-4020-9ca1-cf6da410bc9d",
+          "minimum": 1
+        },
+        "retry_interval": {
+          "type": "integer",
+          "uuid": "913738a8-4ddd-4825-9e36-2b7d46bd78d0",
+          "minimum": 1,
+          "metatags": "@unit:ms"
         }
       }
     }

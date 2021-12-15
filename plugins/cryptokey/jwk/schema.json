@@ -16,9 +16,6 @@
       "type": "object",
       "uuid": "8a90c0b9-b9bb-476c-8c7f-debbdc2815ac",
       "additionalProperties": false,
-      "required": [
-        "storage"
-      ],
       "oneOf": [
         {
           "required": ["storage"],
@@ -30,11 +27,21 @@
               "metatags": "@key_storage_ref"
             },
             "refresh_interval": {
-              "type": "integer",
+              "type": "number",
               "uuid": "a154a736-c42a-4426-ad13-9f208319face",
               "minimum": 0,
               "default": 86400,
               "metatags": "@unit:s"
+            },
+            "retries_num": {
+              "type": "integer",
+              "uuid": "7589e1d0-4cc7-4a84-8236-398c76f8d639",
+              "minimum": 1
+            },
+            "retry_interval": {
+              "type": "number",
+              "uuid": "df043c09-9d52-47ce-824b-039e2fda9e2e",
+              "minimum": 0.1
             }
           }
         },
@@ -48,11 +55,21 @@
               "metatags": "@key_storage_ref"
             },
             "refresh_interval": {
-              "type": "integer",
+              "type": "number",
               "uuid": "a154a736-c42a-4426-ad13-9f208319face",
               "minimum": 0,
               "default": 86400,
               "metatags": "@unit:s"
+            },
+            "retries_num": {
+              "type": "integer",
+              "uuid": "7589e1d0-4cc7-4a84-8236-398c76f8d639",
+              "minimum": 1
+            },
+            "retry_interval": {
+              "type": "number",
+              "uuid": "df043c09-9d52-47ce-824b-039e2fda9e2e",
+              "minimum": 0.1
             },
             "kty": {
               "enum": ["RSA", "oct"],
@@ -99,8 +116,19 @@
               "type": "integer",
               "uuid": "a154a736-c42a-4426-ad13-9f208319face",
               "minimum": 0,
-              "default": 86400,
-              "metatags": "@unit:s"
+              "default": 3600000,
+              "metatags": "@unit:ms"
+            },
+            "retries_num": {
+              "type": "integer",
+              "uuid": "7589e1d0-4cc7-4a84-8236-398c76f8d639",
+              "minimum": 1
+            },
+            "retry_interval": {
+              "type": "integer",
+              "uuid": "df043c09-9d52-47ce-824b-039e2fda9e2e",
+              "minimum": 1,
+              "metatags": "@unit:ms"
             },
             "kty": {
               "enum": ["EC", "OKP"],
