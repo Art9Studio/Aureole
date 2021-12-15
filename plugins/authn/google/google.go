@@ -3,17 +3,17 @@ package google
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"context"
 	"fmt"
+	"net/http"
+	"path"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
-	"net/http"
-	"path"
 )
 
 const pluginID = "1010"
@@ -53,51 +53,54 @@ func (*google) GetMetaData() plugins.Meta {
 }
 
 func (g *google) Login() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		// todo: save state and compare later #2
 		state := c.Query("state")
 		if state != "state" {
-			return nil, nil, errors.New("invalid state")
+			return nil, errors.New("invalid state")
 		}
 		code := c.Query("code")
 		if code == "" {
-			return nil, nil, errors.New("code not found")
+			return nil, errors.New("code not found")
 		}
 
 		jwtT, err := getJwt(g, code)
 		if err != nil {
-			return nil, nil, errors.New("error while exchange")
+			return nil, errors.New("error while exchange")
 		}
 
 		email, ok := jwtT.Get("email")
 		if !ok {
-			return nil, nil, errors.New("can't get 'email' from token")
+			return nil, errors.New("can't get 'email' from token")
 		}
-		socialId, ok := jwtT.Get("sub")
+		/*socialId, ok := jwtT.Get("sub")
 		if !ok {
-			return nil, nil, errors.New("can't get 'social_id' from token")
-		}
+			return nil, errors.New("can't get 'social_id' from token")
+		}*/
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		if ok, err := g.app.Filter(convertUserData(userData), g.rawConf.Filter); err != nil {
-			return nil, nil, err
+		ok, err = g.app.Filter(convertUserData(userData), g.rawConf.Filter)
+		if err != nil {
+			return nil, err
 		} else if !ok {
-			return nil, nil, errors.New("input data doesn't pass filters")
+			return nil, errors.New("input data doesn't pass filters")
 		}
 
-		return &identity.Credential{
-				Name:  identity.Email,
+		return &plugins.AuthNResult{
+			Cred: &plugins.Credential{
+				Name:  plugins.Email,
 				Value: email.(string),
 			},
-			fiber.Map{
-				identity.Email:         email,
-				identity.AuthnProvider: adapterName,
-				identity.SocialID:      socialId,
-				identity.UserData:      userData,
-			}, nil
+			Identity: &plugins.Identity{
+				Email:         email.(*string),
+				EmailVerified: true,
+				Additional:    map[string]interface{}{"social_provider_data": userData},
+			},
+			Provider: "social_provider$" + adapterName,
+		}, nil
 	}
 }
 

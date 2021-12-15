@@ -3,6 +3,7 @@ package plugins
 import (
 	"aureole/internal/configs"
 	"fmt"
+
 	"github.com/lestrrat-go/jwx/jwk"
 )
 

@@ -1,8 +1,9 @@
 package pbkdf2
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // todo: remove when default config will exist in plugin

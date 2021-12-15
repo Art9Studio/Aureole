@@ -2,8 +2,9 @@ package urls
 
 import (
 	"bytes"
-	"github.com/gofiber/fiber/v2"
 	"html/template"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 const tmpl = `

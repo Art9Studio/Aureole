@@ -2,8 +2,9 @@ package email
 
 import (
 	"aureole/internal/core"
-	"github.com/gofiber/fiber/v2"
 	"net/url"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func sendMagicLink(e *email) func(*fiber.Ctx) error {

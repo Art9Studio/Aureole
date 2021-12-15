@@ -1,7 +1,6 @@
 package core
 
 import (
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"errors"
 	"fmt"
@@ -18,6 +17,7 @@ type (
 		apps          map[string]*App
 		authorizers   map[string]plugins.Authorizer
 		secondFactors map[string]plugins.SecondFactor
+		idManagers    map[string]plugins.IDManager
 		storages      map[string]plugins.Storage
 		keyStorages   map[string]plugins.KeyStorage
 		hashers       map[string]plugins.PWHasher
@@ -50,7 +50,6 @@ func (p *Project) GetApp(name string) (*App, error) {
 	if !ok {
 		return nil, fmt.Errorf("can't find app named '%s'", name)
 	}
-
 	return a, nil
 }
 
@@ -59,7 +58,6 @@ func (p *Project) GetAuthorizer(name string) (plugins.Authorizer, error) {
 	if !ok || a == nil {
 		return nil, fmt.Errorf("can't find authorizer named '%s'", name)
 	}
-
 	return a, nil
 }
 
@@ -68,8 +66,15 @@ func (p *Project) GetSecondFactor(name string) (plugins.SecondFactor, error) {
 	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find second factor named '%s'", name)
 	}
-
 	return s, nil
+}
+
+func (p *Project) GetIDManager(name string) (plugins.IDManager, error) {
+	m, ok := p.idManagers[name]
+	if !ok || m == nil {
+		return nil, fmt.Errorf("can't find identity manager named '%s'", name)
+	}
+	return m, nil
 }
 
 func (p *Project) GetStorage(name string) (plugins.Storage, error) {
@@ -77,7 +82,6 @@ func (p *Project) GetStorage(name string) (plugins.Storage, error) {
 	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find storage named '%s'", name)
 	}
-
 	return s, nil
 }
 
@@ -86,7 +90,6 @@ func (p *Project) GetKeyStorage(name string) (plugins.KeyStorage, error) {
 	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find key storage named '%s'", name)
 	}
-
 	return s, nil
 }
 
@@ -95,7 +98,6 @@ func (p *Project) GetHasher(name string) (plugins.PWHasher, error) {
 	if !ok || h == nil {
 		return nil, fmt.Errorf("can't find hasher named '%s'", name)
 	}
-
 	return h, nil
 }
 
@@ -104,7 +106,6 @@ func (p *Project) GetSender(name string) (plugins.Sender, error) {
 	if !ok || s == nil {
 		return nil, fmt.Errorf("can't find sender named '%s'", name)
 	}
-
 	return s, nil
 }
 
@@ -113,7 +114,6 @@ func (p *Project) GetCryptoKey(name string) (plugins.CryptoKey, error) {
 	if !ok || k == nil {
 		return nil, fmt.Errorf("can't find crypto key named '%s'", name)
 	}
-
 	return k, nil
 }
 
@@ -139,14 +139,14 @@ func (p *Project) GetServiceStorage() (plugins.Storage, error) {
 }
 
 type App struct {
-	name            string
-	url             *url.URL
-	pathPrefix      string
-	authSessionExp  int
-	identityManager identity.ManagerI
-	authenticators  map[string]plugins.Authenticator
-	authorizer      plugins.Authorizer
-	secondFactor    plugins.SecondFactor
+	name           string
+	url            *url.URL
+	pathPrefix     string
+	authSessionExp int
+	idManager      plugins.IDManager
+	authenticators map[string]plugins.Authenticator
+	authorizer     plugins.Authorizer
+	secondFactor   plugins.SecondFactor
 }
 
 func (a *App) GetName() string {
@@ -168,11 +168,11 @@ func (a *App) GetAuthSessionExp() int {
 	return a.authSessionExp
 }
 
-func (a *App) GetIdentityManager() (identity.ManagerI, error) {
-	if a.identityManager == nil {
-		return nil, fmt.Errorf("can't find identity for app '%s'", a.name)
+func (a *App) GetIDManager() (plugins.IDManager, error) {
+	if a.idManager == nil {
+		return nil, fmt.Errorf("can't find identity manager for app '%s'", a.name)
 	}
-	return a.identityManager, nil
+	return a.idManager, nil
 }
 
 func (a *App) GetAuthorizer() (plugins.Authorizer, error) {

@@ -3,12 +3,15 @@ package core
 import (
 	"aureole/internal/plugins"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
+
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	gonanoid "github.com/matoous/go-nanoid/v2"
-	"time"
 )
 
 func CreateJWT(payload map[string]interface{}, exp int) (string, error) {
@@ -72,6 +75,20 @@ func InvalidateJWT(token jwt.Token) error {
 		}
 	}
 	return nil
+}
+
+func GetFromJWT(token jwt.Token, name string, value interface{}) error {
+	data, ok := token.Get(name)
+	if !ok {
+		return fmt.Errorf("cannot get '%s' field from token", name)
+	}
+
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(bytes, value)
 }
 
 func newToken(payload map[string]interface{}, exp int) (jwt.Token, error) {

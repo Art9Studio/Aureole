@@ -2,8 +2,8 @@ package plugins
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/identity"
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -21,7 +21,14 @@ type (
 		Login() AuthNLoginFunc
 	}
 
-	AuthNLoginFunc func(fiber.Ctx) (*identity.Credential, fiber.Map, error)
+	AuthNResult struct {
+		Cred       *Credential
+		Identity   *Identity
+		Provider   string
+		Additional map[string]interface{}
+	}
+
+	AuthNLoginFunc func(fiber.Ctx) (*AuthNResult, error)
 )
 
 // NewAuthN returns desired Authenticator depends on the given config

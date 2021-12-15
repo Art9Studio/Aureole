@@ -6,9 +6,10 @@ import (
 	"aureole/internal/plugins"
 	"context"
 	"errors"
-	"github.com/mitchellh/mapstructure"
 	"io"
 	"net/http"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 const pluginID = "4896"

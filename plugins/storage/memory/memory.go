@@ -6,6 +6,7 @@ import (
 	"aureole/internal/plugins"
 	"encoding/json"
 	"errors"
+
 	"github.com/coocood/freecache"
 	"github.com/mitchellh/mapstructure"
 )

@@ -3,15 +3,15 @@ package email
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 const pluginID = "4071"
@@ -65,29 +65,35 @@ func (*email) GetMetaData() plugins.Meta {
 }
 
 func (*email) Login() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		rawToken := c.Query("token")
 		if rawToken == "" {
-			return nil, nil, errors.New("token not found")
+			return nil, errors.New("token not found")
 		}
 
 		token, err := core.ParseJWT(rawToken)
 		if err != nil {
-			return nil, nil, errors.New(err.Error())
+			return nil, errors.New(err.Error())
 		}
 		email, ok := token.Get("email")
 		if !ok {
-			return nil, nil, errors.New("cannot get email from token")
+			return nil, errors.New("cannot get email from token")
 		}
 		if err := core.InvalidateJWT(token); err != nil {
-			return nil, nil, errors.New(err.Error())
+			return nil, errors.New(err.Error())
 		}
 
-		return &identity.Credential{
-				Name:  identity.Email,
+		return &plugins.AuthNResult{
+			Cred: &plugins.Credential{
+				Name:  plugins.Email,
 				Value: email.(string),
 			},
-			fiber.Map{identity.Email: email}, nil
+			Identity: &plugins.Identity{
+				Email:         email.(*string),
+				EmailVerified: true,
+			},
+			Provider: adapterName,
+		}, nil
 	}
 }
 

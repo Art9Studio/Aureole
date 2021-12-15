@@ -5,9 +5,10 @@ import (
 	"aureole/plugins/storage"
 	"context"
 	"errors"
-	"go.etcd.io/etcd/clientv3"
 	"testing"
 	"time"
+
+	"go.etcd.io/etcd/clientv3"
 )
 
 func TestStorage(t *testing.T) {

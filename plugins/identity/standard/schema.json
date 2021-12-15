@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "ec345512-7da4-4c64-8dea-caabcd3bd380",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "type": {
+      "const": "standard",
+      "uuid": "3a04cdde-e1ab-40d1-85fc-8f073b267b54"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "11de8814-4857-4675-9c42-d482483ca1ca",
+      "additionalProperties": false,
+      "required": [
+        "db_url"
+      ],
+      "properties": {
+        "db_url": {
+          "type": "string",
+          "uuid": "b028d565-8464-4c1a-bf6f-ff854992975b",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "example": "identity/standard"
+}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/x509"
 	pemLib "encoding/pem"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwk"
 )

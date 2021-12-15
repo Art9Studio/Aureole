@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"aureole/pkg/configuro"
+
 	"github.com/joho/godotenv"
 )
 
@@ -19,6 +20,7 @@ type (
 		Apps          []App          `config:"apps"`
 		Authz         []Authz        `config:"authZ"`
 		SecondFactors []SecondFactor `config:"2fa"`
+		IDManagers    []IDManager    `config:"id_managers"`
 		KeyStorages   []KeyStorage   `config:"key_storages"`
 		Storages      []Storage      `config:"storages"`
 		HasherConfs   []PwHasher     `config:"hashers"`
@@ -40,6 +42,7 @@ type (
 		AuthSessionExp int     `config:"auth_session_exp"`
 		Authz          string  `config:"authZ"`
 		SecondFactor   string  `config:"2fa"`
+		IDManager      string  `config:"id_manager"`
 		Authn          []Authn `config:"authN"`
 	}
 
@@ -56,6 +59,12 @@ type (
 	}
 
 	SecondFactor struct {
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
+	}
+
+	IDManager struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`

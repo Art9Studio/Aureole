@@ -6,12 +6,13 @@ import (
 	"aureole/internal/plugins"
 	"encoding/json"
 	"fmt"
-	jwx "github.com/lestrrat-go/jwx/jwk"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	jwx "github.com/lestrrat-go/jwx/jwk"
+	"github.com/mitchellh/mapstructure"
 )
 
 const pluginID = "7851"

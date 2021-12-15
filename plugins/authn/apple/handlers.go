@@ -2,6 +2,7 @@ package apple
 
 import (
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
 )

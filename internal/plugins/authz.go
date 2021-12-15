@@ -3,6 +3,7 @@ package plugins
 import (
 	"aureole/internal/configs"
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 )

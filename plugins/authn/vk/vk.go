@@ -3,16 +3,16 @@ package vk
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"errors"
 	"fmt"
+	"net/http"
+	"path"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
-	"net/http"
-	"path"
 )
 
 const pluginID = "3888"
@@ -22,7 +22,7 @@ type vk struct {
 	app        *core.App
 	rawConf    *configs.Authn
 	conf       *config
-	manager    identity.ManagerI
+	manager    plugins.IDManager
 	provider   *oauth2.Config
 	authorizer plugins.Authorizer
 }
@@ -39,7 +39,7 @@ func (v *vk) Init(appName string, api core.PluginAPI) (err error) {
 		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
-	v.manager, err = v.app.GetIdentityManager()
+	v.manager, err = v.app.GetIDManager()
 	if err != nil {
 		fmt.Printf("manager for app '%s' is not declared", appName)
 	}
@@ -64,37 +64,40 @@ func (*vk) GetMetaData() plugins.Meta {
 }
 
 func (v *vk) Login() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		state := c.Query("state")
 		if state != "state" {
-			return nil, nil, errors.New("invalid state")
+			return nil, errors.New("invalid state")
 		}
 		code := c.Query("code")
 		if code == "" {
-			return nil, nil, errors.New("code not found")
+			return nil, errors.New("code not found")
 		}
 
 		userData, err := getUserData(v, code)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		if ok, err := v.app.Filter(convertUserData(userData), v.rawConf.Filter); err != nil {
-			return nil, nil, err
+		ok, err := v.app.Filter(convertUserData(userData), v.rawConf.Filter)
+		if err != nil {
+			return nil, err
 		} else if !ok {
-			return nil, nil, errors.New("input data doesn't pass filters")
+			return nil, errors.New("input data doesn't pass filters")
 		}
 
-		return &identity.Credential{
-				Name:  identity.Email,
+		return &plugins.AuthNResult{
+			Cred: &plugins.Credential{
+				Name:  plugins.Email,
 				Value: userData["email"].(string),
 			},
-			fiber.Map{
-				identity.Email:         userData["email"],
-				identity.AuthnProvider: adapterName,
-				identity.SocialID:      userData["user_id"],
-				identity.UserData:      userData,
-			}, nil
+			Identity: &plugins.Identity{
+				Email:         userData["email"].(*string),
+				EmailVerified: true,
+				Additional:    map[string]interface{}{"social_provider_data": userData},
+			},
+			Provider: "social_provider$" + adapterName,
+		}, nil
 	}
 }
 

@@ -3,13 +3,13 @@ package phone
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
-	"net/http"
 )
 
 const pluginID = "6937"
@@ -55,33 +55,33 @@ func (*phone) GetMetaData() plugins.Meta {
 }
 
 func (p *phone) Login() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if input.Token == "" || input.Otp == "" {
-			return nil, nil, errors.New("token and otp are required")
+			return nil, errors.New("token and otp are required")
 		}
 
 		t, err := core.ParseJWT(input.Token)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		phone, ok := t.Get("phone")
 		if !ok {
-			return nil, nil, errors.New("cannot get phone from token")
+			return nil, errors.New("cannot get phone from token")
 		}
 		attempts, ok := t.Get("attempts")
 		if !ok {
-			return nil, nil, errors.New("cannot get attempts from token")
+			return nil, errors.New("cannot get attempts from token")
 		}
 		if err := core.InvalidateJWT(t); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		if int(attempts.(float64)) >= p.conf.MaxAttempts {
-			return nil, nil, errors.New("too much attempts")
+			return nil, errors.New("too much attempts")
 		}
 
 		var (
@@ -90,26 +90,28 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 		)
 		ok, err = p.pluginApi.GetFromService(phone.(string), &encOtp)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if !ok {
-			return nil, nil, errors.New("otp has expired")
+			return nil, errors.New("otp has expired")
 		}
 		err = core.Decrypt(encOtp, &decrOtp)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		if decrOtp == input.Otp {
-			return &identity.Credential{
-					Name:  identity.Phone,
+			return &plugins.AuthNResult{
+				Cred: &plugins.Credential{
+					Name:  plugins.Phone,
 					Value: phone.(string),
 				},
-				fiber.Map{
-					identity.Phone:         phone,
-					identity.PhoneVerified: true,
-					identity.AuthnProvider: adapterName,
-				}, nil
+				Identity: &plugins.Identity{
+					Email:         phone.(*string),
+					PhoneVerified: true,
+				},
+				Provider: adapterName,
+			}, nil
 		} else {
 			token, err := core.CreateJWT(
 				map[string]interface{}{
@@ -118,9 +120,11 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 				},
 				p.conf.Otp.Exp)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
-			return nil, fiber.Map{"token": token}, errors.New("wrong otp")
+			return &plugins.AuthNResult{
+				Additional: map[string]interface{}{"token": token},
+			}, errors.New("wrong otp")
 		}
 	}
 }

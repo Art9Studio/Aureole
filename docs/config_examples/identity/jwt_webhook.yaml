@@ -1,0 +1,11 @@
+id_managers:
+  - type: "jwt_webhook"
+    name: webhook_identity
+    config:
+      address: http://localhost:3001
+      retries_num: 1
+      retry_interval: 2
+      timeout: 10
+      headers:
+        header1: value1
+        header2: value2

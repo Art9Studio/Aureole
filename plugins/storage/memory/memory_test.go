@@ -2,8 +2,9 @@ package memory
 
 import (
 	"aureole/plugins/storage"
-	"github.com/coocood/freecache"
 	"testing"
+
+	"github.com/coocood/freecache"
 )
 
 func TestStorage(t *testing.T) {

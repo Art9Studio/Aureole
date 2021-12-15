@@ -4,8 +4,9 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
-	"github.com/mitchellh/mapstructure"
 	"os"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 const pluginID = "3827"

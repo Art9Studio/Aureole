@@ -10,15 +10,14 @@ replace (
 
 require (
 	github.com/andybalholm/brotli v1.0.3 // indirect
+	github.com/avast/retry-go/v4 v4.0.2
 	github.com/coocood/freecache v1.2.0
-	github.com/coreos/bbolt v0.0.0-00010101000000-000000000000 // indirect
 	github.com/coreos/etcd v3.3.27+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
-	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/ecies/go v1.0.1
+	github.com/fatih/structs v1.1.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator v9.31.0+incompatible
@@ -28,8 +27,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/vault/api v1.3.1
+	github.com/jackc/pgx/v4 v4.14.1
+	github.com/jackc/tern v1.12.5
 	github.com/jarcoal/httpmock v1.1.0
 	github.com/joho/godotenv v1.4.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
@@ -44,7 +44,6 @@ require (
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
-	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.uber.org/multierr v1.7.0

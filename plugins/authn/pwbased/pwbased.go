@@ -3,15 +3,15 @@ package pwbased
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 const pluginID = "7157"
@@ -22,7 +22,7 @@ type (
 		app               *core.App
 		rawConf           *configs.Authn
 		conf              *config
-		manager           identity.ManagerI
+		manager           plugins.IDManager
 		pwHasher          plugins.PWHasher
 		resetSender       plugins.Sender
 		resetConfirmLink  *url.URL
@@ -58,12 +58,13 @@ func (p *pwBased) Init(appName string, api core.PluginAPI) (err error) {
 		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
-	p.manager, err = p.app.GetIdentityManager()
+	p.manager, err = p.app.GetIDManager()
 	if err != nil {
 		return fmt.Errorf("manager for app '%s' is not declared", appName)
 	}
-	if err := p.manager.CheckFeaturesAvailable([]string{"on_register", "get_data", "update"}); err != nil {
-		return err
+	err = p.manager.CheckFeaturesAvailable([]string{"OnUserAuthenticated", "Register", "GetData", "Update"})
+	if err != nil {
+		return fmt.Errorf("cannot check id manager features available: %v", err)
 	}
 
 	p.pwHasher, err = p.pluginApi.GetHasher(p.conf.MainHasher)
@@ -105,43 +106,44 @@ func (*pwBased) GetMetaData() plugins.Meta {
 }
 
 func (p *pwBased) Login() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if input.Password == "" {
-			return nil, nil, errors.New("password required")
+			return nil, errors.New("password required")
 		}
 
-		i := &identity.Identity{
+		ident := &plugins.Identity{
 			ID:       input.Id,
-			Email:    input.Email,
-			Phone:    input.Phone,
-			Username: input.Username,
+			Email:    &input.Email,
+			Phone:    &input.Phone,
+			Username: &input.Username,
 		}
-		cred, err := getCredential(i)
+		cred, err := getCredential(ident)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		pw, err := p.manager.GetData(cred, adapterName, identity.Password)
+		pw, err := p.manager.GetData(cred, adapterName, plugins.Password)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		isMatch, err := p.pwHasher.ComparePw(input.Password, pw.(string))
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		if isMatch {
-			return cred, fiber.Map{
-				cred.Name:              cred.Value,
-				identity.AuthnProvider: adapterName,
+			return &plugins.AuthNResult{
+				Cred:     cred,
+				Identity: ident,
+				Provider: adapterName,
 			}, nil
 		} else {
-			return nil, nil, errors.New("wrong password")
+			return nil, errors.New("wrong password")
 		}
 	}
 }
