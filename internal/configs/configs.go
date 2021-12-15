@@ -13,37 +13,34 @@ type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion    string         `config:"api_version"`
-		PingPath      string         `config:"-"`
-		TestRun       bool           `config:"test_run"`
-		Service       Service        `config:"service"`
-		Apps          []App          `config:"apps"`
-		Authz         []Authz        `config:"authZ"`
-		SecondFactors []SecondFactor `config:"2fa"`
-		IDManagers    []IDManager    `config:"id_managers"`
-		KeyStorages   []KeyStorage   `config:"key_storages"`
-		Storages      []Storage      `config:"storages"`
-		HasherConfs   []PwHasher     `config:"hashers"`
-		CryptoKeys    []CryptoKey    `config:"crypto_keys"`
-		Senders       []Sender       `config:"senders"`
-		AdminConfs    []Admin        `config:"admin_plugins"`
+		APIVersion string `config:"api_version"`
+		PingPath   string `config:"-"`
+		TestRun    bool   `config:"test_run"`
+		Apps       []App  `config:"apps"`
+	}
+
+	App struct {
+		Name           string         `config:"name"`
+		Host           string         `config:"host"`
+		PathPrefix     string         `config:"path_prefix"`
+		AuthSessionExp int            `config:"auth_session_exp"`
+		Service        Service        `config:"service"`
+		Authn          []Authn        `config:"authN"`
+		Authz          Authz          `config:"authZ"`
+		SecondFactors  []SecondFactor `config:"2fa"`
+		IDManager      IDManager      `config:"id_manager"`
+		KeyStorages    []KeyStorage   `config:"key_storages"`
+		Storages       []Storage      `config:"storages"`
+		HasherConfs    []PwHasher     `config:"hashers"`
+		CryptoKeys     []CryptoKey    `config:"crypto_keys"`
+		Senders        []Sender       `config:"senders"`
+		AdminConfs     []Admin        `config:"admin_plugins"`
 	}
 
 	Service struct {
 		SignKey string `config:"sign_key"`
 		EncKey  string `config:"enc_key"`
 		Storage string `config:"storage"`
-	}
-
-	App struct {
-		Name           string  `config:"name"`
-		Host           string  `config:"host"`
-		PathPrefix     string  `config:"path_prefix"`
-		AuthSessionExp int     `config:"auth_session_exp"`
-		Authz          string  `config:"authZ"`
-		SecondFactor   string  `config:"2fa"`
-		IDManager      string  `config:"id_manager"`
-		Authn          []Authn `config:"authN"`
 	}
 
 	Authn struct {
@@ -54,7 +51,6 @@ type (
 
 	Authz struct {
 		Type   string    `config:"type"`
-		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`
 	}
 
@@ -66,7 +62,6 @@ type (
 
 	IDManager struct {
 		Type   string    `config:"type"`
-		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`
 	}
 

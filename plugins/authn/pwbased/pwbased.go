@@ -18,8 +18,7 @@ const pluginID = "7157"
 
 type (
 	pwBased struct {
-		pluginApi         core.PluginAPI
-		app               *core.App
+		pluginAPI         core.PluginAPI
 		rawConf           *configs.Authn
 		conf              *config
 		manager           plugins.IDManager
@@ -46,35 +45,31 @@ const (
 	VerifyLink linkType = "verify"
 )
 
-func (p *pwBased) Init(appName string, api core.PluginAPI) (err error) {
-	p.pluginApi = api
+func (p *pwBased) Init(api core.PluginAPI) (err error) {
+	p.pluginAPI = api
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	p.app, err = p.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
-	}
-
-	p.manager, err = p.app.GetIDManager()
-	if err != nil {
-		return fmt.Errorf("manager for app '%s' is not declared", appName)
+	var ok bool
+	p.manager, ok = p.pluginAPI.GetIDManager()
+	if !ok {
+		return fmt.Errorf("manager for app '%s' is not declared", p.pluginAPI.GetAppName())
 	}
 	err = p.manager.CheckFeaturesAvailable([]string{"OnUserAuthenticated", "Register", "GetData", "Update"})
 	if err != nil {
 		return fmt.Errorf("cannot check id manager features available: %v", err)
 	}
 
-	p.pwHasher, err = p.pluginApi.GetHasher(p.conf.MainHasher)
-	if err != nil {
+	p.pwHasher, ok = p.pluginAPI.GetHasher(p.conf.MainHasher)
+	if !ok {
 		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
 	}
 
 	if resetEnabled(p) {
-		p.resetSender, err = p.pluginApi.GetSender(p.conf.Reset.Sender)
-		if err != nil {
+		p.resetSender, ok = p.pluginAPI.GetSender(p.conf.Reset.Sender)
+		if !ok {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
 		}
 		p.resetConfirmLink, err = createConfirmLink(ResetLink, p)
@@ -84,8 +79,8 @@ func (p *pwBased) Init(appName string, api core.PluginAPI) (err error) {
 	}
 
 	if verifyEnabled(p) {
-		p.verifySender, err = p.pluginApi.GetSender(p.conf.Verif.Sender)
-		if err != nil {
+		p.verifySender, ok = p.pluginAPI.GetSender(p.conf.Verif.Sender)
+		if !ok {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verif.Sender)
 		}
 		p.verifyConfirmLink, err = createConfirmLink(VerifyLink, p)
@@ -167,11 +162,7 @@ func verifyEnabled(p *pwBased) bool {
 }
 
 func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
-	u, err := p.app.GetUrl()
-	if err != nil {
-		return nil, err
-	}
-
+	u := p.pluginAPI.GetAppUrl()
 	switch linkType {
 	case ResetLink:
 		u.Path = path.Clean(u.Path + resetConfirmUrl)
@@ -223,5 +214,5 @@ func createRoutes(p *pwBased) {
 		routes = append(routes, verifRoutes...)
 	}
 
-	p.pluginApi.AddAppRoutes(p.app.GetName(), routes)
+	p.pluginAPI.AddAppRoutes(routes)
 }

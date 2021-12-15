@@ -10,13 +10,13 @@ import (
 	eciesgo "github.com/ecies/go"
 )
 
-func Encrypt(data interface{}) ([]byte, error) {
+func encrypt(app *app, data interface{}) ([]byte, error) {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 
-	key, err := getKey()
+	key, err := getKey(app)
 	if err != nil {
 		return nil, err
 	}
@@ -29,8 +29,8 @@ func Encrypt(data interface{}) ([]byte, error) {
 	return encrypted, nil
 }
 
-func Decrypt(data []byte, value interface{}) error {
-	key, err := getKey()
+func decrypt(app *app, data []byte, value interface{}) error {
+	key, err := getKey(app)
 	if err != nil {
 		return err
 	}
@@ -43,10 +43,10 @@ func Decrypt(data []byte, value interface{}) error {
 	return json.Unmarshal(decrypted, value)
 }
 
-func getKey() (*eciesgo.PrivateKey, error) {
-	serviceKey, err := p.GetServiceEncKey()
-	if err != nil {
-		return nil, err
+func getKey(app *app) (*eciesgo.PrivateKey, error) {
+	serviceKey, ok := app.getServiceEncKey()
+	if !ok {
+		return nil, errors.New("cannot get service encryption key")
 	}
 	set := serviceKey.GetPrivateSet()
 
@@ -70,7 +70,7 @@ func getKey() (*eciesgo.PrivateKey, error) {
 	}, nil
 }
 
-func GetRandStr(length int, alphabet string) (string, error) {
+func getRandStr(length int, alphabet string) (string, error) {
 	switch alphabet {
 	case "alpha":
 		alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"

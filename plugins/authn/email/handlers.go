@@ -14,7 +14,7 @@ func sendMagicLink(e *email) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, e.conf.Exp)
+		token, err := e.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, e.conf.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

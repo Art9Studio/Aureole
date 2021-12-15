@@ -16,8 +16,7 @@ const pluginID = "6937"
 
 type (
 	phone struct {
-		pluginApi core.PluginAPI
-		appName   string
+		pluginAPI core.PluginAPI
 		rawConf   *configs.Authn
 		conf      *config
 		sender    plugins.Sender
@@ -30,16 +29,16 @@ type (
 	}
 )
 
-func (p *phone) Init(appName string, api core.PluginAPI) (err error) {
-	p.pluginApi = api
-	p.appName = appName
+func (p *phone) Init(api core.PluginAPI) (err error) {
+	p.pluginAPI = api
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	p.sender, err = p.pluginApi.GetSender(p.conf.Sender)
-	if err != nil {
+	var ok bool
+	p.sender, ok = p.pluginAPI.GetSender(p.conf.Sender)
+	if !ok {
 		return fmt.Errorf("sender named '%s' is not declared", p.conf.Sender)
 	}
 
@@ -64,7 +63,7 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 			return nil, errors.New("token and otp are required")
 		}
 
-		t, err := core.ParseJWT(input.Token)
+		t, err := p.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +75,7 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 		if !ok {
 			return nil, errors.New("cannot get attempts from token")
 		}
-		if err := core.InvalidateJWT(t); err != nil {
+		if err := p.pluginAPI.InvalidateJWT(t); err != nil {
 			return nil, err
 		}
 
@@ -88,14 +87,14 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 			encOtp  []byte
 			decrOtp string
 		)
-		ok, err = p.pluginApi.GetFromService(phone.(string), &encOtp)
+		ok, err = p.pluginAPI.GetFromService(phone.(string), &encOtp)
 		if err != nil {
 			return nil, err
 		}
 		if !ok {
 			return nil, errors.New("otp has expired")
 		}
-		err = core.Decrypt(encOtp, &decrOtp)
+		err = p.pluginAPI.Decrypt(encOtp, &decrOtp)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +112,7 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 				Provider: adapterName,
 			}, nil
 		} else {
-			token, err := core.CreateJWT(
+			token, err := p.pluginAPI.CreateJWT(
 				map[string]interface{}{
 					"phone":    phone,
 					"attempts": int(attempts.(float64)) + 1,
@@ -122,9 +121,7 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 			if err != nil {
 				return nil, err
 			}
-			return &plugins.AuthNResult{
-				Additional: map[string]interface{}{"token": token},
-			}, errors.New("wrong otp")
+			return &plugins.AuthNResult{ErrorData: fiber.Map{"token": token}}, errors.New("wrong otp")
 		}
 	}
 }
@@ -152,5 +149,5 @@ func createRoutes(p *phone) {
 			Handler: resendOTP(p),
 		},
 	}
-	p.pluginApi.AddAppRoutes(p.appName, routes)
+	p.pluginAPI.AddAppRoutes(routes)
 }

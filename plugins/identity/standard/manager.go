@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/tern/migrate"
@@ -22,23 +21,17 @@ const pluginID = "4634"
 
 type manager struct {
 	pluginApi core.PluginAPI
-	app       *core.App
 	rawConf   *configs.IDManager
 	conf      *config
 	pool      *pgxpool.Pool
 	features  map[string]bool
 }
 
-func (m *manager) Init(appName string, api core.PluginAPI) (err error) {
+func (m *manager) Init(api core.PluginAPI) (err error) {
 	m.pluginApi = api
 	m.conf, err = initConfig(&m.rawConf.Config)
 	if err != nil {
 		return err
-	}
-
-	m.app, err = m.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
 	m.pool, err = pgxpool.Connect(context.Background(), m.conf.DBUrl)
@@ -71,7 +64,6 @@ func (m *manager) Init(appName string, api core.PluginAPI) (err error) {
 func (m *manager) GetMetaData() plugins.Meta {
 	return plugins.Meta{
 		Type: adapterName,
-		Name: m.rawConf.Name,
 		ID:   pluginID,
 	}
 }
@@ -138,7 +130,7 @@ func (m *manager) OnUserAuthenticated(c *plugins.Credential, i *plugins.Identity
 	return registeredIdent, nil
 }
 
-func (m *manager) On2FA(c *plugins.Credential, mfaProvider string, mfaData map[string]interface{}) error {
+func (m *manager) On2FA(c *plugins.Credential, mfaData *plugins.MFAData) error {
 	conn, err := m.pool.Acquire(context.Background())
 	if err != nil {
 		return fmt.Errorf("cannot acquire connection: %v", err)
@@ -151,11 +143,7 @@ func (m *manager) On2FA(c *plugins.Credential, mfaProvider string, mfaData map[s
 	}
 
 	if exists {
-		err = save2FAData(conn, c, mfaProvider, mfaData)
-		if err != nil {
-			return fmt.Errorf("cannot save 2FA data: %v", err)
-		}
-		return nil
+		return save2FAData(conn, c, mfaData)
 	} else {
 		return fmt.Errorf("user doesn't exists: %v", err)
 	}
@@ -186,7 +174,7 @@ func (m *manager) GetData(c *plugins.Credential, _, name string) (interface{}, e
 	}
 }
 
-func (m *manager) Get2FAData(c *plugins.Credential, mfaProvider string) (map[string]interface{}, error) {
+func (m *manager) Get2FAData(c *plugins.Credential, mfaID string) (*plugins.MFAData, error) {
 	conn, err := m.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -199,9 +187,9 @@ func (m *manager) Get2FAData(c *plugins.Credential, mfaProvider string) (map[str
 	}
 
 	if exists {
-		return get2FAData(conn, c, mfaProvider)
+		return get2FAData(conn, c, mfaID)
 	} else {
-		return nil, errors.New("user doesn't exists")
+		return nil, plugins.UserNotExistError
 	}
 }
 
@@ -391,16 +379,16 @@ func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *plugins.Identi
 	return &ident, nil
 }
 
-func save2FAData(conn *pgxpool.Conn, cred *plugins.Credential, provider string, data fiber.Map) error {
-	bytes2faData, err := json.Marshal(data)
+func save2FAData(conn *pgxpool.Conn, cred *plugins.Credential, data *plugins.MFAData) error {
+	bytesPayload, err := json.Marshal(data.Payload)
 	if err != nil {
 		return err
 	}
 
-	sql := fmt.Sprintf(`insert into mfa(user_id, mfa_name, payload) 
-		                      (select id, $1, $2::json from users where %s=$3);`,
+	sql := fmt.Sprintf(`insert into mfa(user_id, plugin_id, mfa_name, payload) 
+		                      (select id, $1, $2, $3::json from users where %s=$3);`,
 		sanitize(cred.Name))
-	_, err = conn.Exec(context.Background(), sql, provider, string(bytes2faData), cred.Value)
+	_, err = conn.Exec(context.Background(), sql, data.PluginID, data.ProviderName, string(bytesPayload), cred.Value)
 	if err != nil {
 		return err
 	}
@@ -421,16 +409,16 @@ func updateIdentity(conn *pgxpool.Conn, cred *plugins.Credential, newIdent *plug
 	return &ident, nil
 }
 
-func get2FAData(conn *pgxpool.Conn, cred *plugins.Credential, mfaProvider string) (map[string]interface{}, error) {
-	var data map[string]interface{}
-	sql := fmt.Sprintf(`select payload from mfa 
-		                      where name=$1 and user_id=(select id from users where %s=$2));`,
+func get2FAData(conn *pgxpool.Conn, cred *plugins.Credential, mfaID string) (*plugins.MFAData, error) {
+	var data plugins.MFAData
+	sql := fmt.Sprintf(`select plugin_id, provider_name, payload from mfa 
+		                      where plugin_id=$1 and user_id=(select id from users where %s=$2);`,
 		sanitize(cred.Name))
-	err := conn.QueryRow(context.Background(), sql, mfaProvider, cred.Value).Scan(&data)
+	err := conn.QueryRow(context.Background(), sql, mfaID, cred.Value).Scan(&data.PluginID, &data.ProviderName, &data.Payload)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get 2fa data from db: %v", err)
 	}
-	return data, nil
+	return &data, nil
 }
 
 func getCreateQuery(ident *plugins.Identity) (string, []interface{}, error) {

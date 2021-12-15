@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"fmt"
+	"runtime"
 )
 
 var Migrations = map[string]migration{}
@@ -11,13 +12,18 @@ type migration struct {
 	DownSQL string
 }
 
-func appendMigration(name, upSQL, downSQL string) {
-	_, ok := Migrations[name]
+func appendMigration(upSQL, downSQL string) {
+	_, filename, _, ok := runtime.Caller(1)
 	if ok {
-		panic(fmt.Sprintf("cannot append migration: name '%s' already exists", name))
+		_, ok := Migrations[filename]
+		if ok {
+			panic(fmt.Sprintf("cannot append migration: name '%s' already exists", filename))
+		}
 	}
-	Migrations[name] = migration{
+
+	Migrations[filename] = migration{
 		UpSQL:   upSQL,
 		DownSQL: downSQL,
 	}
+
 }

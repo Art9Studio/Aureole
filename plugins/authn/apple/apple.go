@@ -21,8 +21,7 @@ import (
 const pluginID = "5771"
 
 type apple struct {
-	pluginApi core.PluginAPI
-	app       *core.App
+	pluginAPI core.PluginAPI
 	rawConf   *configs.Authn
 	conf      *config
 	secretKey plugins.CryptoKey
@@ -30,25 +29,21 @@ type apple struct {
 	provider  *providerConfig
 }
 
-func (a *apple) Init(appName string, api core.PluginAPI) (err error) {
-	a.pluginApi = api
+func (a *apple) Init(api core.PluginAPI) (err error) {
+	a.pluginAPI = api
 	a.conf, err = initConfig(&a.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	a.app, err = a.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
-	}
-
-	a.secretKey, err = a.pluginApi.GetCryptoKey(a.conf.SecretKey)
-	if err != nil {
+	var ok bool
+	a.secretKey, ok = a.pluginAPI.GetCryptoKey(a.conf.SecretKey)
+	if !ok {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.SecretKey)
 	}
 
-	a.publicKey, err = a.pluginApi.GetCryptoKey(a.conf.PublicKey)
-	if err != nil {
+	a.publicKey, ok = a.pluginAPI.GetCryptoKey(a.conf.PublicKey)
+	if !ok {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.PublicKey)
 	}
 
@@ -100,7 +95,7 @@ func (a *apple) Login() plugins.AuthNLoginFunc {
 			return nil, err
 		}
 
-		ok, err = a.app.Filter(convertUserData(userData), a.rawConf.Filter)
+		ok, err = a.pluginAPI.Filter(convertUserData(userData), a.rawConf.Filter)
 		if err != nil {
 			return nil, err
 		} else if !ok {
@@ -132,11 +127,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initProvider(a *apple) error {
-	url, err := a.app.GetUrl()
-	if err != nil {
-		return err
-	}
-
+	url := a.pluginAPI.GetAppUrl()
 	url.Path = path.Clean(url.Path + pathPrefix + redirectUrl)
 	a.provider = &providerConfig{
 		clientId: a.conf.ClientId,
@@ -149,7 +140,6 @@ func initProvider(a *apple) error {
 		redirectUrl: url.String(),
 		scopes:      a.conf.Scopes,
 	}
-
 	return createSecret(a.provider, a.secretKey)
 }
 
@@ -210,5 +200,5 @@ func createRoutes(a *apple) {
 			Handler: getAuthCode(a),
 		},
 	}
-	a.pluginApi.AddAppRoutes(a.app.GetName(), routes)
+	a.pluginAPI.AddAppRoutes(routes)
 }

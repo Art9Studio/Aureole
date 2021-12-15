@@ -2,28 +2,46 @@ package core
 
 import (
 	"aureole/internal/plugins"
-	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 )
 
+type project struct {
+	apiVersion string
+	testRun    bool
+	pingPath   string
+	apps       map[string]*app
+}
+
+func (p *project) getAPIVersion() string {
+	return p.apiVersion
+}
+
+func (p *project) isTestRun() bool {
+	return p.testRun
+}
+
+func (p *project) getPingPath() string {
+	return p.pingPath
+}
+
 type (
-	Project struct {
-		apiVersion    string
-		testRun       bool
-		pingPath      string
-		service       service
-		apps          map[string]*App
-		authorizers   map[string]plugins.Authorizer
-		secondFactors map[string]plugins.SecondFactor
-		idManagers    map[string]plugins.IDManager
-		storages      map[string]plugins.Storage
-		keyStorages   map[string]plugins.KeyStorage
-		hashers       map[string]plugins.PWHasher
-		senders       map[string]plugins.Sender
-		cryptoKeys    map[string]plugins.CryptoKey
-		admins        map[string]plugins.Admin
+	app struct {
+		name           string
+		url            *url.URL
+		pathPrefix     string
+		authSessionExp int
+		service        service
+		authenticators map[string]plugins.Authenticator
+		authorizer     plugins.Authorizer
+		secondFactors  map[string]plugins.SecondFactor
+		idManager      plugins.IDManager
+		storages       map[string]plugins.Storage
+		keyStorages    map[string]plugins.KeyStorage
+		hashers        map[string]plugins.PWHasher
+		senders        map[string]plugins.Sender
+		cryptoKeys     map[string]plugins.CryptoKey
+		admins         map[string]plugins.Admin
 	}
 
 	service struct {
@@ -33,171 +51,103 @@ type (
 	}
 )
 
-func (p *Project) GetAPIVersion() string {
-	return p.apiVersion
-}
-
-func (p *Project) IsTestRun() bool {
-	return p.testRun
-}
-
-func (p *Project) GetPingPath() string {
-	return p.pingPath
-}
-
-func (p *Project) GetApp(name string) (*App, error) {
-	a, ok := p.apps[name]
-	if !ok {
-		return nil, fmt.Errorf("can't find app named '%s'", name)
-	}
-	return a, nil
-}
-
-func (p *Project) GetAuthorizer(name string) (plugins.Authorizer, error) {
-	a, ok := p.authorizers[name]
-	if !ok || a == nil {
-		return nil, fmt.Errorf("can't find authorizer named '%s'", name)
-	}
-	return a, nil
-}
-
-func (p *Project) GetSecondFactor(name string) (plugins.SecondFactor, error) {
-	s, ok := p.secondFactors[name]
-	if !ok || s == nil {
-		return nil, fmt.Errorf("can't find second factor named '%s'", name)
-	}
-	return s, nil
-}
-
-func (p *Project) GetIDManager(name string) (plugins.IDManager, error) {
-	m, ok := p.idManagers[name]
-	if !ok || m == nil {
-		return nil, fmt.Errorf("can't find identity manager named '%s'", name)
-	}
-	return m, nil
-}
-
-func (p *Project) GetStorage(name string) (plugins.Storage, error) {
-	s, ok := p.storages[name]
-	if !ok || s == nil {
-		return nil, fmt.Errorf("can't find storage named '%s'", name)
-	}
-	return s, nil
-}
-
-func (p *Project) GetKeyStorage(name string) (plugins.KeyStorage, error) {
-	s, ok := p.keyStorages[name]
-	if !ok || s == nil {
-		return nil, fmt.Errorf("can't find key storage named '%s'", name)
-	}
-	return s, nil
-}
-
-func (p *Project) GetHasher(name string) (plugins.PWHasher, error) {
-	h, ok := p.hashers[name]
-	if !ok || h == nil {
-		return nil, fmt.Errorf("can't find hasher named '%s'", name)
-	}
-	return h, nil
-}
-
-func (p *Project) GetSender(name string) (plugins.Sender, error) {
-	s, ok := p.senders[name]
-	if !ok || s == nil {
-		return nil, fmt.Errorf("can't find sender named '%s'", name)
-	}
-	return s, nil
-}
-
-func (p *Project) GetCryptoKey(name string) (plugins.CryptoKey, error) {
-	k, ok := p.cryptoKeys[name]
-	if !ok || k == nil {
-		return nil, fmt.Errorf("can't find crypto key named '%s'", name)
-	}
-	return k, nil
-}
-
-func (p *Project) GetServiceSignKey() (plugins.CryptoKey, error) {
-	if p.service.signKey == nil {
-		return nil, errors.New("cannot find service sign key")
-	}
-	return p.service.signKey, nil
-}
-
-func (p *Project) GetServiceEncKey() (plugins.CryptoKey, error) {
-	if p.service.encKey == nil {
-		return nil, errors.New("cannot find service enc key")
-	}
-	return p.service.encKey, nil
-}
-
-func (p *Project) GetServiceStorage() (plugins.Storage, error) {
-	if p.service.storage == nil {
-		return nil, errors.New("cannot find service storage")
-	}
-	return p.service.storage, nil
-}
-
-type App struct {
-	name           string
-	url            *url.URL
-	pathPrefix     string
-	authSessionExp int
-	idManager      plugins.IDManager
-	authenticators map[string]plugins.Authenticator
-	authorizer     plugins.Authorizer
-	secondFactor   plugins.SecondFactor
-}
-
-func (a *App) GetName() string {
+func (a *app) getName() string {
 	return a.name
 }
 
-func (a *App) GetUrl() (url.URL, error) {
+func (a *app) getUrl() (url.URL, error) {
 	if a.url == nil {
 		return url.URL{}, fmt.Errorf("can't find app url for app '%s'", a.name)
 	}
 	return *a.url, nil
 }
 
-func (a *App) GetPathPrefix() string {
+func (a *app) getPathPrefix() string {
 	return a.pathPrefix
 }
 
-func (a *App) GetAuthSessionExp() int {
+func (a *app) getAuthSessionExp() int {
 	return a.authSessionExp
 }
 
-func (a *App) GetIDManager() (plugins.IDManager, error) {
+func (a *app) getServiceSignKey() (plugins.CryptoKey, bool) {
+	if a.service.signKey == nil {
+		return nil, false
+	}
+	return a.service.signKey, true
+}
+
+func (a *app) getServiceEncKey() (plugins.CryptoKey, bool) {
+	if a.service.encKey == nil {
+		return nil, false
+	}
+	return a.service.encKey, true
+}
+
+func (a *app) getServiceStorage() (plugins.Storage, bool) {
+	if a.service.storage == nil {
+		return nil, false
+	}
+	return a.service.storage, true
+}
+
+func (a *app) getIDManager() (plugins.IDManager, bool) {
 	if a.idManager == nil {
-		return nil, fmt.Errorf("can't find identity manager for app '%s'", a.name)
+		return nil, false
 	}
-	return a.idManager, nil
+	return a.idManager, true
 }
 
-func (a *App) GetAuthorizer() (plugins.Authorizer, error) {
+func (a *app) getAuthorizer() (plugins.Authorizer, bool) {
 	if a.authorizer == nil {
-		return nil, fmt.Errorf("can't find authorizer for app '%s'", a.name)
+		return nil, false
 	}
-	return a.authorizer, nil
+	return a.authorizer, true
 }
 
-func (a *App) GetSecondFactor() (plugins.SecondFactor, error) {
-	if a.secondFactor == nil {
-		return nil, fmt.Errorf("can't find second factor for app '%s'", a.name)
+func (a *app) getSecondFactors() (map[string]plugins.SecondFactor, bool) {
+	if a.secondFactors == nil {
+		return nil, false
 	}
-	return a.secondFactor, nil
+	return a.secondFactors, true
 }
 
-func (*App) Filter(fields, filters map[string]string) (bool, error) {
-	for fieldName, pattern := range filters {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			return false, err
-		}
-		if !re.MatchString(fields[fieldName]) {
-			return false, nil
-		}
+func (a *app) getStorage(name string) (plugins.Storage, bool) {
+	s, ok := a.storages[name]
+	if !ok || s == nil {
+		return nil, false
 	}
-	return true, nil
+	return s, true
+}
+
+func (a *app) getKeyStorage(name string) (plugins.KeyStorage, bool) {
+	s, ok := a.keyStorages[name]
+	if !ok || s == nil {
+		return nil, false
+	}
+	return s, true
+}
+
+func (a *app) getHasher(name string) (plugins.PWHasher, bool) {
+	h, ok := a.hashers[name]
+	if !ok || h == nil {
+		return nil, false
+	}
+	return h, true
+}
+
+func (a *app) getSender(name string) (plugins.Sender, bool) {
+	s, ok := a.senders[name]
+	if !ok || s == nil {
+		return nil, false
+	}
+	return s, true
+}
+
+func (a *app) getCryptoKey(name string) (plugins.CryptoKey, bool) {
+	k, ok := a.cryptoKeys[name]
+	if !ok || k == nil {
+		return nil, false
+	}
+	return k, true
 }

@@ -11,5 +11,5 @@ func (c *config) setDefaults() {
 	configs.SetDefault(&c.Curve, "P-256")
 	configs.SetDefault(&c.Kid, "SHA-256")
 	configs.SetDefault(&c.RetriesNum, 1)
-	configs.SetDefault(&c.RetryInterval, 0.5)
+	configs.SetDefault(&c.RetryInterval, 100)
 }

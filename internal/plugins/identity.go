@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"aureole/internal/configs"
+	"errors"
 	"fmt"
 
 	"github.com/fatih/structs"
@@ -26,20 +27,23 @@ const (
 	AdditionalData = "additional"
 )
 
+var UserNotExistError = errors.New("user doesn't exists")
+
 type (
 	IDManagerAdapter interface {
 		Create(manager *configs.IDManager) IDManager
 	}
 
 	IDManager interface {
+		MetaDataGetter
 		Register(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 		OnUserAuthenticated(c *Credential, i *Identity, authnProvider string) (*Identity, error)
-		On2FA(c *Credential, mfaProvider string, data map[string]interface{}) error
-
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
-		Get2FAData(c *Credential, mfaProvider string) (map[string]interface{}, error)
-
 		Update(c *Credential, i *Identity, authnProvider string) (*Identity, error)
+
+		On2FA(c *Credential, data *MFAData) error
+		Get2FAData(c *Credential, mfaID string) (*MFAData, error)
+
 		CheckFeaturesAvailable(features []string) error
 	}
 
@@ -56,6 +60,12 @@ type (
 		EmailVerified bool                   `mapstructure:"email_verified"`
 		PhoneVerified bool                   `mapstructure:"phone_verified"`
 		Additional    map[string]interface{} `mapstructure:"additional,omitempty"`
+	}
+
+	MFAData struct {
+		PluginID     string
+		ProviderName string
+		Payload      map[string]interface{}
 	}
 )
 

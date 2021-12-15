@@ -48,8 +48,9 @@ func (p *pem) Init(api core.PluginAPI) (err error) {
 	}
 	p.conf.PathPrefix = "/" + strings.ReplaceAll(p.rawConf.Name, "_", "-")
 
-	p.keyStorage, err = p.pluginApi.GetKeyStorage(p.conf.Storage)
-	if err != nil {
+	var ok bool
+	p.keyStorage, ok = p.pluginApi.GetKeyStorage(p.conf.Storage)
+	if !ok {
 		return fmt.Errorf("key keyStorage named '%s' is not declared", p.conf.Storage)
 	}
 

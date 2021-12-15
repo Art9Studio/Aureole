@@ -17,32 +17,6 @@
       "uuid": "1ebdbe28-efd5-48b9-bcba-08ae95929f80",
       "default": false
     },
-    "service": {
-      "type": "object",
-      "uuid": "3096b94f-83f7-488c-8a49-84fdf216e24b",
-      "additionalProperties": false,
-      "required": ["storage"],
-      "properties": {
-        "sign_key": {
-          "type": "string",
-          "uuid": "06b81c7e-725f-473a-9a07-7be0d33efe39",
-          "minLength": 1,
-          "metatags": "@crypto_key_ref"
-        },
-        "enc_key": {
-          "type": "string",
-          "uuid": "8b92b740-f909-4246-8ce5-4c80cbb9e90f" ,
-          "minLength": 1,
-          "metatags": "@crypto_key_ref"
-        },
-        "storage": {
-          "type": "string",
-          "uuid": "7d900d80-53fa-488c-9541-4e0ca8b5af60",
-          "minLength": 1,
-          "metatags": "@key_storage_ref"
-        }
-      }
-    },
     "apps": {
       "type": "array",
       "uuid": "6d0ccc24-0a20-4d26-905b-90251111be96",
@@ -50,70 +24,6 @@
         "$ref": "app.schema.json"
       },
       "minItems": 1
-    },
-    "authZ": {
-      "type": "array",
-      "uuid": "a2d2ea5b-1269-49d4-b758-70f8af9d0f6f",
-      "items": {
-        "$ref": "../../plugins/authz/schema.json"
-      }
-    },
-    "2fa": {
-      "type": "array",
-      "uuid": "fb0e66dd-e1c7-45f3-a635-4875fcd0b9ce",
-      "items": {
-        "$ref": "../../plugins/2fa/schema.json"
-      }
-    },
-    "id_managers": {
-      "type": "array",
-      "uuid": "aa1bfae4-1593-4917-a087-39d56bc96fc1",
-      "items": {
-        "$ref": "../../plugins/identity/schema.json"
-      }
-    },
-    "storages": {
-      "type": "array",
-      "uuid": "df361f60-1628-40ed-b24f-e1a947154e95",
-      "items": {
-        "$ref": "../../plugins/storage/schema.json"
-      },
-      "minItems": 1
-    },
-    "key_storages": {
-      "type": "array",
-      "uuid": "5d2ef815-0404-45ab-abf2-f28257205f22",
-      "items": {
-        "$ref": "../../plugins/kstorage/schema.json"
-      }
-    },
-    "hashers": {
-      "type": "array",
-      "uuid": "cb77c9fe-bfb5-4d7a-83d0-5cbb66e0b92f",
-      "items": {
-        "$ref": "../../plugins/pwhasher/schema.json"
-      }
-    },
-    "crypto_keys": {
-      "type": "array",
-      "uuid": "49bda2a6-5ea4-4899-992f-322424deb332",
-      "items": {
-        "$ref": "../../plugins/cryptokey/schema.json"
-      }
-    },
-    "senders": {
-      "type": "array",
-      "uuid": "d9404fd9-d6f5-432e-b80e-fa73dba384bd",
-      "items": {
-        "$ref": "../../plugins/sender/schema.json"
-      }
-    },
-    "admin_plugins": {
-      "type": "array",
-      "uuid": "f83f8913-29d3-4a0e-a0af-9897e8725c95",
-      "items": {
-        "$ref": "../../plugins/admin/schema.json"
-      }
     }
   },
   "example": "project"

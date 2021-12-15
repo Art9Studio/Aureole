@@ -1,10 +1,5 @@
 package migrations
 
-import (
-	"path/filepath"
-	"runtime"
-)
-
 const upSchema1 = `
 CREATE TABLE users
 (
@@ -29,6 +24,7 @@ CREATE TABLE social_providers
 (
     id            SERIAL PRIMARY KEY,
     user_id       INT REFERENCES users ON DELETE CASCADE,
+	plugin_id 	  VARCHAR(4) NOT NULL,
     provider_name VARCHAR NOT NULL,
     payload       jsonb   NOT NULL
 );
@@ -37,6 +33,7 @@ CREATE TABLE mfa
 (
     id       SERIAL PRIMARY KEY,
     user_id  INT REFERENCES users ON DELETE CASCADE,
+	plugin_id VARCHAR(4) NOT NULL,
     mfa_name VARCHAR NOT NULL,
     payload  jsonb   NOT NULL
 );
@@ -50,10 +47,5 @@ DROP TABLE users;
 `
 
 func init() {
-	_, file, _, ok := runtime.Caller(0)
-	if ok {
-		appendMigration(filepath.Base(file), upSchema1, downSchema1)
-	} else {
-		panic("cannot get name of migration")
-	}
+	appendMigration(upSchema1, downSchema1)
 }

@@ -18,8 +18,7 @@ import (
 const pluginID = "3888"
 
 type vk struct {
-	pluginApi  core.PluginAPI
-	app        *core.App
+	pluginAPI  core.PluginAPI
 	rawConf    *configs.Authn
 	conf       *config
 	manager    plugins.IDManager
@@ -27,26 +26,22 @@ type vk struct {
 	authorizer plugins.Authorizer
 }
 
-func (v *vk) Init(appName string, api core.PluginAPI) (err error) {
-	v.pluginApi = api
+func (v *vk) Init(api core.PluginAPI) (err error) {
+	v.pluginAPI = api
 	v.conf, err = initConfig(&v.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	v.app, err = v.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
+	var ok bool
+	v.manager, ok = v.pluginAPI.GetIDManager()
+	if !ok {
+		fmt.Printf("manager for app '%s' is not declared", v.pluginAPI.GetAppName())
 	}
 
-	v.manager, err = v.app.GetIDManager()
-	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared", appName)
-	}
-
-	v.authorizer, err = v.app.GetAuthorizer()
-	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
+	v.authorizer, ok = v.pluginAPI.GetAuthorizer()
+	if !ok {
+		return fmt.Errorf("authorizer named for app '%s' is not declared", v.pluginAPI.GetAppName())
 	}
 
 	if err := initProvider(v); err != nil {
@@ -79,7 +74,7 @@ func (v *vk) Login() plugins.AuthNLoginFunc {
 			return nil, err
 		}
 
-		ok, err := v.app.Filter(convertUserData(userData), v.rawConf.Filter)
+		ok, err := v.pluginAPI.Filter(convertUserData(userData), v.rawConf.Filter)
 		if err != nil {
 			return nil, err
 		} else if !ok {
@@ -111,11 +106,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initProvider(v *vk) error {
-	redirectUri, err := v.app.GetUrl()
-	if err != nil {
-		return err
-	}
-
+	redirectUri := v.pluginAPI.GetAppUrl()
 	redirectUri.Path = path.Clean(redirectUri.Path + pathPrefix + redirectUrl)
 	v.provider = &oauth2.Config{
 		ClientID:     v.conf.ClientId,
@@ -135,5 +126,5 @@ func createRoutes(v *vk) {
 			Handler: getAuthCode(v),
 		},
 	}
-	v.pluginApi.AddAppRoutes(v.app.GetName(), routes)
+	v.pluginAPI.AddAppRoutes(routes)
 }

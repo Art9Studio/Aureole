@@ -11,5 +11,5 @@ type (
 )
 
 func (yubikeyAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
-	return &yubikey{rawConf: conf}
+	return yubikey{rawConf: conf}
 }

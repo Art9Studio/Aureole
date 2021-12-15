@@ -5,7 +5,6 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"errors"
-	"fmt"
 	"net/http"
 	"path"
 
@@ -18,23 +17,17 @@ import (
 const pluginID = "3030"
 
 type facebook struct {
-	pluginApi core.PluginAPI
-	app       *core.App
+	pluginAPI core.PluginAPI
 	rawConf   *configs.Authn
 	conf      *config
 	provider  *oauth2.Config
 }
 
-func (f *facebook) Init(appName string, api core.PluginAPI) (err error) {
-	f.pluginApi = api
+func (f *facebook) Init(api core.PluginAPI) (err error) {
+	f.pluginAPI = api
 	f.conf, err = initConfig(&f.rawConf.Config)
 	if err != nil {
 		return err
-	}
-
-	f.app, err = f.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
 	if err := initProvider(f); err != nil {
@@ -67,7 +60,7 @@ func (f *facebook) Login() plugins.AuthNLoginFunc {
 			return nil, err
 		}
 
-		ok, err := f.app.Filter(convertUserData(userData), f.rawConf.Filter)
+		ok, err := f.pluginAPI.Filter(convertUserData(userData), f.rawConf.Filter)
 		if err != nil {
 			return nil, err
 		} else if !ok {
@@ -99,11 +92,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initProvider(f *facebook) error {
-	url, err := f.app.GetUrl()
-	if err != nil {
-		return err
-	}
-
+	url := f.pluginAPI.GetAppUrl()
 	url.Path = path.Clean(url.Path + pathPrefix + redirectUrl)
 	f.provider = &oauth2.Config{
 		ClientID:     f.conf.ClientId,
@@ -123,5 +112,5 @@ func createRoutes(f *facebook) {
 			Handler: getAuthCode(f),
 		},
 	}
-	f.pluginApi.AddAppRoutes(f.app.GetName(), routes)
+	f.pluginAPI.AddAppRoutes(routes)
 }

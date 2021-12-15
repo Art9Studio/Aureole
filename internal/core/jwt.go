@@ -14,15 +14,15 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
-func CreateJWT(payload map[string]interface{}, exp int) (string, error) {
+func createJWT(app *app, payload map[string]interface{}, exp int) (string, error) {
 	token, err := newToken(payload, exp)
 	if err != nil {
 		return "", err
 	}
 
-	keySet, err := p.GetServiceSignKey()
-	if err != nil {
-		return "", err
+	keySet, ok := app.getServiceSignKey()
+	if !ok {
+		return "", errors.New("cannot get service sign key")
 	}
 	signedToken, err := signToken(keySet, token)
 	if err != nil {
@@ -31,10 +31,10 @@ func CreateJWT(payload map[string]interface{}, exp int) (string, error) {
 	return string(signedToken), nil
 }
 
-func ParseJWT(rawToken string) (jwt.Token, error) {
-	keySet, err := p.GetServiceSignKey()
-	if err != nil {
-		return nil, err
+func parseJWT(app *app, rawToken string) (jwt.Token, error) {
+	keySet, ok := app.getServiceSignKey()
+	if !ok {
+		return nil, errors.New("cannot get service sign key")
 	}
 	token, err := jwt.ParseString(
 		rawToken,
@@ -48,11 +48,11 @@ func ParseJWT(rawToken string) (jwt.Token, error) {
 		return nil, err
 	}
 
-	storage, err := p.GetServiceStorage()
-	if err != nil {
-		return nil, err
+	storage, ok := app.getServiceStorage()
+	if !ok {
+		return nil, errors.New("cannot get service storage")
 	}
-	ok, err := storage.Exists(token.JwtID())
+	ok, err = storage.Exists(token.JwtID())
 	if err != nil {
 		return nil, err
 	} else if ok {
@@ -62,14 +62,14 @@ func ParseJWT(rawToken string) (jwt.Token, error) {
 	}
 }
 
-func InvalidateJWT(token jwt.Token) error {
+func invalidateJWT(app *app, token jwt.Token) error {
 	if time.Now().Before(token.Expiration()) {
-		storage, err := p.GetServiceStorage()
-		if err != nil {
-			return err
+		storage, ok := app.getServiceStorage()
+		if !ok {
+			return errors.New("cannot get service storage")
 		}
 
-		err = storage.Set(token.JwtID(), token, int(time.Until(token.Expiration()).Seconds()))
+		err := storage.Set(token.JwtID(), token, int(time.Until(token.Expiration()).Seconds()))
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func InvalidateJWT(token jwt.Token) error {
 	return nil
 }
 
-func GetFromJWT(token jwt.Token, name string, value interface{}) error {
+func getFromJWT(token jwt.Token, name string, value interface{}) error {
 	data, ok := token.Get(name)
 	if !ok {
 		return fmt.Errorf("cannot get '%s' field from token", name)
