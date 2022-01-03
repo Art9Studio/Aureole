@@ -2,30 +2,28 @@ package email
 
 import (
 	"aureole/internal/configs"
+	"aureole/internal/core"
 	"aureole/internal/identity"
-	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
-	senderTypes "aureole/internal/plugins/sender/types"
-	"aureole/internal/router/interface"
-	app "aureole/internal/state/interface"
+	"aureole/internal/plugins"
+	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
+	"net/http"
 	"net/url"
 	"path"
 )
 
-const PluginID = "4071"
+const pluginID = "4071"
 
 type (
 	email struct {
-		pluginApi  core.PluginAPI
-		app        app.AppState
-		rawConf    *configs.Authn
-		conf       *config
-		manager    identity.ManagerI
-		authorizer authzTypes.Authorizer
-		sender     senderTypes.Sender
-		magicLink  *url.URL
+		pluginApi core.PluginAPI
+		app       *core.App
+		rawConf   *configs.Authn
+		conf      *config
+		sender    plugins.Sender
+		magicLink *url.URL
 	}
 
 	input struct {
@@ -45,19 +43,9 @@ func (e *email) Init(appName string, api core.PluginAPI) (err error) {
 		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
-	e.manager, err = e.app.GetIdentityManager()
-	if err != nil {
-		fmt.Printf("manager for app '%s' is not declared", appName)
-	}
-
 	e.sender, err = e.pluginApi.GetSender(e.conf.Sender)
 	if err != nil {
 		return fmt.Errorf("sender named '%s' is not declared", e.conf.Sender)
-	}
-
-	e.authorizer, err = e.app.GetAuthorizer()
-	if err != nil {
-		return fmt.Errorf("authorizer named for app '%s' is not declared", appName)
 	}
 
 	e.magicLink, err = createMagicLink(e)
@@ -69,8 +57,38 @@ func (e *email) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*email) GetPluginID() string {
-	return PluginID
+func (*email) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		ID:   pluginID,
+	}
+}
+
+func (*email) Login() plugins.AuthNLoginFunc {
+	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+		rawToken := c.Query("token")
+		if rawToken == "" {
+			return nil, nil, errors.New("token not found")
+		}
+
+		token, err := core.ParseJWT(rawToken)
+		if err != nil {
+			return nil, nil, errors.New(err.Error())
+		}
+		email, ok := token.Get("email")
+		if !ok {
+			return nil, nil, errors.New("cannot get email from token")
+		}
+		if err := core.InvalidateJWT(token); err != nil {
+			return nil, nil, errors.New(err.Error())
+		}
+
+		return &identity.Credential{
+				Name:  identity.Email,
+				Value: email.(string),
+			},
+			fiber.Map{identity.Email: email}, nil
+	}
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -89,22 +107,17 @@ func createMagicLink(e *email) (*url.URL, error) {
 		return nil, err
 	}
 
-	u.Path = path.Clean(u.Path + e.conf.PathPrefix + e.conf.ConfirmUrl)
+	u.Path = path.Clean(u.Path + loginUrl)
 	return &u, nil
 }
 
 func createRoutes(e *email) {
-	routes := []*_interface.Route{
+	routes := []*core.Route{
 		{
-			Method:  "POST",
-			Path:    e.conf.PathPrefix + e.conf.SendUrl,
-			Handler: SendMagicLink(e),
-		},
-		{
-			Method:  "GET",
-			Path:    e.conf.PathPrefix + e.conf.ConfirmUrl,
-			Handler: Login(e),
+			Method:  http.MethodPost,
+			Path:    sendUrl,
+			Handler: sendMagicLink(e),
 		},
 	}
-	e.pluginApi.GetRouter().AddAppRoutes(e.app.GetName(), routes)
+	e.pluginApi.AddAppRoutes(e.app.GetName(), routes)
 }

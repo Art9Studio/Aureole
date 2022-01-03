@@ -2,17 +2,20 @@ package yubikey
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
-	app "aureole/internal/state/interface"
+	"aureole/internal/core"
+	"aureole/internal/identity"
+	"aureole/internal/plugins"
+	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 )
 
-const PluginID = "2734"
+const pluginID = "2734"
 
 type yubikey struct {
 	pluginApi core.PluginAPI
-	app       app.AppState
+	app       *core.App
 	rawConf   *configs.SecondFactor
 	conf      *config
 }
@@ -33,8 +36,26 @@ func (y *yubikey) Init(appName string, api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*yubikey) GetPluginID() string {
-	return PluginID
+func (y *yubikey) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: y.rawConf.Name,
+		ID:   pluginID,
+	}
+}
+
+func (y *yubikey) IsEnabled(cred *identity.Credential, provider string) (bool, error) {
+	enabled, id, err := y.pluginApi.Is2FAEnabled(cred, provider)
+	if err != nil {
+		return false, err
+	}
+	if !enabled {
+		return false, nil
+	}
+	if id != pluginID {
+		return false, errors.New("another 2FA is enabled")
+	}
+	return true, nil
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
@@ -44,6 +65,16 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	}
 	adapterConf.setDefaults()
 	return adapterConf, nil
+}
+
+func (*yubikey) Init2FA(_ *identity.Credential, _ string, _ fiber.Ctx) (fiber.Map, error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (*yubikey) Verify() plugins.MFAVerifyFunc {
+	// TODO implement me
+	panic("implement me")
 }
 
 func createRoutes(*yubikey) {

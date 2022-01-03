@@ -2,7 +2,8 @@ package pbkdf2
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -17,7 +18,7 @@ import (
 	pbkdf "golang.org/x/crypto/pbkdf2"
 )
 
-const PluginID = "6628"
+const pluginID = "6628"
 
 // pbkdf2 represents pbkdf2 hasher
 type pbkdf2 struct {
@@ -27,8 +28,6 @@ type pbkdf2 struct {
 	// Pseudorandom function used to derive a secure encryption key based on the password
 	function func() hash.Hash
 }
-
-var ErrInvalidHash = errors.New("pbkdf2: the encoded pwhasher is not in the correct format")
 
 func (p *pbkdf2) Init(api core.PluginAPI) error {
 	p.pluginApi = api
@@ -48,8 +47,12 @@ func (p *pbkdf2) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*pbkdf2) GetPluginID() string {
-	return PluginID
+func (p *pbkdf2) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: p.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
 // HashPw returns a pbkdf2 pwhasher of a plain-text password using the provided
@@ -60,7 +63,7 @@ func (*pbkdf2) GetPluginID() string {
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
 func (p *pbkdf2) HashPw(pw string) (string, error) {
-	salt, err := getRandomString(p.conf.SaltLen)
+	salt, err := core.GetRandStr(p.conf.SaltLen, "alphanum")
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +103,7 @@ func (*pbkdf2) ComparePw(pw, hash string) (bool, error) {
 func decodePwHash(hashed string) (*config, func() hash.Hash, []byte, []byte, error) {
 	vals := strings.Split(hashed, "$")
 	if len(vals) != 4 {
-		return nil, nil, nil, nil, ErrInvalidHash
+		return nil, nil, nil, nil, errors.New("pbkdf2: the encoded pwhasher is not in the correct format")
 	}
 
 	conf := &config{}

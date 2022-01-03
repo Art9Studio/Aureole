@@ -1,13 +1,13 @@
 package vault
 
 import (
-	"aureole/internal/plugins/kstorage"
+	"aureole/internal/plugins"
 )
 
-const AdapterName = "vault"
+const adapterName = "vault"
 
 func init() {
-	kstorage.Repository.Register(AdapterName, vaultAdapter{})
+	plugins.KeyStorageRepo.Register(adapterName, vaultAdapter{})
 }
 
 type vaultAdapter struct {

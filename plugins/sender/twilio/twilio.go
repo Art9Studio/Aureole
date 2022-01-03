@@ -2,7 +2,8 @@ package twilio
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -17,20 +18,22 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-const PluginID = "5116"
+const pluginID = "5116"
 
-type Exception struct {
-	Status  int
-	Message string
-}
+type (
+	twilio struct {
+		pluginApi core.PluginAPI
+		rawConf   *configs.Sender
+		conf      *config
+	}
 
-type Twilio struct {
-	pluginApi core.PluginAPI
-	rawConf   *configs.Sender
-	conf      *config
-}
+	exception struct {
+		Status  int
+		Message string
+	}
+)
 
-func (t *Twilio) Init(api core.PluginAPI) error {
+func (t *twilio) Init(api core.PluginAPI) error {
 	t.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(t.rawConf.Config, adapterConf); err != nil {
@@ -41,11 +44,15 @@ func (t *Twilio) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*Twilio) GetPluginID() string {
-	return PluginID
+func (t *twilio) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: t.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
-func (t *Twilio) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {
+func (t *twilio) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {
 	tmplFileName := t.conf.Templates[tmplName]
 	baseName := path.Base(tmplFileName)
 	message := &bytes.Buffer{}
@@ -58,7 +65,7 @@ func (t *Twilio) Send(recipient, subject, tmplName string, tmplCtx map[string]in
 	return t.SendRaw(recipient, subject, message.String())
 }
 
-func (t *Twilio) SendRaw(recipient, subject, message string) error {
+func (t *twilio) SendRaw(recipient, subject, message string) error {
 	endpoint := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", t.conf.AccountSid)
 	data := url.Values{}
 	data.Set("Body", message)
@@ -82,12 +89,10 @@ func (t *Twilio) SendRaw(recipient, subject, message string) error {
 
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		defer res.Body.Close()
-
-		e := &Exception{}
+		e := &exception{}
 		if err := json.NewDecoder(res.Body).Decode(e); err != nil {
 			return err
 		}
-
 		return fmt.Errorf("twilio error occurred: status: %d; message: %s", e.Status, e.Message)
 	}
 

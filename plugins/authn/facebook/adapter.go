@@ -1,15 +1,15 @@
 package facebook
 
 import (
-	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "facebook"
+// adapterName is the internal name of the adapter
+const adapterName = "facebook"
 
 // init initializes package by register adapter
 func init() {
-	authn.Repository.Register(AdapterName, facebookAdapter{})
+	plugins.AuthNRepo.Register(adapterName, facebookAdapter{})
 }
 
 type facebookAdapter struct {

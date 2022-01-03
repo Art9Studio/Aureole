@@ -1,15 +1,15 @@
 package email
 
 import (
-	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "email"
+// adapterName is the internal name of the adapter
+const adapterName = "email"
 
 // init initializes package by register adapter
 func init() {
-	authn.Repository.Register(AdapterName, emailAdapter{})
+	plugins.AuthNRepo.Register(adapterName, emailAdapter{})
 }
 
 // emailAdapter represents adapter for password based authentication

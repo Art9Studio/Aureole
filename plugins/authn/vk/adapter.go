@@ -1,15 +1,15 @@
 package vk
 
 import (
-	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "vk"
+// adapterName is the internal name of the adapter
+const adapterName = "vk"
 
 // init initializes package by register adapter
 func init() {
-	authn.Repository.Register(AdapterName, vkAdapter{})
+	plugins.AuthNRepo.Register(adapterName, vkAdapter{})
 }
 
 type vkAdapter struct {

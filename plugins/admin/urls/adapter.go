@@ -1,15 +1,15 @@
 package urls
 
 import (
-	"aureole/internal/plugins/admin"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "urls"
+// adapterName is the internal name of the adapter
+const adapterName = "urls"
 
 // init initializes package by register adapter
 func init() {
-	admin.Repository.Register(AdapterName, urlsAdapter{})
+	plugins.AdminRepo.Register(adapterName, urlsAdapter{})
 }
 
 // urlsAdapter represents adapter for argon2 pwhasher algorithm

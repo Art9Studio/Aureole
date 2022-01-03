@@ -1,15 +1,15 @@
 package email
 
 import (
-	"aureole/internal/plugins/sender"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "email"
+// adapterName is the internal name of the adapter
+const adapterName = "email"
 
 // init initializes package by register adapter
 func init() {
-	sender.Repository.Register(AdapterName, emailAdapter{})
+	plugins.SenderRepo.Register(adapterName, emailAdapter{})
 }
 
 // emailAdapter represents adapter for the email messenger

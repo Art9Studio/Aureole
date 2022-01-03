@@ -2,18 +2,15 @@ package jwt
 
 import (
 	"aureole/internal/configs"
-	authzTypes "aureole/internal/plugins/authz/types"
-	"aureole/internal/plugins/core"
-	ckeyT "aureole/internal/plugins/cryptokey/types"
-	"aureole/internal/router"
-	"aureole/internal/router/interface"
-	state "aureole/internal/state/interface"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	gonanoid "github.com/matoous/go-nanoid/v2"
+	"net/http"
 	"os"
 	"path"
 	"regexp"
@@ -28,32 +25,33 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const PluginID = "4844"
+const pluginID = "4844"
 
 type (
 	jwtAuthz struct {
 		pluginApi     core.PluginAPI
-		app           state.AppState
+		app           *core.App
 		rawConf       *configs.Authz
 		conf          *config
-		signKey       ckeyT.CryptoKey
-		verifyKeys    map[string]ckeyT.CryptoKey
+		signKey       plugins.CryptoKey
+		verifyKeys    map[string]plugins.CryptoKey
 		nativeQueries map[string]string
 	}
+
 	tokenType  string
 	bearerType string
 )
 
 const (
-	AccessToken  tokenType = "access"
-	RefreshToken tokenType = "refresh"
+	accessToken  tokenType = "access"
+	refreshToken tokenType = "refresh"
 )
 
 const (
-	Body   bearerType = "body"
-	Header bearerType = "header"
-	Cookie bearerType = "cookie"
-	Both   bearerType = "both"
+	body   bearerType = "body"
+	header bearerType = "header"
+	cookie bearerType = "cookie"
+	both   bearerType = "both"
 )
 
 var keyMap = map[string]map[string]string{
@@ -84,7 +82,7 @@ func (j *jwtAuthz) Init(appName string, api core.PluginAPI) (err error) {
 		return err
 	}
 
-	j.verifyKeys = make(map[string]ckeyT.CryptoKey)
+	j.verifyKeys = make(map[string]plugins.CryptoKey)
 	for _, keyName := range j.conf.VerifyKeys {
 		j.verifyKeys[keyName], err = j.pluginApi.GetCryptoKey(keyName)
 		if err != nil {
@@ -102,31 +100,35 @@ func (j *jwtAuthz) Init(appName string, api core.PluginAPI) (err error) {
 	return err
 }
 
-func (*jwtAuthz) GetPluginID() string {
-	return PluginID
+func (j *jwtAuthz) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: j.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
 func (j *jwtAuthz) GetNativeQueries() map[string]string {
 	return j.nativeQueries
 }
 
-func (j *jwtAuthz) Authorize(c *fiber.Ctx, payload *authzTypes.Payload) error {
-	accessT, err := newToken(AccessToken, j.conf, payload)
+func (j *jwtAuthz) Authorize(c *fiber.Ctx, payload *plugins.Payload) error {
+	accessT, err := newToken(accessToken, j.conf, payload)
 	if err != nil {
-		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 	}
-	refreshT, err := newToken(RefreshToken, j.conf, payload)
+	refreshT, err := newToken(refreshToken, j.conf, payload)
 	if err != nil {
-		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	signedAccessT, err := signToken(j.signKey, accessT)
 	if err != nil {
-		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 	signedRefreshT, err := signToken(j.signKey, refreshT)
 	if err != nil {
-		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	bearers := map[string]bearerType{
@@ -138,7 +140,7 @@ func (j *jwtAuthz) Authorize(c *fiber.Ctx, payload *authzTypes.Payload) error {
 		"refresh": signedRefreshT,
 	}
 	if err := attachTokens(c, bearers, keyMap, tokens); err != nil {
-		return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
 	return nil
@@ -171,19 +173,19 @@ func readNativeQueries(path string) (map[string]string, error) {
 }
 
 func createRoutes(j *jwtAuthz) {
-	routes := []*_interface.Route{
+	routes := []*core.Route{
 		{
-			Method:  "POST",
-			Path:    j.conf.PathPrefix + j.conf.RefreshUrl,
-			Handler: Refresh(j),
+			Method:  http.MethodPost,
+			Path:    refreshUrl,
+			Handler: refresh(j),
 		},
 	}
-	j.pluginApi.GetRouter().AddAppRoutes(j.app.GetName(), routes)
+	j.pluginApi.AddAppRoutes(j.app.GetName(), routes)
 }
 
-func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t jwt.Token, err error) {
+func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jwt.Token, err error) {
 	switch tokenType {
-	case AccessToken:
+	case accessToken:
 		token := jwt.New()
 		// todo: think about multiple errors handling
 		jti, err := gonanoid.New(16)
@@ -207,8 +209,8 @@ func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t
 			return nil, err
 		}
 
-		if conf.Sub && payload.Id != nil {
-			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.Id))
+		if conf.Sub && payload.ID != nil {
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.ID))
 			if err != nil {
 				return nil, err
 			}
@@ -246,15 +248,15 @@ func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t
 		}
 
 		t = token
-	case RefreshToken:
+	case refreshToken:
 		token := jwt.New()
 		err := token.Set(jwt.IssuerKey, conf.Iss)
 		if err != nil {
 			return nil, err
 		}
 
-		if conf.Sub && payload.Id != nil {
-			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.Id))
+		if conf.Sub && payload.ID != nil {
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.ID))
 			if err != nil {
 				return nil, err
 			}
@@ -284,7 +286,7 @@ func newToken(tokenType tokenType, conf *config, payload *authzTypes.Payload) (t
 	return t, err
 }
 
-func parsePayload(tmplPath string, payload *authzTypes.Payload) (map[string]interface{}, error) {
+func parsePayload(tmplPath string, payload *plugins.Payload) (map[string]interface{}, error) {
 	if tmplPath != "" {
 		return renderPayload(tmplPath, payload)
 	} else {
@@ -292,16 +294,18 @@ func parsePayload(tmplPath string, payload *authzTypes.Payload) (map[string]inte
 	}
 }
 
-func renderPayload(tmplPath string, payload *authzTypes.Payload) (map[string]interface{}, error) {
+func renderPayload(tmplPath string, payload *plugins.Payload) (map[string]interface{}, error) {
 	tmplFile := tmplPath
 	baseName := path.Base(tmplFile)
 	bufRawPayload := &bytes.Buffer{}
 
 	extension := path.Ext(tmplFile)
 	if extension == ".tmpl" {
-		tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
+		/*tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
 			"NativeQ": payload.NativeQ,
-		}).ParseFiles(tmplFile))
+		}).ParseFiles(tmplFile))*/
+
+		tmpl := txtTmpl.Must(txtTmpl.New(baseName).ParseFiles(tmplFile))
 		if err := tmpl.Execute(bufRawPayload, payload); err != nil {
 			return nil, err
 		}
@@ -320,15 +324,15 @@ func renderPayload(tmplPath string, payload *authzTypes.Payload) (map[string]int
 	}
 }
 
-func defaultPayload(payload *authzTypes.Payload) (map[string]interface{}, error) {
+func defaultPayload(payload *plugins.Payload) (map[string]interface{}, error) {
 	p := make(map[string]interface{})
-	if payload.Id != nil {
-		p["id"] = payload.Id
+	if payload.ID != nil {
+		p["id"] = payload.ID
 	}
 	return p, nil
 }
 
-func signToken(signKey ckeyT.CryptoKey, token jwt.Token) ([]byte, error) {
+func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
 	keySet := signKey.GetPrivateSet()
 
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
@@ -340,7 +344,6 @@ func signToken(signKey ckeyT.CryptoKey, token jwt.Token) ([]byte, error) {
 			if err := signAlg.Accept(key.Algorithm()); err != nil {
 				return []byte{}, err
 			}
-
 			return jwt.Sign(token, signAlg, key)
 		}
 	}
@@ -358,17 +361,17 @@ func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string
 
 	for name, token := range tokens {
 		switch bearers[name] {
-		case Body:
+		case body:
 			jsonBody[keyMap[name]["body"]] = string(token)
-		case Header:
+		case header:
 			c.Set(keyMap[name]["header"], string(token))
-		case Cookie:
+		case cookie:
 			cookie := &fiber.Cookie{
 				Name:  keyMap[name]["cookie"],
 				Value: string(token),
 			}
 			c.Cookie(cookie)
-		case Both:
+		case both:
 			jsonBody[keyMap[name]["header"]] = string(token)
 
 			cookie := &fiber.Cookie{

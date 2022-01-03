@@ -2,7 +2,12 @@ package phone
 
 import (
 	"aureole/internal/configs"
-	authnT "aureole/internal/plugins/authn/types"
+	"aureole/internal/plugins"
+)
+
+const (
+	sendUrl   = "/phone/send"
+	resendUrl = "/phone/resendOTP"
 )
 
 type (
@@ -12,10 +17,6 @@ type (
 		Sender      string `mapstructure:"sender"`
 		Template    string `mapstructure:"template"`
 		Otp         otp    `mapstructure:"otp"`
-		PathPrefix  string
-		SendUrl     string
-		ConfirmUrl  string
-		ResendUrl   string
 	}
 
 	otp struct {
@@ -27,6 +28,6 @@ type (
 	}
 )
 
-func (phoneAdapter) Create(conf *configs.Authn) authnT.Authenticator {
+func (phoneAdapter) Create(conf *configs.Authn) plugins.Authenticator {
 	return &phone{rawConf: conf}
 }

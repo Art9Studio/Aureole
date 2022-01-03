@@ -1,21 +1,21 @@
 package pem
 
 import (
-	"aureole/internal/router"
+	"aureole/internal/core"
 	"context"
 	"crypto/x509"
-	"encoding/pem"
+	pemLib "encoding/pem"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwk"
 )
 
-func GetJwkKeys(p *Pem) func(*fiber.Ctx) error {
+func getJwkKeys(p *pem) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(p.publicSet)
 	}
 }
 
-func GetPemKeys(p *Pem) func(*fiber.Ctx) error {
+func getPemKeys(p *pem) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		pemKeySet := map[string]string{}
 
@@ -25,7 +25,7 @@ func GetPemKeys(p *Pem) func(*fiber.Ctx) error {
 
 			var rawKey interface{}
 			if err := key.Raw(&rawKey); err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
 			var (
@@ -37,16 +37,16 @@ func GetPemKeys(p *Pem) func(*fiber.Ctx) error {
 			} else {
 				pemData, err = x509.MarshalPKIXPublicKey(rawKey)
 				if err != nil {
-					return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+					return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 				}
 			}
 
-			pemKey := pem.EncodeToMemory(&pem.Block{
+			pemKey := pemLib.EncodeToMemory(&pemLib.Block{
 				Type:  "PUBLIC KEY",
 				Bytes: pemData,
 			})
 			if pemKey == nil {
-				return router.SendError(c, fiber.StatusInternalServerError, "cannot get pem from jwk")
+				return core.SendError(c, fiber.StatusInternalServerError, "cannot get pem from jwk")
 			}
 
 			pemKeySet[key.KeyID()] = string(pemKey)

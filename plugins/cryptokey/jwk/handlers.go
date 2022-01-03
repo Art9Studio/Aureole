@@ -1,32 +1,32 @@
 package jwk
 
 import (
-	"aureole/internal/router"
+	"aureole/internal/core"
 	"context"
 	"crypto/x509"
 	"encoding/pem"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/lestrrat-go/jwx/jwk"
+	jwx "github.com/lestrrat-go/jwx/jwk"
 )
 
-func GetJwkKeys(j *Jwk) func(*fiber.Ctx) error {
+func getJwkKeys(j *jwk) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(j.publicSet)
 	}
 }
 
-func GetPemKeys(j *Jwk) func(*fiber.Ctx) error {
+func getPemKeys(j *jwk) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		pemKeySet := map[string]string{}
 
 		for it := j.publicSet.Iterate(context.Background()); it.Next(context.Background()); {
 			pair := it.Pair()
-			key := pair.Value.(jwk.Key)
+			key := pair.Value.(jwx.Key)
 
 			var rawKey interface{}
 			if err := key.Raw(&rawKey); err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 
 			var (
@@ -38,7 +38,7 @@ func GetPemKeys(j *Jwk) func(*fiber.Ctx) error {
 			} else {
 				pemData, err = x509.MarshalPKIXPublicKey(rawKey)
 				if err != nil {
-					return router.SendError(c, fiber.StatusInternalServerError, err.Error())
+					return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 				}
 			}
 
@@ -47,7 +47,7 @@ func GetPemKeys(j *Jwk) func(*fiber.Ctx) error {
 				Bytes: pemData,
 			})
 			if pemKey == nil {
-				return router.SendError(c, fiber.StatusInternalServerError, "cannot get pem from jwk")
+				return core.SendError(c, fiber.StatusInternalServerError, "cannot get pem from jwk")
 			}
 
 			pemKeySet[key.KeyID()] = string(pemKey)

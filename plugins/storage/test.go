@@ -1,7 +1,7 @@
 package storage
 
 import (
-	storageT "aureole/internal/plugins/storage/types"
+	"aureole/internal/plugins"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -19,7 +19,7 @@ type privateFoo struct {
 	privateBar string
 }
 
-func TestStore(storage storageT.Storage, t *testing.T) {
+func TestStore(storage plugins.Storage, t *testing.T) {
 	k := strconv.FormatInt(rand.Int63(), 10)
 
 	// Initially the k shouldn't exist
@@ -82,7 +82,7 @@ func TestStore(storage storageT.Storage, t *testing.T) {
 	}
 }
 
-func TestTypes(storage storageT.Storage, t *testing.T) {
+func TestTypes(storage plugins.Storage, t *testing.T) {
 	boolVar := true
 	// Omit byte
 	// Omit error - it's a Go builtin type but marshalling and then unmarshalling doesn't lead to equal objects
@@ -130,9 +130,9 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 		testName string
 		v        interface{}
 		expected interface{}
-		testGet  func(*testing.T, storageT.Storage, string, interface{})
+		testGet  func(*testing.T, plugins.Storage, string, interface{})
 	}{
-		{"bool", boolVar, boolVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"bool", boolVar, boolVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(bool)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -141,7 +141,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"float", floatVar, floatVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"float", floatVar, floatVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(float64)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -150,7 +150,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"int", intVar, intVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"int", intVar, intVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(int)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -159,7 +159,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"rune", runeVar, runeVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"rune", runeVar, runeVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(rune)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -168,7 +168,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"string", stringVar, stringVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"string", stringVar, stringVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(string)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -177,7 +177,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"struct", structVar, structVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"struct", structVar, structVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(Foo)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -186,7 +186,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"struct with private field", structWithPrivateFieldVar, structWithPrivateFieldExpectedVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"struct with private field", structWithPrivateFieldVar, structWithPrivateFieldExpectedVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(Foo)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -195,7 +195,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"private struct", privateStructVar, privateStructVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"private struct", privateStructVar, privateStructVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(privateFoo)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -204,7 +204,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"private struct with private field", privateStructWithPrivateFieldVar, privateStructWithPrivateFieldExpectedVar, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"private struct with private field", privateStructWithPrivateFieldVar, privateStructWithPrivateFieldExpectedVar, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new(privateFoo)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -213,7 +213,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Errorf("Expected: %v, but was: %v", expected, actual)
 			}
 		}},
-		{"slice of bool", sliceOfBool, sliceOfBool, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"slice of bool", sliceOfBool, sliceOfBool, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new([]bool)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -222,7 +222,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Error(diff)
 			}
 		}},
-		{"slice of byte", sliceOfByte, sliceOfByte, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"slice of byte", sliceOfByte, sliceOfByte, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new([]byte)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -231,7 +231,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Error(diff)
 			}
 		}},
-		{"slice of int", sliceOfInt, sliceOfInt, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"slice of int", sliceOfInt, sliceOfInt, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new([]int)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -240,7 +240,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Error(diff)
 			}
 		}},
-		{"slice of string", sliceOfString, sliceOfString, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"slice of string", sliceOfString, sliceOfString, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new([]string)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -249,7 +249,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Error(diff)
 			}
 		}},
-		{"slice of slice of string", sliceOfSliceOfString, sliceOfSliceOfString, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"slice of slice of string", sliceOfSliceOfString, sliceOfSliceOfString, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new([][]string)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -258,7 +258,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Error(diff)
 			}
 		}},
-		{"slice of struct", sliceOfStruct, sliceOfStruct, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"slice of struct", sliceOfStruct, sliceOfStruct, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new([]Foo)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)
@@ -267,7 +267,7 @@ func TestTypes(storage storageT.Storage, t *testing.T) {
 				t.Error(diff)
 			}
 		}},
-		{"slice of private struct", sliceOfPrivateStruct, sliceOfPrivateStruct, func(t *testing.T, s storageT.Storage, k string, expected interface{}) {
+		{"slice of private struct", sliceOfPrivateStruct, sliceOfPrivateStruct, func(t *testing.T, s plugins.Storage, k string, expected interface{}) {
 			actualPtr := new([]privateFoo)
 			ok, err := s.Get(k, actualPtr)
 			handleGetError(t, err, ok)

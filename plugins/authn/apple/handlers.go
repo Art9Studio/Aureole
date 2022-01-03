@@ -1,95 +1,20 @@
 package apple
 
 import (
-	"aureole/internal/identity"
-	authzT "aureole/internal/plugins/authz/types"
-	"aureole/internal/router"
-	"context"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func GetAuthCode(a *apple) func(*fiber.Ctx) error {
+func getAuthCode(a *apple) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		u := a.provider.AuthCodeURL("state")
+		u := a.provider.authCodeURL("state")
 		return c.Redirect(u)
 	}
 }
 
-func Login(a *apple) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		input := struct {
-			State string
-			Code  string
-		}{}
-		if err := c.BodyParser(&input); err != nil {
-			return err
-		}
-		if input.State != "state" {
-			return router.SendError(c, fiber.StatusBadRequest, "invalid state")
-		}
-		if input.Code == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "code not found")
-		}
-
-		jwtT, err := getJwt(a, input.Code)
-		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		email, ok := jwtT.Get("email")
-		if !ok {
-			return router.SendError(c, fiber.StatusInternalServerError, "can't get 'email' from token")
-		}
-		socialId, ok := jwtT.Get("sub")
-		if !ok {
-			return router.SendError(c, fiber.StatusInternalServerError, "can't get 'social_id' from token")
-		}
-		userData, err := jwtT.AsMap(context.Background())
-		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		if ok, err := a.app.Filter(convertUserData(userData), a.rawConf.Filter); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		} else if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
-		}
-
-		var i map[string]interface{}
-		if a.manager != nil {
-			i, err = a.manager.OnUserAuthenticated(
-				&identity.Credential{
-					Name:  identity.Email,
-					Value: email.(string),
-				},
-				&identity.Identity{
-					Email: email.(string),
-				},
-				AdapterName,
-				map[string]interface{}{
-					"social_id": socialId,
-					"user_data": userData,
-				})
-			if err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-		} else {
-			i = map[string]interface{}{
-				identity.Email: email,
-				"provider":     AdapterName,
-				"social_id":    socialId,
-				"user_data":    userData,
-			}
-		}
-
-		return a.authorizer.Authorize(c, authzT.NewPayload(a.authorizer, nil, i))
-	}
-}
-
 func getJwt(a *apple, code string) (jwt.Token, error) {
-	t, err := a.provider.Exchange(code)
+	t, err := a.provider.exchange(code)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +27,7 @@ func getJwt(a *apple, code string) (jwt.Token, error) {
 
 	return jwt.ParseString(
 		idToken.(string),
-		jwt.WithAudience(a.provider.ClientId),
+		jwt.WithAudience(a.provider.clientId),
 		jwt.WithKeySet(keySet))
 }
 

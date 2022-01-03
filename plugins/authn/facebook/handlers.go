@@ -1,74 +1,19 @@
 package facebook
 
 import (
-	"aureole/internal/identity"
-	authzT "aureole/internal/plugins/authz/types"
-	"aureole/internal/router"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 	"net/url"
 	"strings"
 )
 
-func GetAuthCode(f *facebook) func(*fiber.Ctx) error {
+func getAuthCode(f *facebook) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		u := f.provider.AuthCodeURL("state")
 		return c.Redirect(u)
-	}
-}
-
-func Login(f *facebook) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		state := c.Query("state")
-		if state != "state" {
-			return router.SendError(c, fiber.StatusBadRequest, "invalid state")
-		}
-		code := c.Query("code")
-		if code == "" {
-			return router.SendError(c, fiber.StatusBadRequest, "code not found")
-		}
-
-		userData, err := getUserData(f, code)
-		if err != nil {
-			return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-		}
-
-		if ok, err := f.app.Filter(convertUserData(userData), f.rawConf.Filter); err != nil {
-			return router.SendError(c, fiber.StatusBadRequest, err.Error())
-		} else if !ok {
-			return router.SendError(c, fiber.StatusBadRequest, "apple: input data doesn't pass filters")
-		}
-
-		var i map[string]interface{}
-		if f.manager != nil {
-			i, err = f.manager.OnUserAuthenticated(
-				&identity.Credential{
-					Name:  identity.Email,
-					Value: userData["email"].(string),
-				},
-				&identity.Identity{
-					Email: userData["email"].(string),
-				},
-				AdapterName,
-				map[string]interface{}{
-					"social_id": userData["id"],
-					"user_data": userData,
-				})
-			if err != nil {
-				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
-			}
-		} else {
-			i = map[string]interface{}{
-				identity.Email: userData["email"],
-				"provider":     AdapterName,
-				"social_id":    userData["id"],
-				"user_data":    userData,
-			}
-		}
-
-		return f.authorizer.Authorize(c, authzT.NewPayload(f.authorizer, nil, i))
 	}
 }
 
@@ -84,11 +29,17 @@ func getUserData(f *facebook, code string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	client := f.provider.Client(ctx, t)
-	resp, err := client.Get(u)
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
+
+	client := f.provider.Client(ctx, t)
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
 	var userData map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&userData); err != nil {

@@ -24,6 +24,13 @@
       "default": "/",
       "metatags": "@rel_url"
     },
+    "auth_session_exp": {
+      "type": "integer",
+      "uuid": "8032a012-7b97-4aab-994f-d37a54d6b165",
+      "minimum": 0,
+      "default": 86400,
+      "metatags": "@unit:s"
+    },
     "authZ": {
       "type": "string",
       "uuid": "57ce18e6-f1fa-4d8f-b825-f285f6f6114e",

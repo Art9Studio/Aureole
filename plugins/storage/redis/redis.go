@@ -2,25 +2,26 @@ package redis
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/go-redis/redis/v8"
+	redisv8 "github.com/go-redis/redis/v8"
 	"github.com/mitchellh/mapstructure"
 	"time"
 )
 
-const PluginID = "5979"
+const pluginID = "5979"
 
-type Storage struct {
+type redis struct {
 	pluginApi core.PluginAPI
 	rawConf   *configs.Storage
 	conf      *config
-	client    *redis.Client
+	client    *redisv8.Client
 }
 
-func (s *Storage) Init(api core.PluginAPI) error {
+func (s *redis) Init(api core.PluginAPI) error {
 	s.pluginApi = api
 	adapterConf := &config{}
 	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
@@ -29,7 +30,7 @@ func (s *Storage) Init(api core.PluginAPI) error {
 	adapterConf.setDefaults()
 	s.conf = adapterConf
 
-	s.client = redis.NewClient(&redis.Options{
+	s.client = redisv8.NewClient(&redisv8.Options{
 		Addr:     s.conf.Address,
 		Password: s.conf.Password,
 		DB:       s.conf.DB,
@@ -37,11 +38,15 @@ func (s *Storage) Init(api core.PluginAPI) error {
 	return s.client.Ping(context.Background()).Err()
 }
 
-func (*Storage) GetPluginID() string {
-	return PluginID
+func (s *redis) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: s.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
-func (s *Storage) Set(k string, v interface{}, exp int) error {
+func (s *redis) Set(k string, v interface{}, exp int) error {
 	if k == "" || v == nil {
 		return errors.New("redis key storage: key and value cannot be empty")
 	}
@@ -58,14 +63,14 @@ func (s *Storage) Set(k string, v interface{}, exp int) error {
 	return nil
 }
 
-func (s *Storage) Get(k string, v interface{}) (ok bool, err error) {
+func (s *redis) Get(k string, v interface{}) (ok bool, err error) {
 	if k == "" || v == nil {
 		return false, errors.New("redis key storage: key and value cannot be empty")
 	}
 
 	data, err := s.client.Get(context.Background(), k).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if err == redisv8.Nil {
 			return false, nil
 		}
 		return false, err
@@ -73,7 +78,7 @@ func (s *Storage) Get(k string, v interface{}) (ok bool, err error) {
 	return true, json.Unmarshal([]byte(data), v)
 }
 
-func (s *Storage) Delete(k string) error {
+func (s *redis) Delete(k string) error {
 	if k == "" {
 		return errors.New("redis key storage: key and value cannot be empty")
 	}
@@ -82,7 +87,7 @@ func (s *Storage) Delete(k string) error {
 	return err
 }
 
-func (s *Storage) Exists(k string) (bool, error) {
+func (s *redis) Exists(k string) (bool, error) {
 	if k == "" {
 		return false, errors.New("redis key storage: key and value cannot be empty")
 	}
@@ -94,6 +99,6 @@ func (s *Storage) Exists(k string) (bool, error) {
 	}
 }
 
-func (s *Storage) Close() error {
+func (s *redis) Close() error {
 	return s.client.Close()
 }

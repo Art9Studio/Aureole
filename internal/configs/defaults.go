@@ -40,4 +40,13 @@ func isZero(v reflect.Value) bool {
 // todo: run all setDefaults recursively with reflect
 func (p *Project) setDefaults() {
 	p.PingPath = "/ping"
+	for i := range p.Apps {
+		appConf := p.Apps[i]
+		appConf.setDefaults()
+		p.Apps[i] = appConf
+	}
+}
+
+func (a *App) setDefaults() {
+	a.AuthSessionExp = 86400
 }

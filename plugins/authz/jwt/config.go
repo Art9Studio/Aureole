@@ -2,8 +2,10 @@ package jwt
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/authz/types"
+	"aureole/internal/plugins"
 )
+
+const refreshUrl = "/jwt/refresh"
 
 type config struct {
 	Iss           string     `mapstructure:"iss"`
@@ -19,10 +21,8 @@ type config struct {
 	RefreshExp    int        `mapstructure:"refresh_exp"`
 	TmplPath      string     `mapstructure:"payload"`
 	NativeQueries string     `mapstructure:"native_queries"`
-	PathPrefix    string
-	RefreshUrl    string
 }
 
-func (jwtAdapter) Create(conf *configs.Authz) types.Authorizer {
+func (jwtAdapter) Create(conf *configs.Authz) plugins.Authorizer {
 	return &jwtAuthz{rawConf: conf}
 }

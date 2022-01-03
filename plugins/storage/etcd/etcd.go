@@ -2,7 +2,8 @@ package etcd
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,9 +12,9 @@ import (
 	"time"
 )
 
-const PluginID = "4109"
+const pluginID = "4109"
 
-type Storage struct {
+type etcd struct {
 	pluginApi core.PluginAPI
 	rawConf   *configs.Storage
 	conf      *config
@@ -21,19 +22,19 @@ type Storage struct {
 	timeout   time.Duration
 }
 
-func (s *Storage) Init(api core.PluginAPI) (err error) {
-	s.pluginApi = api
+func (e *etcd) Init(api core.PluginAPI) (err error) {
+	e.pluginApi = api
 	adapterConf := &config{}
-	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
+	if err := mapstructure.Decode(e.rawConf.Config, adapterConf); err != nil {
 		return err
 	}
 	adapterConf.setDefaults()
-	s.conf = adapterConf
-	s.timeout = time.Duration(s.conf.Timeout) * time.Second
+	e.conf = adapterConf
+	e.timeout = time.Duration(e.conf.Timeout) * time.Second
 
-	s.client, err = clientv3.New(clientv3.Config{
-		Endpoints:   s.conf.Endpoints,
-		DialTimeout: time.Duration(s.conf.DialTimeout) * time.Second,
+	e.client, err = clientv3.New(clientv3.Config{
+		Endpoints:   e.conf.Endpoints,
+		DialTimeout: time.Duration(e.conf.DialTimeout) * time.Second,
 	})
 	if err != nil {
 		return err
@@ -41,7 +42,7 @@ func (s *Storage) Init(api core.PluginAPI) (err error) {
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	resp, err := s.client.Status(ctxWithTimeout, s.conf.Endpoints[0])
+	resp, err := e.client.Status(ctxWithTimeout, e.conf.Endpoints[0])
 	if err != nil {
 		return err
 	} else if resp == nil {
@@ -50,16 +51,20 @@ func (s *Storage) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (*Storage) GetPluginID() string {
-	return PluginID
+func (e *etcd) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: e.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
-func (s *Storage) Set(k string, v interface{}, exp int) error {
+func (e *etcd) Set(k string, v interface{}, exp int) error {
 	if k == "" || v == nil {
 		return errors.New("etcd key storage: key and value cannot be empty")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 	defer cancel()
 
 	data, err := json.Marshal(v)
@@ -68,27 +73,27 @@ func (s *Storage) Set(k string, v interface{}, exp int) error {
 	}
 
 	if exp > 0 {
-		resp, err := s.client.Grant(context.TODO(), int64(exp))
+		resp, err := e.client.Grant(context.TODO(), int64(exp))
 		if err != nil {
 			return err
 		}
-		_, err = s.client.Put(ctx, k, string(data), clientv3.WithLease(resp.ID))
+		_, err = e.client.Put(ctx, k, string(data), clientv3.WithLease(resp.ID))
 		return err
 	}
 
-	_, err = s.client.Put(ctx, k, string(data))
+	_, err = e.client.Put(ctx, k, string(data))
 	return err
 }
 
-func (s *Storage) Get(k string, v interface{}) (ok bool, err error) {
+func (e *etcd) Get(k string, v interface{}) (ok bool, err error) {
 	if k == "" || v == nil {
 		return false, errors.New("etcd key storage: key and value cannot be empty")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 	defer cancel()
 
-	resp, err := s.client.Get(ctx, k)
+	resp, err := e.client.Get(ctx, k)
 	if err != nil {
 		return false, err
 	}
@@ -99,25 +104,25 @@ func (s *Storage) Get(k string, v interface{}) (ok bool, err error) {
 	return true, json.Unmarshal(resp.Kvs[0].Value, v)
 }
 
-func (s *Storage) Delete(k string) error {
+func (e *etcd) Delete(k string) error {
 	if k == "" {
 		return errors.New("etcd key storage: key and value cannot be empty")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 	defer cancel()
 
-	_, err := s.client.Delete(ctx, k)
+	_, err := e.client.Delete(ctx, k)
 	return err
 }
 
-func (s *Storage) Exists(k string) (bool, error) {
+func (e *etcd) Exists(k string) (bool, error) {
 	if k == "" {
 		return false, errors.New("etcd key storage: key and value cannot be empty")
 	}
-	return s.Get(k, new(interface{}))
+	return e.Get(k, new(interface{}))
 }
 
-func (s *Storage) Close() error {
-	return s.client.Close()
+func (e *etcd) Close() error {
+	return e.client.Close()
 }

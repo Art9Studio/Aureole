@@ -2,7 +2,7 @@ package yubikey
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/2fa/types"
+	"aureole/internal/plugins"
 )
 
 type (
@@ -10,6 +10,6 @@ type (
 	}
 )
 
-func (yubikeyAdapter) Create(conf *configs.SecondFactor) types.SecondFactor {
+func (yubikeyAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
 	return &yubikey{rawConf: conf}
 }

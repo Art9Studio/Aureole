@@ -1,15 +1,15 @@
 package etcd
 
 import (
-	"aureole/internal/plugins/storage"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "etcd"
+// adapterName is the internal name of the adapter
+const adapterName = "etcd"
 
 // init initializes package by register adapter
 func init() {
-	storage.Repository.Register(AdapterName, etcdAdapter{})
+	plugins.StorageRepo.Register(adapterName, etcdAdapter{})
 }
 
 // etcdAdapter represents adapter for etcd storage

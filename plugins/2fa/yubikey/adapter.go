@@ -1,15 +1,15 @@
 package yubikey
 
 import (
-	factor2 "aureole/internal/plugins/2fa"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "yubikey"
+// adapterName is the internal name of the adapter
+const adapterName = "yubikey"
 
 // init initializes package by register adapter
 func init() {
-	factor2.Repository.Register(AdapterName, yubikeyAdapter{})
+	plugins.SecondFactorRepo.Register(adapterName, yubikeyAdapter{})
 }
 
 type yubikeyAdapter struct {

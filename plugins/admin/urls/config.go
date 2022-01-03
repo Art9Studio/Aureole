@@ -2,14 +2,12 @@ package urls
 
 import (
 	"aureole/internal/configs"
-	adminTypes "aureole/internal/plugins/admin/types"
+	"aureole/internal/plugins"
 )
 
-type config struct {
-	Path string
-}
+const getUrlsPath = "urls"
 
 // Create returns urls hasher with the given settings
-func (urlsAdapter) Create(conf *configs.Admin) adminTypes.Admin {
+func (urlsAdapter) Create(conf *configs.Admin) plugins.Admin {
 	return &urls{rawConf: conf}
 }

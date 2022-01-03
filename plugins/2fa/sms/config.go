@@ -2,8 +2,10 @@ package sms
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/2fa/types"
+	"aureole/internal/plugins"
 )
+
+const resendUrl = "/2fa/sms/resend"
 
 type (
 	config struct {
@@ -11,10 +13,6 @@ type (
 		Template    string `mapstructure:"template"`
 		MaxAttempts int    `mapstructure:"max_attempts"`
 		Otp         otp    `mapstructure:"otp"`
-		PathPrefix  string
-		SendUrl     string
-		VerifyUrl   string
-		ResendUrl   string
 	}
 
 	otp struct {
@@ -24,6 +22,6 @@ type (
 	}
 )
 
-func (smsAdapter) Create(conf *configs.SecondFactor) types.SecondFactor {
+func (smsAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
 	return &sms{rawConf: conf}
 }

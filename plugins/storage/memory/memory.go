@@ -2,39 +2,44 @@ package memory
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"encoding/json"
 	"errors"
 	"github.com/coocood/freecache"
 	"github.com/mitchellh/mapstructure"
 )
 
-const PluginID = "7662"
+const pluginID = "7662"
 
-type Storage struct {
+type memory struct {
 	pluginApi core.PluginAPI
 	rawConf   *configs.Storage
 	conf      *config
 	cache     *freecache.Cache
 }
 
-func (s *Storage) Init(api core.PluginAPI) error {
-	s.pluginApi = api
+func (m *memory) Init(api core.PluginAPI) error {
+	m.pluginApi = api
 	adapterConf := &config{}
-	if err := mapstructure.Decode(s.rawConf.Config, adapterConf); err != nil {
+	if err := mapstructure.Decode(m.rawConf.Config, adapterConf); err != nil {
 		return err
 	}
 	adapterConf.setDefaults()
-	s.conf = adapterConf
-	s.cache = freecache.NewCache(s.conf.Size * 1024 * 1024)
+	m.conf = adapterConf
+	m.cache = freecache.NewCache(m.conf.Size * 1024 * 1024)
 	return nil
 }
 
-func (*Storage) GetPluginID() string {
-	return PluginID
+func (m *memory) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: m.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
-func (s *Storage) Set(k string, v interface{}, exp int) error {
+func (m *memory) Set(k string, v interface{}, exp int) error {
 	if k == "" || v == nil {
 		return errors.New("memory key storage: key and value cannot be empty")
 	}
@@ -44,15 +49,15 @@ func (s *Storage) Set(k string, v interface{}, exp int) error {
 		return err
 	}
 
-	return s.cache.Set([]byte(k), data, exp)
+	return m.cache.Set([]byte(k), data, exp)
 }
 
-func (s *Storage) Get(k string, v interface{}) (ok bool, err error) {
+func (m *memory) Get(k string, v interface{}) (ok bool, err error) {
 	if k == "" || v == nil {
 		return false, errors.New("memory key storage: key and value cannot be empty")
 	}
 
-	data, err := s.cache.Get([]byte(k))
+	data, err := m.cache.Get([]byte(k))
 	if err != nil {
 		if err == freecache.ErrNotFound {
 			return false, nil
@@ -63,22 +68,22 @@ func (s *Storage) Get(k string, v interface{}) (ok bool, err error) {
 	return true, json.Unmarshal(data, v)
 }
 
-func (s *Storage) Delete(k string) error {
+func (m *memory) Delete(k string) error {
 	if k == "" {
 		return errors.New("memory key storage: key and value cannot be empty")
 	}
-	s.cache.Del([]byte(k))
+	m.cache.Del([]byte(k))
 	return nil
 }
 
-func (s *Storage) Exists(k string) (bool, error) {
+func (m *memory) Exists(k string) (bool, error) {
 	if k == "" {
 		return false, errors.New("memory key storage: key and value cannot be empty")
 	}
-	return s.Get(k, new(interface{}))
+	return m.Get(k, new(interface{}))
 }
 
-func (s *Storage) Close() error {
-	s.cache.Clear()
+func (m *memory) Close() error {
+	m.cache.Clear()
 	return nil
 }

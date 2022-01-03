@@ -1,15 +1,15 @@
 package memory
 
 import (
-	"aureole/internal/plugins/storage"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "memory"
+// adapterName is the internal name of the adapter
+const adapterName = "memory"
 
 // init initializes package by register adapter
 func init() {
-	storage.Repository.Register(AdapterName, memoryAdapter{})
+	plugins.StorageRepo.Register(adapterName, memoryAdapter{})
 }
 
 // memoryAdapter represents adapter for bigcache storage

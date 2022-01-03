@@ -2,7 +2,8 @@ package url
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"context"
 	"errors"
 	"github.com/mitchellh/mapstructure"
@@ -10,7 +11,7 @@ import (
 	"net/http"
 )
 
-const PluginID = "4896"
+const pluginID = "4896"
 
 type storage struct {
 	pluginApi core.PluginAPI
@@ -28,8 +29,12 @@ func (s *storage) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*storage) GetPluginID() string {
-	return PluginID
+func (s *storage) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: s.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
 func (*storage) Write(_ []byte) error {
@@ -37,7 +42,7 @@ func (*storage) Write(_ []byte) error {
 }
 
 func (s *storage) Read(v *[]byte) (ok bool, err error) {
-	request, err := http.NewRequestWithContext(context.Background(), "GET", s.conf.Path, http.NoBody)
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, s.conf.Path, http.NoBody)
 	if err != nil {
 		return false, err
 	}

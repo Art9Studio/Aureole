@@ -7,7 +7,7 @@ authn:
       max_attempts: 3
       otp:
         length: 6
-        alphabet: "1234567890"
+        alphabet: num
         prefix: A-
         postfix: -B
         exp: 300

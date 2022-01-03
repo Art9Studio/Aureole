@@ -1,15 +1,15 @@
 package pwbased
 
 import (
-	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "password_based"
+// adapterName is the internal name of the adapter
+const adapterName = "password_based"
 
-// init initializes package by register adapter
+// init initializes package by registerConf adapter
 func init() {
-	authn.Repository.Register(AdapterName, pwBasedAdapter{})
+	plugins.AuthNRepo.Register(adapterName, pwBasedAdapter{})
 }
 
 // pwBasedAdapter represents adapter for password based authentication

@@ -2,12 +2,13 @@ package file
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/core"
+	"aureole/internal/core"
+	"aureole/internal/plugins"
 	"github.com/mitchellh/mapstructure"
 	"os"
 )
 
-const PluginID = "3827"
+const pluginID = "3827"
 
 type storage struct {
 	pluginApi core.PluginAPI
@@ -25,8 +26,12 @@ func (s *storage) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (*storage) GetPluginID() string {
-	return PluginID
+func (s *storage) GetMetaData() plugins.Meta {
+	return plugins.Meta{
+		Type: adapterName,
+		Name: s.rawConf.Name,
+		ID:   pluginID,
+	}
 }
 
 func (s *storage) Write(v []byte) error {

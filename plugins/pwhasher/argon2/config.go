@@ -2,7 +2,7 @@ package argon2
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins/pwhasher/types"
+	"aureole/internal/plugins"
 )
 
 // config represents parsed pwhasher config from the config file
@@ -28,6 +28,6 @@ type config struct {
 }
 
 // Create returns argon2 hasher with the given settings
-func (argon2Adapter) Create(conf *configs.PwHasher) types.PwHasher {
+func (argon2Adapter) Create(conf *configs.PwHasher) plugins.PWHasher {
 	return &argon2{rawConf: conf}
 }

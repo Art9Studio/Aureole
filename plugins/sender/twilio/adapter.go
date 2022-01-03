@@ -1,15 +1,15 @@
 package twilio
 
 import (
-	"aureole/internal/plugins/sender"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "twilio"
+// adapterName is the internal name of the adapter
+const adapterName = "twilio"
 
 // init initializes package by register adapter
 func init() {
-	sender.Repository.Register(AdapterName, twilioAdapter{})
+	plugins.SenderRepo.Register(adapterName, twilioAdapter{})
 }
 
 // twilioAdapter represents adapter for the email messenger

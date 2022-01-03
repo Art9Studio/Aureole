@@ -1,15 +1,15 @@
 package redis
 
 import (
-	"aureole/internal/plugins/storage"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "redis"
+// adapterName is the internal name of the adapter
+const adapterName = "redis"
 
 // init initializes package by register adapter
 func init() {
-	storage.Repository.Register(AdapterName, redisAdapter{})
+	plugins.StorageRepo.Register(adapterName, redisAdapter{})
 }
 
 // redisAdapter represents adapter for redis storage

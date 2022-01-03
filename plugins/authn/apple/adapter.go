@@ -1,15 +1,15 @@
 package apple
 
 import (
-	"aureole/internal/plugins/authn"
+	"aureole/internal/plugins"
 )
 
-// AdapterName is the internal name of the adapter
-const AdapterName = "apple"
+// adapterName is the internal name of the adapter
+const adapterName = "apple"
 
 // init initializes package by register adapter
 func init() {
-	authn.Repository.Register(AdapterName, appleAdapter{})
+	plugins.AuthNRepo.Register(adapterName, appleAdapter{})
 }
 
 type appleAdapter struct {

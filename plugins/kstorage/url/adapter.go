@@ -1,13 +1,13 @@
 package url
 
 import (
-	"aureole/internal/plugins/kstorage"
+	"aureole/internal/plugins"
 )
 
-const AdapterName = "url"
+const adapterName = "url"
 
 func init() {
-	kstorage.Repository.Register(AdapterName, urlAdapter{})
+	plugins.KeyStorageRepo.Register(adapterName, urlAdapter{})
 }
 
 type urlAdapter struct {
