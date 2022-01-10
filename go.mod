@@ -17,9 +17,8 @@ require (
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/ecies/go v1.0.1 // indirect
+	github.com/ecies/go v1.0.1
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator v9.31.0+incompatible
@@ -36,7 +35,7 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lestrrat-go/jwx v1.2.13
+	github.com/lestrrat-go/jwx v1.2.15
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
