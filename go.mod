@@ -30,7 +30,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/vault/api v1.3.1
-	github.com/jarcoal/httpmock v1.0.8
+	github.com/jarcoal/httpmock v1.1.0
 	github.com/joho/godotenv v1.4.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
