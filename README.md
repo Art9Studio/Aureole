@@ -56,30 +56,6 @@ Table of Contents
 * [License](#-license)
 * [Translations](#️-translations)
 
-# 📖 Table of contents ![](RackMultipart20210814-4-ec3q2v_html_cb55ddb5edd60516.gif)
-
-- [Quick start:](#-quick-start)
-    - [One-click deployment](#one-click-deployment)
-- [Architecture](#architecture)
-- [Plugins](#plugins)
-    - [About plugins](#about-plugins)
-    - [Authentication](#authentication)
-    - [2-Factor Authentication](#2-factor-authentication)
-    - [Authorization](#authorization)
-    - [Identity manager](#identity-manager)
-    - [Storage](#storage)
-    - [Key storage](#key-storage)
-    - [Password hashing](#password-hashing)
-    - [Signing keys](#signing-keys)
-    - [Sender](#sender)
-    - [Administrative](#administrative)
-- [Business cases](#business-cases)
-- [Support and fixing bugs](#-support-and-fixing-bugs)
-- [Stargazers](#-stargazers)
-- [Forkers](#️-forkers)
-- [License](#license)
-- [Translations](#%EF%B8%8F-translations)
-
 # 🚀 Quick start: ![](RackMultipart20210814-4-ec3q2v_html_cb55ddb5edd60516.gif)
 
 
@@ -203,4 +179,4 @@ This includes everything in all other directories.
 # 🈂️ Translations
 
 - [English 🇬🇧](https://github.com/Art9Studio/Aureole)
-- [Russian 🇷🇺](https://github.com/Art9Studio/Aureole)
+- [Russian 🇷🇺](https://github.com/Art9Studio/Aureole/readme/i18n/README.ru.md)
