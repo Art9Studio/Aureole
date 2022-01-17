@@ -32,7 +32,7 @@ Watch branch **main** of this repo to get notified when we are ready for public 
 - Language-agnostic
 - Has set of plugins for hashing and cryptographic signing
 
-Table of Contents
+📖 Table of Contents
 =================
 
 * [Quick start: <a href="RackMultipart20210814-4-ec3q2v_html_cb55ddb5edd60516.gif" target="_blank" rel="noopener noreferrer"><img src="RackMultipart20210814-4-ec3q2v_html_cb55ddb5edd60516.gif" alt="" style="max-width:100%;"></a>](#-quick-start-)
