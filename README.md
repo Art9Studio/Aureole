@@ -38,6 +38,7 @@ Watch branch **main** of this repo to get notified when we are ready for public 
 * [Quick start: <a href="RackMultipart20210814-4-ec3q2v_html_cb55ddb5edd60516.gif" target="_blank" rel="noopener noreferrer"><img src="RackMultipart20210814-4-ec3q2v_html_cb55ddb5edd60516.gif" alt="" style="max-width:100%;"></a>](#-quick-start-)
    * [One-click deployment:](#one-click-deployment)
 * [Architecture](#-architecture)
+* [Business cases](#business-cases)
 * [Plugins](#️-plugins)
    * [Authentication](#authentication)
    * [2-Factor Authentication](#2-factor-authentication)
@@ -49,7 +50,6 @@ Watch branch **main** of this repo to get notified when we are ready for public 
    * [Signing keys](#signing-keys)
    * [Sender](#sender)
    * [Administrative](#administrative)
-* [Business cases](#business-cases)
 * [Support and fixing bugs](#-support-and-fixing-bugs)
 * [Stargazers](#-stargazers)
 * [Forkers](#️-forkers)
@@ -72,6 +72,16 @@ Aureole is a server-side service. It receives authentication requests from clien
 Aureole can also work with a custom Identity Manager.
 
  <img src="assets/Scheme.svg" width="500px"/>
+
+# 👾Business cases
+
+- Registration and authentication of users on a website
+- Advanced replacement of default authentication in Django
+- Authentication server for Hasura
+- Single auth server for multiple domains
+- Authentication in Kubernetes with OpenID
+- Authentication in Docker Registry
+- Authentication for embedded devices
 
 # 🖇️ Plugins
 
@@ -138,16 +148,6 @@ There are multiple types of plugins:
 
 - [x] List of all URLs
 
-# 👾Business cases
-
-- Registration and authentication of users on a website
-- Advanced replacement of default authentication in Django
-- Authentication server for Hasura
-- Single auth server for multiple domains
-- Authentication in Kubernetes with OpenID
-- Authentication in Docker Registry
-- Authentication for embedded devices
-
 # 💬 Support and fixing bugs
 
 If you have an issue and want to contact us feel free to use any channel:
@@ -179,4 +179,4 @@ This includes everything in all other directories.
 # 🈂️ Translations
 
 - [English 🇬🇧](https://github.com/Art9Studio/Aureole)
-- [Russian 🇷🇺](https://github.com/Art9Studio/Aureole/readme/i18n/README.ru.md)
+- [Russian 🇷🇺](https://github.com/Art9Studio/Aureole/blob/readme/i18n/README.ru.md)
