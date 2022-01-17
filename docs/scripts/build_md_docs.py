@@ -107,14 +107,15 @@ def split_json_schema(project_schema):
     app_props_keys = props_keys + ['apps', 'items', 'properties']
     plugin_keys = {
         'authn': app_props_keys + ['authN', 'items'],
-        'authz': props_keys + ['authZ', 'items'],
-        '2fa': props_keys + ['2fa', 'items'],
-        'storage': props_keys + ['storages', 'items'],
-        'kstorage': props_keys + ['key_storages', 'items'],
-        'hasher': props_keys + ['hashers', 'items'],
-        'crypto_key': props_keys + ['crypto_keys', 'items'],
-        'sender': props_keys + ['senders', 'items'],
-        'admin_plugin': props_keys + ['admin_plugins', 'items']
+        'authz': app_props_keys + ['authZ'],
+        'id_manager': app_props_keys + ['id_manager'],
+        '2fa': app_props_keys + ['2fa', 'items'],
+        'storage': app_props_keys + ['storages', 'items'],
+        'kstorage': app_props_keys + ['key_storages', 'items'],
+        'hasher': app_props_keys + ['hashers', 'items'],
+        'crypto_key': app_props_keys + ['crypto_keys', 'items'],
+        'sender': app_props_keys + ['senders', 'items'],
+        'admin_plugin': app_props_keys + ['admin_plugins', 'items']
     }
 
     plugin_schemas = {}

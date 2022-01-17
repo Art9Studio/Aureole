@@ -7,7 +7,7 @@ module.exports = {
         ['meta', {name: 'theme-color', content: '#3eaf7c'}],
         ['meta', {name: 'apple-mobile-web-app-capable', content: 'yes'}],
         ['meta', {name: 'apple-mobile-web-app-status-bar-style', content: 'black'}],
-        ['link', {rel: 'icon', href: 'favicon.ico' }]
+        ['link', {rel: 'icon', href: 'favicon.ico'}]
     ],
 
     themeConfig: {
@@ -36,16 +36,17 @@ module.exports = {
                 }
             ],
             '/config/': [
-                        '/config/project.md',
-                        '/config/authn.md',
-                        '/config/authz.md',
-                        '/config/2fa.md',
-                        '/config/storage.md',
-                        '/config/kstorage.md',
-                        '/config/hasher.md',
-                        '/config/crypto_key.md',
-                        '/config/sender.md',
-                        '/config/admin_plugin.md'
+                '/config/project.md',
+                '/config/authn.md',
+                '/config/authz.md',
+                '/config/2fa.md',
+                '/config/id_manager.md',
+                '/config/storage.md',
+                '/config/kstorage.md',
+                '/config/hasher.md',
+                '/config/crypto_key.md',
+                '/config/sender.md',
+                '/config/admin_plugin.md'
             ],
         }
     },
