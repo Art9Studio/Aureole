@@ -179,4 +179,4 @@ This includes everything in all other directories.
 # 🈂️ Translations
 
 - [English 🇬🇧](https://github.com/Art9Studio/Aureole)
-- [Russian 🇷🇺](https://github.com/Art9Studio/Aureole/blob/readme/i18n/README.ru.md)
+- [Russian 🇷🇺](https://github.com/Art9Studio/Aureole/blob/main/i18n/README.ru.md)
