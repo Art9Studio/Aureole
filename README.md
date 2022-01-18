@@ -2,7 +2,7 @@
 <p align="center">
 <img src="assets/Logo.svg" width="300px"/>
  </p>
-<p align="center" color="#1FD6E3">The most flexible modern open source authentication server.</p>
+<p align="center" color="#1FD6E3">The most flexible modern open source authentication server for your cloud.</p>
 
 <p align="center">
 <img src="https://img.shields.io/github/commit-activity/m/Art9Studio/Aureole">
