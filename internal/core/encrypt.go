@@ -5,8 +5,9 @@ import (
 	crand "crypto/rand"
 	"encoding/json"
 	"errors"
-	eciesgo "github.com/ecies/go"
 	"math/big"
+
+	eciesgo "github.com/ecies/go"
 )
 
 func Encrypt(data interface{}) ([]byte, error) {

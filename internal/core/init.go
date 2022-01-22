@@ -2,7 +2,6 @@ package core
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"crypto/tls"
 	"fmt"
@@ -33,24 +32,6 @@ func Init(conf *configs.Project) {
 		pingPath:   conf.PingPath,
 	}
 
-	createGlobalPlugins(conf, p)
-	createApps(conf, p)
-	createAppPlugins(conf, p)
-
-	initGlobalPlugins(p)
-	initAppPlugins(p)
-
-	var err error
-	if p.service.signKey, err = p.GetCryptoKey(conf.Service.SignKey); err != nil {
-		fmt.Printf("cannot init service key: %v\n", err)
-	}
-	if p.service.encKey, err = p.GetCryptoKey(conf.Service.EncKey); err != nil {
-		fmt.Printf("cannot init service key: %v\n", err)
-	}
-	if p.service.storage, err = p.GetStorage(conf.Service.Storage); err != nil {
-		fmt.Printf("cannot init service storage: %v\n", err)
-	}
-
 	if p.testRun {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
@@ -65,12 +46,20 @@ func Init(conf *configs.Project) {
 		},
 	})
 
+	createGlobalPlugins(conf, p)
+	createApps(conf, p)
+	createAppPlugins(conf, p)
+
+	initAureoleService(conf, p)
+	initGlobalPlugins(p)
+	initAppPlugins(p)
 	listPluginStatus()
 }
 
 func createGlobalPlugins(conf *configs.Project, p *Project) {
 	createAuthorizers(conf, p)
 	createSecondFactors(conf, p)
+	createIDManagers(conf, p)
 	createPwHashers(conf, p)
 	createSenders(conf, p)
 	createCryptoKeys(conf, p)
@@ -104,6 +93,20 @@ func createSecondFactors(conf *configs.Project, p *Project) {
 		}
 
 		p.secondFactors[mfaConf.Name] = secondFactor
+	}
+}
+
+func createIDManagers(conf *configs.Project, p *Project) {
+	p.idManagers = make(map[string]plugins.IDManager)
+
+	for i := range conf.IDManagers {
+		managerConf := conf.IDManagers[i]
+		m, err := plugins.NewIDManager(&managerConf)
+		if err != nil {
+			fmt.Printf("cannot create identity manager '%s': %v\n", managerConf.Name, err)
+		}
+
+		p.idManagers[managerConf.Name] = m
 	}
 }
 
@@ -235,10 +238,13 @@ func createAppPlugins(conf *configs.Project, p *Project) {
 		}
 
 		appState.authenticators = createAuthenticators(&appConf)
-		appState.identityManager = createIdentityManager(&appConf)
 
 		var err error
 		appState.authorizer, err = p.GetAuthorizer(appConf.Authz)
+		if err != nil {
+			fmt.Printf("app '%s': %v", appState.name, err)
+		}
+		appState.idManager, err = p.GetIDManager(appConf.IDManager)
 		if err != nil {
 			fmt.Printf("app '%s': %v", appState.name, err)
 		}
@@ -279,12 +285,17 @@ func clearAuthnDuplicate(app *configs.App) {
 	}
 }
 
-func createIdentityManager(app *configs.App) identity.ManagerI {
-	i, err := identity.Create()
-	if err != nil {
-		fmt.Printf("cannot create idetity manager for app '%s'", app.Name)
+func initAureoleService(conf *configs.Project, p *Project) {
+	var err error
+	if p.service.signKey, err = p.GetCryptoKey(conf.Service.SignKey); err != nil {
+		fmt.Printf("cannot init service key: %v\n", err)
 	}
-	return i
+	if p.service.encKey, err = p.GetCryptoKey(conf.Service.EncKey); err != nil {
+		fmt.Printf("cannot init service key: %v\n", err)
+	}
+	if p.service.storage, err = p.GetStorage(conf.Service.Storage); err != nil {
+		fmt.Printf("cannot init service storage: %v\n", err)
+	}
 }
 
 func initGlobalPlugins(p *Project) {
@@ -352,9 +363,10 @@ func initAdmins(p *Project) {
 
 func initAppPlugins(p *Project) {
 	for _, a := range p.apps {
-		initAuthenticators(a, p)
+		initIDManager(a, p)
 		initAuthorizer(a, p)
 		initSecondFactor(a, p)
+		initAuthenticators(a, p)
 	}
 }
 
@@ -413,13 +425,22 @@ func initSecondFactor(app *App, p *Project) {
 	getRouter().addAppRoutes(app.name, routes)
 }
 
+func initIDManager(app *App, p *Project) {
+	pluginAPI := initAPI(p, withApp(app), withRouter(getRouter()))
+
+	if err := app.idManager.(AppPluginInitializer).Init(app.name, pluginAPI); err != nil {
+		fmt.Printf("cannot init id manager in app '%s': %v\n", app.name, err)
+		app.idManager = nil
+	}
+}
+
 func listPluginStatus() {
 	fmt.Println("AUREOLE PLUGINS STATUS")
 
 	for appName, app := range p.apps {
 		fmt.Printf("\nAPP: %s\n", appName)
 
-		printStatus("identity manager", p.apps[appName].identityManager)
+		printStatus("identity manager", p.apps[appName].idManager)
 
 		for name, authn := range app.authenticators {
 			printStatus(name, authn)
@@ -436,6 +457,13 @@ func listPluginStatus() {
 	if len(p.secondFactors) != 0 {
 		fmt.Println("\n2FA")
 		for name, plugin := range p.secondFactors {
+			printStatus(name, plugin)
+		}
+	}
+
+	if len(p.idManagers) != 0 {
+		fmt.Println("\nIDENTITY MANAGERS")
+		for name, plugin := range p.idManagers {
 			printStatus(name, plugin)
 		}
 	}

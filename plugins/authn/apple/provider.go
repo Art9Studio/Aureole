@@ -3,12 +3,13 @@ package apple
 import (
 	"context"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const (

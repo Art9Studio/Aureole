@@ -2,10 +2,11 @@ package pwbased
 
 import (
 	"aureole/internal/core"
-	"aureole/internal/identity"
+	"aureole/internal/plugins"
 	"errors"
-	"github.com/gofiber/fiber/v2"
 	"net/url"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func register(p *pwBased) func(*fiber.Ctx) error {
@@ -23,12 +24,12 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		i := &identity.Identity{
+		i := &plugins.Identity{
 			ID:         input.Id,
-			Username:   input.Username,
-			Phone:      input.Phone,
-			Email:      input.Email,
-			Additional: map[string]interface{}{identity.Password: pwHash},
+			Username:   &input.Username,
+			Phone:      &input.Phone,
+			Email:      &input.Email,
+			Additional: map[string]interface{}{plugins.Password: pwHash},
 		}
 		cred, err := getCredential(i)
 		if err != nil {
@@ -74,7 +75,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 		if input.Email == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
-		i := &identity.Identity{Email: input.Email}
+		i := &plugins.Identity{Email: &input.Email}
 
 		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
 		if err != nil {
@@ -82,7 +83,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		link := attachToken(p.resetConfirmLink, token)
-		err = p.resetSender.Send(i.Email, "", p.conf.Reset.Template, map[string]interface{}{"link": link})
+		err = p.resetSender.Send(*i.Email, "", p.conf.Reset.Template, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -123,12 +124,12 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		_, err = p.manager.Update(
-			&identity.Credential{
-				Name:  identity.Email,
+			&plugins.Credential{
+				Name:  plugins.Email,
 				Value: email.(string),
 			},
-			&identity.Identity{
-				Additional: map[string]interface{}{identity.Password: pwHash},
+			&plugins.Identity{
+				Additional: map[string]interface{}{plugins.Password: pwHash},
 			},
 			adapterName)
 		if err != nil {
@@ -159,7 +160,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		if input.Email == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
-		i := &identity.Identity{Email: input.Email}
+		i := &plugins.Identity{Email: &input.Email}
 
 		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
 		if err != nil {
@@ -167,7 +168,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		link := attachToken(p.verifyConfirmLink, token)
-		err = p.verifySender.Send(i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
+		err = p.verifySender.Send(*i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -195,11 +196,11 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		_, err = p.manager.Update(
-			&identity.Credential{
-				Name:  identity.Email,
+			&plugins.Credential{
+				Name:  plugins.Email,
 				Value: email.(string),
 			},
-			&identity.Identity{EmailVerified: true},
+			&plugins.Identity{EmailVerified: true},
 			adapterName)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
@@ -213,25 +214,25 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func getCredential(i *identity.Identity) (*identity.Credential, error) {
-	if i.Username != "nil" {
-		return &identity.Credential{
+func getCredential(i *plugins.Identity) (*plugins.Credential, error) {
+	if *i.Username != "nil" {
+		return &plugins.Credential{
 			Name:  "username",
-			Value: i.Username,
+			Value: *i.Username,
 		}, nil
 	}
 
-	if i.Email != "nil" {
-		return &identity.Credential{
+	if *i.Email != "nil" {
+		return &plugins.Credential{
 			Name:  "email",
-			Value: i.Email,
+			Value: *i.Email,
 		}, nil
 	}
 
-	if i.Phone != "nil" {
-		return &identity.Credential{
+	if *i.Phone != "nil" {
+		return &plugins.Credential{
 			Name:  "phone",
-			Value: i.Phone,
+			Value: *i.Phone,
 		}, nil
 	}
 

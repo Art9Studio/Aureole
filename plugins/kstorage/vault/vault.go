@@ -5,6 +5,7 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"encoding/json"
+
 	vaultAPI "github.com/hashicorp/vault/api"
 	"github.com/mitchellh/mapstructure"
 )

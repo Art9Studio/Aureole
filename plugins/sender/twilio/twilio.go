@@ -79,8 +79,8 @@ func (t *twilio) SendRaw(recipient, subject, message string) error {
 	}
 
 	r.SetBasicAuth(t.conf.AccountSid, t.conf.AuthToken)
-	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Set("Content-Length", strconv.Itoa(len(data.Encode())))
 
 	res, err := http.DefaultClient.Do(r)
 	if err != nil {

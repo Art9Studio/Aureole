@@ -3,19 +3,19 @@ package apple
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"path"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
-	"net/http"
-	"path"
-	"time"
 )
 
 const pluginID = "5771"
@@ -67,55 +67,58 @@ func (*apple) GetMetaData() plugins.Meta {
 }
 
 func (a *apple) Login() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		input := struct {
 			State string
 			Code  string
 		}{}
 		if err := c.BodyParser(&input); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if input.State != "state" {
-			return nil, nil, errors.New("invalid state")
+			return nil, errors.New("invalid state")
 		}
 		if input.Code == "" {
-			return nil, nil, errors.New("code not found")
+			return nil, errors.New("code not found")
 		}
 
 		jwtT, err := getJwt(a, input.Code)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		email, ok := jwtT.Get("email")
 		if !ok {
-			return nil, nil, errors.New("can't get 'email' from token")
+			return nil, errors.New("can't get 'email' from token")
 		}
-		socialId, ok := jwtT.Get("sub")
+		/*socialId, ok := jwtT.Get("sub")
 		if !ok {
-			return nil, nil, errors.New("can't get 'social_id' from token")
-		}
+			return nil, errors.New("can't get 'social_id' from token")
+		}*/
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		if ok, err := a.app.Filter(convertUserData(userData), a.rawConf.Filter); err != nil {
-			return nil, nil, err
+		ok, err = a.app.Filter(convertUserData(userData), a.rawConf.Filter)
+		if err != nil {
+			return nil, err
 		} else if !ok {
-			return nil, nil, errors.New("input data doesn't pass filters")
+			return nil, errors.New("input data doesn't pass filters")
 		}
 
-		return &identity.Credential{
-				Name:  identity.Email,
+		return &plugins.AuthNResult{
+			Cred: &plugins.Credential{
+				Name:  plugins.Email,
 				Value: email.(string),
 			},
-			fiber.Map{
-				identity.Email:         email,
-				identity.AuthnProvider: adapterName,
-				identity.SocialID:      socialId,
-				identity.UserData:      userData,
-			}, nil
+			Identity: &plugins.Identity{
+				Email:         email.(*string),
+				EmailVerified: true,
+				Additional:    map[string]interface{}{"social_provider_data": userData},
+			},
+			Provider: "social_provider$" + adapterName,
+		}, nil
 	}
 }
 

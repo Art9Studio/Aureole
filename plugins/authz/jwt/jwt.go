@@ -9,13 +9,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"net/http"
 	"os"
 	"path"
 	"regexp"
 	txtTmpl "text/template"
 	"time"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"

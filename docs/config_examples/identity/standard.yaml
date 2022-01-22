@@ -1,0 +1,5 @@
+id_managers:
+  - type: "standard"
+    name: standard
+    config:
+      db_url: postgresql://root:password@localhost:5432/aureole

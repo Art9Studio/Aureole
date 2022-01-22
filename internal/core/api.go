@@ -1,7 +1,6 @@
 package core
 
 import (
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 )
 
@@ -48,13 +47,13 @@ func (api PluginAPI) IsTestRun() bool {
 	return api.project.IsTestRun()
 }
 
-func (api PluginAPI) Is2FAEnabled(cred *identity.Credential, provider string) (bool, string, error) {
-	manager, err := api.app.GetIdentityManager()
+func (api PluginAPI) Is2FAEnabled(cred *plugins.Credential, provider string) (bool, string, error) {
+	manager, err := api.app.GetIDManager()
 	if err != nil {
 		return false, "", err
 	}
 
-	id, err := manager.GetData(cred, provider, identity.SecondFactorID)
+	id, err := manager.GetData(cred, provider, plugins.SecondFactorID)
 	if err != nil {
 		return false, "", err
 	}

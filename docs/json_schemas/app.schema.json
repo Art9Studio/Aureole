@@ -41,6 +41,11 @@
       "uuid": "31517d21-92e5-4b96-a1f0-bd40b29389ab",
       "metatags": "@2fa_ref"
     },
+    "id_manager": {
+      "type": "string",
+      "uuid": "4ded83f9-9b5e-4e0a-b3dc-e86ca2203a43",
+      "metatags": "@identity_ref"
+    },
     "authN": {
       "type": "array",
       "uuid": "39042e0a-292c-4e9e-9f59-e132fc471938",

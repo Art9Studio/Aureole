@@ -7,9 +7,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
+
 	redisv8 "github.com/go-redis/redis/v8"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 const pluginID = "5979"

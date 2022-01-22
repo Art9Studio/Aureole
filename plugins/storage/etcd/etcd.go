@@ -7,9 +7,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
+
 	"github.com/mitchellh/mapstructure"
 	"go.etcd.io/etcd/clientv3"
-	"time"
 )
 
 const pluginID = "4109"

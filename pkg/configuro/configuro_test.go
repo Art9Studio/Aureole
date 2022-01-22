@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"aureole/pkg/configuro"
+
 	"go.uber.org/multierr"
 )
 

@@ -3,10 +3,10 @@ package yubikey
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"errors"
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 )
@@ -44,7 +44,7 @@ func (y *yubikey) GetMetaData() plugins.Meta {
 	}
 }
 
-func (y *yubikey) IsEnabled(cred *identity.Credential, provider string) (bool, error) {
+func (y *yubikey) IsEnabled(cred *plugins.Credential, provider string) (bool, error) {
 	enabled, id, err := y.pluginApi.Is2FAEnabled(cred, provider)
 	if err != nil {
 		return false, err
@@ -67,7 +67,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func (*yubikey) Init2FA(_ *identity.Credential, _ string, _ fiber.Ctx) (fiber.Map, error) {
+func (*yubikey) Init2FA(_ *plugins.Credential, _ string, _ fiber.Ctx) (fiber.Map, error) {
 	// TODO implement me
 	panic("implement me")
 }

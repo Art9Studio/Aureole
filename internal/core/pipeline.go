@@ -1,21 +1,23 @@
 package core
 
 import (
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
+
 	"github.com/gofiber/fiber/v2"
 )
 
 func handleLogin(authFunc plugins.AuthNLoginFunc, project *Project, app *App) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		cred, userData, err := authFunc(*c)
+		authnResult, err := authFunc(*c)
 		if err != nil {
+			if authnResult.Additional != nil {
+				return sendErrorWithBody(c, fiber.StatusUnauthorized, err.Error(), authnResult.Additional)
+			}
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
-		authnProvider := userData["provider"].(string)
 
 		if secondFactor, err := app.GetSecondFactor(); err == nil {
-			enabled, err := secondFactor.IsEnabled(cred, authnProvider)
+			enabled, err := secondFactor.IsEnabled(authnResult.Cred, authnResult.Provider)
 			if err != nil {
 				return SendError(c, fiber.StatusUnauthorized, err.Error())
 			}
@@ -25,12 +27,12 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, project *Project, app *App) fu
 				if err != nil {
 					return SendError(c, fiber.StatusUnauthorized, err.Error())
 				}
-				err = serviceStorage.Set(app.GetName()+"$auth_pipeline$"+cred.Value, userData, app.GetAuthSessionExp())
+				err = serviceStorage.Set(app.GetName()+"$auth_pipeline$"+authnResult.Cred.Value, authnResult, app.GetAuthSessionExp())
 				if err != nil {
 					return SendError(c, fiber.StatusUnauthorized, err.Error())
 				}
 
-				mfaData, err := secondFactor.Init2FA(cred, authnProvider, *c)
+				mfaData, err := secondFactor.Init2FA(authnResult.Cred, authnResult.Provider, *c)
 				if err != nil {
 					return SendError(c, fiber.StatusUnauthorized, err.Error())
 				}
@@ -38,7 +40,7 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, project *Project, app *App) fu
 			}
 		}
 
-		return authorize(c, app, cred, userData)
+		return authorize(c, app, authnResult)
 	}
 }
 
@@ -58,8 +60,8 @@ func handle2FA(mfaFunc plugins.MFAVerifyFunc, project *Project, app *App) func(*
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 
-		userData := fiber.Map{}
-		ok, err := serviceStorage.Get(app.GetName()+"$auth_pipeline$"+cred.Value, &userData)
+		authnResult := &plugins.AuthNResult{}
+		ok, err := serviceStorage.Get(app.GetName()+"$auth_pipeline$"+cred.Value, authnResult)
 		if err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
@@ -70,23 +72,18 @@ func handle2FA(mfaFunc plugins.MFAVerifyFunc, project *Project, app *App) func(*
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 
-		return authorize(c, app, cred, userData)
+		return authorize(c, app, authnResult)
 	}
 }
 
-func authorize(c *fiber.Ctx, app *App, cred *identity.Credential, userData fiber.Map) error {
+func authorize(c *fiber.Ctx, app *App, authnResult *plugins.AuthNResult) error {
 	authz, err := app.GetAuthorizer()
 	if err != nil {
 		return err
 	}
 
-	if manager, err := app.GetIdentityManager(); err != nil {
-		i, err := identity.NewIdentity(userData)
-		if err != nil {
-			return err
-		}
-
-		user, err := manager.OnUserAuthenticated(cred, i, userData["provider"].(string))
+	if manager, err := app.GetIDManager(); err != nil {
+		user, err := manager.OnUserAuthenticated(authnResult.Cred, authnResult.Identity, authnResult.Provider)
 		if err != nil {
 			return err
 		}
@@ -98,9 +95,20 @@ func authorize(c *fiber.Ctx, app *App, cred *identity.Credential, userData fiber
 		return authz.Authorize(c, payload)
 	}
 
-	payload, err := plugins.NewPayload(userData)
+	payload, err := plugins.NewPayload(authnResult.Identity.AsMap())
 	if err != nil {
 		return err
 	}
 	return authz.Authorize(c, payload)
+}
+
+func sendErrorWithBody(c *fiber.Ctx, statusCode int, message string, body fiber.Map) error {
+	responseJSON := fiber.Map{
+		"success": false,
+		"message": message,
+	}
+	for k, v := range body {
+		responseJSON[k] = v
+	}
+	return c.Status(statusCode).JSON(responseJSON)
 }

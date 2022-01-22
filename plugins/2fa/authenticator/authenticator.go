@@ -3,16 +3,16 @@ package authenticator
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"aureole/pkg/dgoogauth"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 const pluginID = "1799"
@@ -23,7 +23,7 @@ type (
 		app       *core.App
 		rawConf   *configs.SecondFactor
 		conf      *config
-		manager   identity.ManagerI
+		manager   plugins.IDManager
 	}
 
 	input struct {
@@ -56,7 +56,7 @@ func (g *gauth) GetMetaData() plugins.Meta {
 	}
 }
 
-func (g *gauth) IsEnabled(cred *identity.Credential, provider string) (bool, error) {
+func (g *gauth) IsEnabled(cred *plugins.Credential, provider string) (bool, error) {
 	enabled, id, err := g.pluginApi.Is2FAEnabled(cred, provider)
 	if err != nil {
 		return false, err
@@ -70,7 +70,7 @@ func (g *gauth) IsEnabled(cred *identity.Credential, provider string) (bool, err
 	return true, nil
 }
 
-func (g *gauth) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx) (fiber.Map, error) {
+func (g *gauth) Init2FA(cred *plugins.Credential, provider string, _ fiber.Ctx) (fiber.Map, error) {
 	token, err := core.CreateJWT(
 		map[string]interface{}{
 			"credential": map[string]string{
@@ -86,7 +86,7 @@ func (g *gauth) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx)
 }
 
 func (g *gauth) Verify() plugins.MFAVerifyFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.Credential, fiber.Map, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
 			return nil, nil, err
@@ -112,7 +112,7 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 		}
 
 		provider := rawProvider.(string)
-		cred := &identity.Credential{}
+		cred := &plugins.Credential{}
 		if err := mapstructure.Decode(rawCred, cred); err != nil {
 			return nil, nil, err
 		}
@@ -155,9 +155,10 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("wrong otp")
 		}
-		if err := g.manager.On2FA(cred, map[string]interface{}{
-			"counter": otp.HotpCounter, "scratch_code": otp.ScratchCodes,
-		}); err != nil {
+		if err := g.manager.On2FA(cred, adapterName,
+			map[string]interface{}{
+				"counter": otp.HotpCounter, "scratch_code": otp.ScratchCodes,
+			}); err != nil {
 			return nil, nil, err
 		}
 

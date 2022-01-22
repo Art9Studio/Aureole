@@ -13,12 +13,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"hash"
+	"math/big"
+
 	"github.com/decred/dcrd/dcrec/secp256k1/v3"
 	jwx "github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/x25519"
 	"golang.org/x/crypto/ed25519"
-	"hash"
-	"math/big"
 )
 
 func generateKey(conf *config) (keySet jwx.Set, err error) {

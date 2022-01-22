@@ -3,13 +3,13 @@ package sms
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/identity"
 	"aureole/internal/plugins"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
-	"net/http"
 )
 
 const pluginID = "0509"
@@ -54,7 +54,7 @@ func (s *sms) GetMetaData() plugins.Meta {
 	}
 }
 
-func (s *sms) IsEnabled(cred *identity.Credential, provider string) (bool, error) {
+func (s *sms) IsEnabled(cred *plugins.Credential, provider string) (bool, error) {
 	enabled, id, err := s.pluginApi.Is2FAEnabled(cred, provider)
 	if err != nil {
 		return false, err
@@ -68,7 +68,7 @@ func (s *sms) IsEnabled(cred *identity.Credential, provider string) (bool, error
 	return true, nil
 }
 
-func (s *sms) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx) (fiber.Map, error) {
+func (s *sms) Init2FA(cred *plugins.Credential, provider string, _ fiber.Ctx) (fiber.Map, error) {
 	otp, err := core.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
 	if err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (s *sms) Init2FA(cred *identity.Credential, provider string, _ fiber.Ctx) (
 }
 
 func (s *sms) Verify() plugins.MFAVerifyFunc {
-	return func(c fiber.Ctx) (*identity.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*plugins.Credential, fiber.Map, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
 			return nil, nil, err
@@ -149,7 +149,7 @@ func (s *sms) Verify() plugins.MFAVerifyFunc {
 		}
 
 		if decrOtp == input.Otp {
-			return &identity.Credential{
+			return &plugins.Credential{
 				Name:  "phone",
 				Value: phone.(string),
 			}, nil, nil

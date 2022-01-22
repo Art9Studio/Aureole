@@ -13,6 +13,7 @@ apps:
     
     authZ: jwt
     2fa: google_authenticator
+    id_manager: standard
 
     authN:
       - type: "password_based"
@@ -134,6 +135,23 @@ authZ:
       scratch_code:
         num: 5
         alphabet: alphanum # todo: support regex range syntax '[a-z1-9]'
+
+id_managers:
+  - type: "jwt_webhook"
+    name: webhook_identity
+    config:
+      address: http://localhost:3001
+      retries_num: 1
+      retry_interval: 2
+      timeout: 10
+      headers:
+        header1: value1
+        header2: value2
+
+  - type: "standard"
+    name: standard
+    config:
+      db_url: ${DB_URL}
 
 storages:
   - type: "etcd"

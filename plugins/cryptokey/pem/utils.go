@@ -11,6 +11,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
+
 	"github.com/lestrrat-go/jwx/jwk"
 	"golang.org/x/crypto/ed25519"
 )

@@ -65,6 +65,13 @@
         "$ref": "../../plugins/2fa/schema.json"
       }
     },
+    "id_managers": {
+      "type": "array",
+      "uuid": "aa1bfae4-1593-4917-a087-39d56bc96fc1",
+      "items": {
+        "$ref": "../../plugins/identity/schema.json"
+      }
+    },
     "storages": {
       "type": "array",
       "uuid": "df361f60-1628-40ed-b24f-e1a947154e95",

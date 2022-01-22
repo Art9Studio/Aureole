@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func getAuthCode(f *facebook) func(*fiber.Ctx) error {

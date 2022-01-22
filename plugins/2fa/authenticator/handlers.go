@@ -2,12 +2,13 @@ package authenticator
 
 import (
 	"aureole/internal/core"
-	"aureole/internal/identity"
+	"aureole/internal/plugins"
 	"aureole/pkg/dgoogauth"
 	"encoding/base32"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/skip2/go-qrcode"
-	"strings"
 )
 
 func getQR(g *gauth) func(*fiber.Ctx) error {
@@ -40,14 +41,14 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 			response["scratch_code"] = scratchCodes
 		}
 
-		cred := &identity.Credential{}
+		cred := &plugins.Credential{}
 		qr, err := qrcode.Encode(otp.ProvisionURIWithIssuer(cred.Value, g.conf.Iss), qrcode.Low, 256)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		response["qr"] = qr
 
-		if err := g.manager.On2FA(cred, fa2Data); err != nil {
+		if err := g.manager.On2FA(cred, adapterName, fa2Data); err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(fiber.Map{"qr": qr})
@@ -57,13 +58,13 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 func getScratchCodes(g *gauth) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// check if user already authenticated
-		cred := &identity.Credential{Name: "email", Value: "www@example.com"}
+		cred := &plugins.Credential{Name: "email", Value: "www@example.com"}
 
 		scratchCodes, err := generateScratchCodes(g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		if err := g.manager.On2FA(cred, map[string]interface{}{"scratch_codes": scratchCodes}); err != nil {
+		if err := g.manager.On2FA(cred, adapterName, map[string]interface{}{"scratch_codes": scratchCodes}); err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
