@@ -292,7 +292,7 @@ func makeRequest(j *manager, token string) ([]byte, error) {
 		},
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(time.Duration(j.conf.RetryInterval)*time.Millisecond),
-		retry.Attempts(j.conf.RetriesNum),
+		retry.Attempts(uint(j.conf.RetriesNum)),
 	)
 	if err != nil {
 		return nil, err

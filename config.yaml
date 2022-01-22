@@ -242,7 +242,9 @@ crypto_keys:
   - type: "jwk"
     name: local_jwk_keys
     config:
-      refresh_interval: 20
+      refresh_interval: 5
+      retries_num: 3
+      retry_interval: 7
       storage: local_jwk_keys_store
 
   - type: "pem"

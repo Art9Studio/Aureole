@@ -4,8 +4,18 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/avast/retry-go/v4"
 	"net/http"
 	"strings"
 	"sync"
@@ -13,6 +23,7 @@ import (
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/crypto/ed25519"
 )
 
 const pluginID = "6374"
@@ -24,8 +35,9 @@ type pem struct {
 	keyStorage      plugins.KeyStorage
 	refreshDone     chan struct{}
 	refreshInterval time.Duration
-	muSet           sync.RWMutex
+	muPrivSet       sync.RWMutex
 	privateSet      jwk.Set
+	muPubSet        sync.RWMutex
 	publicSet       jwk.Set
 }
 
@@ -48,7 +60,7 @@ func (p *pem) Init(api core.PluginAPI) (err error) {
 	createRoutes(p)
 
 	if p.conf.RefreshInterval != 0 {
-		p.refreshInterval = time.Duration(p.conf.RefreshInterval) * time.Second
+		p.refreshInterval = time.Duration(p.conf.RefreshInterval) * time.Millisecond
 		p.refreshDone = make(chan struct{})
 		go refreshKeys(p)
 	}
@@ -65,16 +77,16 @@ func (p *pem) GetMetaData() plugins.Meta {
 }
 
 func (p *pem) GetPrivateSet() jwk.Set {
-	p.muSet.RLock()
+	p.muPrivSet.RLock()
 	privSet := p.privateSet
-	p.muSet.RUnlock()
+	p.muPrivSet.RUnlock()
 	return privSet
 }
 
 func (p *pem) GetPublicSet() jwk.Set {
-	p.muSet.RLock()
+	p.muPubSet.RLock()
 	pubSet := p.publicSet
-	p.muSet.RUnlock()
+	p.muPubSet.RUnlock()
 	return pubSet
 }
 
@@ -167,41 +179,189 @@ func refreshKeys(p *pem) {
 				keySet  jwk.Set
 			)
 
-			ok, err := p.keyStorage.Read(&rawKeys)
+			err := retry.Do(
+				func() error {
+					ok, err := p.keyStorage.Read(&rawKeys)
+					if err != nil {
+						return err
+					}
+					if !ok {
+						fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
+					}
+
+					keySet, err = jwk.Parse(rawKeys, jwk.WithPEM(true))
+					return err
+				},
+				retry.DelayType(retry.FixedDelay),
+				retry.Delay(time.Duration(p.conf.RetryInterval)*time.Millisecond),
+				retry.Attempts(uint(p.conf.RetriesNum)),
+			)
+			if err != nil {
+				fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
+				continue
+			}
+
+			if err := setAttr(keySet, p.conf.Alg); err != nil {
+				fmt.Printf("pem '%s': cannot assign alg attribute to key while refreshing^ %v", p.rawConf.Name, err)
+			}
+
+			setType, err := getKeySetType(keySet)
 			if err != nil {
 				fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
 			}
 
-			if ok {
-				keySet, err = jwk.Parse(rawKeys)
+			if setType == plugins.Private {
+				pubSet, err := jwk.PublicSetOf(keySet)
 				if err != nil {
 					fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
 				}
 
-				setType, err := getKeySetType(keySet)
-				if err != nil {
-					fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
-				}
+				p.muPrivSet.Lock()
+				p.privateSet = keySet
+				p.muPrivSet.Unlock()
 
-				if setType == plugins.Private {
-					pubSet, err := jwk.PublicSetOf(keySet)
-					if err != nil {
-						fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
-					}
-
-					p.muSet.Lock()
-					p.privateSet = keySet
-					p.publicSet = pubSet
-					p.muSet.Unlock()
-				} else {
-					p.muSet.Lock()
-					p.publicSet = keySet
-					p.muSet.Unlock()
-				}
-
+				p.muPubSet.Lock()
+				p.publicSet = pubSet
+				p.muPubSet.Unlock()
 			} else {
-				fmt.Printf("pem '%s': an error occured while refreshing keys: key is empty", p.rawConf.Name)
+				p.muPubSet.Lock()
+				p.publicSet = keySet
+				p.muPubSet.Unlock()
 			}
 		}
 	}
+}
+
+func generateKey() (keySet jwk.Set, err error) {
+	pubRawKey, privRawKey, err := generateRawKey()
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := jwk.New(privRawKey)
+	if err != nil {
+		return nil, err
+	}
+	kid, err := generateKid(pubRawKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := key.Set(jwk.KeyIDKey, kid); err != nil {
+		return nil, err
+	}
+	if err := key.Set(jwk.AlgorithmKey, "ES256"); err != nil {
+		return nil, err
+	}
+	if err := key.Set(jwk.KeyUsageKey, "sig"); err != nil {
+		return nil, err
+	}
+
+	keySet = jwk.NewSet()
+	keySet.Add(key)
+	return keySet, nil
+}
+
+func generateRawKey() (interface{}, interface{}, error) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &key.PublicKey, key, nil
+}
+
+func generateKid(rawKey interface{}) (string, error) {
+	keyBytes, err := x509.MarshalPKIXPublicKey(rawKey)
+	if err != nil {
+		return "", err
+	}
+
+	h := sha256.New()
+	_, err = h.Write(keyBytes)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+}
+
+func getKeySetType(keySet jwk.Set) (plugins.KeyType, error) {
+	isPrivate, err := isPrivateSet(keySet)
+	if err != nil {
+		return "", err
+	}
+	if isPrivate {
+		return plugins.Private, nil
+	}
+
+	isPublic, err := isPublicSet(keySet)
+	if err != nil {
+		return "", err
+	}
+	if isPublic {
+		return plugins.Public, nil
+	}
+
+	return "", errors.New("public and private keys in the same key set")
+}
+
+func isPrivateSet(keySet jwk.Set) (bool, error) {
+	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
+		pair := it.Pair()
+		key := pair.Value.(jwk.Key)
+
+		var rawKey interface{}
+		if err := key.Raw(&rawKey); err != nil {
+			return false, err
+		}
+
+		if _, ok := rawKey.(*rsa.PublicKey); ok {
+			return false, nil
+		}
+		if _, ok := rawKey.(*ed25519.PublicKey); ok {
+			return false, nil
+		}
+		if _, ok := rawKey.(*ecdsa.PublicKey); ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func isPublicSet(keySet jwk.Set) (bool, error) {
+	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
+		pair := it.Pair()
+		key := pair.Value.(jwk.Key)
+
+		var rawKey interface{}
+		if err := key.Raw(&rawKey); err != nil {
+			return false, err
+		}
+
+		if _, ok := rawKey.(*rsa.PrivateKey); ok {
+			return false, nil
+		}
+		if _, ok := rawKey.(*ed25519.PrivateKey); ok {
+			return false, nil
+		}
+		if _, ok := rawKey.(*ecdsa.PrivateKey); ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func setAttr(keySet jwk.Set, alg string) error {
+	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
+		pair := it.Pair()
+		key := pair.Value.(jwk.Key)
+		if err := key.Set(jwk.AlgorithmKey, alg); err != nil {
+			return err
+		}
+		if err := key.Set(jwk.KeyUsageKey, "sig"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
