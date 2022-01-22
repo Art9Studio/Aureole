@@ -182,7 +182,7 @@ func (m *IDManager) getData(c *fiber.Ctx, token jwt.Token) error {
 
 	fmt.Printf("'GetData' event request with parameters: \n"+
 		"Credential: %v\n"+
-		"Name: %s\n"+
+		"ProviderName: %s\n"+
 		"AuthN provider: %s\n", cred, name, authnProvider)
 
 	conn, err := m.pool.Acquire(context.Background())

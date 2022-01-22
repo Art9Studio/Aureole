@@ -18,8 +18,7 @@ const pluginID = "4071"
 
 type (
 	email struct {
-		pluginApi core.PluginAPI
-		app       *core.App
+		pluginAPI core.PluginAPI
 		rawConf   *configs.Authn
 		conf      *config
 		sender    plugins.Sender
@@ -31,20 +30,16 @@ type (
 	}
 )
 
-func (e *email) Init(appName string, api core.PluginAPI) (err error) {
-	e.pluginApi = api
+func (e *email) Init(api core.PluginAPI) (err error) {
+	e.pluginAPI = api
 	e.conf, err = initConfig(&e.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	e.app, err = e.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
-	}
-
-	e.sender, err = e.pluginApi.GetSender(e.conf.Sender)
-	if err != nil {
+	var ok bool
+	e.sender, ok = e.pluginAPI.GetSender(e.conf.Sender)
+	if !ok {
 		return fmt.Errorf("sender named '%s' is not declared", e.conf.Sender)
 	}
 
@@ -64,32 +59,33 @@ func (*email) GetMetaData() plugins.Meta {
 	}
 }
 
-func (*email) Login() plugins.AuthNLoginFunc {
+func (e *email) Login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		rawToken := c.Query("token")
 		if rawToken == "" {
 			return nil, errors.New("token not found")
 		}
 
-		token, err := core.ParseJWT(rawToken)
+		var email string
+		token, err := e.pluginAPI.ParseJWT(rawToken)
 		if err != nil {
 			return nil, errors.New(err.Error())
 		}
-		email, ok := token.Get("email")
-		if !ok {
+		err = e.pluginAPI.GetFromJWT(token, "email", &email)
+		if err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		if err := core.InvalidateJWT(token); err != nil {
+		if err := e.pluginAPI.InvalidateJWT(token); err != nil {
 			return nil, errors.New(err.Error())
 		}
 
 		return &plugins.AuthNResult{
 			Cred: &plugins.Credential{
 				Name:  plugins.Email,
-				Value: email.(string),
+				Value: email,
 			},
 			Identity: &plugins.Identity{
-				Email:         email.(*string),
+				Email:         &email,
 				EmailVerified: true,
 			},
 			Provider: adapterName,
@@ -108,11 +104,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func createMagicLink(e *email) (*url.URL, error) {
-	u, err := e.app.GetUrl()
-	if err != nil {
-		return nil, err
-	}
-
+	u := e.pluginAPI.GetAppUrl()
 	u.Path = path.Clean(u.Path + loginUrl)
 	return &u, nil
 }
@@ -125,5 +117,5 @@ func createRoutes(e *email) {
 			Handler: sendMagicLink(e),
 		},
 	}
-	e.pluginApi.AddAppRoutes(e.app.GetName(), routes)
+	e.pluginAPI.AddAppRoutes(routes)
 }

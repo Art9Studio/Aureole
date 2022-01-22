@@ -42,7 +42,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		_ = user
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := core.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verif.Exp)
+			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verif.Exp)
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -77,7 +77,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 		}
 		i := &plugins.Identity{Email: &input.Email}
 
-		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
+		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -98,7 +98,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := core.ParseJWT(rawToken)
+		token, err := p.pluginAPI.ParseJWT(rawToken)
 		if err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -106,7 +106,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if !ok {
 			return core.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
-		if err := core.InvalidateJWT(token); err != nil {
+		if err := p.pluginAPI.InvalidateJWT(token); err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
@@ -162,7 +162,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		}
 		i := &plugins.Identity{Email: &input.Email}
 
-		token, err := core.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
+		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -183,7 +183,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusNotFound, "token not found")
 		}
 
-		token, err := core.ParseJWT(rawToken)
+		token, err := p.pluginAPI.ParseJWT(rawToken)
 		if err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -191,7 +191,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if !ok {
 			return core.SendError(c, fiber.StatusBadRequest, "cannot get email from token")
 		}
-		if err := core.InvalidateJWT(token); err != nil {
+		if err := p.pluginAPI.InvalidateJWT(token); err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 

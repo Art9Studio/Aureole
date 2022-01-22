@@ -20,45 +20,37 @@ import (
 const pluginID = "8483"
 
 type manager struct {
-	pluginApi core.PluginAPI
-	app       *core.App
+	pluginAPI core.PluginAPI
 	rawConf   *configs.IDManager
 	conf      *config
 	client    http.Client
 }
 
-func (j *manager) Init(appName string, api core.PluginAPI) (err error) {
-	j.pluginApi = api
+func (j *manager) Init(api core.PluginAPI) (err error) {
+	j.pluginAPI = api
 	j.conf, err = initConfig(&j.rawConf.Config)
 	if err != nil {
 		return err
 	}
-
 	j.client = http.Client{Timeout: time.Duration(j.conf.Timeout) * time.Millisecond}
-	j.app, err = j.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
-	}
-
 	return nil
 }
 
 func (j *manager) GetMetaData() plugins.Meta {
 	return plugins.Meta{
 		Type: adapterName,
-		Name: j.rawConf.Name,
 		ID:   pluginID,
 	}
 }
 
 func (j *manager) Register(c *plugins.Credential, i *plugins.Identity, authnProvider string) (*plugins.Identity, error) {
-	requestToken, err := core.CreateJWT(map[string]interface{}{
+	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "Register",
 		"credential":     map[string]string{c.Name: c.Value},
 		"identity":       i.AsMap(),
 		"authn_provider": authnProvider,
 	},
-		j.app.GetAuthSessionExp())
+		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +59,7 @@ func (j *manager) Register(c *plugins.Credential, i *plugins.Identity, authnProv
 	if err != nil {
 		return nil, err
 	}
-	rawToken, err := getJWT(respData)
+	rawToken, err := getJWT(j.pluginAPI, respData)
 	if err != nil {
 		return nil, err
 	}
@@ -85,13 +77,13 @@ func (j *manager) Register(c *plugins.Credential, i *plugins.Identity, authnProv
 }
 
 func (j *manager) OnUserAuthenticated(c *plugins.Credential, i *plugins.Identity, authnProvider string) (*plugins.Identity, error) {
-	requestToken, err := core.CreateJWT(map[string]interface{}{
+	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "OnUserAuthenticated",
 		"credential":     map[string]string{c.Name: c.Value},
 		"identity":       i.AsMap(),
 		"authn_provider": authnProvider,
 	},
-		j.app.GetAuthSessionExp())
+		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +92,7 @@ func (j *manager) OnUserAuthenticated(c *plugins.Credential, i *plugins.Identity
 	if err != nil {
 		return nil, err
 	}
-	rawToken, err := getJWT(respData)
+	rawToken, err := getJWT(j.pluginAPI, respData)
 	if err != nil {
 		return nil, err
 	}
@@ -117,14 +109,13 @@ func (j *manager) OnUserAuthenticated(c *plugins.Credential, i *plugins.Identity
 	return plugins.NewIdentity(payload)
 }
 
-func (j *manager) On2FA(c *plugins.Credential, mfaProvider string, data map[string]interface{}) error {
-	requestToken, err := core.CreateJWT(map[string]interface{}{
-		"event":        "On2FA",
-		"credential":   map[string]string{c.Name: c.Value},
-		"2fa_provider": mfaProvider,
-		"2fa_data":     data,
+func (j *manager) On2FA(c *plugins.Credential, mfaData *plugins.MFAData) error {
+	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
+		"event":      "On2FA",
+		"credential": map[string]string{c.Name: c.Value},
+		"2fa_data":   mfaData,
 	},
-		j.app.GetAuthSessionExp())
+		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
 		return err
 	}
@@ -137,13 +128,13 @@ func (j *manager) On2FA(c *plugins.Credential, mfaProvider string, data map[stri
 }
 
 func (j *manager) GetData(c *plugins.Credential, authnProvider, name string) (interface{}, error) {
-	requestToken, err := core.CreateJWT(map[string]interface{}{
+	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "GetData",
 		"credential":     map[string]string{c.Name: c.Value},
 		"name":           name,
 		"authn_provider": authnProvider,
 	},
-		j.app.GetAuthSessionExp())
+		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +143,7 @@ func (j *manager) GetData(c *plugins.Credential, authnProvider, name string) (in
 	if err != nil {
 		return nil, err
 	}
-	rawToken, err := getJWT(respData)
+	rawToken, err := getJWT(j.pluginAPI, respData)
 	if err != nil {
 		return nil, err
 	}
@@ -168,13 +159,13 @@ func (j *manager) GetData(c *plugins.Credential, authnProvider, name string) (in
 	return data, nil
 }
 
-func (j *manager) Get2FAData(c *plugins.Credential, mfaProvider string) (map[string]interface{}, error) {
-	requestToken, err := core.CreateJWT(map[string]interface{}{
-		"event":        "Get2FAData",
-		"credential":   map[string]string{c.Name: c.Value},
-		"2fa_provider": mfaProvider,
+func (j *manager) Get2FAData(c *plugins.Credential, mfaID string) (*plugins.MFAData, error) {
+	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
+		"event":      "Get2FAData",
+		"credential": map[string]string{c.Name: c.Value},
+		"2fa_id":     mfaID,
 	},
-		j.app.GetAuthSessionExp())
+		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +174,7 @@ func (j *manager) Get2FAData(c *plugins.Credential, mfaProvider string) (map[str
 	if err != nil {
 		return nil, err
 	}
-	rawToken, err := getJWT(respData)
+	rawToken, err := getJWT(j.pluginAPI, respData)
 	if err != nil {
 		return nil, err
 	}
@@ -193,22 +184,22 @@ func (j *manager) Get2FAData(c *plugins.Credential, mfaProvider string) (map[str
 		return nil, err
 	}
 
-	var data map[string]interface{}
-	err = core.GetFromJWT(token, "2fa_data", &data)
+	var data plugins.MFAData
+	err = j.pluginAPI.GetFromJWT(token, "2fa_data", &data)
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return &data, nil
 }
 
 func (j *manager) Update(c *plugins.Credential, i *plugins.Identity, authnProvider string) (*plugins.Identity, error) {
-	requestToken, err := core.CreateJWT(map[string]interface{}{
+	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "Update",
 		"credential":     map[string]string{c.Name: c.Value},
 		"identity":       i.AsMap(),
 		"authn_provider": authnProvider,
 	},
-		j.app.GetAuthSessionExp())
+		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +208,7 @@ func (j *manager) Update(c *plugins.Credential, i *plugins.Identity, authnProvid
 	if err != nil {
 		return nil, err
 	}
-	rawToken, err := getJWT(respData)
+	rawToken, err := getJWT(j.pluginAPI, respData)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +219,7 @@ func (j *manager) Update(c *plugins.Credential, i *plugins.Identity, authnProvid
 	}
 
 	var rawIdent map[string]interface{}
-	err = core.GetFromJWT(token, "identity", &rawIdent)
+	err = j.pluginAPI.GetFromJWT(token, "identity", &rawIdent)
 	if err != nil {
 		return nil, err
 	}
@@ -236,11 +227,11 @@ func (j *manager) Update(c *plugins.Credential, i *plugins.Identity, authnProvid
 }
 
 func (j *manager) CheckFeaturesAvailable(features []string) error {
-	requestToken, err := core.CreateJWT(map[string]interface{}{
+	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":    "CheckFeaturesAvailable",
 		"features": features,
 	},
-		j.app.GetAuthSessionExp())
+		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
 		return err
 	}
@@ -300,7 +291,7 @@ func makeRequest(j *manager, token string) ([]byte, error) {
 	return respBytes, nil
 }
 
-func getJWT(data []byte) (string, error) {
+func getJWT(api core.PluginAPI, data []byte) (string, error) {
 	var respData map[string]string
 	err := json.Unmarshal(data, &respData)
 	if err != nil {
@@ -310,7 +301,7 @@ func getJWT(data []byte) (string, error) {
 	if requestToken, ok := respData["request_token"]; ok {
 		t, err := jwt.ParseString(requestToken)
 		if err == nil {
-			_ = core.InvalidateJWT(t)
+			_ = api.InvalidateJWT(t)
 		}
 	}
 

@@ -63,7 +63,7 @@ func (p *pbkdf2) GetMetaData() plugins.Meta {
 //		pbkdf2_sha1$4096$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG
 //
 func (p *pbkdf2) HashPw(pw string) (string, error) {
-	salt, err := core.GetRandStr(p.conf.SaltLen, "alphanum")
+	salt, err := p.pluginApi.GetRandStr(p.conf.SaltLen, "alphanum")
 	if err != nil {
 		return "", err
 	}

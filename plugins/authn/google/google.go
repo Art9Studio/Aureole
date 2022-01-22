@@ -5,7 +5,6 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"context"
-	"fmt"
 	"net/http"
 	"path"
 
@@ -19,23 +18,17 @@ import (
 const pluginID = "1010"
 
 type google struct {
-	pluginApi core.PluginAPI
-	app       *core.App
+	pluginAPI core.PluginAPI
 	rawConf   *configs.Authn
 	conf      *config
 	provider  *oauth2.Config
 }
 
-func (g *google) Init(appName string, api core.PluginAPI) (err error) {
-	g.pluginApi = api
+func (g *google) Init(api core.PluginAPI) (err error) {
+	g.pluginAPI = api
 	g.conf, err = initConfig(&g.rawConf.Config)
 	if err != nil {
 		return err
-	}
-
-	g.app, err = g.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
 	}
 
 	if err := initProvider(g); err != nil {
@@ -82,7 +75,7 @@ func (g *google) Login() plugins.AuthNLoginFunc {
 			return nil, err
 		}
 
-		ok, err = g.app.Filter(convertUserData(userData), g.rawConf.Filter)
+		ok, err = g.pluginAPI.Filter(convertUserData(userData), g.rawConf.Filter)
 		if err != nil {
 			return nil, err
 		} else if !ok {
@@ -114,11 +107,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func initProvider(g *google) error {
-	redirectUri, err := g.app.GetUrl()
-	if err != nil {
-		return err
-	}
-
+	redirectUri := g.pluginAPI.GetAppUrl()
 	redirectUri.Path = path.Clean(redirectUri.Path + pathPrefix + redirectUrl)
 	g.provider = &oauth2.Config{
 		ClientID:     g.conf.ClientId,
@@ -138,5 +127,5 @@ func createRoutes(g *google) {
 			Handler: getAuthCode(g),
 		},
 	}
-	g.pluginApi.AddAppRoutes(g.app.GetName(), routes)
+	g.pluginAPI.AddAppRoutes(routes)
 }

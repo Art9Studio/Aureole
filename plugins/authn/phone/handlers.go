@@ -18,22 +18,22 @@ func sendOTP(p *phone) func(*fiber.Ctx) error {
 		}
 		i := plugins.Identity{Phone: &input.Phone}
 
-		randStr, err := core.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
+		randStr, err := p.pluginAPI.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		otp := p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix
-		encOtp, err := core.Encrypt(p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix)
+		encOtp, err := p.pluginAPI.Encrypt(p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		err = p.pluginApi.SaveToService(input.Phone, encOtp, p.conf.Otp.Exp)
+		err = p.pluginAPI.SaveToService(input.Phone, encOtp, p.conf.Otp.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		token, err := core.CreateJWT(
+		token, err := p.pluginAPI.CreateJWT(
 			map[string]interface{}{
 				"phone":    i.Phone,
 				"attempts": 0,
@@ -62,7 +62,7 @@ func resendOTP(p *phone) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusBadRequest, "token are required")
 		}
 
-		t, err := core.ParseJWT(input.Token)
+		t, err := p.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -70,26 +70,26 @@ func resendOTP(p *phone) func(*fiber.Ctx) error {
 		if !ok {
 			return core.SendError(c, fiber.StatusBadRequest, "cannot get phone from token")
 		}
-		if err := core.InvalidateJWT(t); err != nil {
+		if err := p.pluginAPI.InvalidateJWT(t); err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		randStr, err := core.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
+		randStr, err := p.pluginAPI.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		otp := p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix
-		encOtp, err := core.Encrypt(p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix)
+		encOtp, err := p.pluginAPI.Encrypt(p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		err = p.pluginApi.SaveToService(phone.(string), encOtp, p.conf.Otp.Exp)
+		err = p.pluginAPI.SaveToService(phone.(string), encOtp, p.conf.Otp.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		token, err := core.CreateJWT(
+		token, err := p.pluginAPI.CreateJWT(
 			map[string]interface{}{
 				"phone":    phone,
 				"attempts": 0,

@@ -30,8 +30,7 @@ const pluginID = "4844"
 
 type (
 	jwtAuthz struct {
-		pluginApi     core.PluginAPI
-		app           *core.App
+		pluginAPI     core.PluginAPI
 		rawConf       *configs.Authz
 		conf          *config
 		signKey       plugins.CryptoKey
@@ -66,28 +65,24 @@ var keyMap = map[string]map[string]string{
 	},
 }
 
-func (j *jwtAuthz) Init(appName string, api core.PluginAPI) (err error) {
-	j.pluginApi = api
+func (j *jwtAuthz) Init(api core.PluginAPI) (err error) {
+	j.pluginAPI = api
 	j.conf, err = initConfig(&j.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
-	j.app, err = j.pluginApi.GetApp(appName)
-	if err != nil {
-		return err
-	}
-
-	j.signKey, err = j.pluginApi.GetCryptoKey(j.conf.SignKey)
-	if err != nil {
-		return err
+	var ok bool
+	j.signKey, ok = j.pluginAPI.GetCryptoKey(j.conf.SignKey)
+	if !ok {
+		return fmt.Errorf("cannot get crypto key named %s", j.conf.SignKey)
 	}
 
 	j.verifyKeys = make(map[string]plugins.CryptoKey)
 	for _, keyName := range j.conf.VerifyKeys {
-		j.verifyKeys[keyName], err = j.pluginApi.GetCryptoKey(keyName)
-		if err != nil {
-			return err
+		j.verifyKeys[keyName], ok = j.pluginAPI.GetCryptoKey(keyName)
+		if !ok {
+			return fmt.Errorf("cannot get crypto key named %s", j.conf.SignKey)
 		}
 	}
 
@@ -104,7 +99,6 @@ func (j *jwtAuthz) Init(appName string, api core.PluginAPI) (err error) {
 func (j *jwtAuthz) GetMetaData() plugins.Meta {
 	return plugins.Meta{
 		Type: adapterName,
-		Name: j.rawConf.Name,
 		ID:   pluginID,
 	}
 }
@@ -181,7 +175,7 @@ func createRoutes(j *jwtAuthz) {
 			Handler: refresh(j),
 		},
 	}
-	j.pluginApi.AddAppRoutes(j.app.GetName(), routes)
+	j.pluginAPI.AddAppRoutes(routes)
 }
 
 func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jwt.Token, err error) {

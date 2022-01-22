@@ -13,7 +13,8 @@ func main() {
 	}
 
 	core.Init(conf)
-	if err := core.RunServer(); err != nil {
+	err = core.RunServer()
+	if err != nil {
 		log.Panic(err)
 	}
 }

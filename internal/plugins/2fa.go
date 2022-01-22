@@ -3,7 +3,6 @@ package plugins
 import (
 	"aureole/internal/configs"
 	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,12 +15,13 @@ type (
 
 	SecondFactor interface {
 		MetaDataGetter
-		IsEnabled(cred *Credential, provider string) (bool, error)
-		Init2FA(cred *Credential, provider string, c fiber.Ctx) (fiber.Map, error)
+		IsEnabled(cred *Credential) (bool, error)
+		Init2FA() MFAInitFunc
 		Verify() MFAVerifyFunc
 	}
 
 	MFAVerifyFunc func(fiber.Ctx) (*Credential, fiber.Map, error)
+	MFAInitFunc   func(c fiber.Ctx) (fiber.Map, error)
 )
 
 func NewSecondFactor(conf *configs.SecondFactor) (SecondFactor, error) {

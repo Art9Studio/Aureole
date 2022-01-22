@@ -21,7 +21,7 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 		fa2Data := map[string]interface{}{}
 		response := fiber.Map{}
 
-		secret, err := generateSecret()
+		secret, err := generateSecret(g.pluginApi)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -33,7 +33,7 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 			fa2Data["counter"] = 1
 		}
 		if g.conf.ScratchCode.Num != 0 {
-			scratchCodes, err := generateScratchCodes(g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
+			scratchCodes, err := generateScratchCodes(g.pluginApi, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -48,10 +48,15 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 		}
 		response["qr"] = qr
 
-		if err := g.manager.On2FA(cred, adapterName, fa2Data); err != nil {
+		err = g.manager.On2FA(cred, &plugins.MFAData{
+			PluginID:     pluginID,
+			ProviderName: adapterName,
+			Payload:      fa2Data,
+		})
+		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(fiber.Map{"qr": qr})
+		return c.JSON(response)
 	}
 }
 
@@ -60,30 +65,34 @@ func getScratchCodes(g *gauth) func(*fiber.Ctx) error {
 		// check if user already authenticated
 		cred := &plugins.Credential{Name: "email", Value: "www@example.com"}
 
-		scratchCodes, err := generateScratchCodes(g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
+		scratchCodes, err := generateScratchCodes(g.pluginApi, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		if err := g.manager.On2FA(cred, adapterName, map[string]interface{}{"scratch_codes": scratchCodes}); err != nil {
+		err = g.manager.On2FA(cred, &plugins.MFAData{
+			PluginID:     pluginID,
+			ProviderName: adapterName,
+			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},
+		})
+		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-
 		return c.JSON(&fiber.Map{"scratch_codes": scratchCodes})
 	}
 }
 
-func generateSecret() (string, error) {
-	randStr, err := core.GetRandStr(8, "alphanum")
+func generateSecret(api core.PluginAPI) (string, error) {
+	randStr, err := api.GetRandStr(8, "alphanum")
 	if err != nil {
 		return "", err
 	}
 	return base32.StdEncoding.EncodeToString([]byte(randStr)), nil
 }
 
-func generateScratchCodes(num int, alphabet string) (scratchCodes []string, err error) {
+func generateScratchCodes(api core.PluginAPI, num int, alphabet string) (scratchCodes []string, err error) {
 	scratchCodes = make([]string, num)
 	for i := 0; i < num; i++ {
-		scratchCodes[i], err = core.GetRandStr(8, alphabet)
+		scratchCodes[i], err = api.GetRandStr(8, alphabet)
 		if err != nil {
 			return nil, err
 		}

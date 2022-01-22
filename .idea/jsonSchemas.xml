@@ -110,6 +110,9 @@
                   <Item>
                     <option name="path" value="docs/json_schemas/app.json" />
                   </Item>
+                  <Item>
+                    <option name="path" value="docs/json_schemas/app.schema.json" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>

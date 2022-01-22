@@ -3,17 +3,6 @@
   "type": "object",
   "uuid": "dc3b7b6e-eb05-4fc4-9bdd-f400bc08f47a",
   "additionalProperties": false,
-  "properties": {
-    "name": {
-      "type": "string",
-      "uuid": "a91cf55a-1ea0-4572-8e88-0440278a29b9",
-      "minLength": 1,
-      "metatags": "@plugin_name"
-    }
-  },
-  "required": [
-    "name"
-  ],
   "oneOf": [
     {
       "$ref": "jwt_webhook/schema.json"

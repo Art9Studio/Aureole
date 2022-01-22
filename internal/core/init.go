@@ -4,6 +4,7 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/plugins"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
@@ -13,20 +14,16 @@ import (
 	"unicode/utf8"
 )
 
-var p *Project
+var p *project
 
-type (
-	PluginInitializer interface {
-		Init(api PluginAPI) error
-	}
+type PluginInitializer interface {
+	Init(api PluginAPI) error
+}
 
-	AppPluginInitializer interface {
-		Init(appName string, api PluginAPI) error
-	}
-)
+var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
 
 func Init(conf *configs.Project) {
-	p = &Project{
+	p = &project{
 		apiVersion: conf.APIVersion,
 		testRun:    conf.TestRun,
 		pingPath:   conf.PingPath,
@@ -46,174 +43,60 @@ func Init(conf *configs.Project) {
 		},
 	})
 
-	createGlobalPlugins(conf, p)
 	createApps(conf, p)
-	createAppPlugins(conf, p)
-
-	initAureoleService(conf, p)
-	initGlobalPlugins(p)
-	initAppPlugins(p)
+	initApps(p)
 	listPluginStatus()
 }
 
-func createGlobalPlugins(conf *configs.Project, p *Project) {
-	createAuthorizers(conf, p)
-	createSecondFactors(conf, p)
-	createIDManagers(conf, p)
-	createPwHashers(conf, p)
-	createSenders(conf, p)
-	createCryptoKeys(conf, p)
-	createStorages(conf, p)
-	createKeyStorages(conf, p)
-	createAdmins(conf, p)
-}
-
-func createAuthorizers(conf *configs.Project, p *Project) {
-	p.authorizers = make(map[string]plugins.Authorizer)
-
-	for i := range conf.Authz {
-		authzConf := conf.Authz[i]
-		a, err := plugins.NewAuthZ(&authzConf)
-		if err != nil {
-			fmt.Printf("cannot create authorizator '%s': %v\n", authzConf.Name, err)
-		}
-
-		p.authorizers[authzConf.Name] = a
-	}
-}
-
-func createSecondFactors(conf *configs.Project, p *Project) {
-	p.secondFactors = make(map[string]plugins.SecondFactor)
-
-	for i := range conf.SecondFactors {
-		mfaConf := conf.SecondFactors[i]
-		secondFactor, err := plugins.NewSecondFactor(&mfaConf)
-		if err != nil {
-			fmt.Printf("cannot create second factor '%s': %v\n", mfaConf.Name, err)
-		}
-
-		p.secondFactors[mfaConf.Name] = secondFactor
-	}
-}
-
-func createIDManagers(conf *configs.Project, p *Project) {
-	p.idManagers = make(map[string]plugins.IDManager)
-
-	for i := range conf.IDManagers {
-		managerConf := conf.IDManagers[i]
-		m, err := plugins.NewIDManager(&managerConf)
-		if err != nil {
-			fmt.Printf("cannot create identity manager '%s': %v\n", managerConf.Name, err)
-		}
-
-		p.idManagers[managerConf.Name] = m
-	}
-}
-
-func createPwHashers(conf *configs.Project, p *Project) {
-	p.hashers = make(map[string]plugins.PWHasher)
-
-	for i := range conf.HasherConfs {
-		hasherConf := conf.HasherConfs[i]
-		h, err := plugins.NewPWHasher(&conf.HasherConfs[i])
-		if err != nil {
-			fmt.Printf("cannot create hasher '%s': %v\n", hasherConf.Name, err)
-		}
-
-		p.hashers[hasherConf.Name] = h
-	}
-}
-
-func createSenders(conf *configs.Project, p *Project) {
-	p.senders = make(map[string]plugins.Sender)
-
-	for i := range conf.Senders {
-		senderConf := conf.Senders[i]
-		s, err := plugins.NewSender(&senderConf)
-		if err != nil {
-			fmt.Printf("cannot create sender '%s': %v\n", senderConf.Name, err)
-		}
-
-		p.senders[senderConf.Name] = s
-	}
-}
-
-func createCryptoKeys(conf *configs.Project, p *Project) {
-	p.cryptoKeys = make(map[string]plugins.CryptoKey)
-
-	for i := range conf.CryptoKeys {
-		ckeyConf := conf.CryptoKeys[i]
-		ckey, err := plugins.NewCryptoKey(&ckeyConf)
-		if err != nil {
-			fmt.Printf("cannot create crypto key '%s': %v\n", ckeyConf.Name, err)
-		}
-
-		p.cryptoKeys[ckeyConf.Name] = ckey
-	}
-}
-
-func createStorages(conf *configs.Project, p *Project) {
-	p.storages = make(map[string]plugins.Storage)
-
-	for i := range conf.Storages {
-		storageConf := conf.Storages[i]
-		s, err := plugins.NewStorage(&storageConf)
-		if err != nil {
-			fmt.Printf("open connection session to storage '%s': %v\n", storageConf.Name, err)
-		}
-
-		p.storages[storageConf.Name] = s
-	}
-}
-
-func createKeyStorages(conf *configs.Project, p *Project) {
-	p.keyStorages = make(map[string]plugins.KeyStorage)
-
-	for i := range conf.KeyStorages {
-		storageConf := conf.KeyStorages[i]
-		s, err := plugins.NewKeyStorage(&storageConf)
-		if err != nil {
-			fmt.Printf("open connection session to key storage '%s': %v\n", storageConf.Name, err)
-		}
-
-		p.keyStorages[storageConf.Name] = s
-	}
-}
-
-func createAdmins(conf *configs.Project, p *Project) {
-	p.admins = make(map[string]plugins.Admin)
-
-	for i := range conf.AdminConfs {
-		adminConf := conf.AdminConfs[i]
-		a, err := plugins.NewAdmin(&adminConf)
-		if err != nil {
-			fmt.Printf("cannot create admin plugin '%s': %v\n", adminConf.Name, err)
-		}
-
-		p.admins[adminConf.Name] = a
-	}
-}
-
-func createApps(conf *configs.Project, p *Project) {
-	p.apps = make(map[string]*App, len(conf.Apps))
+func createApps(conf *configs.Project, p *project) {
+	p.apps = make(map[string]*app, len(conf.Apps))
 
 	for _, appConf := range conf.Apps {
-		appUrl, err := createAppUrl(&appConf)
+		appUrl, err := createAppUrl(appConf)
 		if err != nil {
 			fmt.Printf("cannot parse app url in app '%s': %v\n",
 				appConf.Name, err)
 		}
-
-		p.apps[appConf.Name] = &App{
+		app := &app{
 			name:           appConf.Name,
 			url:            appUrl,
 			pathPrefix:     appConf.PathPrefix,
 			authSessionExp: appConf.AuthSessionExp,
 		}
+
+		createPwHashers(app, appConf)
+		createSenders(app, appConf)
+		createCryptoKeys(app, appConf)
+		createStorages(app, appConf)
+		createKeyStorages(app, appConf)
+		createAdmins(app, appConf)
+		createAuthenticators(app, appConf)
+		createAuthorizer(app, appConf)
+		createSecondFactors(app, appConf)
+		createIDManager(app, appConf)
+		createAureoleService(app, appConf)
+
+		p.apps[appConf.Name] = app
 	}
 }
 
-func createAppUrl(app *configs.App) (*url.URL, error) {
+func createAureoleService(app *app, conf configs.App) {
+	var ok bool
+	app.service.signKey, ok = app.getCryptoKey(conf.Service.SignKey)
+	if !ok {
+		fmt.Printf("app %s: cannot get service key\n", app.name)
+	}
+	app.service.encKey, ok = app.getCryptoKey(conf.Service.EncKey)
+	if !ok {
+		fmt.Printf("app %s: cannot get service key\n", app.name)
+	}
+	app.service.storage, ok = app.getStorage(conf.Service.Storage)
+	if !ok {
+		fmt.Printf("app %s: cannot get service storage\n", app.name)
+	}
+}
+
+func createAppUrl(app configs.App) (*url.URL, error) {
 	if !strings.HasPrefix(app.Host, "http") {
 		app.Host = "https://" + app.Host
 	}
@@ -226,52 +109,90 @@ func createAppUrl(app *configs.App) (*url.URL, error) {
 	return appUrl, nil
 }
 
-func createAppPlugins(conf *configs.Project, p *Project) {
-	for appName := range p.apps {
-		appState := p.apps[appName]
-
-		var appConf configs.App
-		for _, a := range conf.Apps {
-			if a.Name == appName {
-				appConf = a
-			}
-		}
-
-		appState.authenticators = createAuthenticators(&appConf)
-
-		var err error
-		appState.authorizer, err = p.GetAuthorizer(appConf.Authz)
+func createPwHashers(app *app, conf configs.App) {
+	app.hashers = make(map[string]plugins.PWHasher)
+	for i := range conf.HasherConfs {
+		hasherConf := conf.HasherConfs[i]
+		pwHasher, err := plugins.NewPWHasher(&conf.HasherConfs[i])
 		if err != nil {
-			fmt.Printf("app '%s': %v", appState.name, err)
+			fmt.Printf("app %s: cannot create hasher %s: %v\n", app.name, hasherConf.Name, err)
 		}
-		appState.idManager, err = p.GetIDManager(appConf.IDManager)
-		if err != nil {
-			fmt.Printf("app '%s': %v", appState.name, err)
-		}
-		if appConf.SecondFactor != "" {
-			appState.secondFactor, err = p.GetSecondFactor(appConf.SecondFactor)
-			if err != nil {
-				fmt.Printf("app '%s': %v", appState.name, err)
-			}
-		}
+		app.hashers[hasherConf.Name] = pwHasher
 	}
 }
 
-func createAuthenticators(app *configs.App) map[string]plugins.Authenticator {
-	clearAuthnDuplicate(app)
-	authenticators := make(map[string]plugins.Authenticator, len(app.Authn))
+func createSenders(app *app, conf configs.App) {
+	app.senders = make(map[string]plugins.Sender)
+	for i := range conf.Senders {
+		senderConf := conf.Senders[i]
+		sender, err := plugins.NewSender(&senderConf)
+		if err != nil {
+			fmt.Printf("app %s: cannot create sender %s: %v\n", app.name, senderConf.Name, err)
+		}
+		app.senders[senderConf.Name] = sender
+	}
+}
 
-	for i := range app.Authn {
-		authnConf := app.Authn[i]
+func createCryptoKeys(app *app, conf configs.App) {
+	app.cryptoKeys = make(map[string]plugins.CryptoKey)
+	for i := range conf.CryptoKeys {
+		ckeyConf := conf.CryptoKeys[i]
+		cryptoKey, err := plugins.NewCryptoKey(&ckeyConf)
+		if err != nil {
+			fmt.Printf("app %s: cannot create crypto key %s: %v\n", app.name, ckeyConf.Name, err)
+		}
+		app.cryptoKeys[ckeyConf.Name] = cryptoKey
+	}
+}
+
+func createStorages(app *app, conf configs.App) {
+	app.storages = make(map[string]plugins.Storage)
+	for i := range conf.Storages {
+		storageConf := conf.Storages[i]
+		storage, err := plugins.NewStorage(&storageConf)
+		if err != nil {
+			fmt.Printf("app %s: cannot create storage %s: %v\n", app.name, storageConf.Name, err)
+		}
+		app.storages[storageConf.Name] = storage
+	}
+}
+
+func createKeyStorages(app *app, conf configs.App) {
+	app.keyStorages = make(map[string]plugins.KeyStorage)
+	for i := range conf.KeyStorages {
+		storageConf := conf.KeyStorages[i]
+		keyStorage, err := plugins.NewKeyStorage(&storageConf)
+		if err != nil {
+			fmt.Printf("app %s: cannot create key storage %s: %v\n", app.name, storageConf.Name, err)
+		}
+		app.keyStorages[storageConf.Name] = keyStorage
+	}
+}
+
+func createAdmins(app *app, conf configs.App) {
+	app.admins = make(map[string]plugins.Admin)
+	for i := range conf.AdminConfs {
+		adminConf := conf.AdminConfs[i]
+		admin, err := plugins.NewAdmin(&adminConf)
+		if err != nil {
+			fmt.Printf("app %s: cannot create admin plugin %s: %v\n", app.name, adminConf.Name, err)
+		}
+		app.admins[adminConf.Name] = admin
+	}
+}
+
+func createAuthenticators(app *app, conf configs.App) {
+	clearAuthnDuplicate(&conf)
+
+	app.authenticators = make(map[string]plugins.Authenticator, len(conf.Authn))
+	for i := range conf.Authn {
+		authnConf := conf.Authn[i]
 		authenticator, err := plugins.NewAuthN(&authnConf)
 		if err != nil {
-			fmt.Printf("cannot create authenticator '%s' in app '%s': %v\n",
-				authnConf.Type, app.Name, err)
+			fmt.Printf("app %s: cannot create authenticator %s: %v\n", app.name, authnConf.Type, err)
 		}
-		authenticators[authnConf.Type] = authenticator
+		app.authenticators[authnConf.Type] = authenticator
 	}
-
-	return authenticators
 }
 
 func clearAuthnDuplicate(app *configs.App) {
@@ -285,151 +206,239 @@ func clearAuthnDuplicate(app *configs.App) {
 	}
 }
 
-func initAureoleService(conf *configs.Project, p *Project) {
-	var err error
-	if p.service.signKey, err = p.GetCryptoKey(conf.Service.SignKey); err != nil {
-		fmt.Printf("cannot init service key: %v\n", err)
+func createAuthorizer(app *app, conf configs.App) {
+	authorizer, err := plugins.NewAuthZ(&conf.Authz)
+	if err != nil {
+		fmt.Printf("app %s: cannot create authorizator: %v\n", app.name, err)
 	}
-	if p.service.encKey, err = p.GetCryptoKey(conf.Service.EncKey); err != nil {
-		fmt.Printf("cannot init service key: %v\n", err)
-	}
-	if p.service.storage, err = p.GetStorage(conf.Service.Storage); err != nil {
-		fmt.Printf("cannot init service storage: %v\n", err)
+	app.authorizer = authorizer
+}
+
+func createSecondFactors(app *app, conf configs.App) {
+	app.secondFactors = make(map[string]plugins.SecondFactor)
+	for i := range conf.SecondFactors {
+		mfaConf := conf.SecondFactors[i]
+		secondFactor, err := plugins.NewSecondFactor(&mfaConf)
+		if err != nil {
+			fmt.Printf("app %s: cannot create second factor %s: %v\n", app.name, mfaConf.Name, err)
+		}
+		app.secondFactors[mfaConf.Name] = secondFactor
 	}
 }
 
-func initGlobalPlugins(p *Project) {
-	initStorages(p)
-	initKeyStorages(p)
-	initPwHashers(p)
-	initSenders(p)
-	initCryptoKeys(p)
-	initAdmins(p)
+func createIDManager(app *app, conf configs.App) {
+	idManager, err := plugins.NewIDManager(&conf.IDManager)
+	if err != nil {
+		fmt.Printf("app %s: cannot create identity manager: %v\n", app.name, err)
+	}
+	app.idManager = idManager
 }
 
-func initStorages(p *Project) {
-	for name, s := range p.storages {
-		if err := s.(PluginInitializer).Init(initAPI(p)); err != nil {
-			fmt.Printf("cannot init storage '%s': %v\n", name, err)
-			p.storages[name] = nil
+func initApps(p *project) {
+	for _, app := range p.apps {
+		initStorages(app, p)
+		initKeyStorages(app, p)
+		initPwHashers(app, p)
+		initSenders(app, p)
+		initCryptoKeys(app, p)
+		initAdmins(app, p)
+		initIDManager(app, p)
+		initAuthorizer(app, p)
+		initSecondFactor(app, p)
+		initAuthenticators(app, p)
+	}
+}
+
+func initStorages(app *app, p *project) {
+	for name, s := range app.storages {
+		pluginInit, ok := s.(PluginInitializer)
+		if ok {
+			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
+			if err != nil {
+				fmt.Printf("app %s: cannot init storage '%s': %v\n", app.name, name, err)
+				app.storages[name] = nil
+			}
+		} else {
+			fmt.Printf("app %s: cannot init storage '%s': %v\n", app.name, name, PluginInitErr)
+			app.storages[name] = nil
 		}
 	}
 }
 
-func initKeyStorages(p *Project) {
-	for name, s := range p.keyStorages {
-		if err := s.(PluginInitializer).Init(initAPI(p)); err != nil {
-			fmt.Printf("cannot init key storage '%s': %v\n", name, err)
-			p.keyStorages[name] = nil
+func initKeyStorages(app *app, p *project) {
+	for name, s := range app.keyStorages {
+		pluginInit, ok := s.(PluginInitializer)
+		if ok {
+			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
+			if err != nil {
+				fmt.Printf("app %s: cannot init key storage '%s': %v\n", app.name, name, err)
+				app.keyStorages[name] = nil
+			}
+		} else {
+			fmt.Printf("app %s: cannot init key storage '%s': %v\n", app.name, name, PluginInitErr)
+			app.keyStorages[name] = nil
 		}
 	}
 }
 
-func initPwHashers(p *Project) {
-	for name, h := range p.hashers {
-		if err := h.(PluginInitializer).Init(initAPI(p)); err != nil {
-			fmt.Printf("cannot init hasher '%s': %v\n", name, err)
-			p.hashers[name] = nil
+func initPwHashers(app *app, p *project) {
+	for name, h := range app.hashers {
+		pluginInit, ok := h.(PluginInitializer)
+		if ok {
+			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
+			if err != nil {
+				fmt.Printf("app %s: cannot init hasher '%s': %v\n", app.name, name, err)
+				app.hashers[name] = nil
+			}
+		} else {
+			fmt.Printf("app %s: cannot init hasher '%s': %v\n", app.name, name, PluginInitErr)
+			app.hashers[name] = nil
 		}
 	}
 }
 
-func initSenders(p *Project) {
-	for name, s := range p.senders {
-		if err := s.(PluginInitializer).Init(initAPI(p)); err != nil {
-			fmt.Printf("cannot init sender '%s': %v\n", name, err)
-			p.senders[name] = nil
+func initSenders(app *app, p *project) {
+	for name, s := range app.senders {
+		pluginInit, ok := s.(PluginInitializer)
+		if ok {
+			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
+			if err != nil {
+				fmt.Printf("app %s: cannot init sender '%s': %v\n", app.name, name, err)
+				app.senders[name] = nil
+			}
+		} else {
+			fmt.Printf("app %s: cannot init sender '%s': %v\n", app.name, name, PluginInitErr)
+			app.senders[name] = nil
 		}
 	}
 }
 
-func initCryptoKeys(p *Project) {
-	for name, k := range p.cryptoKeys {
-		if err := k.(PluginInitializer).Init(initAPI(p, withRouter(getRouter()))); err != nil {
-			fmt.Printf("cannot init kstorage '%s': %v\n", name, err)
-			p.cryptoKeys[name] = nil
+func initCryptoKeys(app *app, p *project) {
+	for name, k := range app.cryptoKeys {
+		pluginInit, ok := k.(PluginInitializer)
+		if ok {
+			err := pluginInit.Init(initAPI(withProject(p), withApp(app), withRouter(getRouter())))
+			if err != nil {
+				fmt.Printf("app %s: cannot init kstorage '%s': %v\n", app.name, name, err)
+				app.cryptoKeys[name] = nil
+			}
+		} else {
+			fmt.Printf("app %s: cannot init kstorage '%s': %v\n", app.name, name, PluginInitErr)
+			app.cryptoKeys[name] = nil
 		}
 	}
 }
 
-func initAdmins(p *Project) {
-	for name, a := range p.admins {
-		if err := a.(PluginInitializer).Init(initAPI(p, withRouter(getRouter()))); err != nil {
-			fmt.Printf("cannot init admin plugin '%s': %v\n", name, err)
-			p.admins[name] = nil
+func initAdmins(app *app, p *project) {
+	for name, a := range app.admins {
+		pluginInit, ok := a.(PluginInitializer)
+		if ok {
+			err := pluginInit.Init(initAPI(withProject(p), withApp(app), withRouter(getRouter())))
+			if err != nil {
+				fmt.Printf("app %s: cannot init admin plugin '%s': %v\n", app.name, name, err)
+				app.admins[name] = nil
+			}
+		} else {
+			fmt.Printf("app %s: cannot init admin plugin '%s': %v\n", app.name, name, PluginInitErr)
+			app.admins[name] = nil
 		}
 	}
 }
 
-func initAppPlugins(p *Project) {
-	for _, a := range p.apps {
-		initIDManager(a, p)
-		initAuthorizer(a, p)
-		initSecondFactor(a, p)
-		initAuthenticators(a, p)
-	}
-}
-
-func initAuthenticators(app *App, p *Project) {
+func initAuthenticators(app *app, p *project) {
 	var routes []*Route
 
 	for name, authenticator := range app.authenticators {
-		prefix := fmt.Sprintf("%s$%s$", app.name, authenticator.GetMetaData().ID)
-		pluginAPI := initAPI(p, withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
-
-		if err := authenticator.(AppPluginInitializer).Init(app.name, pluginAPI); err != nil {
-			fmt.Printf("cannot init authenticator '%s' in app '%s': %v\n",
-				name, app.name, err)
-			app.authenticators[name] = nil
+		pluginInit, ok := authenticator.(PluginInitializer)
+		if ok {
+			prefix := fmt.Sprintf("%s$%s$", app.name, authenticator.GetMetaData().ID)
+			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
+			err := pluginInit.Init(pluginAPI)
+			if err != nil {
+				fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
+				app.authenticators[name] = nil
+			} else {
+				pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Type, "_", "-")
+				routes = append(routes, &Route{
+					Method:  http.MethodPost,
+					Path:    pathPrefix + "/login",
+					Handler: handleLogin(authenticator.Login(), app),
+				})
+			}
 		} else {
-			pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Type, "_", "-")
-			routes = append(routes, &Route{
-				Method:  http.MethodPost,
-				Path:    pathPrefix + "/login",
-				Handler: handleLogin(authenticator.Login(), p, app),
-			})
+			fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, PluginInitErr)
+			app.authenticators[name] = nil
 		}
 	}
 	getRouter().addAppRoutes(app.name, routes)
 }
 
-func initAuthorizer(app *App, p *Project) {
-	prefix := fmt.Sprintf("%s$%s$", app.name, app.authorizer.GetMetaData().ID)
-	pluginAPI := initAPI(p, withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
-
-	if err := app.authorizer.(AppPluginInitializer).Init(app.name, pluginAPI); err != nil {
-		fmt.Printf("cannot init authorizer in app '%s': %v\n", app.name, err)
+func initAuthorizer(app *app, p *project) {
+	pluginInit, ok := app.authorizer.(PluginInitializer)
+	if ok {
+		prefix := fmt.Sprintf("%s$%s$", app.name, app.authorizer.GetMetaData().ID)
+		pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
+		err := pluginInit.Init(pluginAPI)
+		if err != nil {
+			fmt.Printf("app %s: cannot init authorizer: %v\n", app.name, err)
+			app.authorizer = nil
+		}
+	} else {
+		fmt.Printf("app %s: cannot init authorizer: %v\n", app.name, PluginInitErr)
 		app.authorizer = nil
 	}
 }
 
-func initSecondFactor(app *App, p *Project) {
+func initSecondFactor(app *app, p *project) {
 	var routes []*Route
 
-	if app.secondFactor != nil {
-		prefix := fmt.Sprintf("%s$%s$", app.name, app.secondFactor.GetMetaData().ID)
-		pluginAPI := initAPI(p, withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
+	if app.secondFactors != nil && len(app.secondFactors) != 0 {
+		for name := range app.secondFactors {
+			secondFactor := app.secondFactors[name]
+			pluginInit, ok := secondFactor.(PluginInitializer)
+			if ok {
+				prefix := fmt.Sprintf("%s$%s$", app.name, secondFactor.GetMetaData().ID)
+				pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
 
-		if err := app.secondFactor.(AppPluginInitializer).Init(app.name, pluginAPI); err != nil {
-			fmt.Printf("cannot init second factor in app '%s': %v\n", app.name, err)
-			app.secondFactor = nil
-		} else {
-			pathPrefix := "/2fa/" + strings.ReplaceAll(app.secondFactor.GetMetaData().Type, "_", "-")
-			routes = append(routes, &Route{
-				Method:  http.MethodPost,
-				Path:    pathPrefix + "/verify",
-				Handler: handle2FA(app.secondFactor.Verify(), p, app),
-			})
+				err := pluginInit.Init(pluginAPI)
+				if err != nil {
+					fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, err)
+					app.secondFactors[secondFactor.GetMetaData().Name] = nil
+				} else {
+					pathPrefix := "/2fa/" + strings.ReplaceAll(secondFactor.GetMetaData().Type, "_", "-")
+					routes = append(routes,
+						&Route{
+							Method:  http.MethodPost,
+							Path:    pathPrefix + "/start",
+							Handler: handle2FAInit(secondFactor.Init2FA(), app),
+						},
+						&Route{
+							Method:  http.MethodPost,
+							Path:    pathPrefix + "/verify",
+							Handler: handle2FAVerify(secondFactor.Verify(), app),
+						})
+					app.secondFactors[name] = secondFactor
+				}
+			} else {
+				fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, PluginInitErr)
+				app.secondFactors[secondFactor.GetMetaData().Name] = nil
+			}
 		}
 	}
 	getRouter().addAppRoutes(app.name, routes)
 }
 
-func initIDManager(app *App, p *Project) {
-	pluginAPI := initAPI(p, withApp(app), withRouter(getRouter()))
-
-	if err := app.idManager.(AppPluginInitializer).Init(app.name, pluginAPI); err != nil {
-		fmt.Printf("cannot init id manager in app '%s': %v\n", app.name, err)
+func initIDManager(app *app, p *project) {
+	pluginInit, ok := app.idManager.(PluginInitializer)
+	if ok {
+		pluginAPI := initAPI(withProject(p), withApp(app), withRouter(getRouter()))
+		err := pluginInit.Init(pluginAPI)
+		if err != nil {
+			fmt.Printf("app %s: cannot init id manager: %v\n", app.name, err)
+			app.idManager = nil
+		}
+	} else {
+		fmt.Printf("app %s: cannot init id manager: %v\n", app.name, PluginInitErr)
 		app.idManager = nil
 	}
 }
@@ -440,73 +449,61 @@ func listPluginStatus() {
 	for appName, app := range p.apps {
 		fmt.Printf("\nAPP: %s\n", appName)
 
-		printStatus("identity manager", p.apps[appName].idManager)
+		printStatus("IDENTITY MANAGER", p.apps[appName].idManager)
+		printStatus("AUTHORIZER", app.authorizer)
 
+		fmt.Println("\nAUTHENTICATORS")
 		for name, authn := range app.authenticators {
 			printStatus(name, authn)
 		}
-	}
 
-	if len(p.authorizers) != 0 {
-		fmt.Println("\nAUTHORIZERS")
-		for name, plugin := range p.authorizers {
-			printStatus(name, plugin)
+		if len(app.secondFactors) != 0 {
+			fmt.Println("\n2FA")
+			for name, plugin := range app.secondFactors {
+				printStatus(name, plugin)
+			}
 		}
-	}
 
-	if len(p.secondFactors) != 0 {
-		fmt.Println("\n2FA")
-		for name, plugin := range p.secondFactors {
-			printStatus(name, plugin)
+		if len(app.storages) != 0 {
+			fmt.Println("\nSTORAGE PLUGINS")
+			for name, plugin := range app.storages {
+				printStatus(name, plugin)
+			}
 		}
-	}
 
-	if len(p.idManagers) != 0 {
-		fmt.Println("\nIDENTITY MANAGERS")
-		for name, plugin := range p.idManagers {
-			printStatus(name, plugin)
+		if len(app.keyStorages) != 0 {
+			fmt.Println("\nKEY STORAGE PLUGINS")
+			for name, plugin := range app.keyStorages {
+				printStatus(name, plugin)
+			}
 		}
-	}
 
-	if len(p.storages) != 0 {
-		fmt.Println("\nSTORAGE PLUGINS")
-		for name, plugin := range p.storages {
-			printStatus(name, plugin)
+		if len(app.hashers) != 0 {
+			fmt.Println("\nHASHER PLUGINS")
+			for name, plugin := range app.hashers {
+				printStatus(name, plugin)
+			}
 		}
-	}
 
-	if len(p.keyStorages) != 0 {
-		fmt.Println("\nKEY STORAGE PLUGINS")
-		for name, plugin := range p.keyStorages {
-			printStatus(name, plugin)
+		if len(app.senders) != 0 {
+			fmt.Println("\nSENDER PLUGINS")
+			for name, plugin := range app.senders {
+				printStatus(name, plugin)
+			}
 		}
-	}
 
-	if len(p.hashers) != 0 {
-		fmt.Println("\nHASHER PLUGINS")
-		for name, plugin := range p.hashers {
-			printStatus(name, plugin)
+		if len(app.cryptoKeys) != 0 {
+			fmt.Println("\nCRYPTOKEY PLUGINS")
+			for name, plugin := range app.cryptoKeys {
+				printStatus(name, plugin)
+			}
 		}
-	}
 
-	if len(p.senders) != 0 {
-		fmt.Println("\nSENDER PLUGINS")
-		for name, plugin := range p.senders {
-			printStatus(name, plugin)
-		}
-	}
-
-	if len(p.cryptoKeys) != 0 {
-		fmt.Println("\nCRYPTOKEY PLUGINS")
-		for name, plugin := range p.cryptoKeys {
-			printStatus(name, plugin)
-		}
-	}
-
-	if len(p.admins) != 0 {
-		fmt.Println("\nADMIN PLUGINS")
-		for name, plugin := range p.admins {
-			printStatus(name, plugin)
+		if len(app.admins) != 0 {
+			fmt.Println("\nADMIN PLUGINS")
+			for name, plugin := range app.admins {
+				printStatus(name, plugin)
+			}
 		}
 	}
 }

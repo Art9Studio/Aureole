@@ -16,7 +16,7 @@ type config struct {
 	// Length of the generated key. 16 bytes or more is recommended
 	KeyLen int `mapstructure:"key_length"`
 
-	// Name of the pseudorandom function
+	// ProviderName of the pseudorandom function
 	FuncName string `mapstructure:"func"`
 }
 

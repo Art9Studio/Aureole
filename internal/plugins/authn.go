@@ -26,6 +26,7 @@ type (
 		Identity   *Identity
 		Provider   string
 		Additional map[string]interface{}
+		ErrorData  map[string]interface{}
 	}
 
 	AuthNLoginFunc func(fiber.Ctx) (*AuthNResult, error)

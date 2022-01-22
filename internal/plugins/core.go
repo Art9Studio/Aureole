@@ -42,7 +42,7 @@ func (repo *repository) Register(name string, a adapter) {
 	defer repo.adaptersMU.Unlock()
 
 	if name == "" {
-		panic("adapter Name can't be empty")
+		panic("adapter ProviderName can't be empty")
 	}
 	if _, ok := repo.adapters[name]; ok {
 		panic("multiply Register call for adapter " + name)

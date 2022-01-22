@@ -6,7 +6,6 @@ import (
 	"aureole/internal/plugins"
 	"aureole/pkg/dgoogauth"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,7 +19,6 @@ const pluginID = "1799"
 type (
 	gauth struct {
 		pluginApi core.PluginAPI
-		app       *core.App
 		rawConf   *configs.SecondFactor
 		conf      *config
 		manager   plugins.IDManager
@@ -32,18 +30,12 @@ type (
 	}
 )
 
-func (g *gauth) Init(appName string, api core.PluginAPI) (err error) {
+func (g *gauth) Init(api core.PluginAPI) (err error) {
 	g.pluginApi = api
 	g.conf, err = initConfig(&g.rawConf.Config)
 	if err != nil {
 		return err
 	}
-
-	g.app, err = g.pluginApi.GetApp(appName)
-	if err != nil {
-		return fmt.Errorf("app named '%s' is not declared", appName)
-	}
-
 	createRoutes(g)
 	return nil
 }
@@ -56,33 +48,35 @@ func (g *gauth) GetMetaData() plugins.Meta {
 	}
 }
 
-func (g *gauth) IsEnabled(cred *plugins.Credential, provider string) (bool, error) {
-	enabled, id, err := g.pluginApi.Is2FAEnabled(cred, provider)
-	if err != nil {
-		return false, err
-	}
-	if !enabled {
-		return false, nil
-	}
-	if id != pluginID {
-		return false, errors.New("another 2FA is enabled")
-	}
-	return true, nil
+func (g *gauth) IsEnabled(cred *plugins.Credential) (bool, error) {
+	return g.pluginApi.Is2FAEnabled(cred, pluginID)
 }
 
-func (g *gauth) Init2FA(cred *plugins.Credential, provider string, _ fiber.Ctx) (fiber.Map, error) {
-	token, err := core.CreateJWT(
-		map[string]interface{}{
-			"credential": map[string]string{
-				cred.Name: cred.Value,
-			},
-			"provider": provider,
-		},
-		g.app.GetAuthSessionExp())
-	if err != nil {
-		return nil, err
+func (g *gauth) Init2FA() plugins.MFAInitFunc {
+	return func(c fiber.Ctx) (fiber.Map, error) {
+		var input *input
+		if err := c.BodyParser(input); err != nil {
+			return nil, err
+		}
+		if input.Token == "" {
+			return nil, errors.New("token are required")
+		}
+
+		t, err := g.pluginApi.ParseJWT(input.Token)
+		if err != nil {
+			return nil, err
+		}
+		_, ok := t.Get("provider")
+		if !ok {
+			return nil, errors.New("cannot get provider from token")
+		}
+		_, ok = t.Get("credential")
+		if !ok {
+			return nil, errors.New("cannot get credential from token")
+		}
+
+		return fiber.Map{"token": input.Token}, nil
 	}
-	return fiber.Map{"token": token}, nil
 }
 
 func (g *gauth) Verify() plugins.MFAVerifyFunc {
@@ -95,7 +89,7 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := core.ParseJWT(input.Token)
+		t, err := g.pluginApi.ParseJWT(input.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -107,7 +101,7 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("cannot get credential from token")
 		}
-		if err := core.InvalidateJWT(t); err != nil {
+		if err := g.pluginApi.InvalidateJWT(t); err != nil {
 			return nil, nil, err
 		}
 
@@ -155,10 +149,12 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("wrong otp")
 		}
-		if err := g.manager.On2FA(cred, adapterName,
-			map[string]interface{}{
-				"counter": otp.HotpCounter, "scratch_code": otp.ScratchCodes,
-			}); err != nil {
+		err = g.manager.On2FA(cred, &plugins.MFAData{
+			PluginID:     pluginID,
+			ProviderName: adapterName,
+			Payload:      map[string]interface{}{"counter": otp.HotpCounter, "scratch_code": otp.ScratchCodes},
+		})
+		if err != nil {
 			return nil, nil, err
 		}
 
@@ -203,5 +199,5 @@ func createRoutes(g *gauth) {
 			Handler: getScratchCodes(g),
 		},
 	}
-	g.pluginApi.AddAppRoutes(g.app.GetName(), routes)
+	g.pluginApi.AddAppRoutes(routes)
 }

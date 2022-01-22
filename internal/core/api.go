@@ -2,12 +2,17 @@ package core
 
 import (
 	"aureole/internal/plugins"
+	"errors"
+	"fmt"
+	"github.com/lestrrat-go/jwx/jwt"
+	"net/url"
+	"regexp"
 )
 
 type (
 	PluginAPI struct {
-		app       *App
-		project   *Project
+		app       *app
+		project   *project
 		router    *router
 		keyPrefix string
 	}
@@ -15,8 +20,8 @@ type (
 	option func(api *PluginAPI)
 )
 
-func initAPI(p *Project, options ...option) PluginAPI {
-	api := PluginAPI{project: p}
+func initAPI(options ...option) PluginAPI {
+	api := PluginAPI{}
 
 	for _, option := range options {
 		option(&api)
@@ -31,7 +36,13 @@ func withKeyPrefix(prefix string) option {
 	}
 }
 
-func withApp(app *App) option {
+func withProject(project *project) option {
+	return func(api *PluginAPI) {
+		api.project = project
+	}
+}
+
+func withApp(app *app) option {
 	return func(api *PluginAPI) {
 		api.app = app
 	}
@@ -44,77 +55,76 @@ func withRouter(r *router) option {
 }
 
 func (api PluginAPI) IsTestRun() bool {
-	return api.project.IsTestRun()
+	return api.project.isTestRun()
 }
 
-func (api PluginAPI) Is2FAEnabled(cred *plugins.Credential, provider string) (bool, string, error) {
-	manager, err := api.app.GetIDManager()
-	if err != nil {
-		return false, "", err
+func (api PluginAPI) Is2FAEnabled(cred *plugins.Credential, mfaID string) (bool, error) {
+	manager, ok := api.app.getIDManager()
+	if !ok {
+		return false, fmt.Errorf("can't find identity manager for app %s", api.app.name)
 	}
 
-	id, err := manager.GetData(cred, provider, plugins.SecondFactorID)
-	if err != nil {
-		return false, "", err
-	}
-
-	if id != "" {
-		return true, id.(string), nil
-	} else {
-		return false, "", nil
-	}
-}
-
-func (api PluginAPI) SaveToService(k string, v interface{}, exp int) error {
-	serviceStorage, err := api.project.GetServiceStorage()
-	if err != nil {
-		return err
-	}
-	return serviceStorage.Set(api.keyPrefix+k, v, exp)
-}
-
-func (api PluginAPI) GetFromService(k string, v interface{}) (ok bool, err error) {
-	serviceStorage, err := api.project.GetServiceStorage()
-	if err != nil {
+	mfaData, err := manager.Get2FAData(cred, mfaID)
+	if err != nil && !errors.Is(err, plugins.UserNotExistError) {
 		return false, err
 	}
-	return serviceStorage.Get(api.keyPrefix+k, v)
+	if mfaData != nil {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
-func (api PluginAPI) GetApp(name string) (*App, error) {
-	return api.project.GetApp(name)
+func (api PluginAPI) GetAppName() string {
+	return api.app.name
 }
 
-func (api PluginAPI) GetAuthorizer(name string) (plugins.Authorizer, error) {
-	return api.project.GetAuthorizer(name)
+func (api PluginAPI) GetAppUrl() url.URL {
+	return *api.app.url
 }
 
-func (api PluginAPI) GetSecondFactor(name string) (plugins.SecondFactor, error) {
-	return api.project.GetSecondFactor(name)
+func (api PluginAPI) GetAppPathPrefix() string {
+	return api.app.pathPrefix
 }
 
-func (api PluginAPI) GetStorage(name string) (plugins.Storage, error) {
-	return api.project.GetStorage(name)
+func (api PluginAPI) GetAuthSessionExp() int {
+	return api.app.authSessionExp
 }
 
-func (api PluginAPI) GetKeyStorage(name string) (plugins.KeyStorage, error) {
-	return api.project.GetKeyStorage(name)
+func (api PluginAPI) GetAuthorizer() (plugins.Authorizer, bool) {
+	return api.app.getAuthorizer()
 }
 
-func (api PluginAPI) GetHasher(name string) (plugins.PWHasher, error) {
-	return api.project.GetHasher(name)
+func (api PluginAPI) GetSecondFactors() (map[string]plugins.SecondFactor, bool) {
+	return api.app.getSecondFactors()
 }
 
-func (api PluginAPI) GetSender(name string) (plugins.Sender, error) {
-	return api.project.GetSender(name)
+func (api PluginAPI) GetStorage(name string) (plugins.Storage, bool) {
+	return api.app.getStorage(name)
 }
 
-func (api PluginAPI) GetCryptoKey(name string) (plugins.CryptoKey, error) {
-	return api.project.GetCryptoKey(name)
+func (api PluginAPI) GetIDManager() (plugins.IDManager, bool) {
+	return api.app.getIDManager()
 }
 
-func (api PluginAPI) AddAppRoutes(appName string, routes []*Route) {
-	api.router.addAppRoutes(appName, routes)
+func (api PluginAPI) GetKeyStorage(name string) (plugins.KeyStorage, bool) {
+	return api.app.getKeyStorage(name)
+}
+
+func (api PluginAPI) GetHasher(name string) (plugins.PWHasher, bool) {
+	return api.app.getHasher(name)
+}
+
+func (api PluginAPI) GetSender(name string) (plugins.Sender, bool) {
+	return api.app.getSender(name)
+}
+
+func (api PluginAPI) GetCryptoKey(name string) (plugins.CryptoKey, bool) {
+	return api.app.getCryptoKey(name)
+}
+
+func (api PluginAPI) AddAppRoutes(routes []*Route) {
+	api.router.addAppRoutes(api.app.name, routes)
 }
 
 func (api PluginAPI) AddProjectRoutes(routes []*Route) {
@@ -127,4 +137,61 @@ func (api PluginAPI) GetAppRoutes() map[string][]*Route {
 
 func (api PluginAPI) GetProjectRoutes() []*Route {
 	return api.router.getProjectRoutes()
+}
+
+func (api PluginAPI) SaveToService(k string, v interface{}, exp int) error {
+	serviceStorage, ok := api.app.getServiceStorage()
+	if !ok {
+		return errors.New("can't find service storage")
+	}
+	return serviceStorage.Set(api.keyPrefix+k, v, exp)
+}
+
+func (api PluginAPI) GetFromService(k string, v interface{}) (ok bool, err error) {
+	serviceStorage, ok := api.app.getServiceStorage()
+	if !ok {
+		return false, errors.New("can't find service storage")
+	}
+	return serviceStorage.Get(api.keyPrefix+k, v)
+}
+
+func (api PluginAPI) Encrypt(data interface{}) ([]byte, error) {
+	return encrypt(api.app, data)
+}
+
+func (api PluginAPI) Decrypt(data []byte, value interface{}) error {
+	return decrypt(api.app, data, value)
+}
+
+func (api PluginAPI) GetRandStr(length int, alphabet string) (string, error) {
+	return getRandStr(length, alphabet)
+}
+
+func (api PluginAPI) CreateJWT(payload map[string]interface{}, exp int) (string, error) {
+	return createJWT(api.app, payload, exp)
+}
+
+func (api PluginAPI) ParseJWT(rawToken string) (jwt.Token, error) {
+	return parseJWT(api.app, rawToken)
+}
+
+func (api PluginAPI) InvalidateJWT(token jwt.Token) error {
+	return invalidateJWT(api.app, token)
+}
+
+func (api PluginAPI) GetFromJWT(token jwt.Token, name string, value interface{}) error {
+	return getFromJWT(token, name, value)
+}
+
+func (api PluginAPI) Filter(fields, filters map[string]string) (bool, error) {
+	for fieldName, pattern := range filters {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return false, err
+		}
+		if !re.MatchString(fields[fieldName]) {
+			return false, nil
+		}
+	}
+	return true, nil
 }

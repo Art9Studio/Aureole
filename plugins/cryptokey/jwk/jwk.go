@@ -36,7 +36,7 @@ const pluginID = "7851"
 
 type (
 	jwk struct {
-		pluginApi       core.PluginAPI
+		pluginAPI       core.PluginAPI
 		rawConf         *configs.CryptoKey
 		conf            *config
 		keyStorage      plugins.KeyStorage
@@ -50,14 +50,15 @@ type (
 )
 
 func (j *jwk) Init(api core.PluginAPI) (err error) {
-	j.pluginApi = api
+	j.pluginAPI = api
 	if j.conf, err = initConfig(&j.rawConf.Config); err != nil {
 		return err
 	}
 	j.conf.PathPrefix = "/" + strings.ReplaceAll(j.rawConf.Name, "_", "-")
 
-	j.keyStorage, err = j.pluginApi.GetKeyStorage(j.conf.Storage)
-	if err != nil {
+	var ok bool
+	j.keyStorage, ok = j.pluginAPI.GetKeyStorage(j.conf.Storage)
+	if !ok {
 		return fmt.Errorf("key storage named '%s' is not declared", j.conf.Storage)
 	}
 
@@ -169,7 +170,7 @@ func createRoutes(j *jwk) {
 			Handler: getPemKeys(j),
 		},
 	}
-	j.pluginApi.AddProjectRoutes(routes)
+	j.pluginAPI.AddProjectRoutes(routes)
 }
 
 func refreshKeys(j *jwk) {
@@ -227,12 +228,10 @@ func refreshKeys(j *jwk) {
 				j.muPubSet.Lock()
 				j.publicSet = pubSet
 				j.muPubSet.Unlock()
-				fmt.Printf("jwk '%s': public and private sets refreshed succesfully\n", j.rawConf.Name)
 			} else {
 				j.muPubSet.Lock()
 				j.publicSet = keySet
 				j.muPubSet.Unlock()
-				fmt.Printf("jwk '%s': public set refreshed succesfully\n", j.rawConf.Name)
 			}
 		}
 	}
