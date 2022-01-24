@@ -45,7 +45,11 @@ func (*google) GetMetaData() plugins.Meta {
 	}
 }
 
-func (g *google) Login() plugins.AuthNLoginFunc {
+func (g *google) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
+	return http.MethodGet, g.login
+}
+
+func (g *google) login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		// todo: save state and compare later #2
 		state := c.Query("state")
@@ -57,14 +61,14 @@ func (g *google) Login() plugins.AuthNLoginFunc {
 			return nil, errors.New("code not found")
 		}
 
+		var email string
 		jwtT, err := getJwt(g, code)
 		if err != nil {
 			return nil, errors.New("error while exchange")
 		}
-
-		email, ok := jwtT.Get("email")
-		if !ok {
-			return nil, errors.New("can't get 'email' from token")
+		err = g.pluginAPI.GetFromJWT(jwtT, "email", &email)
+		if err != nil {
+			return nil, errors.New("cannot get email from token")
 		}
 		/*socialId, ok := jwtT.Get("sub")
 		if !ok {
@@ -75,7 +79,7 @@ func (g *google) Login() plugins.AuthNLoginFunc {
 			return nil, err
 		}
 
-		ok, err = g.pluginAPI.Filter(convertUserData(userData), g.rawConf.Filter)
+		ok, err := g.pluginAPI.Filter(convertUserData(userData), g.rawConf.Filter)
 		if err != nil {
 			return nil, err
 		} else if !ok {
@@ -85,12 +89,16 @@ func (g *google) Login() plugins.AuthNLoginFunc {
 		return &plugins.AuthNResult{
 			Cred: &plugins.Credential{
 				Name:  plugins.Email,
-				Value: email.(string),
+				Value: email,
 			},
 			Identity: &plugins.Identity{
-				Email:         email.(*string),
+				Email:         &email,
 				EmailVerified: true,
-				Additional:    map[string]interface{}{"social_provider_data": userData},
+				Additional: map[string]interface{}{
+					"social_provider_data": map[string]interface{}{
+						"plugin_id": pluginID, "payload": userData,
+					},
+				},
 			},
 			Provider: "social_provider$" + adapterName,
 		}, nil

@@ -3,10 +3,12 @@ package core
 import (
 	"aureole/internal/configs"
 	"aureole/internal/plugins"
+	"crypto/rsa"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/lestrrat-go/jwx/jwk"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -246,7 +248,23 @@ func initApps(p *project) {
 		initAuthorizer(app, p)
 		initSecondFactor(app, p)
 		initAuthenticators(app, p)
+
+		err := isRSA(app.service.encKey.GetPrivateSet())
+		if err != nil {
+			app.service.encKey = nil
+			fmt.Printf("app %s: service key must be RSA key\n", app.name)
+		}
 	}
+}
+
+func isRSA(set jwk.Set) error {
+	key, ok := set.Get(0)
+	if !ok {
+		return errors.New("cannot get service key")
+	}
+
+	var rsaKey rsa.PrivateKey
+	return key.Raw(&rsaKey)
 }
 
 func initStorages(app *app, p *project) {
@@ -319,11 +337,11 @@ func initCryptoKeys(app *app, p *project) {
 		if ok {
 			err := pluginInit.Init(initAPI(withProject(p), withApp(app), withRouter(getRouter())))
 			if err != nil {
-				fmt.Printf("app %s: cannot init kstorage '%s': %v\n", app.name, name, err)
+				fmt.Printf("app %s: cannot init crypto key '%s': %v\n", app.name, name, err)
 				app.cryptoKeys[name] = nil
 			}
 		} else {
-			fmt.Printf("app %s: cannot init kstorage '%s': %v\n", app.name, name, PluginInitErr)
+			fmt.Printf("app %s: cannot init crypto key '%s': %v\n", app.name, name, PluginInitErr)
 			app.cryptoKeys[name] = nil
 		}
 	}
@@ -359,10 +377,11 @@ func initAuthenticators(app *app, p *project) {
 				app.authenticators[name] = nil
 			} else {
 				pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Type, "_", "-")
+				method, loginFunc := authenticator.GetLoginHandler()
 				routes = append(routes, &Route{
-					Method:  http.MethodPost,
+					Method:  method,
 					Path:    pathPrefix + "/login",
-					Handler: handleLogin(authenticator.Login(), app),
+					Handler: handleLogin(loginFunc(), app),
 				})
 			}
 		} else {

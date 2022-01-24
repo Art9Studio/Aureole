@@ -39,7 +39,7 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) err
 			if !ok {
 				return SendError(c, fiber.StatusUnauthorized, "cannot get service storage")
 			}
-			err = serviceStorage.Set(app.getName()+"$auth_pipeline$"+authnResult.Cred.Value, authnResult, app.getAuthSessionExp())
+			err = serviceStorage.Set(app.name+"$auth_pipeline$"+authnResult.Cred.Value, authnResult, app.authSessionExp)
 			if err != nil {
 				return SendError(c, fiber.StatusUnauthorized, err.Error())
 			}
@@ -54,7 +54,7 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) err
 			token, err := createJWT(app, map[string]interface{}{
 				"credential": authnResult.Cred,
 				"provider":   authnResult.Provider,
-			}, app.getAuthSessionExp())
+			}, app.authSessionExp)
 			if err != nil {
 				return SendError(c, fiber.StatusUnauthorized, err.Error())
 			}
@@ -91,14 +91,14 @@ func handle2FAVerify(mfaFunc plugins.MFAVerifyFunc, app *app) func(*fiber.Ctx) e
 		}
 
 		authnResult := &plugins.AuthNResult{}
-		ok, err = serviceStorage.Get(app.getName()+"$auth_pipeline$"+cred.Value, authnResult)
+		ok, err = serviceStorage.Get(app.name+"$auth_pipeline$"+cred.Value, authnResult)
 		if err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 		if !ok {
 			return SendError(c, fiber.StatusUnauthorized, "auth session has expired, cannot get user data")
 		}
-		if err := serviceStorage.Delete(app.getName() + "$auth_pipeline$" + cred.Value); err != nil {
+		if err := serviceStorage.Delete(app.name + "$auth_pipeline$" + cred.Value); err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 

@@ -4,8 +4,7 @@
   "uuid": "d8592fe5-80d6-4ec7-8e65-7a2374a662d7",
   "additionalProperties": false,
   "required": [
-    "type",
-    "config"
+    "type"
   ],
   "properties": {
     "type": {

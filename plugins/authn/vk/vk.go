@@ -58,7 +58,11 @@ func (*vk) GetMetaData() plugins.Meta {
 	}
 }
 
-func (v *vk) Login() plugins.AuthNLoginFunc {
+func (v *vk) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
+	return http.MethodGet, v.login
+}
+
+func (v *vk) login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		state := c.Query("state")
 		if state != "state" {
@@ -80,14 +84,15 @@ func (v *vk) Login() plugins.AuthNLoginFunc {
 		} else if !ok {
 			return nil, errors.New("input data doesn't pass filters")
 		}
+		email := userData["email"].(string)
 
 		return &plugins.AuthNResult{
 			Cred: &plugins.Credential{
 				Name:  plugins.Email,
-				Value: userData["email"].(string),
+				Value: email,
 			},
 			Identity: &plugins.Identity{
-				Email:         userData["email"].(*string),
+				Email:         &email,
 				EmailVerified: true,
 				Additional:    map[string]interface{}{"social_provider_data": userData},
 			},

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	pathPrefix  = "/oauth2/vk"
+	pathPrefix  = "/" + adapterName
 	redirectUrl = "/login"
 )
 

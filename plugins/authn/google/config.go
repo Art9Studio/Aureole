@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	pathPrefix  = "/oauth2/google"
+	pathPrefix  = "/" + adapterName
 	redirectUrl = "/login"
 )
 

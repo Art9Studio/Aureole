@@ -12,7 +12,6 @@ const (
 
 type (
 	config struct {
-		Hasher      string `mapstructure:"hasher"`
 		MaxAttempts int    `mapstructure:"max_attempts"`
 		Sender      string `mapstructure:"sender"`
 		Template    string `mapstructure:"template"`

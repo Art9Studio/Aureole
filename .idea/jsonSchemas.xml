@@ -15,6 +15,9 @@
                   <Item>
                     <option name="path" value="config.yaml" />
                   </Item>
+                  <Item>
+                    <option name="path" value="examples/saas_hasura/aureole/config.yaml" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>

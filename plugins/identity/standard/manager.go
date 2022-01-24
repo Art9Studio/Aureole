@@ -271,7 +271,7 @@ func getIdentity(conn *pgxpool.Conn, cred *plugins.Credential) (*plugins.Identit
 	)
 	for rows.Next() {
 		var (
-			providerName string
+			providerName *string
 			payload      map[string]interface{}
 		)
 		err = rows.Scan(&ident.ID, &ident.Username, &ident.Phone, &ident.Email, &ident.EmailVerified,
@@ -280,7 +280,7 @@ func getIdentity(conn *pgxpool.Conn, cred *plugins.Credential) (*plugins.Identit
 			return nil, err
 		}
 
-		if providerName != "" && payload != nil {
+		if providerName != nil && payload != nil {
 			userSocialProviders = append(userSocialProviders, map[string]interface{}{
 				"provider_name": providerName,
 				"payload":       payload,
@@ -291,7 +291,12 @@ func getIdentity(conn *pgxpool.Conn, cred *plugins.Credential) (*plugins.Identit
 	if rows.Err() != nil {
 		return nil, err
 	}
-	ident.Additional["social_providers"] = userSocialProviders
+	if userSocialProviders != nil {
+		if ident.Additional == nil {
+			ident.Additional = make(map[string]interface{})
+			ident.Additional["social_providers"] = userSocialProviders
+		}
+	}
 	return &ident, nil
 }
 
@@ -310,14 +315,15 @@ func registerIdentity(conn *pgxpool.Conn, newIdent *plugins.Identity) (*plugins.
 }
 
 func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *plugins.Identity, provider string) (*plugins.Identity, error) {
-	socialProviderData, ok := newIdent.Additional["social_provider_data"]
+	socialProviderData, ok := newIdent.Additional["social_provider_data"].(map[string]interface{})
 	if !ok {
 		return nil, errors.New("cannot get social provider data")
 	}
-	bytesOAuth2Data, err := json.Marshal(socialProviderData)
+	oauth2PayloadBytes, err := json.Marshal(socialProviderData["payload"])
 	if err != nil {
 		return nil, err
 	}
+	pluginID := socialProviderData["plugin_id"].(string)
 	delete(newIdent.Additional, "social_provider_data")
 
 	tx, err := conn.Begin(context.Background())
@@ -336,8 +342,8 @@ func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *plugins.Identi
 		return nil, err
 	}
 
-	saveSocialProviderSql := "insert into social_providers(user_id, provider_name, payload) values ($1, $2, $3);"
-	_, err = tx.Exec(context.Background(), saveSocialProviderSql, ident.ID, provider, string(bytesOAuth2Data))
+	saveProviderSql := "insert into social_providers(user_id, plugin_id, provider_name, payload) values ($1, $2, $3, $4);"
+	_, err = tx.Exec(context.Background(), saveProviderSql, ident.ID, pluginID, provider, string(oauth2PayloadBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +391,7 @@ func save2FAData(conn *pgxpool.Conn, cred *plugins.Credential, data *plugins.MFA
 		return err
 	}
 
-	sql := fmt.Sprintf(`insert into mfa(user_id, plugin_id, mfa_name, payload) 
+	sql := fmt.Sprintf(`insert into mfa(user_id, plugin_id, provider_name, payload) 
 		                      (select id, $1, $2, $3::json from users where %s=$3);`,
 		sanitize(cred.Name))
 	_, err = conn.Exec(context.Background(), sql, data.PluginID, data.ProviderName, string(bytesPayload), cred.Value)

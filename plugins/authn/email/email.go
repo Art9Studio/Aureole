@@ -43,7 +43,7 @@ func (e *email) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("sender named '%s' is not declared", e.conf.Sender)
 	}
 
-	e.magicLink, err = createMagicLink(e)
+	e.magicLink = createMagicLink(e)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,11 @@ func (*email) GetMetaData() plugins.Meta {
 	}
 }
 
-func (e *email) Login() plugins.AuthNLoginFunc {
+func (e *email) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
+	return http.MethodGet, e.login
+}
+
+func (e *email) login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		rawToken := c.Query("token")
 		if rawToken == "" {
@@ -103,10 +107,10 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func createMagicLink(e *email) (*url.URL, error) {
+func createMagicLink(e *email) *url.URL {
 	u := e.pluginAPI.GetAppUrl()
 	u.Path = path.Clean(u.Path + loginUrl)
-	return &u, nil
+	return &u
 }
 
 func createRoutes(e *email) {

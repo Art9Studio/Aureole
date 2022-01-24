@@ -3,14 +3,13 @@ package phone
 import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
-
 	"github.com/gofiber/fiber/v2"
 )
 
 func sendOTP(p *phone) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var input input
+		if err := c.BodyParser(&input); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 		if input.Phone == "" {

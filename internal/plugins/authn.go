@@ -18,7 +18,7 @@ type (
 
 	Authenticator interface {
 		MetaDataGetter
-		Login() AuthNLoginFunc
+		GetLoginHandler() (string, func() AuthNLoginFunc)
 	}
 
 	AuthNResult struct {

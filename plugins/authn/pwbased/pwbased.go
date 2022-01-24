@@ -72,7 +72,7 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		if !ok {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
 		}
-		p.resetConfirmLink, err = createConfirmLink(ResetLink, p)
+		p.resetConfirmLink = createConfirmLink(ResetLink, p)
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		if !ok {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verif.Sender)
 		}
-		p.verifyConfirmLink, err = createConfirmLink(VerifyLink, p)
+		p.verifyConfirmLink = createConfirmLink(VerifyLink, p)
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,11 @@ func (*pwBased) GetMetaData() plugins.Meta {
 	}
 }
 
-func (p *pwBased) Login() plugins.AuthNLoginFunc {
+func (p *pwBased) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
+	return http.MethodPost, p.login
+}
+
+func (p *pwBased) login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		var input *input
 		if err := c.BodyParser(input); err != nil {
@@ -161,7 +165,7 @@ func verifyEnabled(p *pwBased) bool {
 	return p.conf.Verif.Sender != "" && p.conf.Verif.Template != ""
 }
 
-func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
+func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 	u := p.pluginAPI.GetAppUrl()
 	switch linkType {
 	case ResetLink:
@@ -169,8 +173,7 @@ func createConfirmLink(linkType linkType, p *pwBased) (*url.URL, error) {
 	case VerifyLink:
 		u.Path = path.Clean(u.Path + verifyConfirmUrl)
 	}
-
-	return &u, nil
+	return &u
 }
 
 func createRoutes(p *pwBased) {

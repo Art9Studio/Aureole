@@ -2,7 +2,7 @@ version: '3'
 
 services:
   aureole:
-    image: aureolecloud/aureole:latest
+    image: aureole:latest
     ports:
       - "3000:3000"
     depends_on:

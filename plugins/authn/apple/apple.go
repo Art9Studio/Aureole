@@ -61,7 +61,11 @@ func (*apple) GetMetaData() plugins.Meta {
 	}
 }
 
-func (a *apple) Login() plugins.AuthNLoginFunc {
+func (a *apple) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
+	return http.MethodPost, a.login
+}
+
+func (a *apple) login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		input := struct {
 			State string
@@ -77,14 +81,14 @@ func (a *apple) Login() plugins.AuthNLoginFunc {
 			return nil, errors.New("code not found")
 		}
 
+		var email string
 		jwtT, err := getJwt(a, input.Code)
 		if err != nil {
 			return nil, err
 		}
-
-		email, ok := jwtT.Get("email")
-		if !ok {
-			return nil, errors.New("can't get 'email' from token")
+		err = a.pluginAPI.GetFromJWT(jwtT, "email", &email)
+		if err != nil {
+			return nil, errors.New("cannot get email from token")
 		}
 		/*socialId, ok := jwtT.Get("sub")
 		if !ok {
@@ -95,7 +99,7 @@ func (a *apple) Login() plugins.AuthNLoginFunc {
 			return nil, err
 		}
 
-		ok, err = a.pluginAPI.Filter(convertUserData(userData), a.rawConf.Filter)
+		ok, err := a.pluginAPI.Filter(convertUserData(userData), a.rawConf.Filter)
 		if err != nil {
 			return nil, err
 		} else if !ok {
@@ -105,10 +109,10 @@ func (a *apple) Login() plugins.AuthNLoginFunc {
 		return &plugins.AuthNResult{
 			Cred: &plugins.Credential{
 				Name:  plugins.Email,
-				Value: email.(string),
+				Value: email,
 			},
 			Identity: &plugins.Identity{
-				Email:         email.(*string),
+				Email:         &email,
 				EmailVerified: true,
 				Additional:    map[string]interface{}{"social_provider_data": userData},
 			},

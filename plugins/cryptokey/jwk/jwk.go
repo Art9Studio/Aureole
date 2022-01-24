@@ -9,14 +9,12 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hash"
 	"math/big"
 	"net/http"
 	"strings"
@@ -26,7 +24,6 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/lestrrat-go/jwx/x25519"
 
-	"github.com/decred/dcrd/dcrec/secp256k1/v3"
 	jwx "github.com/lestrrat-go/jwx/jwk"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/ed25519"
@@ -292,8 +289,6 @@ func generateRawKey(conf *config) (pubRawKey, privRawKey interface{}, err error)
 			curve = elliptic.P384()
 		case "P-521":
 			curve = elliptic.P521()
-		case "secp256k1":
-			curve = secp256k1.S256()
 		default:
 			return nil, nil, fmt.Errorf("wrong curve '%s' for kty '%s'", conf.Curve, conf.Kty)
 		}
@@ -327,31 +322,21 @@ func generateRawKey(conf *config) (pubRawKey, privRawKey interface{}, err error)
 }
 
 func generateKid(rawKey interface{}, kidType string) (kid string, err error) {
-	var h hash.Hash
-	switch kidType {
-	case "SHA-256":
-		h = sha256.New()
-	case "SHA-1":
-		h = sha1.New()
-	default:
-		return kidType, nil
-	}
-
-	var keyBytes []byte
-	if b, ok := rawKey.([]byte); ok {
-		keyBytes = b
-	} else {
-		keyBytes, err = x509.MarshalPKIXPublicKey(rawKey)
-		if err != nil {
-			return "", err
+	if kidType == "SHA-256" {
+		var keyBytes []byte
+		if b, ok := rawKey.([]byte); ok {
+			keyBytes = b
+		} else {
+			keyBytes, err = x509.MarshalPKIXPublicKey(rawKey)
+			if err != nil {
+				return "", err
+			}
 		}
-	}
 
-	_, err = h.Write(keyBytes)
-	if err != nil {
-		return "", err
+		h := sha256.Sum256(keyBytes)
+		return base64.RawStdEncoding.EncodeToString(h[:]), nil
 	}
-	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+	return kidType, nil
 }
 
 func generateRandomBytes(length int) ([]byte, error) {
