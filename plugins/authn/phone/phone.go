@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -16,10 +18,11 @@ const pluginID = "6937"
 
 type (
 	phone struct {
-		pluginAPI core.PluginAPI
-		rawConf   *configs.Authn
-		conf      *config
-		sender    plugins.Sender
+		pluginAPI     core.PluginAPI
+		rawConf       *configs.Authn
+		conf          *config
+		sender        plugins.Sender
+		tmpl, tmplExt string
 	}
 
 	input struct {
@@ -40,6 +43,15 @@ func (p *phone) Init(api core.PluginAPI) (err error) {
 	p.sender, ok = p.pluginAPI.GetSender(p.conf.Sender)
 	if !ok {
 		return fmt.Errorf("sender named '%s' is not declared", p.conf.Sender)
+	}
+
+	tmpl, err := os.ReadFile(p.conf.TmplPath)
+	if err != nil {
+		p.tmpl = defaultTmpl
+		p.tmplExt = "txt"
+	} else {
+		p.tmpl = string(tmpl)
+		p.tmplExt = path.Ext(p.conf.TmplPath)
 	}
 
 	createRoutes(p)

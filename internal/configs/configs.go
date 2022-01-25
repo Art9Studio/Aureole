@@ -20,21 +20,20 @@ type (
 	}
 
 	App struct {
-		Name           string         `config:"name"`
-		Host           string         `config:"host"`
-		PathPrefix     string         `config:"path_prefix"`
-		AuthSessionExp int            `config:"auth_session_exp"`
-		Service        Service        `config:"service"`
-		Authn          []Authn        `config:"authN"`
-		Authz          Authz          `config:"authZ"`
-		SecondFactors  []SecondFactor `config:"2fa"`
-		IDManager      IDManager      `config:"id_manager"`
-		KeyStorages    []KeyStorage   `config:"key_storages"`
-		Storages       []Storage      `config:"storages"`
-		HasherConfs    []PwHasher     `config:"hashers"`
-		CryptoKeys     []CryptoKey    `config:"crypto_keys"`
-		Senders        []Sender       `config:"senders"`
-		AdminConfs     []Admin        `config:"admin_plugins"`
+		Name           string          `config:"name"`
+		Host           string          `config:"host"`
+		PathPrefix     string          `config:"path_prefix"`
+		AuthSessionExp int             `config:"auth_session_exp"`
+		Service        Service         `config:"service"`
+		Authn          []Authn         `config:"authN"`
+		Authz          Authz           `config:"authZ"`
+		SecondFactors  []SecondFactor  `config:"2fa"`
+		IDManager      IDManager       `config:"id_manager"`
+		CryptoStorages []CryptoStorage `config:"crypto_storages"`
+		Storages       []Storage       `config:"storages"`
+		CryptoKeys     []CryptoKey     `config:"crypto_keys"`
+		Senders        []Sender        `config:"senders"`
+		AdminConfs     []Admin         `config:"admin_plugins"`
 	}
 
 	Service struct {
@@ -65,19 +64,13 @@ type (
 		Config RawConfig `config:"config"`
 	}
 
-	KeyStorage struct {
+	CryptoStorage struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`
 	}
 
 	Storage struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
-	}
-
-	PwHasher struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`

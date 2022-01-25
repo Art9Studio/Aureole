@@ -45,6 +45,7 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.uber.org/multierr v1.7.0
+	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect

@@ -3,43 +3,38 @@ package pwbased
 import (
 	"aureole/internal/configs"
 	"aureole/internal/plugins"
+	"aureole/plugins/authn/pwbased/pwhasher"
 )
 
 const (
-	pathPrefix       = "/password-based"
-	registerUrl      = "/register"
-	resetUrl         = "/reset-password"
-	resetConfirmUrl  = "/reset-password/confirm"
-	verifyUrl        = "/verify-email"
-	verifyConfirmUrl = "/verify-email/confirm"
+	pathPrefix        = "/password-based"
+	registerUrl       = "/register"
+	resetUrl          = "/reset-password"
+	resetConfirmUrl   = "/reset-password/confirm"
+	verifyUrl         = "/verify-email"
+	verifyConfirmUrl  = "/verify-email/confirm"
+	defaultResetTmpl  = "Your password reset link: {{.link}}"
+	defaultVerifyTmpl = "Click and verify you email: {{.link}}"
 )
 
-type (
-	config struct {
-		MainHasher    string       `mapstructure:"main_hasher"`
-		CompatHashers []string     `mapstructure:"compat_hashers"`
-		Register      registerConf `mapstructure:"registerConf"`
-		Reset         resetConf    `mapstructure:"password_reset"`
-		Verif         verifConf    `mapstructure:"verification"`
-	}
-
-	registerConf struct {
+type config struct {
+	MainHasher    pwhasher.Config   `mapstructure:"main_hasher"`
+	CompatHashers []pwhasher.Config `mapstructure:"compat_hashers"`
+	Register      struct {
 		IsLoginAfter  bool `mapstructure:"login_after"`
 		IsVerifyAfter bool `mapstructure:"verify_after"`
-	}
-
-	resetConf struct {
+	} `mapstructure:"register"`
+	Reset struct {
 		Sender   string `mapstructure:"sender"`
-		Template string `mapstructure:"template"`
+		TmplPath string `mapstructure:"template"`
 		Exp      int    `mapstructure:"exp"`
-	}
-
-	verifConf struct {
+	} `mapstructure:"password_reset"`
+	Verify struct {
 		Sender   string `mapstructure:"sender"`
-		Template string `mapstructure:"template"`
+		TmplPath string `mapstructure:"template"`
 		Exp      int    `mapstructure:"exp"`
-	}
-)
+	} `mapstructure:"verification"`
+}
 
 func (pwBasedAdapter) Create(conf *configs.Authn) plugins.Authenticator {
 	return &pwBased{rawConf: conf}

@@ -1,5 +1,0 @@
-key_storages:
-  - type: "file"
-    name: jwk_keys_store
-    config:
-      path: lab/keys/keys.json

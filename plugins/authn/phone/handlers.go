@@ -42,7 +42,7 @@ func sendOTP(p *phone) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = p.sender.Send(*i.Phone, "", p.conf.Template, map[string]interface{}{"otp": otp})
+		err = p.sender.Send(*i.Phone, "", p.tmpl, p.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -98,7 +98,7 @@ func resendOTP(p *phone) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = p.sender.Send(phone.(string), "", p.conf.Template, map[string]interface{}{"otp": otp})
+		err = p.sender.Send(phone.(string), "", p.tmpl, p.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

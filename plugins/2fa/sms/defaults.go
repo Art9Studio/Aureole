@@ -4,11 +4,7 @@ import "aureole/internal/configs"
 
 func (c *config) setDefaults() {
 	configs.SetDefault(&c.MaxAttempts, 3)
-	c.Otp.setDefaults()
-}
-
-func (o *otp) setDefaults() {
-	configs.SetDefault(&o.Length, 6)
-	configs.SetDefault(&o.Alphabet, "alphanum")
-	configs.SetDefault(&o.Exp, 300)
+	configs.SetDefault(&c.Otp.Length, 6)
+	configs.SetDefault(&c.Otp.Alphabet, "alphanum")
+	configs.SetDefault(&c.Otp.Exp, 300)
 }

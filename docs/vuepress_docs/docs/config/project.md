@@ -21,10 +21,8 @@
       - `id_manager`: См. [IdManager](./id_manager.md).
       - `storages`: Тип: **array**. Перечисление конфигураций хранилищ. Используется для указания конфигураций всех хранилищ, которые используются в проекте. Минимальное кол-во элементов: **1**.
         - **Элементы**: См. [Storage](./storage.md).
-      - `key_storages`: Тип: **array**. Перечисление конфигураций хранилищ ключей. Используется для указания конфигураций всех хранилищ ключей, которые используются в проекте.
-        - **Элементы**: См. [Kstorage](./kstorage.md).
-      - `hashers`: Тип: **array**. Перечисление конфигураций хэшеров. Используется для указания конфигураций всех хэшеров, которые используются в проекте.
-        - **Элементы**: См. [Hasher](./hasher.md).
+      - `crypto_storages`: Тип: **array**. Перечисление конфигураций хранилищ ключей. Используется для указания конфигураций всех хранилищ ключей, которые используются в проекте.
+        - **Элементы**: См. [CryptoStorage](./crypto_storage.md).
       - `crypto_keys`: Тип: **array**. Перечисление конфигураций ключей. Используется для указания конфигураций всех ключей, которые используются в проекте.
         - **Элементы**: См. [CryptoKey](./crypto_key.md).
       - `senders`: Тип: **array**. Перечисление конфигураций отправителей. Используется для указания конфигураций всех отправителей, которые используются в проекте.
@@ -35,25 +33,31 @@
   ```yaml
   api_version: "0.1"
   
-  service:
-    internal_key: service
-    storage: vault_store
-  
   apps:
     - name: app
-      authn:
-        # array of authenticators
-      authz:
-        # authorizer config
   
-  storages:
-    # array of storages
-  hashers:
-    # array of hashers
-  crypo_keys:
-    # array of crypto keys
-  senders:
-    # array of senders
-  admin_plugins:
-    # array of admin plugins
+      service:
+        enc_key: service_enc_key
+        sign_key: service_sign_key
+        storage: service_store
+  
+      authN:
+        # array of authenticators
+      authZ:
+        # authorizer config
+      2fa:
+        # array of 2FA plugins
+      id_manager:
+        # identity manager config
+  
+      storages:
+        # array of storages
+      crypto_storages:
+        # array of crypto storages
+      crypo_keys:
+        # array of crypto keys
+      senders:
+        # array of senders
+      admin_plugins:
+        # array of admin plugins
   ```

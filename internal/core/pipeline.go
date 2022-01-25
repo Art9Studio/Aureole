@@ -18,37 +18,19 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) err
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 
-		secondFactors, ok := app.getSecondFactors()
-		if !ok {
-			return authorize(c, app, authnResult)
+		enabled2FA, err := getEnabled2FA(app, authnResult)
+		if err != nil {
+			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 
-		var enabledFactors []plugins.SecondFactor
-		for _, secondFactor := range secondFactors {
-			enabled, err := secondFactor.IsEnabled(authnResult.Cred)
-			if err != nil {
-				return SendError(c, fiber.StatusUnauthorized, err.Error())
-			}
-			if enabled {
-				enabledFactors = append(enabledFactors, secondFactor)
-			}
-		}
-
-		if len(enabledFactors) != 0 {
+		if len(enabled2FA) != 0 {
 			serviceStorage, ok := app.getServiceStorage()
 			if !ok {
 				return SendError(c, fiber.StatusUnauthorized, "cannot get service storage")
 			}
-			err = serviceStorage.Set(app.name+"$auth_pipeline$"+authnResult.Cred.Value, authnResult, app.authSessionExp)
+			err := serviceStorage.Set(app.name+"$auth_pipeline$"+authnResult.Cred.Value, authnResult, app.authSessionExp)
 			if err != nil {
 				return SendError(c, fiber.StatusUnauthorized, err.Error())
-			}
-
-			var enabledFactorsJson fiber.Map
-			for _, enabledFactor := range enabledFactors {
-				path := app.url.String() + "/2fa/" +
-					strings.ReplaceAll(enabledFactor.GetMetaData().Type, "_", "-")
-				enabledFactorsJson[enabledFactor.GetMetaData().Type] = path
 			}
 
 			token, err := createJWT(app, map[string]interface{}{
@@ -58,9 +40,14 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) err
 			if err != nil {
 				return SendError(c, fiber.StatusUnauthorized, err.Error())
 			}
-			return c.JSON(fiber.Map{"token": token, "2fa": enabledFactorsJson})
+			return c.JSON(fiber.Map{"token": token, "2fa": enabled2FA})
 		}
-		return authorize(c, app, authnResult)
+
+		identity, err := authenticate(app, authnResult)
+		if err != nil {
+			return SendError(c, fiber.StatusUnauthorized, err.Error())
+		}
+		return authorize(c, app, identity)
 	}
 }
 
@@ -98,35 +85,62 @@ func handle2FAVerify(mfaFunc plugins.MFAVerifyFunc, app *app) func(*fiber.Ctx) e
 		if !ok {
 			return SendError(c, fiber.StatusUnauthorized, "auth session has expired, cannot get user data")
 		}
-		if err := serviceStorage.Delete(app.name + "$auth_pipeline$" + cred.Value); err != nil {
+
+		err = serviceStorage.Delete(app.name + "$auth_pipeline$" + cred.Value)
+		if err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 
-		return authorize(c, app, authnResult)
+		identity, err := authenticate(app, authnResult)
+		if err != nil {
+			return SendError(c, fiber.StatusUnauthorized, err.Error())
+		}
+		return authorize(c, app, identity)
 	}
 }
 
-func authorize(c *fiber.Ctx, app *app, authnResult *plugins.AuthNResult) error {
+func getEnabled2FA(app *app, authnResult *plugins.AuthNResult) (fiber.Map, error) {
+	secondFactors, ok := app.getSecondFactors()
+	if ok {
+		var enabled2FA []plugins.SecondFactor
+		for _, secondFactor := range secondFactors {
+			enabled, err := secondFactor.IsEnabled(authnResult.Cred)
+			if err != nil {
+				return nil, err
+			}
+			if enabled {
+				enabled2FA = append(enabled2FA, secondFactor)
+			}
+		}
+
+		if len(enabled2FA) != 0 {
+			enabledFactorsMap := fiber.Map{}
+			for _, enabledFactor := range enabled2FA {
+				path := app.url.String() + "/2fa/" +
+					strings.ReplaceAll(enabledFactor.GetMetaData().Type, "_", "-")
+				enabledFactorsMap[enabledFactor.GetMetaData().Type] = path
+			}
+			return enabledFactorsMap, nil
+		}
+	}
+	return nil, nil
+}
+
+func authenticate(app *app, authnResult *plugins.AuthNResult) (*plugins.Identity, error) {
+	manager, ok := app.getIDManager()
+	if ok {
+		return manager.OnUserAuthenticated(authnResult.Cred, authnResult.Identity, authnResult.Provider)
+	}
+	return authnResult.Identity, nil
+}
+
+func authorize(c *fiber.Ctx, app *app, identity *plugins.Identity) error {
 	authz, ok := app.getAuthorizer()
 	if !ok {
 		return SendError(c, fiber.StatusUnauthorized, fmt.Sprintf("app %s: cannot get authorizer", app.name))
 	}
 
-	manager, ok := app.getIDManager()
-	if ok {
-		user, err := manager.OnUserAuthenticated(authnResult.Cred, authnResult.Identity, authnResult.Provider)
-		if err != nil {
-			return SendError(c, fiber.StatusUnauthorized, err.Error())
-		}
-
-		payload, err := plugins.NewPayload(user.AsMap())
-		if err != nil {
-			return SendError(c, fiber.StatusUnauthorized, err.Error())
-		}
-		return authz.Authorize(c, payload)
-	}
-
-	payload, err := plugins.NewPayload(authnResult.Identity.AsMap())
+	payload, err := plugins.NewPayload(identity.AsMap())
 	if err != nil {
 		return SendError(c, fiber.StatusUnauthorized, err.Error())
 	}

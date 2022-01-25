@@ -4,11 +4,11 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.uber.org/zap/buffer"
 	"net/http"
 	"os"
 	"path"
@@ -53,6 +53,24 @@ const (
 	cookie bearerType = "cookie"
 	both   bearerType = "both"
 )
+
+const defaultPayloadTmpl = `{
+  {{ if .ID }}
+    "id": {{ .ID }},
+  {{ end }}
+
+  {{ if .Username }}
+    "username": "{{ .Username }}",
+  {{ end }}
+
+  {{ if .Phone }}
+    "phone": "{{ .Phone }}",
+  {{ end }}
+
+  {{ if .Email }}
+    "email": "{{ .Email }}",
+  {{ end }}
+}`
 
 var keyMap = map[string]map[string]string{
 	"access": {
@@ -264,7 +282,7 @@ func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jw
 			return nil, err
 		}
 
-		payload, err := defaultPayload(payload)
+		payload, err := renderPayload(defaultPayloadTmpl, payload)
 		if err != nil {
 			return nil, err
 		}
@@ -283,48 +301,38 @@ func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jw
 
 func parsePayload(tmplPath string, payload *plugins.Payload) (map[string]interface{}, error) {
 	if tmplPath != "" {
-		return renderPayload(tmplPath, payload)
-	} else {
-		return defaultPayload(payload)
-	}
-}
-
-func renderPayload(tmplPath string, payload *plugins.Payload) (map[string]interface{}, error) {
-	tmplFile := tmplPath
-	baseName := path.Base(tmplFile)
-	bufRawPayload := &bytes.Buffer{}
-
-	extension := path.Ext(tmplFile)
-	if extension == ".tmpl" {
-		/*tmpl := txtTmpl.Must(txtTmpl.New(baseName).Funcs(txtTmpl.FuncMap{
-			"NativeQ": payload.NativeQ,
-		}).ParseFiles(tmplFile))*/
-
-		tmpl := txtTmpl.Must(txtTmpl.New(baseName).ParseFiles(tmplFile))
-		if err := tmpl.Execute(bufRawPayload, payload); err != nil {
-			return nil, err
+		extension := path.Ext(tmplPath)
+		if extension == ".tmpl" {
+			tmplBytes, err := os.ReadFile(tmplPath)
+			if err != nil {
+				return nil, err
+			}
+			return renderPayload(string(tmplBytes), payload)
 		}
-
-		strRawPayload := regexp.MustCompile(`\s+`).ReplaceAllString(bufRawPayload.String(), "")
-		strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
-
-		p := make(map[string]interface{})
-		if err := json.Unmarshal([]byte(strRawPayload), &p); err != nil {
-			return nil, err
-		}
-
-		return p, nil
-	} else {
 		return nil, fmt.Errorf("jwt: json type expected, '%s' found", extension)
+	} else {
+		return renderPayload(defaultPayloadTmpl, payload)
 	}
 }
 
-func defaultPayload(payload *plugins.Payload) (map[string]interface{}, error) {
-	p := make(map[string]interface{})
-	if payload.ID != nil {
-		p["id"] = payload.ID
+func renderPayload(tmplStr string, payload *plugins.Payload) (map[string]interface{}, error) {
+	tmpl, err := txtTmpl.New("payload").Parse(tmplStr)
+	if err != nil {
+		return nil, err
 	}
-	return p, nil
+
+	bufRawPayload := &buffer.Buffer{}
+	err = tmpl.Execute(bufRawPayload, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	strRawPayload := regexp.MustCompile(`\s+`).ReplaceAllString(bufRawPayload.String(), "")
+	strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
+
+	p := make(map[string]interface{})
+	err = json.Unmarshal([]byte(strRawPayload), &p)
+	return p, err
 }
 
 func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {

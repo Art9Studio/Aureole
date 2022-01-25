@@ -1,0 +1,7 @@
+crypto_storages:
+  - type: "vault"
+    name: vault_keys_store
+    config:
+      token: ${VAULT_AUTH_TOKEN}
+      address: http://127.0.0.1:8200
+      path: /secret/keys

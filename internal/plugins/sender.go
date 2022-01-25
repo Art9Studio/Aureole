@@ -16,7 +16,7 @@ type (
 
 	Sender interface {
 		MetaDataGetter
-		Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error
+		Send(recipient, subject, tmpl, tmplExtension string, tmplCtx map[string]interface{}) error
 		SendRaw(recipient, subject, message string) error
 	}
 )

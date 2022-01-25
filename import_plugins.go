@@ -26,11 +26,11 @@ import (
 
 	_ "aureole/plugins/identity/standard"
 
-	_ "aureole/plugins/kstorage/file"
+	_ "aureole/plugins/crypto-storage/file"
 
-	_ "aureole/plugins/kstorage/url"
+	_ "aureole/plugins/crypto-storage/url"
 
-	_ "aureole/plugins/kstorage/vault"
+	_ "aureole/plugins/crypto-storage/vault"
 
 	_ "aureole/plugins/storage/etcd"
 
@@ -38,13 +38,9 @@ import (
 
 	_ "aureole/plugins/storage/memory"
 
-	_ "aureole/plugins/pwhasher/argon2"
+	_ "aureole/plugins/crypto-key/jwk"
 
-	_ "aureole/plugins/pwhasher/pbkdf2"
-
-	_ "aureole/plugins/cryptokey/jwk"
-
-	_ "aureole/plugins/cryptokey/pem"
+	_ "aureole/plugins/crypto-key/pem"
 
 	_ "aureole/plugins/sender/email"
 

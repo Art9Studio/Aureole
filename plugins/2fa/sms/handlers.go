@@ -16,7 +16,7 @@ func resend(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusBadRequest, "token are required")
 		}
 
-		t, err := s.pluginApi.ParseJWT(input.Token)
+		t, err := s.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -24,16 +24,16 @@ func resend(s *sms) func(*fiber.Ctx) error {
 		if !ok {
 			return core.SendError(c, fiber.StatusBadRequest, "cannot get phone from token")
 		}
-		if err := s.pluginApi.InvalidateJWT(t); err != nil {
+		if err := s.pluginAPI.InvalidateJWT(t); err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		otp, err := s.pluginApi.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
+		otp, err := s.pluginAPI.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		token, err := s.pluginApi.CreateJWT(
+		token, err := s.pluginAPI.CreateJWT(
 			map[string]interface{}{
 				"phone":    phone,
 				"attempts": 0,
@@ -43,17 +43,17 @@ func resend(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		encOtp, err := s.pluginApi.Encrypt(otp)
+		encOtp, err := s.pluginAPI.Encrypt(otp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		_ = encOtp
-		err = s.pluginApi.SaveToService(phone.(string), encOtp, s.conf.Otp.Exp)
+		err = s.pluginAPI.SaveToService(phone.(string), encOtp, s.conf.Otp.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = s.sender.Send(phone.(string), "", s.conf.Template, map[string]interface{}{"otp": otp})
+		err = s.sender.Send(phone.(string), "", s.tmpl, s.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

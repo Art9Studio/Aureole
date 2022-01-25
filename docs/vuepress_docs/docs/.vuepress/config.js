@@ -42,8 +42,7 @@ module.exports = {
                 '/config/2fa.md',
                 '/config/id_manager.md',
                 '/config/storage.md',
-                '/config/kstorage.md',
-                '/config/hasher.md',
+                '/config/crypto_storage.md',
                 '/config/crypto_key.md',
                 '/config/sender.md',
                 '/config/admin_plugin.md'

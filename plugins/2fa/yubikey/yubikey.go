@@ -4,6 +4,7 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/mitchellh/mapstructure"
@@ -12,17 +13,23 @@ import (
 const pluginID = "2734"
 
 type yubikey struct {
-	pluginApi core.PluginAPI
+	pluginAPI core.PluginAPI
 	rawConf   *configs.SecondFactor
 	conf      *config
 }
 
-func (y *yubikey) Init(appName string, api core.PluginAPI) (err error) {
-	y.pluginApi = api
+func (y *yubikey) Init(api core.PluginAPI) (err error) {
+	y.pluginAPI = api
 	y.conf, err = initConfig(&y.rawConf.Config)
 	if err != nil {
 		return err
 	}
+
+	_, ok := y.pluginAPI.GetIDManager()
+	if !ok {
+		return fmt.Errorf("manager for app '%s' is not declared", y.pluginAPI.GetAppName())
+	}
+
 	createRoutes(y)
 	return nil
 }
@@ -36,7 +43,7 @@ func (y yubikey) GetMetaData() plugins.Meta {
 }
 
 func (y yubikey) IsEnabled(cred *plugins.Credential) (bool, error) {
-	return y.pluginApi.Is2FAEnabled(cred, pluginID)
+	return y.pluginAPI.Is2FAEnabled(cred, pluginID)
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {

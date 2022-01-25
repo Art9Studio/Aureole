@@ -111,8 +111,7 @@ def split_json_schema(project_schema):
         'id_manager': app_props_keys + ['id_manager'],
         '2fa': app_props_keys + ['2fa', 'items'],
         'storage': app_props_keys + ['storages', 'items'],
-        'kstorage': app_props_keys + ['key_storages', 'items'],
-        'hasher': app_props_keys + ['hashers', 'items'],
+        'crypto_storage': app_props_keys + ['crypto_storages', 'items'],
         'crypto_key': app_props_keys + ['crypto_keys', 'items'],
         'sender': app_props_keys + ['senders', 'items'],
         'admin_plugin': app_props_keys + ['admin_plugins', 'items']
