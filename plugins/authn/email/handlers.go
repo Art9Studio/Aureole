@@ -25,7 +25,7 @@ func sendMagicLink(e *email) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(&fiber.Map{"success": true})
+		return c.SendStatus(fiber.StatusOK)
 	}
 }
 

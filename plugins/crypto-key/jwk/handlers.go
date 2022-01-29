@@ -12,7 +12,7 @@ import (
 
 func getJwkKeys(j *jwk) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusOK).JSON(j.publicSet)
+		return c.JSON(j.publicSet)
 	}
 }
 
@@ -53,6 +53,6 @@ func getPemKeys(j *jwk) func(*fiber.Ctx) error {
 			pemKeySet[key.KeyID()] = string(pemKey)
 		}
 
-		return c.Status(fiber.StatusOK).JSON(pemKeySet)
+		return c.JSON(pemKeySet)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/swaggo/swag"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -48,6 +49,13 @@ func Init(conf *configs.Project) {
 	createApps(conf, p)
 	initApps(p)
 	listPluginStatus()
+
+	err := assembleSwagger()
+	if err != nil {
+		fmt.Printf("cannot assemble swagger docs: %v", err)
+	} else {
+		swag.Register("swagger", &swagger{})
+	}
 }
 
 func createApps(conf *configs.Project, p *project) {
@@ -347,11 +355,20 @@ func initAuthenticators(app *app, p *project) {
 				app.authenticators[name] = nil
 			} else {
 				pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Type, "_", "-")
-				method, loginFunc := authenticator.GetLoginHandler()
+				specs, _ := authenticator.GetHandlersSpec()
+				if err != nil {
+					fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
+				}
+				var method string
+				if specs.Paths["/login"].Post != nil {
+					method = http.MethodPost
+				} else {
+					method = http.MethodGet
+				}
 				routes = append(routes, &Route{
 					Method:  method,
 					Path:    pathPrefix + "/login",
-					Handler: handleLogin(loginFunc(), app),
+					Handler: loginHandler(authenticator.LoginWrapper(), app),
 				})
 			}
 		} else {
@@ -399,12 +416,12 @@ func initSecondFactor(app *app, p *project) {
 						&Route{
 							Method:  http.MethodPost,
 							Path:    pathPrefix + "/start",
-							Handler: handle2FAInit(secondFactor.Init2FA(), app),
+							Handler: mfaInitHandler(secondFactor.Init2FA(), app),
 						},
 						&Route{
 							Method:  http.MethodPost,
 							Path:    pathPrefix + "/verify",
-							Handler: handle2FAVerify(secondFactor.Verify(), app),
+							Handler: mfaVerificationHandler(secondFactor.Verify(), app),
 						})
 					app.secondFactors[name] = secondFactor
 				}

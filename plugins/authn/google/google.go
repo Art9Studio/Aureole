@@ -5,6 +5,10 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"context"
+	_ "embed"
+	"encoding/json"
+	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"path"
 
@@ -22,7 +26,14 @@ type google struct {
 	rawConf   *configs.Authn
 	conf      *config
 	provider  *oauth2.Config
+	swagger   struct {
+		Paths       *spec.Paths
+		Definitions spec.Definitions
+	}
 }
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (g *google) Init(api core.PluginAPI) (err error) {
 	g.pluginAPI = api
@@ -30,10 +41,15 @@ func (g *google) Init(api core.PluginAPI) (err error) {
 	if err != nil {
 		return err
 	}
-
 	if err := initProvider(g); err != nil {
 		return err
 	}
+
+	err = json.Unmarshal(swaggerJson, &g.swagger)
+	if err != nil {
+		fmt.Printf("google authn: cannot marshal swagger docs: %v", err)
+	}
+
 	createRoutes(g)
 	return nil
 }
@@ -45,11 +61,11 @@ func (*google) GetMetaData() plugins.Meta {
 	}
 }
 
-func (g *google) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
-	return http.MethodGet, g.login
+func (g *google) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return g.swagger.Paths, g.swagger.Definitions
 }
 
-func (g *google) login() plugins.AuthNLoginFunc {
+func (g *google) LoginWrapper() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		// todo: save state and compare later #2
 		state := c.Query("state")

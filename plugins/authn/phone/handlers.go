@@ -6,16 +6,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func sendOTP(p *phone) func(*fiber.Ctx) error {
+func sendOTP(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input input
-		if err := c.BodyParser(&input); err != nil {
+		var phone phone
+		if err := c.BodyParser(&phone); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		if input.Phone == "" {
+		if phone.Phone == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "phone required")
 		}
-		i := plugins.Identity{Phone: &input.Phone}
+		i := plugins.Identity{Phone: &phone.Phone}
 
 		randStr, err := p.pluginAPI.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
@@ -27,7 +27,7 @@ func sendOTP(p *phone) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		err = p.pluginAPI.SaveToService(input.Phone, encOtp, p.conf.Otp.Exp)
+		err = p.pluginAPI.SaveToService(phone.Phone, encOtp, p.conf.Otp.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -51,9 +51,9 @@ func sendOTP(p *phone) func(*fiber.Ctx) error {
 	}
 }
 
-func resendOTP(p *phone) func(*fiber.Ctx) error {
+func resendOTP(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *input
+		var input *otp
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}

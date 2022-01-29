@@ -5,8 +5,11 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"aureole/plugins/authn/pwbased/pwhasher"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"net/url"
 	"os"
@@ -37,14 +40,22 @@ type (
 			tmplExt     string
 			confirmLink *url.URL
 		}
+		swagger struct {
+			Paths       *spec.Paths
+			Definitions spec.Definitions
+		}
 	}
 
-	input struct {
+	credential struct {
 		Id       interface{} `json:"id"`
 		Email    string      `json:"email"`
 		Phone    string      `json:"phone"`
 		Username string      `json:"username"`
 		Password string      `json:"password"`
+	}
+
+	email struct {
+		Email string `json:"email"`
 	}
 
 	linkType string
@@ -54,6 +65,9 @@ const (
 	ResetLink  linkType = "reset"
 	VerifyLink linkType = "verify"
 )
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (p *pwBased) Init(api core.PluginAPI) (err error) {
 	p.pluginAPI = api
@@ -119,6 +133,11 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		}
 	}
 
+	err = json.Unmarshal(swaggerJson, &p.swagger)
+	if err != nil {
+		fmt.Printf("pwbased authn: cannot marshal swagger docs: %v", err)
+	}
+
 	createRoutes(p)
 	return nil
 }
@@ -130,13 +149,13 @@ func (*pwBased) GetMetaData() plugins.Meta {
 	}
 }
 
-func (p *pwBased) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
-	return http.MethodPost, p.login
+func (p *pwBased) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return p.swagger.Paths, p.swagger.Definitions
 }
 
-func (p *pwBased) login() plugins.AuthNLoginFunc {
+func (p *pwBased) LoginWrapper() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
-		var input *input
+		var input *credential
 		if err := c.BodyParser(input); err != nil {
 			return nil, err
 		}
@@ -223,7 +242,7 @@ func createRoutes(p *pwBased) {
 				Handler: Reset(p),
 			},
 			{
-				Method:  http.MethodPost,
+				Method:  http.MethodGet,
 				Path:    pathPrefix + resetConfirmUrl,
 				Handler: ResetConfirm(p),
 			},

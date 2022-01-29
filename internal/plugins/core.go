@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"fmt"
+	"github.com/go-openapi/spec"
 	"sync"
 )
 
@@ -14,6 +15,10 @@ type (
 		Type string
 		Name string
 		ID   string
+	}
+
+	OpenAPISpecGetter interface {
+		GetHandlersSpec() (*spec.Paths, spec.Definitions)
 	}
 
 	adapter interface {

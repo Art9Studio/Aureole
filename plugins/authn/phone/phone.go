@@ -4,8 +4,11 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"os"
 	"path"
@@ -17,65 +20,80 @@ import (
 const pluginID = "6937"
 
 type (
-	phone struct {
+	authn struct {
 		pluginAPI     core.PluginAPI
 		rawConf       *configs.Authn
 		conf          *config
 		sender        plugins.Sender
 		tmpl, tmplExt string
+		swagger       struct {
+			Paths       *spec.Paths
+			Definitions spec.Definitions
+		}
 	}
 
-	input struct {
+	phone struct {
 		Phone string `json:"phone"`
+	}
+
+	otp struct {
 		Token string `json:"token"`
 		Otp   string `json:"otp"`
 	}
 )
 
-func (p *phone) Init(api core.PluginAPI) (err error) {
-	p.pluginAPI = api
-	p.conf, err = initConfig(&p.rawConf.Config)
+//go:embed swagger.json
+var swaggerJson []byte
+
+func (a *authn) Init(api core.PluginAPI) (err error) {
+	a.pluginAPI = api
+	a.conf, err = initConfig(&a.rawConf.Config)
 	if err != nil {
 		return err
 	}
 
 	var ok bool
-	p.sender, ok = p.pluginAPI.GetSender(p.conf.Sender)
+	a.sender, ok = a.pluginAPI.GetSender(a.conf.Sender)
 	if !ok {
-		return fmt.Errorf("sender named '%s' is not declared", p.conf.Sender)
+		return fmt.Errorf("sender named '%s' is not declared", a.conf.Sender)
 	}
 
-	tmpl, err := os.ReadFile(p.conf.TmplPath)
+	err = json.Unmarshal(swaggerJson, &a.swagger)
 	if err != nil {
-		p.tmpl = defaultTmpl
-		p.tmplExt = "txt"
-	} else {
-		p.tmpl = string(tmpl)
-		p.tmplExt = path.Ext(p.conf.TmplPath)
+		fmt.Printf("phone authn: cannot marshal swagger docs: %v", err)
 	}
 
-	createRoutes(p)
+	tmpl, err := os.ReadFile(a.conf.TmplPath)
+	if err != nil {
+		a.tmpl = defaultTmpl
+		a.tmplExt = "txt"
+	} else {
+		a.tmpl = string(tmpl)
+		a.tmplExt = path.Ext(a.conf.TmplPath)
+	}
+
+	createRoutes(a)
 	return nil
 }
 
-func (*phone) GetMetaData() plugins.Meta {
+func (*authn) GetMetaData() plugins.Meta {
 	return plugins.Meta{
 		Type: adapterName,
 		ID:   pluginID,
 	}
 }
 
-func (p *phone) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
-	return http.MethodPost, p.login
+func (a *authn) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return a.swagger.Paths, a.swagger.Definitions
 }
 
-func (p *phone) login() plugins.AuthNLoginFunc {
+func (a *authn) LoginWrapper() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
-		var input input
-		if err := c.BodyParser(&input); err != nil {
+		var otp otp
+		if err := c.BodyParser(&otp); err != nil {
 			return nil, err
 		}
-		if input.Token == "" || input.Otp == "" {
+		if otp.Token == "" || otp.Otp == "" {
 			return nil, errors.New("token and otp are required")
 		}
 
@@ -83,23 +101,23 @@ func (p *phone) login() plugins.AuthNLoginFunc {
 			phone    string
 			attempts int
 		)
-		t, err := p.pluginAPI.ParseJWT(input.Token)
+		t, err := a.pluginAPI.ParseJWT(otp.Token)
 		if err != nil {
 			return nil, err
 		}
-		err = p.pluginAPI.GetFromJWT(t, "phone", &phone)
+		err = a.pluginAPI.GetFromJWT(t, "phone", &phone)
 		if err != nil {
 			return nil, errors.New("cannot get phone from token")
 		}
-		err = p.pluginAPI.GetFromJWT(t, "attempts", &attempts)
+		err = a.pluginAPI.GetFromJWT(t, "attempts", &attempts)
 		if err != nil {
 			return nil, errors.New("cannot get attempts count from token")
 		}
-		if err := p.pluginAPI.InvalidateJWT(t); err != nil {
+		if err := a.pluginAPI.InvalidateJWT(t); err != nil {
 			return nil, err
 		}
 
-		if attempts >= p.conf.MaxAttempts {
+		if attempts >= a.conf.MaxAttempts {
 			return nil, errors.New("too much attempts")
 		}
 
@@ -107,7 +125,7 @@ func (p *phone) login() plugins.AuthNLoginFunc {
 			encOtp  []byte
 			decrOtp string
 		)
-		ok, err := p.pluginAPI.GetFromService(phone, &encOtp)
+		ok, err := a.pluginAPI.GetFromService(phone, &encOtp)
 		if err != nil {
 			return nil, err
 		}
@@ -115,12 +133,12 @@ func (p *phone) login() plugins.AuthNLoginFunc {
 			return nil, errors.New("otp has expired")
 		}
 
-		err = p.pluginAPI.Decrypt(encOtp, &decrOtp)
+		err = a.pluginAPI.Decrypt(encOtp, &decrOtp)
 		if err != nil {
 			return nil, err
 		}
 
-		if decrOtp == input.Otp {
+		if decrOtp == otp.Otp {
 			return &plugins.AuthNResult{
 				Cred: &plugins.Credential{
 					Name:  plugins.Phone,
@@ -133,12 +151,12 @@ func (p *phone) login() plugins.AuthNLoginFunc {
 				Provider: adapterName,
 			}, nil
 		} else {
-			token, err := p.pluginAPI.CreateJWT(
+			token, err := a.pluginAPI.CreateJWT(
 				map[string]interface{}{
 					"phone":    phone,
 					"attempts": attempts + 1,
 				},
-				p.conf.Otp.Exp)
+				a.conf.Otp.Exp)
 			if err != nil {
 				return nil, err
 			}
@@ -157,7 +175,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func createRoutes(p *phone) {
+func createRoutes(p *authn) {
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,

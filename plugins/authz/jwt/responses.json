@@ -1,0 +1,52 @@
+{
+  "responses": {
+    "200": {
+      "description": "Successfully authorize and return refresh and access tokens",
+      "headers": {
+        "Access-Set-Cookie": {
+          "type": "string",
+          "description": "Access JWT"
+        },
+        "Refresh-Set-Cookie": {
+          "type": "string",
+          "description": "Refresh JWT"
+        },
+        "Both-Set-Cookie": {
+          "type": "array",
+          "description": "Refresh and Access JWT",
+          "items": {
+            "type": "string"
+          }
+        },
+        "access": {
+          "type": "string",
+          "description": "Access JWT"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/token"
+      }
+    },
+    "500": {
+      "description": "Internal server error",
+      "schema": {
+        "$ref": "#/definitions/ErrorMessage"
+      }
+    }
+  },
+  "definitions": {
+    "token": {
+      "type": "object",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "title": "Json Web Token",
+          "type": "string",
+          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        }
+      }
+    }
+  }
+}

@@ -5,9 +5,11 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"go.uber.org/zap/buffer"
 	"net/http"
 	"os"
@@ -23,7 +25,6 @@ import (
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/yaml.v3"
 )
 
 const pluginID = "4844"
@@ -36,6 +37,14 @@ type (
 		signKey       plugins.CryptoKey
 		verifyKeys    map[string]plugins.CryptoKey
 		nativeQueries map[string]string
+		swagger       struct {
+			Paths       *spec.Paths
+			Definitions spec.Definitions
+		}
+		responses struct {
+			Responses   *spec.Responses
+			Definitions spec.Definitions
+		}
 	}
 
 	tokenType  string
@@ -83,6 +92,13 @@ var keyMap = map[string]map[string]string{
 	},
 }
 
+var (
+	//go:embed swagger.json
+	swaggerJson []byte
+	//go:embed responses.json
+	responsesJson []byte
+)
+
 func (j *jwtAuthz) Init(api core.PluginAPI) (err error) {
 	j.pluginAPI = api
 	j.conf, err = initConfig(&j.rawConf.Config)
@@ -104,14 +120,98 @@ func (j *jwtAuthz) Init(api core.PluginAPI) (err error) {
 		}
 	}
 
-	if j.conf.NativeQueries != "" {
+	/*if j.conf.NativeQueries != "" {
 		if j.nativeQueries, err = readNativeQueries(j.conf.NativeQueries); err != nil {
 			return err
 		}
+	}*/
+
+	err = assembleResponses(j)
+	if err != nil {
+		return err
+	}
+	err = assembleSwagger(j)
+	if err != nil {
+		return err
 	}
 
 	createRoutes(j)
 	return err
+}
+
+func assembleSwagger(j *jwtAuthz) error {
+	err := json.Unmarshal(swaggerJson, &j.swagger)
+	if err != nil {
+		return fmt.Errorf("jwt authz: cannot marshal swagger docs: %v", err)
+	}
+
+	handler := j.swagger.Paths.Paths["/jwt/refresh"].Post
+	if j.conf.RefreshBearer == body {
+		handler.Parameters = handler.Parameters[:1]
+	} else if j.conf.RefreshBearer == cookie {
+		handler.Consumes = nil
+		handler.Produces = nil
+		handler.Parameters = handler.Parameters[1:]
+	}
+
+	var resp spec.Responses
+	bytes, err := j.responses.Responses.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	err = resp.UnmarshalJSON(bytes)
+	if err != nil {
+		return err
+	}
+
+	errResp := handler.Responses.StatusCodeResponses[400]
+	handler.Responses = &resp
+	handler.Responses.StatusCodeResponses[400] = errResp
+	okResp := handler.Responses.StatusCodeResponses[200]
+	okResp.Description = "Successfully refresh JWT and returns new refresh JWT and old access JWT"
+	handler.Responses.StatusCodeResponses[200] = okResp
+
+	return nil
+}
+
+func assembleResponses(j *jwtAuthz) error {
+	err := json.Unmarshal(responsesJson, &j.responses)
+	if err != nil {
+		return fmt.Errorf("jwt authz: cannot marshal jwt responses docs: %v", err)
+	}
+
+	okResponse := j.responses.Responses.ResponsesProps.StatusCodeResponses[200]
+
+	if j.conf.AccessBearer == both {
+		okResponse.Headers["Set-Cookie"] = okResponse.Headers["Access-Set-Cookie"]
+	} else if j.conf.AccessBearer == cookie {
+		okResponse.Headers["Set-Cookie"] = okResponse.Headers["Access-Set-Cookie"]
+		delete(okResponse.Headers, "access")
+	}
+
+	if j.conf.RefreshBearer == both {
+		_, ok := okResponse.Headers["Set-Cookie"]
+		if ok {
+			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Both-Set-Cookie"]
+		} else {
+			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Refresh-Set-Cookie"]
+		}
+	} else if j.conf.RefreshBearer == cookie {
+		okResponse.Schema = nil
+		_, ok := okResponse.Headers["Set-Cookie"]
+		if ok {
+			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Both-Set-Cookie"]
+		} else {
+			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Refresh-Set-Cookie"]
+		}
+	}
+
+	delete(okResponse.Headers, "Access-Set-Cookie")
+	delete(okResponse.Headers, "Refresh-Set-Cookie")
+	delete(okResponse.Headers, "Both-Set-Cookie")
+
+	j.responses.Responses.ResponsesProps.StatusCodeResponses[200] = okResponse
+	return nil
 }
 
 func (j *jwtAuthz) GetMetaData() plugins.Meta {
@@ -119,6 +219,14 @@ func (j *jwtAuthz) GetMetaData() plugins.Meta {
 		Type: adapterName,
 		ID:   pluginID,
 	}
+}
+
+func (j *jwtAuthz) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return j.swagger.Paths, j.swagger.Definitions
+}
+
+func (j *jwtAuthz) GetResponseData() (*spec.Responses, spec.Definitions) {
+	return j.responses.Responses, j.responses.Definitions
 }
 
 func (j *jwtAuthz) GetNativeQueries() map[string]string {
@@ -169,7 +277,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func readNativeQueries(path string) (map[string]string, error) {
+/*func readNativeQueries(path string) (map[string]string, error) {
 	q := map[string]string{}
 
 	f, err := os.ReadFile(path)
@@ -183,7 +291,7 @@ func readNativeQueries(path string) (map[string]string, error) {
 	}
 
 	return q, nil
-}
+}*/
 
 func createRoutes(j *jwtAuthz) {
 	routes := []*core.Route{

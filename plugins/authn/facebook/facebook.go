@@ -4,7 +4,11 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	_ "embed"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"path"
 
@@ -21,7 +25,14 @@ type facebook struct {
 	rawConf   *configs.Authn
 	conf      *config
 	provider  *oauth2.Config
+	swagger   struct {
+		Paths       *spec.Paths
+		Definitions spec.Definitions
+	}
 }
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (f *facebook) Init(api core.PluginAPI) (err error) {
 	f.pluginAPI = api
@@ -29,10 +40,15 @@ func (f *facebook) Init(api core.PluginAPI) (err error) {
 	if err != nil {
 		return err
 	}
-
 	if err := initProvider(f); err != nil {
 		return err
 	}
+
+	err = json.Unmarshal(swaggerJson, &f.swagger)
+	if err != nil {
+		fmt.Printf("facebook authn: cannot marshal swagger docs: %v", err)
+	}
+
 	createRoutes(f)
 	return nil
 }
@@ -44,11 +60,11 @@ func (*facebook) GetMetaData() plugins.Meta {
 	}
 }
 
-func (f *facebook) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
-	return http.MethodGet, f.login
+func (f *facebook) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return f.swagger.Paths, f.swagger.Definitions
 }
 
-func (f *facebook) login() plugins.AuthNLoginFunc {
+func (f *facebook) LoginWrapper() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		state := c.Query("state")
 		if state != "state" {

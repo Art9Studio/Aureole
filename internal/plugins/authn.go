@@ -3,7 +3,6 @@ package plugins
 import (
 	"aureole/internal/configs"
 	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -18,7 +17,8 @@ type (
 
 	Authenticator interface {
 		MetaDataGetter
-		GetLoginHandler() (string, func() AuthNLoginFunc)
+		OpenAPISpecGetter
+		LoginWrapper() AuthNLoginFunc
 	}
 
 	AuthNResult struct {

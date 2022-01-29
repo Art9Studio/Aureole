@@ -116,6 +116,25 @@
                   <Item>
                     <option name="path" value="docs/json_schemas/app.schema.json" />
                   </Item>
+                  <Item>
+                    <option name="path" value="plugins/2fa/authenticator/definitions/token.json" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+        <entry key="Swagger 2.0">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="Swagger 2.0" />
+              <option name="relativePathToSchema" value="https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/schemas/v2.0/schema.json" />
+              <option name="applicationDefined" value="true" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="plugins/2fa/authenticator/openapi/definitions.json" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>

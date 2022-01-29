@@ -7,7 +7,7 @@ import (
 
 const (
 	sendUrl     = "/phone/send"
-	resendUrl   = "/phone/resendOTP"
+	resendUrl   = "/phone/resend"
 	defaultTmpl = "Your verification code: {{.otp}}"
 )
 
@@ -25,5 +25,5 @@ type config struct {
 }
 
 func (phoneAdapter) Create(conf *configs.Authn) plugins.Authenticator {
-	return &phone{rawConf: conf}
+	return &authn{rawConf: conf}
 }

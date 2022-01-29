@@ -1,0 +1,41 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Title",
+    "description": "Title",
+    "version": "1.0.0"
+  },
+  "host": "www",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/login": {
+      "get": {
+        "summary": "Google OAuth2 authentication",
+        "description": "Authenticate user with Google OAuth2 provider",
+        "tags": [
+          "Google OAuth2 AuthN"
+        ]
+      }
+    },
+    "/google": {
+      "get": {
+        "summary": "Google OAuth2 start authentication",
+        "description": "Start Google OAuth2 authentication pipeline and provides Google credentials input prompt",
+        "tags": ["Google OAuth2 AuthN"],
+        "responses": {
+          "302": {
+            "description": "Redirect to /google/login",
+            "headers": {
+              "Location": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {}
+}

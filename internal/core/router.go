@@ -1,6 +1,7 @@
 package core
 
 import (
+	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
 	"path"
 	"sync"
 
@@ -21,6 +22,10 @@ type (
 		Handler func(c *fiber.Ctx) error
 	}
 
+	ErrorMessage struct {
+		Error string
+	}
+
 	router struct {
 		appRoutes     map[string][]*Route
 		projectRoutes []*Route
@@ -36,11 +41,10 @@ func createServer() *fiber.App {
 	fiberApp := fiber.New(fiber.Config{DisableStartupMessage: true})
 	fiberApp.Use(cors.New())
 	fiberApp.Use(logger.New())
-	v := fiberApp.Group("")
 
 	for appName, routes := range r.appRoutes {
 		pathPrefix := p.apps[appName].pathPrefix
-		appGroup := v.Group(pathPrefix)
+		appGroup := fiberApp.Group(pathPrefix)
 
 		for _, route := range routes {
 			appGroup.Add(route.Method, route.Path, route.Handler)
@@ -48,9 +52,10 @@ func createServer() *fiber.App {
 	}
 
 	for _, route := range r.projectRoutes {
-		v.Add(route.Method, route.Path, route.Handler)
+		fiberApp.Add(route.Method, route.Path, route.Handler)
 	}
 
+	fiberApp.Get("/swagger/*", fiberSwagger.HandlerDefault)
 	return fiberApp
 }
 
@@ -93,9 +98,6 @@ func (r *router) getProjectRoutes() []*Route {
 	return r.projectRoutes
 }
 
-func SendError(c *fiber.Ctx, statusCode int, message string) error {
-	return c.Status(statusCode).JSON(fiber.Map{
-		"success": false,
-		"message": message,
-	})
+func SendError(c *fiber.Ctx, statusCode int, errorMessage string) error {
+	return c.Status(statusCode).JSON(ErrorMessage{Error: errorMessage})
 }

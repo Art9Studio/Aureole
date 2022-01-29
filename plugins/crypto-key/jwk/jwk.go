@@ -11,10 +11,12 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"math/big"
 	"net/http"
 	"strings"
@@ -43,8 +45,15 @@ type (
 		muPubSet        sync.RWMutex
 		publicSet       jwx.Set
 		refreshDone     chan struct{}
+		swagger         struct {
+			Paths       *spec.Paths
+			Definitions spec.Definitions
+		}
 	}
 )
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (j *jwk) Init(api core.PluginAPI) (err error) {
 	j.pluginAPI = api
@@ -71,6 +80,18 @@ func (j *jwk) Init(api core.PluginAPI) (err error) {
 		go refreshKeys(j)
 	}
 
+	err = json.Unmarshal(swaggerJson, &j.swagger)
+	if err != nil {
+		fmt.Printf("jwk crypto-key: cannot marshal swagger docs: %v", err)
+	}
+
+	jwkHandler := j.swagger.Paths.Paths["/jwk"]
+	pemHandler := j.swagger.Paths.Paths["/pem"]
+	j.swagger.Paths.Paths = map[string]spec.PathItem{
+		j.conf.PathPrefix + "/jwk": jwkHandler,
+		j.conf.PathPrefix + "/pem": pemHandler,
+	}
+
 	return nil
 }
 
@@ -80,6 +101,10 @@ func (j *jwk) GetMetaData() plugins.Meta {
 		Name: j.rawConf.Name,
 		ID:   pluginID,
 	}
+}
+
+func (j *jwk) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return j.swagger.Paths, j.swagger.Definitions
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {

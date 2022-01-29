@@ -4,8 +4,11 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,12 +28,19 @@ type (
 		sender        plugins.Sender
 		magicLink     *url.URL
 		tmpl, tmplExt string
+		swagger       struct {
+			Paths       *spec.Paths
+			Definitions spec.Definitions
+		}
 	}
 
 	input struct {
 		Email string `json:"email"`
 	}
 )
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (e *email) Init(api core.PluginAPI) (err error) {
 	e.pluginAPI = api
@@ -48,6 +58,11 @@ func (e *email) Init(api core.PluginAPI) (err error) {
 	e.magicLink = createMagicLink(e)
 	if err != nil {
 		return err
+	}
+
+	err = json.Unmarshal(swaggerJson, &e.swagger)
+	if err != nil {
+		fmt.Printf("email authn: cannot marshal swagger docs: %v", err)
 	}
 
 	tmpl, err := os.ReadFile(e.conf.TmplPath)
@@ -70,11 +85,11 @@ func (*email) GetMetaData() plugins.Meta {
 	}
 }
 
-func (e *email) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
-	return http.MethodGet, e.login
+func (e *email) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return e.swagger.Paths, e.swagger.Definitions
 }
 
-func (e *email) login() plugins.AuthNLoginFunc {
+func (e *email) LoginWrapper() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		rawToken := c.Query("token")
 		if rawToken == "" {

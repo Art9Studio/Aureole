@@ -8,7 +8,7 @@ import (
 
 func resend(s *sms) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *input
+		var input *token
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}

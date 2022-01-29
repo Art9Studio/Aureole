@@ -1,0 +1,41 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Title",
+    "description": "Title",
+    "version": "1.0.0"
+  },
+  "host": "www",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/login": {
+      "get": {
+        "summary": "Facebook OAuth2 authentication",
+        "description": "Authenticate user with Facebook OAuth2 provider",
+        "tags": [
+          "Facebook OAuth2 AuthN"
+        ]
+      }
+    },
+    "/facebook": {
+      "get": {
+        "summary": "Facebook OAuth2 start authentication",
+        "description": "Start Facebook OAuth2 authentication pipeline and provides Facebook credentials input prompt",
+        "tags": ["Facebook OAuth2 AuthN"],
+        "responses": {
+          "302": {
+            "description": "Redirect to /facebook/login",
+            "headers": {
+              "Location": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {}
+}
