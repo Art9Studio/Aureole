@@ -89,6 +89,20 @@ func NewIdentity(data map[string]interface{}) (*Identity, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if len(*ident.Email) == 0 {
+		ident.Email = nil
+	}
+	if len(*ident.Phone) == 0 {
+		ident.Phone = nil
+	}
+	if len(*ident.Username) == 0 {
+		ident.Username = nil
+	}
+	if len(ident.Additional) == 0 {
+		ident.Additional = nil
+	}
+
 	return ident, nil
 }
 

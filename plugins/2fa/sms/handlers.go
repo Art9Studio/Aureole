@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func resend(s *sms) func(*fiber.Ctx) error {
+func resend(s *mfa) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *token
 		if err := c.BodyParser(input); err != nil {

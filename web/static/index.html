@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+    <meta charset='UTF-8' />
+    <title>Aureole Demo UI</title>
+    <link rel='stylesheet' href='static/css/style.css'>
+</head>
+
+<body>
+    <div id="main" class='main'>
+        <section v-if='errored' сlass="error">
+            We're sorry, we're not able to show ui now
+        </section>
+
+        <section v-else>
+            <div v-if='loading' class="loading">Loading...</div>
+
+            <div v-else-if='show2FAChoice' class="mfa_choice">
+                <h3 class="authn_title">Second Factor Authentication</h3>
+                <div v-if="googleAuthenticatorEnabled">
+                    <button class="mfa_btn" value="google_authenticator" v-on:click="handle2FAChoice($event)">Google Authenticator</button>
+                </div>
+                <div v-if="smsEnabled">
+                    <button class="mfa_btn" value="sms" v-on:click="handle2FAChoice($event)">SMS</button>
+                </div>
+                <div v-if="fido2Enabled">
+                    <button class="mfa_btn" value="fido2" v-on:click="handle2FAChoice($event)">FIDO2</button>
+                </div>
+            </div>
+
+            <div v-else-if="show2FA">
+                <div v-if="googleAuthenticatorEnabled">
+                    <h3 class="authn_title">Google Authenticator 2FA</h3>
+                    <form method="post" v-on:submit.prevent="submit2FAGoogleAuth">
+                        <div class="form">
+                            <input type="text" name="otp" v-model='google2FAForm.otp' placeholder="OTP" class="form_input">
+                            <input type='submit' value='Verify' class='form_btn' />
+                        </div>
+                    </form>
+                </div>
+                <div v-else-if="smsEnabled">
+                    <h3 class="authn_title">SMS 2FA</h3>
+                    <form method='post' v-on:submit.prevent='submit2FASMSSend'>
+                        <div class='form'>
+                            <input type='text' name='phone' v-model='sms2FAForm.phone' placeholder='Phone' class='form_input' />
+                            <input type='submit' value='Send me OTP' class='form_btn' />
+                        </div>
+                    </form>
+                    <form method="post" v-on:submit.prevent="submit2FASMSVerify">
+                        <div class="form">
+                            <input type="text" name="otp" v-model='sms2FAForm.otp' placeholder="OTP" class="form_input">
+                            <input type='submit' value='Verify' class='form_btn' />
+                        </div>
+                    </form>
+                </div>
+                <div v-else>
+                    <h3 class="authn_title">FIDO2 2FA</h3>
+                </div>
+            </div>
+
+            <div v-else>
+                <div v-if='emailEnabled'>
+                    <h3 class='authn_title'>Email passwordless</h3>
+                    <form method='post' v-on:submit.prevent='submitEmailForm'>
+                        <div class='form'>
+                            <input type='email' name='email' v-model='emailForm.email' placeholder='Email' class='form_input' />
+                            <input type='submit' value='Login' class='form_btn' />
+                        </div>
+                    </form>
+                    <hr/>
+                </div>
+
+                <div v-if='phoneEnabled'>
+                    <h3 class='authn_title'>Phone passwordless</h3>
+                    <form method='post' v-on:submit.prevent='submitPhoneForm'>
+                        <div class='form'>
+                            <input type='text' name='phone' v-model='phoneForm.phone' placeholder='Phone' class='form_input' />
+                            <input type='submit' value='Login' class='form_btn' />
+                        </div>
+                    </form>
+                    <form method='post' v-on:submit.prevent='submitPhoneOTPForm' class='form'>
+                        <div class='form'>
+                            <input type='text' name='otp' v-model='phoneOTPForm.otp' placeholder='Code' class='form_input' />
+                            <input type='submit' value='Verify' class='form_btn' />
+                        </div>
+                    </form>
+                    <hr />
+                </div>
+
+                <div v-if='pwbasedEnabled'>
+                    <h3 class='authn_title'>Password-based</h3>
+                    <form method='post' v-on:submit.prevent=''>
+                        <div class='form'>
+                            <input type='text' name='username' v-model='pwbasedForm.username' placeholder='Username' class='form_input' />
+                            <input type='email' name='email' v-model='pwbasedForm.email' placeholder='Email' class='form_input' />
+                            <input type='text' name='phone' v-model='pwbasedForm.phone' placeholder='Phone' class='form_input' />
+                            <input type='password' name='password' v-model='pwbasedForm.password' placeholder='Password' class='form_input' />
+                            <input type='button' v-on:click='submitPWBasedLoginForm' value='Login' class='form_btn' />
+                            <input type='button' v-on:click='submitPWBasedRegisterForm' value='Register' class='form_btn' />
+                        </div>
+                    </form>
+                    <hr />
+                </div>
+
+                <div v-if='socialProvidersEnabled'>
+                    <h3 class='authn_title'>Social providers</h3>
+                    <div class="providers_wrapper">
+                        <a v-if='googleEnabled' v-bind:href='googleLoginURL' class="provider_btn">Google Login</a>
+                        <a v-if='facebookEnabled' v-bind:href='facebookLoginURL' class="provider_btn">Facebook Login</a>
+                        <a v-if='vkEnabled' v-bind:href='vkLoginURL' class="provider_btn">VK Login</a>
+                        <a v-if='appleEnabled' v-bind:href='appleLoginURL' class="provider_btn">Apple Login</a>
+                    </div>
+                    <hr />
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src='https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js'></script>
+    <script src='https://unpkg.com/axios/dist/axios.min.js'></script>
+    <script type="text/javascript" src="static/js/cbor.js"></script>
+    <script type="text/javascript" src="static/js/base64.js"></script>
+    <script src='static/js/script.js'></script>
+</body>
+
+</html>

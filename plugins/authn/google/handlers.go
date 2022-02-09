@@ -8,7 +8,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func getAuthCode(g *google) func(*fiber.Ctx) error {
+func getAuthCode(g *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// todo: save state and compare later #1
 		u := g.provider.AuthCodeURL("state")
@@ -16,7 +16,7 @@ func getAuthCode(g *google) func(*fiber.Ctx) error {
 	}
 }
 
-func getJwt(g *google, code string) (jwt.Token, error) {
+func getJwt(g *authn, code string) (jwt.Token, error) {
 	t, err := g.provider.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, err

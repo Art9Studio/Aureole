@@ -16,13 +16,13 @@
   ],
   "oneOf": [
     {
-      "$ref": "file/schema.json"
+      "$ref": "file/docs/schema.json"
     },
     {
-      "$ref": "url/schema.json"
+      "$ref": "url/docs/schema.json"
     },
     {
-      "$ref": "vault/schema.json"
+      "$ref": "vault/docs/schema.json"
     }
   ]
 }

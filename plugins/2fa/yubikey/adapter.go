@@ -1,6 +1,7 @@
 package yubikey
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,8 +10,12 @@ const adapterName = "yubikey"
 
 // init initializes package by register adapter
 func init() {
-	plugins.SecondFactorRepo.Register(adapterName, yubikeyAdapter{})
+	plugins.SecondFactorRepo.Register(adapterName, adapter{})
 }
 
-type yubikeyAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
+	return &mfa{rawConf: conf}
 }

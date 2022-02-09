@@ -11,14 +11,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func getAuthCode(f *facebook) func(*fiber.Ctx) error {
+func getAuthCode(f *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		u := f.provider.AuthCodeURL("state")
 		return c.Redirect(u)
 	}
 }
 
-func getUserData(f *facebook, code string) (map[string]interface{}, error) {
+func getUserData(f *authn, code string) (map[string]interface{}, error) {
 	ctx := context.Background()
 	t, err := f.provider.Exchange(ctx, code)
 	if err != nil {
@@ -49,7 +49,7 @@ func getUserData(f *facebook, code string) (map[string]interface{}, error) {
 	return userData, nil
 }
 
-func getUserInfoUrl(f *facebook) (string, error) {
+func getUserInfoUrl(f *authn) (string, error) {
 	u, err := url.Parse("https://graph.facebook.com/me")
 	if err != nil {
 		return "", err

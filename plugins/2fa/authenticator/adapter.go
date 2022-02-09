@@ -1,6 +1,7 @@
 package authenticator
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -13,4 +14,8 @@ func init() {
 }
 
 type gauthAdapter struct {
+}
+
+func (gauthAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
+	return &mfa{rawConf: conf}
 }

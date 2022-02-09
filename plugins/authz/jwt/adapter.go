@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,9 +10,13 @@ const adapterName = "jwt"
 
 // init initializes package by register adapter
 func init() {
-	plugins.AuthZRepo.Register(adapterName, jwtAdapter{})
+	plugins.AuthZRepo.Register(adapterName, adapter{})
 }
 
-// jwtAdapter represents adapter for jwtAuthz authorization
-type jwtAdapter struct {
+// adapter represents adapter for authz authorization
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Authz) plugins.Authorizer {
+	return &authz{rawConf: conf}
 }

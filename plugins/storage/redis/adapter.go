@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,9 +10,13 @@ const adapterName = "redis"
 
 // init initializes package by register adapter
 func init() {
-	plugins.StorageRepo.Register(adapterName, redisAdapter{})
+	plugins.StorageRepo.Register(adapterName, adapter{})
 }
 
-// redisAdapter represents adapter for redis storage
-type redisAdapter struct {
+// adapter represents adapter for redis storage
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Storage) plugins.Storage {
+	return &storage{rawConf: conf}
 }

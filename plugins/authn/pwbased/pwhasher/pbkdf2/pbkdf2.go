@@ -36,6 +36,13 @@ type (
 	}
 )
 
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Iterations, 260000)
+	configs.SetDefault(&c.SaltLen, 22)
+	configs.SetDefault(&c.KeyLen, 32)
+	configs.SetDefault(&c.FuncName, "sha256")
+}
+
 func (p *PWHasher) Init(rawConf configs.RawConfig) error {
 	adapterConf := &config{}
 	if err := mapstructure.Decode(rawConf, adapterConf); err != nil {

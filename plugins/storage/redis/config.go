@@ -2,7 +2,6 @@ package redis
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 type config struct {
@@ -11,6 +10,6 @@ type config struct {
 	DB       int    `mapstructure:"db"`
 }
 
-func (redisAdapter) Create(conf *configs.Storage) plugins.Storage {
-	return &redis{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Address, "localhost:6379")
 }

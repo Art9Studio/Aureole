@@ -6,20 +6,19 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
-	"net"
 	_ "net/http/pprof"
 	"os"
 	"path"
-	"sync"
 	"syscall"
 )
 
-var (
-	r    *router
-	once sync.Once
-)
-
 type (
+	router struct {
+		appRoutes     map[string][]*Route
+		projectRoutes []*Route
+		staticPaths   map[string][]string
+	}
+
 	Route struct {
 		Method  string
 		Path    string
@@ -29,37 +28,33 @@ type (
 	ErrorMessage struct {
 		Error string
 	}
-
-	router struct {
-		appRoutes     map[string][]*Route
-		projectRoutes []*Route
-	}
 )
 
-func RunServer(ln net.Listener) error {
-	return createServer().Listener(ln)
-}
-
 // createServer initializes router and creates routes for each application
-func createServer() *fiber.App {
+func createServer(r *router) *fiber.App {
 	fiberApp := fiber.New(fiber.Config{DisableStartupMessage: true})
 	fiberApp.Use(cors.New())
 	fiberApp.Use(logger.New())
 	fiberApp.Use(pprof.New())
 
 	for appName, routes := range r.appRoutes {
-		pathPrefix := p.apps[appName].pathPrefix
+		app := p.apps[appName]
+		pathPrefix := app.pathPrefix
 		appGroup := fiberApp.Group(pathPrefix)
 
 		for _, route := range routes {
 			appGroup.Add(route.Method, route.Path, route.Handler)
 		}
+
+		appGroup.Get("/authn", getEnabledAuthn(app))
+		appGroup.Get("/2fa", getEnabled2FA(app))
 	}
 
 	for _, route := range r.projectRoutes {
 		fiberApp.Add(route.Method, route.Path, route.Handler)
 	}
 
+	fiberApp.Static("/static", "./web/static")
 	fiberApp.Get("/swagger/*", fiberSwagger.HandlerDefault)
 	fiberApp.Get("/reload", reload)
 	return fiberApp
@@ -74,15 +69,24 @@ func reload(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func getRouter() *router {
-	once.Do(
-		func() {
-			r = &router{
-				appRoutes:     make(map[string][]*Route),
-				projectRoutes: []*Route{},
-			}
-		})
-	return r
+func getEnabledAuthn(a *app) func(ctx *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		var enabledAuthn []string
+		for authnType := range a.authenticators {
+			enabledAuthn = append(enabledAuthn, authnType)
+		}
+		return c.JSON(fiber.Map{"authn": enabledAuthn})
+	}
+}
+
+func getEnabled2FA(a *app) func(ctx *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		var enabledMFA []string
+		for _, mfa := range a.secondFactors {
+			enabledMFA = append(enabledMFA, mfa.GetMetaData().Type)
+		}
+		return c.JSON(fiber.Map{"2fa": enabledMFA})
+	}
 }
 
 func (r *router) addAppRoutes(appName string, routes []*Route) {

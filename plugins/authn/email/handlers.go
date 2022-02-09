@@ -2,19 +2,22 @@ package email
 
 import (
 	"aureole/internal/core"
+	"fmt"
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func sendMagicLink(e *email) func(*fiber.Ctx) error {
+func sendMagicLink(e *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var i input
 		if err := c.BodyParser(&i); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
 
-		token, err := e.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, e.conf.Exp)
+		fmt.Print(c.Request().URI().String())
+		token, err := e.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email, "url": c.Request().URI().String()},
+			e.conf.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

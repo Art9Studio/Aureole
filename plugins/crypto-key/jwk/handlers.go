@@ -10,13 +10,13 @@ import (
 	jwx "github.com/lestrrat-go/jwx/jwk"
 )
 
-func getJwkKeys(j *jwk) func(*fiber.Ctx) error {
+func getJwkKeys(j *cryptoKey) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		return c.JSON(j.publicSet)
 	}
 }
 
-func getPemKeys(j *jwk) func(*fiber.Ctx) error {
+func getPemKeys(j *cryptoKey) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		pemKeySet := map[string]string{}
 

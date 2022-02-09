@@ -1,9 +1,6 @@
 package authenticator
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
+import "aureole/internal/configs"
 
 const (
 	getQRUrl        = "/2fa/google-authenticator/send"
@@ -22,6 +19,11 @@ type config struct {
 	} `mapstructure:"scratch_code"`
 }
 
-func (gauthAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
-	return &gauth{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Alg, "totp")
+	configs.SetDefault(&c.Iss, "Aureole")
+	configs.SetDefault(&c.WindowSize, 10)
+	configs.SetDefault(&c.MaxAttempts, 3)
+	configs.SetDefault(&c.ScratchCode.Num, 5)
+	configs.SetDefault(&c.ScratchCode.Alphabet, "alphanum")
 }

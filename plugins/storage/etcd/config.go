@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 type config struct {
@@ -11,6 +10,8 @@ type config struct {
 	DialTimeout float32  `mapstructure:"dial_timeout"`
 }
 
-func (etcdAdapter) Create(conf *configs.Storage) plugins.Storage {
-	return &etcd{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Endpoints, []string{"localhost:2379"})
+	configs.SetDefault(&c.Timeout, 0.2)
+	configs.SetDefault(&c.DialTimeout, 2)
 }

@@ -3,8 +3,6 @@ package core
 import (
 	"aureole/internal/plugins"
 	"fmt"
-	"strings"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -18,7 +16,7 @@ func loginHandler(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) er
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
 
-		enabled2FA, err := getEnabled2FA(app, authnResult)
+		enabled2FA, err := getUserEnabled2FA(app, authnResult)
 		if err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
@@ -98,29 +96,21 @@ func mfaVerificationHandler(verify2FA plugins.MFAVerifyFunc, app *app) func(*fib
 	}
 }
 
-func getEnabled2FA(app *app, authnResult *plugins.AuthNResult) (fiber.Map, error) {
+func getUserEnabled2FA(app *app, authnResult *plugins.AuthNResult) ([]string, error) {
 	secondFactors, ok := app.getSecondFactors()
 	if ok {
-		var enabled2FA []plugins.SecondFactor
+		var enabled2FA []string
 		for _, secondFactor := range secondFactors {
 			enabled, err := secondFactor.IsEnabled(authnResult.Cred)
 			if err != nil {
 				return nil, err
 			}
 			if enabled {
-				enabled2FA = append(enabled2FA, secondFactor)
+				enabled2FA = append(enabled2FA, secondFactor.GetMetaData().Type)
 			}
-		}
 
-		if len(enabled2FA) != 0 {
-			enabledFactorsMap := fiber.Map{}
-			for _, enabledFactor := range enabled2FA {
-				path := app.url.String() + "/2fa/" +
-					strings.ReplaceAll(enabledFactor.GetMetaData().Type, "_", "-")
-				enabledFactorsMap[enabledFactor.GetMetaData().Type] = path
-			}
-			return enabledFactorsMap, nil
 		}
+		return enabled2FA, nil
 	}
 	return nil, nil
 }

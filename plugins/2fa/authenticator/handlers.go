@@ -11,7 +11,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-func getQR(g *gauth) func(*fiber.Ctx) error {
+func getQR(m *mfa) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// check if user authenticated:
 		// yes -> generate new data and persist it, send user qr
@@ -21,19 +21,19 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 		fa2Data := map[string]interface{}{}
 		response := fiber.Map{}
 
-		secret, err := generateSecret(g.pluginAPI)
+		secret, err := generateSecret(m.pluginAPI)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		fa2Data["secret"] = secret
 
 		otp := &dgoogauth.OTPConfig{Secret: strings.TrimSpace(secret)}
-		if g.conf.Alg == "hotp" {
+		if m.conf.Alg == "hotp" {
 			otp.HotpCounter = 1
 			fa2Data["counter"] = 1
 		}
-		if g.conf.ScratchCode.Num != 0 {
-			scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
+		if m.conf.ScratchCode.Num != 0 {
+			scratchCodes, err := generateScratchCodes(m.pluginAPI, m.conf.ScratchCode.Num, m.conf.ScratchCode.Alphabet)
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -41,14 +41,17 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 			response["scratch_code"] = scratchCodes
 		}
 
-		cred := &plugins.Credential{}
-		qr, err := qrcode.Encode(otp.ProvisionURIWithIssuer(cred.Value, g.conf.Iss), qrcode.Low, 256)
+		cred := &plugins.Credential{
+			Name:  "username",
+			Value: "user1",
+		}
+		qr, err := qrcode.Encode(otp.ProvisionURIWithIssuer(cred.Value, m.conf.Iss), qrcode.Low, 256)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		response["qr"] = qr
 
-		err = g.manager.On2FA(cred, &plugins.MFAData{
+		err = m.manager.On2FA(cred, &plugins.MFAData{
 			PluginID:     pluginID,
 			ProviderName: adapterName,
 			Payload:      fa2Data,
@@ -60,16 +63,16 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 	}
 }
 
-func getScratchCodes(g *gauth) func(*fiber.Ctx) error {
+func getScratchCodes(m *mfa) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// check if user already authenticated
 		cred := &plugins.Credential{Name: "email", Value: "www@example.com"}
 
-		scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
+		scratchCodes, err := generateScratchCodes(m.pluginAPI, m.conf.ScratchCode.Num, m.conf.ScratchCode.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		err = g.manager.On2FA(cred, &plugins.MFAData{
+		err = m.manager.On2FA(cred, &plugins.MFAData{
 			PluginID:     pluginID,
 			ProviderName: adapterName,
 			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},

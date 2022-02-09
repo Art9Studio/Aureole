@@ -1,24 +1,19 @@
 package vk
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
+import "aureole/internal/configs"
 
 const (
 	pathPrefix  = "/" + adapterName
 	redirectUrl = "/login"
 )
 
-type (
-	config struct {
-		ClientId     string   `mapstructure:"client_id"`
-		ClientSecret string   `mapstructure:"client_secret"`
-		Scopes       []string `mapstructure:"scopes"`
-		Fields       []string `mapstructure:"fields"`
-	}
-)
+type config struct {
+	ClientId     string   `mapstructure:"client_id"`
+	ClientSecret string   `mapstructure:"client_secret"`
+	Scopes       []string `mapstructure:"scopes"`
+	Fields       []string `mapstructure:"fields"`
+}
 
-func (vkAdapter) Create(conf *configs.Authn) plugins.Authenticator {
-	return &vk{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Scopes, []string{"email"})
 }

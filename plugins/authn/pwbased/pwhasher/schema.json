@@ -5,10 +5,10 @@
   "additionalProperties": false,
   "oneOf": [
     {
-      "$ref": "argon2/schema.json"
+      "$ref": "argon2/docs/schema.json"
     },
     {
-      "$ref": "pbkdf2/schema.json"
+      "$ref": "pbkdf2/docs/schema.json"
     }
   ]
 }

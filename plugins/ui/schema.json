@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "uuid": "",
+      "minLength": 1,
+      "metatags": "@plugin_name"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "oneOf": [
+    {
+      "$ref": ""
+    }
+  ]
+}

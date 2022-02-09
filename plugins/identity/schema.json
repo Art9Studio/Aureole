@@ -5,10 +5,10 @@
   "additionalProperties": false,
   "oneOf": [
     {
-      "$ref": "jwt_webhook/schema.json"
+      "$ref": "jwt_webhook/docs/schema.json"
     },
     {
-      "$ref": "standard/schema.json"
+      "$ref": "standard/docs/schema.json"
     }
   ]
 }

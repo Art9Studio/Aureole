@@ -1,9 +1,6 @@
 package jwt_webhook
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
+import "aureole/internal/configs"
 
 type config struct {
 	Address       string            `mapstructure:"address"`
@@ -13,6 +10,8 @@ type config struct {
 	Headers       map[string]string `mapstructure:"headers"`
 }
 
-func (adapter) Create(conf *configs.IDManager) plugins.IDManager {
-	return &manager{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.RetriesNum, 1)
+	configs.SetDefault(&c.RetryInterval, 100)
+	configs.SetDefault(&c.Timeout, 5)
 }

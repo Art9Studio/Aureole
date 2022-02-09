@@ -1,6 +1,7 @@
 package vk
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,8 +10,12 @@ const adapterName = "vk"
 
 // init initializes package by register adapter
 func init() {
-	plugins.AuthNRepo.Register(adapterName, vkAdapter{})
+	plugins.AuthNRepo.Register(adapterName, adapter{})
 }
 
-type vkAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Authn) plugins.Authenticator {
+	return &vk{rawConf: conf}
 }

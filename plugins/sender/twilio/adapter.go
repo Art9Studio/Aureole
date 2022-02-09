@@ -1,6 +1,7 @@
 package twilio
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,9 +10,13 @@ const adapterName = "twilio"
 
 // init initializes package by register adapter
 func init() {
-	plugins.SenderRepo.Register(adapterName, twilioAdapter{})
+	plugins.SenderRepo.Register(adapterName, adapter{})
 }
 
 // twilioAdapter represents adapter for the email messenger
-type twilioAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Sender) plugins.Sender {
+	return &sender{rawConf: conf}
 }

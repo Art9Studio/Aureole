@@ -18,25 +18,25 @@
   },
   "oneOf": [
     {
-      "$ref": "apple/schema.json"
+      "$ref": "apple/docs/schema.json"
     },
     {
-      "$ref": "google/schema.json"
+      "$ref": "google/docs/schema.json"
     },
     {
-      "$ref": "facebook/schema.json"
+      "$ref": "facebook/docs/schema.json"
     },
     {
-      "$ref": "vk/schema.json"
+      "$ref": "vk/docs/schema.json"
     },
     {
-      "$ref": "pwbased/schema.json"
+      "$ref": "pwbased/docs/schema.json"
     },
     {
-      "$ref": "email/schema.json"
+      "$ref": "email/docs/schema.json"
     },
     {
-      "$ref": "phone/schema.json"
+      "$ref": "phone/docs/schema.json"
     }
   ]
 }

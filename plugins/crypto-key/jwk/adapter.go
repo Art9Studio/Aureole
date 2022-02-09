@@ -1,6 +1,7 @@
 package jwk
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,9 +10,13 @@ const adapterName = "jwk"
 
 // init initializes package by register adapter
 func init() {
-	plugins.CryptoKeyRepo.Register(adapterName, jwkAdapter{})
+	plugins.CryptoKeyRepo.Register(adapterName, adapter{})
 }
 
-// jwkAdapter represents adapter for jwk
-type jwkAdapter struct {
+// adapter represents adapter for jwk
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.CryptoKey) plugins.CryptoKey {
+	return &cryptoKey{rawConf: conf}
 }

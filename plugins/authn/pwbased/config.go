@@ -2,7 +2,6 @@ package pwbased
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 	"aureole/plugins/authn/pwbased/pwhasher"
 )
 
@@ -36,6 +35,8 @@ type config struct {
 	} `mapstructure:"verification"`
 }
 
-func (pwBasedAdapter) Create(conf *configs.Authn) plugins.Authenticator {
-	return &pwBased{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.CompatHashers, []pwhasher.Config{})
+	configs.SetDefault(&c.Reset.Exp, 3600)
+	configs.SetDefault(&c.Verify.Exp, 3600)
 }

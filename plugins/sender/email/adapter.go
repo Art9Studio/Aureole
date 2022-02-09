@@ -1,6 +1,7 @@
 package email
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,9 +10,13 @@ const adapterName = "email"
 
 // init initializes package by register adapter
 func init() {
-	plugins.SenderRepo.Register(adapterName, emailAdapter{})
+	plugins.SenderRepo.Register(adapterName, adapter{})
 }
 
 // emailAdapter represents adapter for the email messenger
-type emailAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Sender) plugins.Sender {
+	return &sender{rawConf: conf}
 }

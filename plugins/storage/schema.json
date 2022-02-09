@@ -16,13 +16,13 @@
   ],
   "oneOf": [
     {
-      "$ref": "etcd/schema.json"
+      "$ref": "etcd/docs/schema.json"
     },
     {
-      "$ref": "redis/schema.json"
+      "$ref": "redis/docs/schema.json"
     },
     {
-      "$ref": "memory/schema.json"
+      "$ref": "memory/docs/schema.json"
     }
   ]
 }

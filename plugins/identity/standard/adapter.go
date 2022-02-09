@@ -1,6 +1,9 @@
 package standard
 
-import "aureole/internal/plugins"
+import (
+	"aureole/internal/configs"
+	"aureole/internal/plugins"
+)
 
 // adapterName is the internal name of the adapter
 const adapterName = "standard"
@@ -12,4 +15,8 @@ func init() {
 
 // adapter represents adapter for password based authentication
 type adapter struct {
+}
+
+func (adapter) Create(conf *configs.IDManager) plugins.IDManager {
+	return &manager{rawConf: conf}
 }

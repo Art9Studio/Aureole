@@ -1,6 +1,7 @@
 package facebook
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,8 +10,12 @@ const adapterName = "facebook"
 
 // init initializes package by register adapter
 func init() {
-	plugins.AuthNRepo.Register(adapterName, facebookAdapter{})
+	plugins.AuthNRepo.Register(adapterName, adapter{})
 }
 
-type facebookAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Authn) plugins.Authenticator {
+	return &authn{rawConf: conf}
 }

@@ -22,11 +22,9 @@ type (
 
 func initAPI(options ...option) PluginAPI {
 	api := PluginAPI{}
-
 	for _, option := range options {
 		option(&api)
 	}
-
 	return api
 }
 
@@ -75,49 +73,68 @@ func (api PluginAPI) Is2FAEnabled(cred *plugins.Credential, mfaID string) (bool,
 	}
 }
 
-func (api PluginAPI) GetAppName() string {
-	// todo: удлаить этот метод и сделать логирование через плагин апи, при получении плагина логировать ошибку
-	return api.app.name
-}
-
 func (api PluginAPI) GetAppUrl() url.URL {
 	return *api.app.url
-}
-
-func (api PluginAPI) GetAppPathPrefix() string {
-	return api.app.pathPrefix
 }
 
 func (api PluginAPI) GetAuthSessionExp() int {
 	return api.app.authSessionExp
 }
 
-func (api PluginAPI) GetAuthorizer() (plugins.Authorizer, bool) {
-	return api.app.getAuthorizer()
+func (api PluginAPI) GetAuthorizer() (plugins.Authorizer, error) {
+	authorizer, ok := api.app.getAuthorizer()
+	if !ok {
+		return nil, fmt.Errorf("app %s: cannot get authorizer", api.app.name)
+	}
+	return authorizer, nil
 }
 
-func (api PluginAPI) GetSecondFactors() (map[string]plugins.SecondFactor, bool) {
-	return api.app.getSecondFactors()
+func (api PluginAPI) GetSecondFactors() (map[string]plugins.SecondFactor, error) {
+	secondFactor, ok := api.app.getSecondFactors()
+	if !ok {
+		return nil, fmt.Errorf("app %s: cannot get second factors", api.app.name)
+	}
+	return secondFactor, nil
 }
 
-func (api PluginAPI) GetStorage(name string) (plugins.Storage, bool) {
-	return api.app.getStorage(name)
+func (api PluginAPI) GetStorage(name string) (plugins.Storage, error) {
+	storage, ok := api.app.getStorage(name)
+	if !ok {
+		return nil, fmt.Errorf("app %s: cannot get storage %s", api.app.name, name)
+	}
+	return storage, nil
 }
 
-func (api PluginAPI) GetIDManager() (plugins.IDManager, bool) {
-	return api.app.getIDManager()
+func (api PluginAPI) GetIDManager() (plugins.IDManager, error) {
+	idManager, ok := api.app.getIDManager()
+	if !ok {
+		return nil, fmt.Errorf("app %s: cannot get identity manager", api.app.name)
+	}
+	return idManager, nil
 }
 
-func (api PluginAPI) GetCryptoStorage(name string) (plugins.CryptoStorage, bool) {
-	return api.app.getCryptoStorage(name)
+func (api PluginAPI) GetCryptoStorage(name string) (plugins.CryptoStorage, error) {
+	cryptoStorage, ok := api.app.getCryptoStorage(name)
+	if !ok {
+		return nil, fmt.Errorf("app %s: cannot get crypto storage %s", api.app.name, name)
+	}
+	return cryptoStorage, nil
 }
 
-func (api PluginAPI) GetSender(name string) (plugins.Sender, bool) {
-	return api.app.getSender(name)
+func (api PluginAPI) GetSender(name string) (plugins.Sender, error) {
+	sender, ok := api.app.getSender(name)
+	if !ok {
+		return nil, fmt.Errorf("app %s: cannot get sender %s", api.app.name, name)
+	}
+	return sender, nil
 }
 
-func (api PluginAPI) GetCryptoKey(name string) (plugins.CryptoKey, bool) {
-	return api.app.getCryptoKey(name)
+func (api PluginAPI) GetCryptoKey(name string) (plugins.CryptoKey, error) {
+	cryptoKey, ok := api.app.getCryptoKey(name)
+	if !ok {
+		return nil, fmt.Errorf("app %s: cannot get crypto key %s", api.app.name, name)
+	}
+	return cryptoKey, nil
 }
 
 func (api PluginAPI) AddAppRoutes(routes []*Route) {

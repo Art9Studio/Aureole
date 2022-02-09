@@ -1,14 +1,19 @@
 package vault
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
 const adapterName = "vault"
 
 func init() {
-	plugins.CryptoStorageRepo.Register(adapterName, vaultAdapter{})
+	plugins.CryptoStorageRepo.Register(adapterName, adapter{})
 }
 
-type vaultAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.CryptoStorage) plugins.CryptoStorage {
+	return &cryptoStorage{rawConf: conf}
 }

@@ -34,6 +34,7 @@ type (
 		CryptoKeys     []CryptoKey     `config:"crypto_keys"`
 		Senders        []Sender        `config:"senders"`
 		AdminConfs     []Admin         `config:"admin_plugins"`
+		UI             UI              `config:"ui"`
 	}
 
 	Service struct {
@@ -89,6 +90,12 @@ type (
 	}
 
 	Admin struct {
+		Type   string    `config:"type"`
+		Name   string    `config:"name"`
+		Config RawConfig `config:"config"`
+	}
+
+	UI struct {
 		Type   string    `config:"type"`
 		Name   string    `config:"name"`
 		Config RawConfig `config:"config"`

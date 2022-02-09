@@ -16,10 +16,10 @@
   ],
   "oneOf": [
     {
-      "$ref": "jwk/schema.json"
+      "$ref": "jwk/docs/schema.json"
     },
     {
-      "$ref": "pem/schema.json"
+      "$ref": "pem/docs/schema.json"
     }
   ]
 }

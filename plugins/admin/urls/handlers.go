@@ -18,7 +18,7 @@ const tmpl = `
 {{ end }}
 `
 
-func getUrls(u *urls) func(*fiber.Ctx) error {
+func getUrls(u *admin) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		routes := u.pluginApi.GetAppRoutes()
 		routes["Project"] = u.pluginApi.GetProjectRoutes()

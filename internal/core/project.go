@@ -1,15 +1,67 @@
 package core
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
+	"github.com/jpillora/overseer"
+	"log"
+	"net"
 	"net/url"
+	"os"
 )
+
+func RunReloadableAureole() {
+	overseer.Run(overseer.Config{
+		Program: runReloadableAureole,
+		Address: ":" + getAureolePort(),
+	})
+}
+
+func runReloadableAureole(state overseer.State) {
+	run(state.Listener)
+}
+
+func RunAureole() {
+	port := getAureolePort()
+	ln, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		panic(err)
+	}
+	run(ln)
+}
+
+func run(ln net.Listener) {
+	conf, err := configs.LoadMainConfig()
+	if err != nil {
+		log.Panic(err)
+	}
+	Init(conf)
+
+	err = p.runServer(ln)
+	if err != nil {
+		log.Panic(err)
+	}
+}
+
+func getAureolePort() (port string) {
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = "3000"
+	}
+	return port
+}
 
 type project struct {
 	apiVersion string
 	testRun    bool
 	pingPath   string
 	apps       map[string]*app
+	router     *router
+}
+
+func (p *project) runServer(ln net.Listener) error {
+	server := createServer(p.router)
+	return server.Listener(ln)
 }
 
 type (
@@ -28,6 +80,7 @@ type (
 		senders        map[string]plugins.Sender
 		cryptoKeys     map[string]plugins.CryptoKey
 		admins         map[string]plugins.Admin
+		ui             plugins.UI
 	}
 
 	service struct {
@@ -73,40 +126,28 @@ func (a *app) getAuthorizer() (plugins.Authorizer, bool) {
 }
 
 func (a *app) getSecondFactors() (map[string]plugins.SecondFactor, bool) {
-	if a.secondFactors == nil || len(a.secondFactors) == 0 {
+	if len(a.secondFactors) == 0 {
 		return nil, false
 	}
 	return a.secondFactors, true
 }
 
 func (a *app) getStorage(name string) (plugins.Storage, bool) {
-	s, ok := a.storages[name]
-	if !ok || s == nil {
-		return nil, false
-	}
-	return s, true
+	storage, ok := a.storages[name]
+	return storage, ok
 }
 
 func (a *app) getCryptoStorage(name string) (plugins.CryptoStorage, bool) {
-	s, ok := a.cryptoStorages[name]
-	if !ok || s == nil {
-		return nil, false
-	}
-	return s, true
+	cryptoStorage, ok := a.cryptoStorages[name]
+	return cryptoStorage, ok
 }
 
 func (a *app) getSender(name string) (plugins.Sender, bool) {
-	s, ok := a.senders[name]
-	if !ok || s == nil {
-		return nil, false
-	}
-	return s, true
+	sender, ok := a.senders[name]
+	return sender, ok
 }
 
 func (a *app) getCryptoKey(name string) (plugins.CryptoKey, bool) {
-	k, ok := a.cryptoKeys[name]
-	if !ok || k == nil {
-		return nil, false
-	}
-	return k, true
+	cryptoKey, ok := a.cryptoKeys[name]
+	return cryptoKey, ok
 }

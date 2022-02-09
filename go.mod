@@ -41,6 +41,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/mapstructure v1.4.3
+	github.com/otiai10/copy v1.7.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/profile v1.6.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e

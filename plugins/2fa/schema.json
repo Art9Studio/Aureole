@@ -16,10 +16,10 @@
   ],
   "oneOf": [
     {
-      "$ref": "authenticator/schema.json"
+      "$ref": "authenticator/docs/schema.json"
     },
     {
-      "$ref": "sms/schema.json"
+      "$ref": "sms/docs/schema.json"
     }
   ]
 }

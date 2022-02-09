@@ -1,15 +1,7 @@
 package yubikey
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
+type config struct{}
 
-type (
-	config struct {
-	}
-)
-
-func (yubikeyAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
-	return &yubikey{rawConf: conf}
+func (*config) setDefaults() {
+	// configs.SetDefault()
 }

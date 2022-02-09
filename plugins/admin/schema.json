@@ -16,7 +16,7 @@
   ],
   "oneOf": [
     {
-      "$ref": "urls/schema.json"
+      "$ref": "urls/docs/schema.json"
     }
   ]
 }

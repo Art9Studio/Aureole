@@ -1,6 +1,7 @@
 package apple
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,8 +10,12 @@ const adapterName = "apple"
 
 // init initializes package by register adapter
 func init() {
-	plugins.AuthNRepo.Register(adapterName, appleAdapter{})
+	plugins.AuthNRepo.Register(adapterName, adapter{})
 }
 
-type appleAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Authn) plugins.Authenticator {
+	return &authn{rawConf: conf}
 }

@@ -1,6 +1,7 @@
 package email
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,9 +10,13 @@ const adapterName = "email"
 
 // init initializes package by register adapter
 func init() {
-	plugins.AuthNRepo.Register(adapterName, emailAdapter{})
+	plugins.AuthNRepo.Register(adapterName, adapter{})
 }
 
 // emailAdapter represents adapter for password based authentication
-type emailAdapter struct {
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.Authn) plugins.Authenticator {
+	return &authn{rawConf: conf}
 }

@@ -1,6 +1,7 @@
 package pem
 
 import (
+	"aureole/internal/configs"
 	"aureole/internal/plugins"
 )
 
@@ -9,9 +10,13 @@ const adapterName = "pem"
 
 // init initializes package by register adapter
 func init() {
-	plugins.CryptoKeyRepo.Register(adapterName, pemAdapter{})
+	plugins.CryptoKeyRepo.Register(adapterName, adapter{})
 }
 
-// pemAdapter represents adapter for jwk
-type pemAdapter struct {
+// adapter represents adapter for jwk
+type adapter struct {
+}
+
+func (adapter) Create(conf *configs.CryptoKey) plugins.CryptoKey {
+	return &cryptoKey{rawConf: conf}
 }

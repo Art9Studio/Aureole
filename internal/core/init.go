@@ -8,12 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jpillora/overseer"
 	"github.com/lestrrat-go/jwx/jwk"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"reflect"
 	"strings"
 	"unicode/utf8"
@@ -27,44 +24,23 @@ type PluginInitializer interface {
 
 var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
 
-func Run() {
-	var port string
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "3000"
-	}
-
-	overseer.Run(overseer.Config{
-		Program: prog,
-		Address: ":" + port,
-	})
-}
-
-func prog(state overseer.State) {
-	conf, err := configs.LoadMainConfig()
-	if err != nil {
-		log.Panic(err)
-	}
-
-	Init(conf)
-	err = RunServer(state.Listener)
-	if err != nil {
-		log.Panic(err)
-	}
-}
-
 func Init(conf *configs.Project) {
 	p = &project{
 		apiVersion: conf.APIVersion,
 		testRun:    conf.TestRun,
 		pingPath:   conf.PingPath,
+		router: &router{
+			appRoutes:     map[string][]*Route{},
+			projectRoutes: []*Route{},
+			staticPaths:   map[string][]string{},
+		},
 	}
 
 	if p.testRun {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	getRouter().addProjectRoutes([]*Route{
+	p.router.addProjectRoutes([]*Route{
 		{
 			Method: "GET",
 			Path:   p.pingPath,
@@ -110,6 +86,7 @@ func createApps(conf *configs.Project, p *project) {
 		createSecondFactors(app, appConf)
 		createIDManager(app, appConf)
 		createAureoleService(app, appConf)
+		createUI(app, appConf)
 
 		p.apps[appConf.Name] = app
 	}
@@ -204,6 +181,14 @@ func createAdmins(app *app, conf configs.App) {
 	}
 }
 
+func createUI(app *app, conf configs.App) {
+	ui, err := plugins.NewUI(&conf.UI)
+	if err != nil {
+		fmt.Printf("app %s: cannot create ui: %v\n", app.name, err)
+	}
+	app.ui = ui
+}
+
 func createAuthenticators(app *app, conf configs.App) {
 	clearAuthnDuplicate(&conf)
 
@@ -268,6 +253,7 @@ func initApps(p *project) {
 		initAuthorizer(app, p)
 		initSecondFactor(app, p)
 		initAuthenticators(app, p)
+		initUI(app, p)
 
 		err := isRSA(app.service.encKey.GetPrivateSet())
 		if err != nil {
@@ -288,10 +274,13 @@ func isRSA(set jwk.Set) error {
 }
 
 func initStorages(app *app, p *project) {
-	for name, s := range app.storages {
-		pluginInit, ok := s.(PluginInitializer)
+	for name, storage := range app.storages {
+		pluginInit, ok := storage.(PluginInitializer)
 		if ok {
-			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
+			prefix := fmt.Sprintf("%s$%s$", app.name, storage.GetMetaData().ID)
+			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
+			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init storage '%s': %v\n", app.name, name, err)
 				app.storages[name] = nil
@@ -304,10 +293,13 @@ func initStorages(app *app, p *project) {
 }
 
 func initCryptoStorages(app *app, p *project) {
-	for name, s := range app.cryptoStorages {
-		pluginInit, ok := s.(PluginInitializer)
+	for name, cryptoStorage := range app.cryptoStorages {
+		pluginInit, ok := cryptoStorage.(PluginInitializer)
 		if ok {
-			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
+			prefix := fmt.Sprintf("%s$%s$", app.name, cryptoStorage.GetMetaData().ID)
+			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
+			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init key storage '%s': %v\n", app.name, name, err)
 				app.cryptoStorages[name] = nil
@@ -320,10 +312,13 @@ func initCryptoStorages(app *app, p *project) {
 }
 
 func initSenders(app *app, p *project) {
-	for name, s := range app.senders {
-		pluginInit, ok := s.(PluginInitializer)
+	for name, sender := range app.senders {
+		pluginInit, ok := sender.(PluginInitializer)
 		if ok {
-			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
+			prefix := fmt.Sprintf("%s$%s$", app.name, sender.GetMetaData().ID)
+			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
+			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init sender '%s': %v\n", app.name, name, err)
 				app.senders[name] = nil
@@ -336,10 +331,13 @@ func initSenders(app *app, p *project) {
 }
 
 func initCryptoKeys(app *app, p *project) {
-	for name, k := range app.cryptoKeys {
-		pluginInit, ok := k.(PluginInitializer)
+	for name, cryptoKey := range app.cryptoKeys {
+		pluginInit, ok := cryptoKey.(PluginInitializer)
 		if ok {
-			err := pluginInit.Init(initAPI(withProject(p), withApp(app), withRouter(getRouter())))
+			prefix := fmt.Sprintf("%s$%s$", app.name, cryptoKey.GetMetaData().ID)
+			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
+			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init crypto key '%s': %v\n", app.name, name, err)
 				app.cryptoKeys[name] = nil
@@ -352,10 +350,13 @@ func initCryptoKeys(app *app, p *project) {
 }
 
 func initAdmins(app *app, p *project) {
-	for name, a := range app.admins {
-		pluginInit, ok := a.(PluginInitializer)
+	for name, admin := range app.admins {
+		pluginInit, ok := admin.(PluginInitializer)
 		if ok {
-			err := pluginInit.Init(initAPI(withProject(p), withApp(app), withRouter(getRouter())))
+			prefix := fmt.Sprintf("%s$%s$", app.name, admin.GetMetaData().ID)
+			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
+			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init admin plugin '%s': %v\n", app.name, name, err)
 				app.admins[name] = nil
@@ -374,7 +375,8 @@ func initAuthenticators(app *app, p *project) {
 		pluginInit, ok := authenticator.(PluginInitializer)
 		if ok {
 			prefix := fmt.Sprintf("%s$%s$", app.name, authenticator.GetMetaData().ID)
-			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
+			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
 			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
@@ -385,12 +387,14 @@ func initAuthenticators(app *app, p *project) {
 				if err != nil {
 					fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
 				}
+
 				var method string
 				if specs.Paths["/login"].Post != nil {
 					method = http.MethodPost
 				} else {
 					method = http.MethodGet
 				}
+
 				routes = append(routes, &Route{
 					Method:  method,
 					Path:    pathPrefix + "/login",
@@ -402,14 +406,15 @@ func initAuthenticators(app *app, p *project) {
 			app.authenticators[name] = nil
 		}
 	}
-	getRouter().addAppRoutes(app.name, routes)
+	p.router.addAppRoutes(app.name, routes)
 }
 
 func initAuthorizer(app *app, p *project) {
 	pluginInit, ok := app.authorizer.(PluginInitializer)
 	if ok {
 		prefix := fmt.Sprintf("%s$%s$", app.name, app.authorizer.GetMetaData().ID)
-		pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
+		pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
 		err := pluginInit.Init(pluginAPI)
 		if err != nil {
 			fmt.Printf("app %s: cannot init authorizer: %v\n", app.name, err)
@@ -430,7 +435,7 @@ func initSecondFactor(app *app, p *project) {
 			pluginInit, ok := secondFactor.(PluginInitializer)
 			if ok {
 				prefix := fmt.Sprintf("%s$%s$", app.name, secondFactor.GetMetaData().ID)
-				pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(getRouter()))
+				pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
 
 				err := pluginInit.Init(pluginAPI)
 				if err != nil {
@@ -457,13 +462,15 @@ func initSecondFactor(app *app, p *project) {
 			}
 		}
 	}
-	getRouter().addAppRoutes(app.name, routes)
+	p.router.addAppRoutes(app.name, routes)
 }
 
 func initIDManager(app *app, p *project) {
 	pluginInit, ok := app.idManager.(PluginInitializer)
 	if ok {
-		pluginAPI := initAPI(withProject(p), withApp(app), withRouter(getRouter()))
+		prefix := fmt.Sprintf("%s$%s$", app.name, app.idManager.GetMetaData().ID)
+		pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
 		err := pluginInit.Init(pluginAPI)
 		if err != nil {
 			fmt.Printf("app %s: cannot init id manager: %v\n", app.name, err)
@@ -475,65 +482,114 @@ func initIDManager(app *app, p *project) {
 	}
 }
 
+func initUI(app *app, p *project) {
+	pluginInit, ok := app.ui.(PluginInitializer)
+	if ok {
+		prefix := fmt.Sprintf("%s$%s$", app.name, app.ui.GetMetaData().ID)
+		pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(p.router))
+
+		err := pluginInit.Init(pluginAPI)
+		if err != nil {
+			fmt.Printf("app %s: cannot init ui: %v\n", app.name, err)
+			app.ui = nil
+		}
+	} else {
+		fmt.Printf("app %s: cannot init ui: %v\n", app.name, PluginInitErr)
+		app.ui = nil
+	}
+}
+
 func listPluginStatus() {
 	fmt.Println("AUREOLE PLUGINS STATUS")
 
 	for appName, app := range p.apps {
 		fmt.Printf("\nAPP: %s\n", appName)
 
-		printStatus("IDENTITY MANAGER", p.apps[appName].idManager)
-		printStatus("AUTHORIZER", app.authorizer)
+		printStatus("IDENTITY MANAGER", getPluginStatus(p.apps[appName].idManager))
+		printStatus("AUTHORIZER", getPluginStatus(app.authorizer))
 
 		fmt.Println("\nAUTHENTICATORS")
-		for name, authn := range app.authenticators {
-			printStatus(name, authn)
+		for name, plugin := range app.authenticators {
+			status := getPluginStatus(plugin)
+			if !status {
+				delete(app.authenticators, name)
+			}
+			printStatus(name, status)
 		}
 
 		if len(app.secondFactors) != 0 {
 			fmt.Println("\n2FA")
 			for name, plugin := range app.secondFactors {
-				printStatus(name, plugin)
+				status := getPluginStatus(plugin)
+				if !status {
+					delete(app.secondFactors, name)
+				}
+				printStatus(name, status)
 			}
 		}
 
 		if len(app.storages) != 0 {
 			fmt.Println("\nSTORAGE PLUGINS")
 			for name, plugin := range app.storages {
-				printStatus(name, plugin)
+				status := getPluginStatus(plugin)
+				if !status {
+					delete(app.storages, name)
+				}
+				printStatus(name, status)
 			}
 		}
 
 		if len(app.cryptoStorages) != 0 {
 			fmt.Println("\nKEY STORAGE PLUGINS")
 			for name, plugin := range app.cryptoStorages {
-				printStatus(name, plugin)
+				status := getPluginStatus(plugin)
+				if !status {
+					delete(app.cryptoStorages, name)
+				}
+				printStatus(name, status)
 			}
 		}
 
 		if len(app.senders) != 0 {
 			fmt.Println("\nSENDER PLUGINS")
 			for name, plugin := range app.senders {
-				printStatus(name, plugin)
+				status := getPluginStatus(plugin)
+				if !status {
+					delete(app.senders, name)
+				}
+				printStatus(name, status)
 			}
 		}
 
 		if len(app.cryptoKeys) != 0 {
 			fmt.Println("\nCRYPTOKEY PLUGINS")
 			for name, plugin := range app.cryptoKeys {
-				printStatus(name, plugin)
+				status := getPluginStatus(plugin)
+				if !status {
+					delete(app.cryptoKeys, name)
+				}
+				printStatus(name, status)
 			}
 		}
 
 		if len(app.admins) != 0 {
 			fmt.Println("\nADMIN PLUGINS")
 			for name, plugin := range app.admins {
-				printStatus(name, plugin)
+				status := getPluginStatus(plugin)
+				if !status {
+					delete(app.admins, name)
+				}
+				printStatus(name, status)
 			}
 		}
 	}
 }
 
-func printStatus(name string, plugin interface{}) {
+func getPluginStatus(plugin interface{}) bool {
+	return plugin != nil && !reflect.ValueOf(plugin).IsNil()
+}
+
+func printStatus(name string, status bool) {
 	colorRed := "\033[31m"
 	colorGreen := "\033[32m"
 	resetColor := "\033[0m"
@@ -541,7 +597,7 @@ func printStatus(name string, plugin interface{}) {
 	checkMark, _ := utf8.DecodeRuneInString("\u2714")
 	crossMark, _ := utf8.DecodeRuneInString("\u274c")
 
-	if plugin != nil && !reflect.ValueOf(plugin).IsNil() {
+	if status {
 		fmt.Printf("%s%s - %v%s\n", colorGreen, name, string(checkMark), resetColor)
 	} else {
 		fmt.Printf("%s%s - %v%s\n", colorRed, name, string(crossMark), resetColor)

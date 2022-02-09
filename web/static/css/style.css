@@ -1,0 +1,69 @@
+.main {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.error {
+    font-size: 50px;
+}
+
+.authn_title {
+    text-align: center;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.form_input {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 14px;
+    color: #5F5D5D;
+    background-color: white;
+    padding: 10px;
+    width: 255px;
+    height: 15px;
+    margin-bottom: 20px;
+}
+
+.form_btn {
+    background: cornflowerblue;
+    color: white;
+    width: 190px;
+    height: 30px;
+    border: 0;
+    border-radius: 3px;
+    margin-bottom: 15px;
+}
+
+.providers_wrapper {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.provider_btn {
+    background-color: cornflowerblue;
+    color: white;
+    padding: 10px 50px;
+    border-radius: 3px;
+    text-decoration: none;
+}
+
+.mfa_choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.mfa_btn {
+    background-color: cornflowerblue;
+    color: white;
+    width: 200px;
+    height: 50px;
+    border-radius: 3px;
+    margin-bottom: 15px;
+}

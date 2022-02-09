@@ -16,10 +16,10 @@
   ],
   "oneOf": [
     {
-      "$ref": "email/schema.json"
+      "$ref": "email/docs/schema.json"
     },
     {
-      "$ref": "twilio/schema.json"
+      "$ref": "twilio/docs/schema.json"
     }
   ]
 }

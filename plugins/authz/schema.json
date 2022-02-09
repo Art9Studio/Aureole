@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "oneOf": [
     {
-      "$ref": "jwt/schema.json"
+      "$ref": "jwt/docs/schema.json"
     }
   ]
 }

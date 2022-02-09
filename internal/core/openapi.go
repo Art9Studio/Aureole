@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	//go:embed swagger.json
+	//go:embed docs/swagger.json
 	baseSwaggerJson []byte
 
 	swaggerDocs    spec.Swagger

@@ -9,7 +9,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-func refresh(j *jwtAuthz) func(*fiber.Ctx) error {
+func refresh(j *authz) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawRefreshT, err := getRawToken(c, j.conf.RefreshBearer, keyMap["refresh"])
 		if err != nil {

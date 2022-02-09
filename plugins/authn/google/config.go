@@ -1,23 +1,18 @@
 package google
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
+import "aureole/internal/configs"
 
 const (
 	pathPrefix  = "/" + adapterName
 	redirectUrl = "/login"
 )
 
-type (
-	config struct {
-		ClientId     string   `mapstructure:"client_id"`
-		ClientSecret string   `mapstructure:"client_secret"`
-		Scopes       []string `mapstructure:"scopes"`
-	}
-)
+type config struct {
+	ClientId     string   `mapstructure:"client_id"`
+	ClientSecret string   `mapstructure:"client_secret"`
+	Scopes       []string `mapstructure:"scopes"`
+}
 
-func (googleAdapter) Create(conf *configs.Authn) plugins.Authenticator {
-	return &google{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Scopes, []string{"https://www.googleapis.com/auth/userinfo.email"})
 }

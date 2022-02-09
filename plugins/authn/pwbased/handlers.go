@@ -9,29 +9,28 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func register(p *pwBased) func(*fiber.Ctx) error {
+func register(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var rawCred *credential
-		if err := c.BodyParser(rawCred); err != nil {
+		var input credentialInput
+		if err := c.BodyParser(&input); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		if rawCred.Password == "" {
+		if input.Password == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "password required")
 		}
 
-		pwHash, err := p.pwHasher.HashPw(rawCred.Password)
+		pwHash, err := p.pwHasher.HashPw(input.Password)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		i := &plugins.Identity{
-			ID:         rawCred.Id,
-			Username:   &rawCred.Username,
-			Phone:      &rawCred.Phone,
-			Email:      &rawCred.Email,
-			Additional: map[string]interface{}{plugins.Password: pwHash},
+		i, err := plugins.NewIdentity(input.AsMap())
+		if err != nil {
+			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		cred, err := getCredential(i)
+		i.Additional = map[string]interface{}{plugins.Password: pwHash}
+
+		cred, err := getCredential(&input)
 		if err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -42,13 +41,13 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		_ = user
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": rawCred.Email}, p.conf.Verify.Exp)
+			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verify.Exp)
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 			link := attachToken(p.verify.confirmLink, token)
 
-			err = p.verify.sender.Send(rawCred.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
+			err = p.verify.sender.Send(input.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -66,7 +65,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func Reset(p *pwBased) func(*fiber.Ctx) error {
+func Reset(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var e *email
 		if err := c.BodyParser(e); err != nil {
@@ -91,7 +90,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
+func ResetConfirm(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
@@ -110,7 +109,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		var input *credential
+		var input *credentialInput
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -151,7 +150,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func Verify(p *pwBased) func(*fiber.Ctx) error {
+func Verify(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var e *email
 		if err := c.BodyParser(e); err != nil {
@@ -176,7 +175,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
+func VerifyConfirm(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
@@ -214,25 +213,25 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func getCredential(i *plugins.Identity) (*plugins.Credential, error) {
-	if *i.Username != "nil" {
+func getCredential(c *credentialInput) (*plugins.Credential, error) {
+	if c.Username != "" {
 		return &plugins.Credential{
 			Name:  "username",
-			Value: *i.Username,
+			Value: c.Username,
 		}, nil
 	}
 
-	if *i.Email != "nil" {
+	if c.Email != "" {
 		return &plugins.Credential{
 			Name:  "email",
-			Value: *i.Email,
+			Value: c.Email,
 		}, nil
 	}
 
-	if *i.Phone != "nil" {
+	if c.Phone != "" {
 		return &plugins.Credential{
 			Name:  "phone",
-			Value: *i.Phone,
+			Value: c.Phone,
 		}, nil
 	}
 

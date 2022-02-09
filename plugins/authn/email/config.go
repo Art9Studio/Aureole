@@ -1,9 +1,6 @@
 package email
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
+import "aureole/internal/configs"
 
 const (
 	sendUrl     = "/email/send"
@@ -17,6 +14,6 @@ type config struct {
 	Exp      int    `mapstructure:"exp"`
 }
 
-func (emailAdapter) Create(conf *configs.Authn) plugins.Authenticator {
-	return &email{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Exp, 600)
 }
