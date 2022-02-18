@@ -23,7 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/avast/retry-go/v4"
 	"github.com/lestrrat-go/jwx/x25519"
 
 	jwx "github.com/lestrrat-go/jwx/jwk"
@@ -77,7 +76,7 @@ func (j *jwk) Init(api core.PluginAPI) (err error) {
 	if j.conf.RefreshInterval != 0 {
 		j.refreshInterval = time.Duration(j.conf.RefreshInterval) * time.Millisecond
 		j.refreshDone = make(chan struct{})
-		go refreshKeys(j)
+		//go refreshKeys(j)
 	}
 
 	err = json.Unmarshal(swaggerJson, &j.swagger)
@@ -195,20 +194,30 @@ func createRoutes(j *jwk) {
 	j.pluginAPI.AddProjectRoutes(routes)
 }
 
+var s = `{"a": 10}`
+
 func refreshKeys(j *jwk) {
 	ticker := time.NewTicker(j.refreshInterval)
+	/*var (
+		rawKeys []byte
+		keySet  jwx.Set
+		setType plugins.KeyType
+		pubSet  jwx.Set
+		ok      bool
+		err     error
+	)*/
+	var a interface{}
+
+	//_ = keySet
+
 	defer ticker.Stop()
+
 	for {
 		select {
 		case <-j.refreshDone:
 			return
 		case <-ticker.C:
-			var (
-				rawKeys []byte
-				keySet  jwx.Set
-			)
-
-			err := retry.Do(
+			/*err := retry.Do(
 				func() error {
 					ok, err := j.cryptoStorage.Read(&rawKeys)
 					if err != nil {
@@ -229,32 +238,58 @@ func refreshKeys(j *jwk) {
 				fmt.Printf("jwk '%s': an error occured while refreshing keys: %v\n", j.rawConf.Name, err)
 				continue
 			}
+			*/
 
-			setType, err := getKeySetType(keySet)
+			fmt.Println("refresh key")
+
+			/*ok, err := j.cryptoStorage.Read(&rawKeys)
+			if err != nil {
+				fmt.Printf("jwk '%s': an error occured while refreshing keys: %v\n", j.rawConf.Name, err)
+				continue
+			}
+			if !ok {
+				fmt.Printf("jwk '%s': an error occured while refreshing keys: keys don't find\n", j.rawConf.Name)
+				continue
+			}*/
+
+			err := json.Unmarshal([]byte(s), &a)
 			if err != nil {
 				fmt.Printf("jwk '%s': an error occured while refreshing keys: %v\n", j.rawConf.Name, err)
 				continue
 			}
 
-			if setType == plugins.Private {
-				pubSet, err := jwx.PublicSetOf(keySet)
+			/*keySet, err = jwx.Parse(rawKeys)
+			if err != nil {
+				fmt.Printf("jwk '%s': an error occured while refreshing keys: %v\n", j.rawConf.Name, err)
+				continue
+			}*/
+
+			/*
+				setType, err = getKeySetType(keySet)
 				if err != nil {
 					fmt.Printf("jwk '%s': an error occured while refreshing keys: %v\n", j.rawConf.Name, err)
 					continue
 				}
 
-				j.muPrivSet.Lock()
-				j.privateSet = keySet
-				j.muPrivSet.Unlock()
+				if setType == plugins.Private {
+					pubSet, err = jwx.PublicSetOf(keySet)
+					if err != nil {
+						fmt.Printf("jwk '%s': an error occured while refreshing keys: %v\n", j.rawConf.Name, err)
+						continue
+					}
 
-				j.muPubSet.Lock()
-				j.publicSet = pubSet
-				j.muPubSet.Unlock()
-			} else {
-				j.muPubSet.Lock()
-				j.publicSet = keySet
-				j.muPubSet.Unlock()
-			}
+					j.muPrivSet.Lock()
+					j.privateSet = keySet
+					j.muPrivSet.Unlock()
+
+					j.muPubSet.Lock()
+					j.publicSet = pubSet
+					j.muPubSet.Unlock()
+				} else {
+					j.muPubSet.Lock()
+					j.publicSet = keySet
+					j.muPubSet.Unlock()
+				}*/
 		}
 	}
 }

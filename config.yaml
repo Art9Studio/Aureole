@@ -140,14 +140,6 @@ apps:
         db_url: ${DB_URL}
 
     storages:
-      - type: "etcd"
-        name: etcd_store
-        config:
-          endpoints:
-            - localhost:2379
-          timeout: 0.2
-          dial_timeout: 3
-
       - type: "redis"
         name: redis_store
         config:
@@ -166,6 +158,14 @@ apps:
         name: memory_store
         config:
           size: 100
+
+#      - type: "etcd"
+#        name: etcd_store
+#        config:
+#          endpoints:
+#            - localhost:2379
+#          timeout: 0.2
+#          dial_timeout: 3
 
     crypto_storages:
       - type: "file"
@@ -209,8 +209,8 @@ apps:
       - type: "jwk"
         name: local_jwk_keys
         config:
-          refresh_interval: 5
-          retries_num: 3
+          refresh_interval: 50
+          retries_num: 2
           retry_interval: 7
           storage: local_jwk_keys_store
 
