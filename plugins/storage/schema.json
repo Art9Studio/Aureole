@@ -16,9 +16,6 @@
   ],
   "oneOf": [
     {
-      "$ref": "etcd/docs/schema.json"
-    },
-    {
       "$ref": "redis/docs/schema.json"
     },
     {

@@ -227,13 +227,13 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return adapterConf, nil
 }
 
-func createRoutes(s *mfa) {
+func createRoutes(m *mfa) {
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    resendUrl,
-			Handler: resend(s),
+			Handler: resend(m),
 		},
 	}
-	s.pluginAPI.AddAppRoutes(routes)
+	m.pluginAPI.AddAppRoutes(routes)
 }

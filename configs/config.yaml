@@ -111,6 +111,12 @@ apps:
         payload: lab/templates/jwt_payload.json.tmpl
 
     2fa:
+      - type: "fido2"
+        name: fido2
+        config:
+          attestation_type: direct # [none, direct, indirect] def "direct"
+          authenticator_type: cross-platform # [none, platform, cross-platform] def ""
+
       - type: "sms"
         name: sms
         config:

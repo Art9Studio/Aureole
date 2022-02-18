@@ -1,4 +1,4 @@
-package yubikey
+package fido2
 
 import (
 	"aureole/internal/configs"
@@ -6,7 +6,7 @@ import (
 )
 
 // adapterName is the internal name of the adapter
-const adapterName = "yubikey"
+const adapterName = "fido2"
 
 // init initializes package by register adapter
 func init() {
