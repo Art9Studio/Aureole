@@ -205,7 +205,7 @@ func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jw
 		}
 
 		if conf.Sub && payload.ID != nil {
-			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.ID))
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%v", payload.ID))
 			if err != nil {
 				return nil, err
 			}
@@ -251,7 +251,7 @@ func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jw
 		}
 
 		if conf.Sub && payload.ID != nil {
-			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%f", payload.ID))
+			err := token.Set(jwt.SubjectKey, fmt.Sprintf("%v", payload.ID))
 			if err != nil {
 				return nil, err
 			}

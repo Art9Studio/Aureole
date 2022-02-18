@@ -53,33 +53,41 @@ func (*phone) GetMetaData() plugins.Meta {
 	}
 }
 
-func (p *phone) Login() plugins.AuthNLoginFunc {
+func (p *phone) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
+	return http.MethodPost, p.login
+}
+
+func (p *phone) login() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var input input
+		if err := c.BodyParser(&input); err != nil {
 			return nil, err
 		}
 		if input.Token == "" || input.Otp == "" {
 			return nil, errors.New("token and otp are required")
 		}
 
+		var (
+			phone    string
+			attempts int
+		)
 		t, err := p.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return nil, err
 		}
-		phone, ok := t.Get("phone")
-		if !ok {
+		err = p.pluginAPI.GetFromJWT(t, "phone", &phone)
+		if err != nil {
 			return nil, errors.New("cannot get phone from token")
 		}
-		attempts, ok := t.Get("attempts")
-		if !ok {
-			return nil, errors.New("cannot get attempts from token")
+		err = p.pluginAPI.GetFromJWT(t, "attempts", &attempts)
+		if err != nil {
+			return nil, errors.New("cannot get attempts count from token")
 		}
 		if err := p.pluginAPI.InvalidateJWT(t); err != nil {
 			return nil, err
 		}
 
-		if int(attempts.(float64)) >= p.conf.MaxAttempts {
+		if attempts >= p.conf.MaxAttempts {
 			return nil, errors.New("too much attempts")
 		}
 
@@ -87,13 +95,14 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 			encOtp  []byte
 			decrOtp string
 		)
-		ok, err = p.pluginAPI.GetFromService(phone.(string), &encOtp)
+		ok, err := p.pluginAPI.GetFromService(phone, &encOtp)
 		if err != nil {
 			return nil, err
 		}
 		if !ok {
 			return nil, errors.New("otp has expired")
 		}
+
 		err = p.pluginAPI.Decrypt(encOtp, &decrOtp)
 		if err != nil {
 			return nil, err
@@ -103,10 +112,10 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 			return &plugins.AuthNResult{
 				Cred: &plugins.Credential{
 					Name:  plugins.Phone,
-					Value: phone.(string),
+					Value: phone,
 				},
 				Identity: &plugins.Identity{
-					Email:         phone.(*string),
+					Email:         &phone,
 					PhoneVerified: true,
 				},
 				Provider: adapterName,
@@ -115,7 +124,7 @@ func (p *phone) Login() plugins.AuthNLoginFunc {
 			token, err := p.pluginAPI.CreateJWT(
 				map[string]interface{}{
 					"phone":    phone,
-					"attempts": int(attempts.(float64)) + 1,
+					"attempts": attempts + 1,
 				},
 				p.conf.Otp.Exp)
 			if err != nil {
@@ -139,12 +148,12 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 func createRoutes(p *phone) {
 	routes := []*core.Route{
 		{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			Path:    sendUrl,
 			Handler: sendOTP(p),
 		},
 		{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			Path:    resendUrl,
 			Handler: resendOTP(p),
 		},

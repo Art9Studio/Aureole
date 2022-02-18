@@ -17,8 +17,7 @@
       "uuid": "f7356ab9-c80e-4f81-aa71-2e22dad5f6de",
       "additionalProperties": false,
       "required": [
-        "sign_key",
-        "verify_keys"
+        "sign_key"
       ],
       "properties": {
         "iss": {

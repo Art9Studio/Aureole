@@ -55,7 +55,7 @@ func withRouter(r *router) option {
 }
 
 func (api PluginAPI) IsTestRun() bool {
-	return api.project.isTestRun()
+	return api.project.testRun
 }
 
 func (api PluginAPI) Is2FAEnabled(cred *plugins.Credential, mfaID string) (bool, error) {

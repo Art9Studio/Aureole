@@ -2,7 +2,6 @@ package core
 
 import (
 	"aureole/internal/plugins"
-	"fmt"
 	"net/url"
 )
 
@@ -11,18 +10,6 @@ type project struct {
 	testRun    bool
 	pingPath   string
 	apps       map[string]*app
-}
-
-func (p *project) getAPIVersion() string {
-	return p.apiVersion
-}
-
-func (p *project) isTestRun() bool {
-	return p.testRun
-}
-
-func (p *project) getPingPath() string {
-	return p.pingPath
 }
 
 type (
@@ -50,25 +37,6 @@ type (
 		storage plugins.Storage
 	}
 )
-
-func (a *app) getName() string {
-	return a.name
-}
-
-func (a *app) getUrl() (url.URL, error) {
-	if a.url == nil {
-		return url.URL{}, fmt.Errorf("can't find app url for app '%s'", a.name)
-	}
-	return *a.url, nil
-}
-
-func (a *app) getPathPrefix() string {
-	return a.pathPrefix
-}
-
-func (a *app) getAuthSessionExp() int {
-	return a.authSessionExp
-}
 
 func (a *app) getServiceSignKey() (plugins.CryptoKey, bool) {
 	if a.service.signKey == nil {

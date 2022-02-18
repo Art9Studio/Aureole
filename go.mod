@@ -14,9 +14,7 @@ require (
 	github.com/coocood/freecache v1.2.0
 	github.com/coreos/etcd v3.3.27+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/ecies/go v1.0.1
 	github.com/fatih/structs v1.1.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0

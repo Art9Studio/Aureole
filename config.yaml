@@ -35,7 +35,6 @@ apps:
 
       - type: "phone"
         config:
-          hasher: django
           sender: twilio
           template: phone_otp
           max_attempts: 3
@@ -47,8 +46,8 @@ apps:
             exp: 300
 
       - type: "google"
-        filter:
-          email: ".*\\.aureole.cloud"
+#        filter:
+#          email: ".*\\.aureole.cloud"
         config:
           client_id: ${GOOGLE_CLIENT_ID}
           client_secret: ${GOOGLE_SECRET}
@@ -99,37 +98,37 @@ apps:
         sign_key: local_jwk_keys
         verify_keys:
           - local_jwk_keys
-        access_exp: 900
+        access_exp: 900000
         refresh_exp: 7890000
         payload: lab/templates/jwt_payload.json.tmpl
 
-    2fa:
-      #  - type: "sms"
-      #    name: sms
-      #    config:
-      #      sender: twilio
-      #      template: sms_2fa_tmpl
-      #      max_attempts: 5
-      #      otp:
-      #        length: 6
-      #        alphabet: alphanum
-      #        exp: 60
-
-      #  - type: "yubikey"
-      #    name: yubikey_2fa
-      #    config:
-
-      - type: "google_authenticator"
-        name: google_authenticator
-        config:
-          alg: hotp
-          iss: Company Name
-          window_size: 15
-          disallow_reuse: false
-          max_attempts: 5
-          scratch_code:
-            num: 5
-            alphabet: alphanum # todo: support regex range syntax '[a-z1-9]'
+#    2fa:
+#      #  - type: "sms"
+#      #    name: sms
+#      #    config:
+#      #      sender: twilio
+#      #      template: sms_2fa_tmpl
+#      #      max_attempts: 5
+#      #      otp:
+#      #        length: 6
+#      #        alphabet: alphanum
+#      #        exp: 60
+#
+#      #  - type: "yubikey"
+#      #    name: yubikey_2fa
+#      #    config:
+#
+#      - type: "google_authenticator"
+#        name: google_authenticator
+#        config:
+#          alg: hotp
+#          iss: Company Name
+#          window_size: 15
+#          disallow_reuse: false
+#          max_attempts: 5
+#          scratch_code:
+#            num: 5
+#            alphabet: alphanum # todo: support regex range syntax '[a-z1-9]'
 
     id_manager:
       type: "standard"
@@ -264,10 +263,10 @@ apps:
       - type: "jwk"
         name: service_enc_key
         config:
-          kty: EC
-          alg: ES256
+          kty: RSA
+          alg: RSA-OAEP-256
+          size: 4096
           use: enc
-          curve: P-256
           kid: SHA-256
           storage: service_enc_keys_store
 

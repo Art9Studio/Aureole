@@ -34,7 +34,7 @@ CREATE TABLE mfa
     id       SERIAL PRIMARY KEY,
     user_id  INT REFERENCES users ON DELETE CASCADE,
 	plugin_id VARCHAR(4) NOT NULL,
-    mfa_name VARCHAR NOT NULL,
+    provider_name VARCHAR NOT NULL,
     payload  jsonb   NOT NULL
 );
 `

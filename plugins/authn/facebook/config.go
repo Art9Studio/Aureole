@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	pathPrefix  = "/oauth2/facebook"
+	pathPrefix  = "/" + adapterName
 	redirectUrl = "/login"
 )
 

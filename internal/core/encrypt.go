@@ -1,17 +1,16 @@
 package core
 
 import (
-	"crypto/ecdsa"
-	crand "crypto/rand"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"math/big"
-
-	eciesgo "github.com/ecies/go"
 )
 
 func encrypt(app *app, data interface{}) ([]byte, error) {
-	bytes, err := json.Marshal(data)
+	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -21,12 +20,7 @@ func encrypt(app *app, data interface{}) ([]byte, error) {
 		return nil, err
 	}
 
-	encrypted, err := eciesgo.Encrypt(key.PublicKey, bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return encrypted, nil
+	return rsa.EncryptOAEP(sha256.New(), rand.Reader, &key.PublicKey, dataBytes, nil)
 }
 
 func decrypt(app *app, data []byte, value interface{}) error {
@@ -35,7 +29,7 @@ func decrypt(app *app, data []byte, value interface{}) error {
 		return err
 	}
 
-	decrypted, err := eciesgo.Decrypt(key, data)
+	decrypted, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, key, data, nil)
 	if err != nil {
 		return err
 	}
@@ -43,7 +37,7 @@ func decrypt(app *app, data []byte, value interface{}) error {
 	return json.Unmarshal(decrypted, value)
 }
 
-func getKey(app *app) (*eciesgo.PrivateKey, error) {
+func getKey(app *app) (*rsa.PrivateKey, error) {
 	serviceKey, ok := app.getServiceEncKey()
 	if !ok {
 		return nil, errors.New("cannot get service encryption key")
@@ -55,19 +49,12 @@ func getKey(app *app) (*eciesgo.PrivateKey, error) {
 		return nil, errors.New("cannot get service key")
 	}
 
-	var ecKey ecdsa.PrivateKey
-	if err := key.Raw(&ecKey); err != nil {
+	var rsaKey rsa.PrivateKey
+	if err := key.Raw(&rsaKey); err != nil {
 		return nil, err
 	}
 
-	return &eciesgo.PrivateKey{
-		PublicKey: &eciesgo.PublicKey{
-			Curve: ecKey.Curve,
-			X:     ecKey.X,
-			Y:     ecKey.Y,
-		},
-		D: ecKey.D,
-	}, nil
+	return &rsaKey, nil
 }
 
 func getRandStr(length int, alphabet string) (string, error) {
@@ -82,7 +69,7 @@ func getRandStr(length int, alphabet string) (string, error) {
 
 	randBytes := make([]byte, length)
 	for i := 0; i < length; i++ {
-		num, err := crand.Int(crand.Reader, big.NewInt(int64(len(alphabet))))
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(alphabet))))
 		if err != nil {
 			return "", err
 		}

@@ -24,13 +24,13 @@ type (
 	}
 
 	Payload struct {
-		ID         interface{}            `mapstructure:"id"`
-		SocialID   interface{}            `mapstructure:"social_id"`
-		Username   string                 `mapstructure:"username"`
-		Phone      string                 `mapstructure:"phone"`
-		Email      string                 `mapstructure:"email"`
-		UserData   interface{}            `mapstructure:"user_data"`
-		Additional map[string]interface{} `mapstructure:",remain"`
+		ID            interface{}            `mapstructure:"id,omitempty"`
+		Username      *string                `mapstructure:"username,omitempty"`
+		Phone         *string                `mapstructure:"phone,omitempty"`
+		Email         *string                `mapstructure:"email,omitempty"`
+		EmailVerified bool                   `mapstructure:"email_verified"`
+		PhoneVerified bool                   `mapstructure:"phone_verified"`
+		Additional    map[string]interface{} `mapstructure:"additional,omitempty"`
 		// NativeQ    func(queryName string, args ...interface{}) string
 	}
 )
