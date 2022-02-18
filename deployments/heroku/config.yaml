@@ -1,0 +1,173 @@
+api_version: "0.1"
+
+apps:
+  - name: aureole
+    path_prefix: ${APP_PATH_PREFIX:/aureole}
+    host: ${APP_HOST:http://localhost:3000}
+
+    service:
+      enc_key: service_enc_key
+      sign_key: service_sign_key
+      storage: service_store
+
+    authN:
+      - type: "email"
+        config:
+          sender: email
+          template: magic_link
+
+      - type: "password_based"
+        config:
+          main_hasher:
+            type: "argon2"
+          register:
+            login_after: false
+            verify_after: false
+          password_reset:
+            sender: email
+            template: reset
+          verification:
+            sender: email
+            template: email_verification
+
+      - type: "phone"
+        config:
+          sender: twilio
+          template: phone_otp
+
+      - type: "google"
+        config:
+          client_id: ${GOOGLE_CLIENT_ID}
+          client_secret: ${GOOGLE_SECRET}
+          scopes:
+            - https://www.googleapis.com/auth/userinfo.email
+            - https://www.googleapis.com/auth/userinfo.profile
+
+      - type: "vk"
+        config:
+          client_id: ${VK_CLIENT_ID}
+          client_secret: ${VK_SECRET}
+          scopes:
+            - email
+          fields: [ ]
+
+      - type: "facebook"
+        config:
+          client_id: ${FACEBOOK_CLIENT_ID}
+          client_secret: ${FACEBOOK_SECRET}
+          scopes:
+            - email
+          fields:
+            - email
+
+      - type: "apple"
+        config:
+          secret_key: apple_private_keys
+          public_key: apple_public_keys
+          client_id: ${APPLE_CLIENT_ID}
+          team_id: ${APPLE_TEAM_ID}
+          key_id: ${APPLE_KEY_ID}
+          scopes:
+            - email
+            - name
+
+    authZ:
+      type: "jwt"
+      config:
+        aud:
+          - ${JWT_AUD}
+        access_bearer: ${JWT_ACCESS_BEARER:cookie}
+        refresh_bearer: ${JWT_REFRESH_BEARER:body}
+        sign_key: jwk_keys
+        payload: templates/jwt_payload.json.tmpl
+
+    id_manager:
+      type: "standard"
+      config:
+        db_url: ${DATABASE_URL}
+
+    storages:
+      - type: "memory"
+        name: service_store
+        config:
+          size: 100
+
+    crypto_storages:
+      - type: "file"
+        name: jwk_keys_store
+        config:
+          path: keys/jwt_sign_key.json
+
+      - type: "file"
+        name: service_sign_keys_store
+        config:
+          path: keys/service_sign_key.json
+
+      - type: "file"
+        name: service_enc_keys_store
+        config:
+          path: keys/service_enc_key.json
+
+      - type: "url"
+        name: apple_public_keys_store
+        config:
+          path: https://appleid.apple.com/auth/keys
+
+      - type: "file"
+        name: apple_private_keys_store
+        config:
+          path: keys/apple_private_key.p8
+
+    crypto_keys:
+      - type: "jwk"
+        name: jwk_keys
+        config:
+          storage: jwk_keys_store
+
+      - type: "jwk"
+        name: service_sign_key
+        config:
+          storage: service_sign_keys_store
+
+      - type: "jwk"
+        name: service_enc_key
+        config:
+          use: enc
+          storage: service_enc_keys_store
+
+      - type: "pem"
+        name: apple_private_keys
+        config:
+          alg: ES256
+          storage: apple_private_keys_store
+
+      - type: "jwk"
+        name: apple_public_keys
+        config:
+          storage: apple_public_keys_store
+
+    senders:
+      - type: "email"
+        name: email
+        config:
+          host: ${SMTP_HOST}
+          username: ${SMTP_USERNAME}
+          password: ${SMTP_PASSWORD}
+          from: ${SMTP_USERNAME}
+          templates:
+            reset: templates/password_reset.txt
+            magic_link: templates/magic_link.txt
+            email_verification: templates/email_verification.txt
+
+      - type: "twilio"
+        name: twilio
+        config:
+          account_sid: ${TEST_TWILIO_ACCOUNT_SID}
+          auth_token: ${TEST_TWILIO_AUTH_TOKEN}
+          from: ${TEST_TWILIO_PHONE_NUMBER}
+          templates:
+            phone_otp: templates/phone_otp.txt
+
+    admin_plugins:
+      - type: "urls"
+        name: get-urls

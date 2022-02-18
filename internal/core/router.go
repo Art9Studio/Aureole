@@ -2,6 +2,7 @@ package core
 
 import (
 	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
+	"os"
 	"path"
 	"sync"
 
@@ -33,7 +34,12 @@ type (
 )
 
 func RunServer() error {
-	return createServer().Listen(":3000")
+	var port string
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = "3000"
+	}
+	return createServer().Listen(":" + port)
 }
 
 // createServer initializes router and creates routes for each application

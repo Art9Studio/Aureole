@@ -64,7 +64,7 @@
 
 | Провайдер | Ссылка | Документация |
 | --- | --- | --- |
-| Heroku | ![](https://www.herokucdn.com/deploy/button.svg) | Ссылка |
+| Heroku | [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy) | Ссылка |
 | Render | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Art9Studio/Aureole) | Ссылка |
 
 # ⚙ Архитектура

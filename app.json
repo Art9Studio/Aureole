@@ -1,7 +1,112 @@
 {
   "name": "Aureole",
-  "description": "The most flexible and modern open-source auth server",
+  "description": "Самый гибкий и современный сервер аутентификации с открытым исходным кодом.",
   "repository": "https://github.com/Art9Studio/Aureole",
-  "logo": "https://github.com/Art9Studio/Aureole/raw/Readme/assets/Logo.svg",
-  "keywords": ["Aureole", "authentication", "authorization"]
+  "logo": "https://github.com/Art9Studio/Aureole/raw/main/assets/Logo.svg",
+  "keywords": [
+    "Aureole",
+    "authentication",
+    "authorization",
+    "Go",
+    "JWT",
+    "OAuth2"
+  ],
+  "stack": "container",
+  "addons": [
+    {
+      "plan": "heroku-postgresql:hobby-dev"
+    }
+  ],
+  "env": {
+    "HEROKU_APP_NAME": {
+      "description": "Имя Heroku приложения. Необходимо, чтобы сформировать хост Heroku приложения.",
+      "required": false
+    },
+    "APP_HOST": {
+      "description": "Хост Heroku приложения. Необходим для работы OAuth2.",
+      "required": false
+    },
+    "APP_PATH_PREFIX": {
+      "description": "Префикс Aureole приложения.",
+      "required": false
+    },
+    "GOOGLE_CLIENT_ID": {
+      "description": "Идентификатор OAuth2 приложения Google.",
+      "required": false
+    },
+    "GOOGLE_SECRET": {
+      "description": "Секретный ключ OAuth2 приложения Google.",
+      "required": false
+    },
+    "VK_CLIENT_ID": {
+      "description": "Идентификатор OAuth2 приложения VK.",
+      "required": false
+    },
+    "VK_SECRET": {
+      "description": "Секретный ключ OAuth2 приложения VK.",
+      "required": false
+    },
+    "FACEBOOK_CLIENT_ID": {
+      "description": "Идентификатор OAuth2 приложения Facebook.",
+      "required": false
+    },
+    "FACEBOOK_SECRET": {
+      "description": "Секретный ключ OAuth2 приложения Facebook.",
+      "required": false
+    },
+    "APPLE_CLIENT_ID": {
+      "description": "Идентификатор OAuth2 приложения Apple.",
+      "required": false
+    },
+    "APPLE_SECRET": {
+      "description": "Секретный ключ OAuth2 приложения Apple.",
+      "required": false
+    },
+    "APPLE_PRIVATE_KEY": {
+      "description": "Приватный ключ от провайдера Apple. Нужен для подписи JWT токенов для провайдера.",
+      "required": false
+    },
+    "JWT_AUD": {
+      "description": "'aud' ключ JWT-токена.",
+      "value": "AppName"
+    },
+    "JWT_ACCESS_BEARER": {
+      "description": "Способ отправки access-токена. Возможные варианты: cookie, header, both.",
+      "value": "cookie",
+      "required": false
+    },
+    "JWT_REFRESH_BEARER": {
+      "description": "Способ отправки refresh-токена. Возможные варианты: cookie, body, both.",
+      "value": "body",
+      "required": false
+    },
+    "SMTP_HOST": {
+      "description": "Хост SMTP-сервера.",
+      "required": false
+    },
+    "SMTP_USERNAME": {
+      "description": "Username для аутентификации на сервере.",
+      "required": false
+    },
+    "SMTP_PASSWORD": {
+      "description": "Пароль для аутентификации на сервере.",
+      "required": false
+    },
+    "SMTP_FROM": {
+      "description": "Аккаунт, от имени которого будут отправляться письма.",
+      "required": false
+    },
+    "TWILIO_ACCOUNT_SID": {
+      "description": "Идентификатор Twilio аккаунта.",
+      "required": false
+    },
+    "TWILIO_AUTH_TOKEN": {
+      "description": "Токен Twilio аккаунта.",
+      "required": false
+    },
+    "TWILIO_PHONE_NUMBER": {
+      "description": "Номер, от имени которого будут отправляться сообщения.",
+      "required": false
+    }
+  }
 }
