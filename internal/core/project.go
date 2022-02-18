@@ -24,8 +24,7 @@ type (
 		secondFactors  map[string]plugins.SecondFactor
 		idManager      plugins.IDManager
 		storages       map[string]plugins.Storage
-		keyStorages    map[string]plugins.KeyStorage
-		hashers        map[string]plugins.PWHasher
+		cryptoStorages map[string]plugins.CryptoStorage
 		senders        map[string]plugins.Sender
 		cryptoKeys     map[string]plugins.CryptoKey
 		admins         map[string]plugins.Admin
@@ -74,7 +73,7 @@ func (a *app) getAuthorizer() (plugins.Authorizer, bool) {
 }
 
 func (a *app) getSecondFactors() (map[string]plugins.SecondFactor, bool) {
-	if a.secondFactors == nil {
+	if a.secondFactors == nil || len(a.secondFactors) == 0 {
 		return nil, false
 	}
 	return a.secondFactors, true
@@ -88,20 +87,12 @@ func (a *app) getStorage(name string) (plugins.Storage, bool) {
 	return s, true
 }
 
-func (a *app) getKeyStorage(name string) (plugins.KeyStorage, bool) {
-	s, ok := a.keyStorages[name]
+func (a *app) getCryptoStorage(name string) (plugins.CryptoStorage, bool) {
+	s, ok := a.cryptoStorages[name]
 	if !ok || s == nil {
 		return nil, false
 	}
 	return s, true
-}
-
-func (a *app) getHasher(name string) (plugins.PWHasher, bool) {
-	h, ok := a.hashers[name]
-	if !ok || h == nil {
-		return nil, false
-	}
-	return h, true
 }
 
 func (a *app) getSender(name string) (plugins.Sender, bool) {

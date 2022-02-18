@@ -21,18 +21,13 @@
       ],
       "properties": {
         "main_hasher": {
-          "type": "string",
-          "uuid": "74be3f3d-1bca-4024-a994-eb1174c270a3",
-          "minLength": 1,
-          "metatags": "@hasher_ref"
+          "$ref": "pwhasher/schema.json"
         },
         "compat_hashers": {
           "type": "array",
           "uuid": "6797130f-3700-4271-9a8a-6eabdc5435d4",
           "items": {
-            "type": "string",
-            "minLength": 1,
-            "metatags": "@hasher_ref"
+            "$ref": "pwhasher/schema.json"
           },
           "uniqueItems": true
         },

@@ -107,12 +107,8 @@ func (api PluginAPI) GetIDManager() (plugins.IDManager, bool) {
 	return api.app.getIDManager()
 }
 
-func (api PluginAPI) GetKeyStorage(name string) (plugins.KeyStorage, bool) {
-	return api.app.getKeyStorage(name)
-}
-
-func (api PluginAPI) GetHasher(name string) (plugins.PWHasher, bool) {
-	return api.app.getHasher(name)
+func (api PluginAPI) GetCryptoStorage(name string) (plugins.CryptoStorage, bool) {
+	return api.app.getCryptoStorage(name)
 }
 
 func (api PluginAPI) GetSender(name string) (plugins.Sender, bool) {

@@ -66,11 +66,10 @@ func createApps(conf *configs.Project, p *project) {
 			authSessionExp: appConf.AuthSessionExp,
 		}
 
-		createPwHashers(app, appConf)
 		createSenders(app, appConf)
 		createCryptoKeys(app, appConf)
 		createStorages(app, appConf)
-		createKeyStorages(app, appConf)
+		createCryptoStorages(app, appConf)
 		createAdmins(app, appConf)
 		createAuthenticators(app, appConf)
 		createAuthorizer(app, appConf)
@@ -111,18 +110,6 @@ func createAppUrl(app configs.App) (*url.URL, error) {
 	return appUrl, nil
 }
 
-func createPwHashers(app *app, conf configs.App) {
-	app.hashers = make(map[string]plugins.PWHasher)
-	for i := range conf.HasherConfs {
-		hasherConf := conf.HasherConfs[i]
-		pwHasher, err := plugins.NewPWHasher(&conf.HasherConfs[i])
-		if err != nil {
-			fmt.Printf("app %s: cannot create hasher %s: %v\n", app.name, hasherConf.Name, err)
-		}
-		app.hashers[hasherConf.Name] = pwHasher
-	}
-}
-
 func createSenders(app *app, conf configs.App) {
 	app.senders = make(map[string]plugins.Sender)
 	for i := range conf.Senders {
@@ -159,15 +146,15 @@ func createStorages(app *app, conf configs.App) {
 	}
 }
 
-func createKeyStorages(app *app, conf configs.App) {
-	app.keyStorages = make(map[string]plugins.KeyStorage)
-	for i := range conf.KeyStorages {
-		storageConf := conf.KeyStorages[i]
-		keyStorage, err := plugins.NewKeyStorage(&storageConf)
+func createCryptoStorages(app *app, conf configs.App) {
+	app.cryptoStorages = make(map[string]plugins.CryptoStorage)
+	for i := range conf.CryptoStorages {
+		storageConf := conf.CryptoStorages[i]
+		cryptoStorage, err := plugins.NewCryptoStorage(&storageConf)
 		if err != nil {
-			fmt.Printf("app %s: cannot create key storage %s: %v\n", app.name, storageConf.Name, err)
+			fmt.Printf("app %s: cannot create crypto storage %s: %v\n", app.name, storageConf.Name, err)
 		}
-		app.keyStorages[storageConf.Name] = keyStorage
+		app.cryptoStorages[storageConf.Name] = cryptoStorage
 	}
 }
 
@@ -239,8 +226,7 @@ func createIDManager(app *app, conf configs.App) {
 func initApps(p *project) {
 	for _, app := range p.apps {
 		initStorages(app, p)
-		initKeyStorages(app, p)
-		initPwHashers(app, p)
+		initCryptoStorages(app, p)
 		initSenders(app, p)
 		initCryptoKeys(app, p)
 		initAdmins(app, p)
@@ -283,34 +269,18 @@ func initStorages(app *app, p *project) {
 	}
 }
 
-func initKeyStorages(app *app, p *project) {
-	for name, s := range app.keyStorages {
+func initCryptoStorages(app *app, p *project) {
+	for name, s := range app.cryptoStorages {
 		pluginInit, ok := s.(PluginInitializer)
 		if ok {
 			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
 			if err != nil {
 				fmt.Printf("app %s: cannot init key storage '%s': %v\n", app.name, name, err)
-				app.keyStorages[name] = nil
+				app.cryptoStorages[name] = nil
 			}
 		} else {
 			fmt.Printf("app %s: cannot init key storage '%s': %v\n", app.name, name, PluginInitErr)
-			app.keyStorages[name] = nil
-		}
-	}
-}
-
-func initPwHashers(app *app, p *project) {
-	for name, h := range app.hashers {
-		pluginInit, ok := h.(PluginInitializer)
-		if ok {
-			err := pluginInit.Init(initAPI(withProject(p), withApp(app)))
-			if err != nil {
-				fmt.Printf("app %s: cannot init hasher '%s': %v\n", app.name, name, err)
-				app.hashers[name] = nil
-			}
-		} else {
-			fmt.Printf("app %s: cannot init hasher '%s': %v\n", app.name, name, PluginInitErr)
-			app.hashers[name] = nil
+			app.cryptoStorages[name] = nil
 		}
 	}
 }
@@ -490,16 +460,9 @@ func listPluginStatus() {
 			}
 		}
 
-		if len(app.keyStorages) != 0 {
+		if len(app.cryptoStorages) != 0 {
 			fmt.Println("\nKEY STORAGE PLUGINS")
-			for name, plugin := range app.keyStorages {
-				printStatus(name, plugin)
-			}
-		}
-
-		if len(app.hashers) != 0 {
-			fmt.Println("\nHASHER PLUGINS")
-			for name, plugin := range app.hashers {
+			for name, plugin := range app.cryptoStorages {
 				printStatus(name, plugin)
 			}
 		}

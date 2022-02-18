@@ -6,6 +6,7 @@ import (
 	"aureole/internal/plugins"
 	"aureole/pkg/dgoogauth"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,7 +19,7 @@ const pluginID = "1799"
 
 type (
 	gauth struct {
-		pluginApi core.PluginAPI
+		pluginAPI core.PluginAPI
 		rawConf   *configs.SecondFactor
 		conf      *config
 		manager   plugins.IDManager
@@ -31,11 +32,17 @@ type (
 )
 
 func (g *gauth) Init(api core.PluginAPI) (err error) {
-	g.pluginApi = api
+	g.pluginAPI = api
 	g.conf, err = initConfig(&g.rawConf.Config)
 	if err != nil {
 		return err
 	}
+
+	_, ok := g.pluginAPI.GetIDManager()
+	if !ok {
+		return fmt.Errorf("manager for app '%s' is not declared", g.pluginAPI.GetAppName())
+	}
+
 	createRoutes(g)
 	return nil
 }
@@ -49,7 +56,7 @@ func (g *gauth) GetMetaData() plugins.Meta {
 }
 
 func (g *gauth) IsEnabled(cred *plugins.Credential) (bool, error) {
-	return g.pluginApi.Is2FAEnabled(cred, pluginID)
+	return g.pluginAPI.Is2FAEnabled(cred, pluginID)
 }
 
 func (g *gauth) Init2FA() plugins.MFAInitFunc {
@@ -62,7 +69,7 @@ func (g *gauth) Init2FA() plugins.MFAInitFunc {
 			return nil, errors.New("token are required")
 		}
 
-		t, err := g.pluginApi.ParseJWT(input.Token)
+		t, err := g.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +96,7 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := g.pluginApi.ParseJWT(input.Token)
+		t, err := g.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -101,7 +108,7 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("cannot get credential from token")
 		}
-		if err := g.pluginApi.InvalidateJWT(t); err != nil {
+		if err := g.pluginAPI.InvalidateJWT(t); err != nil {
 			return nil, nil, err
 		}
 
@@ -130,7 +137,7 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 		}
 
 		var usedOtp []int
-		_, err = g.pluginApi.GetFromService(cred.Value, &usedOtp)
+		_, err = g.pluginAPI.GetFromService(cred.Value, &usedOtp)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -168,7 +175,7 @@ func (g *gauth) Verify() plugins.MFAVerifyFunc {
 			}
 
 			usedOtp = append(usedOtp, intOtp)
-			if err := g.pluginApi.SaveToService(cred.Value, usedOtp, 1); err != nil {
+			if err := g.pluginAPI.SaveToService(cred.Value, usedOtp, 1); err != nil {
 				return nil, nil, err
 			}
 		}
@@ -199,5 +206,5 @@ func createRoutes(g *gauth) {
 			Handler: getScratchCodes(g),
 		},
 	}
-	g.pluginApi.AddAppRoutes(routes)
+	g.pluginAPI.AddAppRoutes(routes)
 }

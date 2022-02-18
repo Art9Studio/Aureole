@@ -42,13 +42,13 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		_ = user
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verif.Exp)
+			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verify.Exp)
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
-			link := attachToken(p.verifyConfirmLink, token)
+			link := attachToken(p.verify.confirmLink, token)
 
-			err = p.verifySender.Send(input.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
+			err = p.verify.sender.Send(input.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -82,8 +82,8 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := attachToken(p.resetConfirmLink, token)
-		err = p.resetSender.Send(*i.Email, "", p.conf.Reset.Template, map[string]interface{}{"link": link})
+		link := attachToken(p.reset.confirmLink, token)
+		err = p.reset.sender.Send(*i.Email, "", p.reset.tmpl, p.reset.tmplExt, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -136,7 +136,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		err = p.resetSender.SendRaw(email.(string), "Reset your password",
+		err = p.reset.sender.SendRaw(email.(string), "Reset your password",
 			"Your password has been successfully changed")
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
@@ -162,13 +162,13 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		}
 		i := &plugins.Identity{Email: &input.Email}
 
-		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verif.Exp)
+		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verify.Exp)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		link := attachToken(p.verifyConfirmLink, token)
-		err = p.verifySender.Send(*i.Email, "", p.conf.Verif.Template, map[string]interface{}{"link": link})
+		link := attachToken(p.verify.confirmLink, token)
+		err = p.verify.sender.Send(*i.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

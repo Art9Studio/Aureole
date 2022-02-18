@@ -1,8 +1,0 @@
-hashers:
-  - type: "pbkdf2"
-    name: django
-    config:
-      func: sha256
-      iterations: 260000
-      salt_length: 22
-      key_length: 32

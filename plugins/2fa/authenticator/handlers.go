@@ -21,7 +21,7 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 		fa2Data := map[string]interface{}{}
 		response := fiber.Map{}
 
-		secret, err := generateSecret(g.pluginApi)
+		secret, err := generateSecret(g.pluginAPI)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -33,7 +33,7 @@ func getQR(g *gauth) func(*fiber.Ctx) error {
 			fa2Data["counter"] = 1
 		}
 		if g.conf.ScratchCode.Num != 0 {
-			scratchCodes, err := generateScratchCodes(g.pluginApi, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
+			scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -65,7 +65,7 @@ func getScratchCodes(g *gauth) func(*fiber.Ctx) error {
 		// check if user already authenticated
 		cred := &plugins.Credential{Name: "email", Value: "www@example.com"}
 
-		scratchCodes, err := generateScratchCodes(g.pluginApi, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
+		scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

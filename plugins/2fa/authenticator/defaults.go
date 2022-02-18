@@ -7,10 +7,6 @@ func (c *config) setDefaults() {
 	configs.SetDefault(&c.Iss, "Aureole")
 	configs.SetDefault(&c.WindowSize, 10)
 	configs.SetDefault(&c.MaxAttempts, 3)
-	c.ScratchCode.setDefaults()
-}
-
-func (s *scratchCode) setDefaults() {
-	configs.SetDefault(&s.Num, 5)
-	configs.SetDefault(&s.Alphabet, "alphanum")
+	configs.SetDefault(&c.ScratchCode.Num, 5)
+	configs.SetDefault(&c.ScratchCode.Alphabet, "alphanum")
 }

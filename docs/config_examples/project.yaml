@@ -1,23 +1,29 @@
 api_version: "0.1"
 
-service:
-  internal_key: service
-  storage: vault_store
-
 apps:
   - name: app
-    authn:
-      # array of authenticators
-    authz:
-      # authorizer config
 
-storages:
-  # array of storages
-hashers:
-  # array of hashers
-crypo_keys:
-  # array of crypto keys
-senders:
-  # array of senders
-admin_plugins:
-  # array of admin plugins
+    service:
+      enc_key: service_enc_key
+      sign_key: service_sign_key
+      storage: service_store
+
+    authN:
+      # array of authenticators
+    authZ:
+      # authorizer config
+    2fa:
+      # array of 2FA plugins
+    id_manager:
+      # identity manager config
+
+    storages:
+      # array of storages
+    crypto_storages:
+      # array of crypto storages
+    crypo_keys:
+      # array of crypto keys
+    senders:
+      # array of senders
+    admin_plugins:
+      # array of admin plugins

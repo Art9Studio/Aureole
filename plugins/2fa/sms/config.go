@@ -5,22 +5,21 @@ import (
 	"aureole/internal/plugins"
 )
 
-const resendUrl = "/2fa/sms/resend"
+const (
+	resendUrl   = "/2fa/sms/resend"
+	defaultTmpl = "Your second factor code: {{.otp}}"
+)
 
-type (
-	config struct {
-		Sender      string `mapstructure:"sender"`
-		Template    string `mapstructure:"template"`
-		MaxAttempts int    `mapstructure:"max_attempts"`
-		Otp         otp    `mapstructure:"otp"`
-	}
-
-	otp struct {
+type config struct {
+	Sender      string `mapstructure:"sender"`
+	TmplPath    string `mapstructure:"template"`
+	MaxAttempts int    `mapstructure:"max_attempts"`
+	Otp         struct {
 		Length   int    `mapstructure:"length"`
 		Alphabet string `mapstructure:"alphabet"`
 		Exp      int    `mapstructure:"exp"`
-	}
-)
+	} `mapstructure:"otp"`
+}
 
 func (smsAdapter) Create(conf *configs.SecondFactor) plugins.SecondFactor {
 	return &sms{rawConf: conf}

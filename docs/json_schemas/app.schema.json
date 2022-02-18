@@ -53,7 +53,7 @@
           "type": "string",
           "uuid": "7d900d80-53fa-488c-9541-4e0ca8b5af60",
           "minLength": 1,
-          "metatags": "@key_storage_ref"
+          "metatags": "@crypto_storage_ref"
         }
       }
     },
@@ -86,25 +86,18 @@
       },
       "minItems": 1
     },
-    "key_storages": {
+    "crypto_storages": {
       "type": "array",
       "uuid": "5d2ef815-0404-45ab-abf2-f28257205f22",
       "items": {
-        "$ref": "../../plugins/kstorage/schema.json"
-      }
-    },
-    "hashers": {
-      "type": "array",
-      "uuid": "cb77c9fe-bfb5-4d7a-83d0-5cbb66e0b92f",
-      "items": {
-        "$ref": "../../plugins/pwhasher/schema.json"
+        "$ref": "../../plugins/crypto-storage/schema.json"
       }
     },
     "crypto_keys": {
       "type": "array",
       "uuid": "49bda2a6-5ea4-4899-992f-322424deb332",
       "items": {
-        "$ref": "../../plugins/cryptokey/schema.json"
+        "$ref": "../../plugins/crypto-key/schema.json"
       }
     },
     "senders": {

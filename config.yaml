@@ -14,7 +14,15 @@ apps:
     authN:
       - type: "password_based"
         config:
-          main_hasher: argon2
+          main_hasher:
+            type: "argon2"
+            config:
+              kind: argon2i
+              iterations: 1
+              parallelism: 1
+              salt_length: 16
+              key_length: 16
+              memory: 16384
           register:
             login_after: false
             verify_after: false
@@ -174,7 +182,7 @@ apps:
         config:
           size: 100
 
-    key_storages:
+    crypto_storages:
       - type: "file"
         name: local_jwk_keys_store
         config:
@@ -211,25 +219,6 @@ apps:
         name: service_enc_keys_store
         config:
           path: lab/keys/service_enc_key.json
-
-    hashers:
-      - type: "argon2"
-        name: argon2
-        config:
-          kind: argon2i
-          iterations: 1
-          parallelism: 1
-          salt_length: 16
-          key_length: 16
-          memory: 16384
-
-      - type: "pbkdf2"
-        name: django
-        config:
-          func: sha256
-          iterations: 260000
-          salt_length: 22
-          key_length: 32
 
     crypto_keys:
       - type: "jwk"

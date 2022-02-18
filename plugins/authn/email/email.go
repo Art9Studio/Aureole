@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,11 +19,12 @@ const pluginID = "4071"
 
 type (
 	email struct {
-		pluginAPI core.PluginAPI
-		rawConf   *configs.Authn
-		conf      *config
-		sender    plugins.Sender
-		magicLink *url.URL
+		pluginAPI     core.PluginAPI
+		rawConf       *configs.Authn
+		conf          *config
+		sender        plugins.Sender
+		magicLink     *url.URL
+		tmpl, tmplExt string
 	}
 
 	input struct {
@@ -46,6 +48,15 @@ func (e *email) Init(api core.PluginAPI) (err error) {
 	e.magicLink = createMagicLink(e)
 	if err != nil {
 		return err
+	}
+
+	tmpl, err := os.ReadFile(e.conf.TmplPath)
+	if err != nil {
+		e.tmpl = defaultTmpl
+		e.tmplExt = "txt"
+	} else {
+		e.tmpl = string(tmpl)
+		e.tmplExt = path.Ext(e.conf.TmplPath)
 	}
 
 	createRoutes(e)

@@ -20,7 +20,7 @@ func sendMagicLink(e *email) func(*fiber.Ctx) error {
 		}
 		link := attachToken(e.magicLink, token)
 
-		err = e.sender.Send(i.Email, "", e.conf.Template, map[string]interface{}{"link": link})
+		err = e.sender.Send(i.Email, "", e.tmpl, e.tmplExt, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

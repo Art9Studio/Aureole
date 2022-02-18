@@ -5,7 +5,10 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"path"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -15,10 +18,11 @@ const pluginID = "0509"
 
 type (
 	sms struct {
-		pluginApi core.PluginAPI
-		rawConf   *configs.SecondFactor
-		conf      *config
-		sender    plugins.Sender
+		pluginAPI     core.PluginAPI
+		rawConf       *configs.SecondFactor
+		conf          *config
+		sender        plugins.Sender
+		tmpl, tmplExt string
 	}
 
 	input struct {
@@ -29,11 +33,26 @@ type (
 )
 
 func (s *sms) Init(api core.PluginAPI) (err error) {
-	s.pluginApi = api
+	s.pluginAPI = api
 	s.conf, err = initConfig(&s.rawConf.Config)
 	if err != nil {
 		return err
 	}
+
+	_, ok := s.pluginAPI.GetIDManager()
+	if !ok {
+		return fmt.Errorf("manager for app '%s' is not declared", s.pluginAPI.GetAppName())
+	}
+
+	tmpl, err := os.ReadFile(s.conf.TmplPath)
+	if err != nil {
+		s.tmpl = defaultTmpl
+		s.tmplExt = "txt"
+	} else {
+		s.tmpl = string(tmpl)
+		s.tmplExt = path.Ext(s.conf.TmplPath)
+	}
+
 	createRoutes(s)
 	return nil
 }
@@ -51,7 +70,7 @@ func (s *sms) Clone() interface{} {
 }
 
 func (s *sms) IsEnabled(cred *plugins.Credential) (bool, error) {
-	return s.pluginApi.Is2FAEnabled(cred, pluginID)
+	return s.pluginAPI.Is2FAEnabled(cred, pluginID)
 }
 
 func (s *sms) Init2FA() plugins.MFAInitFunc {
@@ -68,25 +87,25 @@ func (s *sms) Init2FA() plugins.MFAInitFunc {
 			provider string
 			cred     plugins.Credential
 		)
-		t, err := s.pluginApi.ParseJWT(input.Token)
+		t, err := s.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return nil, err
 		}
-		err = s.pluginApi.GetFromJWT(t, "provider", &provider)
+		err = s.pluginAPI.GetFromJWT(t, "provider", &provider)
 		if err != nil {
 			return nil, errors.New("cannot get provider from token")
 		}
-		err = s.pluginApi.GetFromJWT(t, "credential", &cred)
+		err = s.pluginAPI.GetFromJWT(t, "credential", &cred)
 		if err != nil {
 			return nil, errors.New("cannot get credential from token")
 		}
 
-		otp, err := s.pluginApi.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
+		otp, err := s.pluginAPI.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
 		if err != nil {
 			return nil, err
 		}
 
-		token, err := s.pluginApi.CreateJWT(
+		token, err := s.pluginAPI.CreateJWT(
 			map[string]interface{}{
 				"phone":    cred.Value,
 				"provider": provider,
@@ -97,16 +116,16 @@ func (s *sms) Init2FA() plugins.MFAInitFunc {
 			return nil, err
 		}
 
-		encOtp, err := s.pluginApi.Encrypt(otp)
+		encOtp, err := s.pluginAPI.Encrypt(otp)
 		if err != nil {
 			return nil, err
 		}
-		err = s.pluginApi.SaveToService(cred.Value, encOtp, s.conf.Otp.Exp)
+		err = s.pluginAPI.SaveToService(cred.Value, encOtp, s.conf.Otp.Exp)
 		if err != nil {
 			return nil, err
 		}
 
-		err = s.sender.Send(cred.Value, "", s.conf.Template, map[string]interface{}{"otp": otp})
+		err = s.sender.Send(cred.Value, "", s.tmpl, s.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +144,7 @@ func (s *sms) Verify() plugins.MFAVerifyFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := s.pluginApi.ParseJWT(input.Token)
+		t, err := s.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -137,7 +156,7 @@ func (s *sms) Verify() plugins.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("cannot get attempts from token")
 		}
-		if err := s.pluginApi.InvalidateJWT(t); err != nil {
+		if err := s.pluginAPI.InvalidateJWT(t); err != nil {
 			return nil, nil, err
 		}
 
@@ -149,14 +168,14 @@ func (s *sms) Verify() plugins.MFAVerifyFunc {
 			encOtp  []byte
 			decrOtp string
 		)
-		ok, err = s.pluginApi.GetFromService(phone.(string), &encOtp)
+		ok, err = s.pluginAPI.GetFromService(phone.(string), &encOtp)
 		if err != nil {
 			return nil, nil, err
 		}
 		if !ok {
 			return nil, nil, errors.New("otp has expired")
 		}
-		err = s.pluginApi.Decrypt(encOtp, &decrOtp)
+		err = s.pluginAPI.Decrypt(encOtp, &decrOtp)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -167,7 +186,7 @@ func (s *sms) Verify() plugins.MFAVerifyFunc {
 				Value: phone.(string),
 			}, nil, nil
 		} else {
-			token, err := s.pluginApi.CreateJWT(
+			token, err := s.pluginAPI.CreateJWT(
 				map[string]interface{}{
 					"phone":    phone,
 					"attempts": int(attempts.(float64)) + 1,
@@ -198,5 +217,5 @@ func createRoutes(s *sms) {
 			Handler: resend(s),
 		},
 	}
-	s.pluginApi.AddAppRoutes(routes)
+	s.pluginAPI.AddAppRoutes(routes)
 }

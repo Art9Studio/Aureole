@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	htmlTmpl "html/template"
 	"net/smtp"
-	"path"
 	"strings"
 	txtTmpl "text/template"
 
@@ -43,7 +42,7 @@ func (e *email) GetMetaData() plugins.Meta {
 	}
 }
 
-func (e *email) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {
+func (e *email) Send(recipient, subject, tmplStr, tmplExt string, tmplCtx map[string]interface{}) error {
 	mail := &emailLib.Email{
 		From:    e.conf.From,
 		To:      []string{recipient},
@@ -52,24 +51,29 @@ func (e *email) Send(recipient, subject, tmplName string, tmplCtx map[string]int
 		Subject: subject,
 	}
 
-	tmplFileName := e.conf.Templates[tmplName]
-	baseName := path.Base(tmplFileName)
-	extension := path.Ext(tmplFileName)
 	message := &bytes.Buffer{}
 
-	if extension == ".html" {
-		tmpl := htmlTmpl.Must(htmlTmpl.New(baseName).ParseFiles(tmplFileName))
-		if err := tmpl.Execute(message, tmplCtx); err != nil {
+	if tmplExt == ".html" {
+		tmpl, err := htmlTmpl.New("message").Parse(tmplStr)
+		if err != nil {
 			return err
 		}
 
+		err = tmpl.Execute(message, tmplCtx)
+		if err != nil {
+			return err
+		}
 		mail.HTML = message.Bytes()
 	} else {
-		tmpl := txtTmpl.Must(txtTmpl.New(baseName).ParseFiles(tmplFileName))
-		if err := tmpl.Execute(message, tmplCtx); err != nil {
+		tmpl, err := txtTmpl.New("message").Parse(tmplStr)
+		if err != nil {
 			return err
 		}
 
+		err = tmpl.Execute(message, tmplCtx)
+		if err != nil {
+			return err
+		}
 		mail.Text = message.Bytes()
 	}
 

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"strconv"
 	"strings"
 	txtTmpl "text/template"
@@ -52,20 +51,22 @@ func (t *twilio) GetMetaData() plugins.Meta {
 	}
 }
 
-func (t *twilio) Send(recipient, subject, tmplName string, tmplCtx map[string]interface{}) error {
-	tmplFileName := t.conf.Templates[tmplName]
-	baseName := path.Base(tmplFileName)
+func (t *twilio) Send(recipient, subject, tmplStr, _ string, tmplCtx map[string]interface{}) error {
 	message := &bytes.Buffer{}
 
-	tmpl := txtTmpl.Must(txtTmpl.New(baseName).ParseFiles(tmplFileName))
-	if err := tmpl.Execute(message, tmplCtx); err != nil {
+	tmpl, err := txtTmpl.New("message").Parse(tmplStr)
+	if err != nil {
 		return err
 	}
 
+	err = tmpl.Execute(message, tmplCtx)
+	if err != nil {
+		return err
+	}
 	return t.SendRaw(recipient, subject, message.String())
 }
 
-func (t *twilio) SendRaw(recipient, subject, message string) error {
+func (t *twilio) SendRaw(recipient, _, message string) error {
 	endpoint := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", t.conf.AccountSid)
 	data := url.Values{}
 	data.Set("Body", message)

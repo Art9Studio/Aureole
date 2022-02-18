@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "6f9f5646-e445-40f7-a837-f0049ae92b35",
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "$ref": "argon2/schema.json"
+    },
+    {
+      "$ref": "pbkdf2/schema.json"
+    }
+  ]
+}

@@ -4,10 +4,12 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	"aureole/plugins/authn/pwbased/pwhasher"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,15 +20,23 @@ const pluginID = "7157"
 
 type (
 	pwBased struct {
-		pluginAPI         core.PluginAPI
-		rawConf           *configs.Authn
-		conf              *config
-		manager           plugins.IDManager
-		pwHasher          plugins.PWHasher
-		resetSender       plugins.Sender
-		resetConfirmLink  *url.URL
-		verifySender      plugins.Sender
-		verifyConfirmLink *url.URL
+		pluginAPI core.PluginAPI
+		rawConf   *configs.Authn
+		conf      *config
+		manager   plugins.IDManager
+		pwHasher  pwhasher.PWHasher
+		reset     struct {
+			sender      plugins.Sender
+			tmpl        string
+			tmplExt     string
+			confirmLink *url.URL
+		}
+		verify struct {
+			sender      plugins.Sender
+			tmpl        string
+			tmplExt     string
+			confirmLink *url.URL
+		}
 	}
 
 	input struct {
@@ -62,28 +72,48 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("cannot check id manager features available: %v", err)
 	}
 
-	p.pwHasher, ok = p.pluginAPI.GetHasher(p.conf.MainHasher)
-	if !ok {
-		return fmt.Errorf("hasher named '%s' is not declared", p.conf.MainHasher)
+	p.pwHasher, err = pwhasher.NewPWHasher(p.conf.MainHasher)
+	if err != nil {
+		return fmt.Errorf("cannot intit pwbased authn: %v", err)
 	}
 
 	if resetEnabled(p) {
-		p.resetSender, ok = p.pluginAPI.GetSender(p.conf.Reset.Sender)
+		p.reset.sender, ok = p.pluginAPI.GetSender(p.conf.Reset.Sender)
 		if !ok {
 			return fmt.Errorf("sender named '%s' is not declared", p.conf.Reset.Sender)
 		}
-		p.resetConfirmLink = createConfirmLink(ResetLink, p)
+
+		resetTmpl, err := os.ReadFile(p.conf.Reset.TmplPath)
+		if err != nil {
+			p.reset.tmpl = defaultResetTmpl
+			p.reset.tmplExt = "txt"
+		} else {
+			p.reset.tmpl = string(resetTmpl)
+			p.reset.tmplExt = path.Ext(p.conf.Reset.TmplPath)
+		}
+
+		p.reset.confirmLink = createConfirmLink(ResetLink, p)
 		if err != nil {
 			return err
 		}
 	}
 
 	if verifyEnabled(p) {
-		p.verifySender, ok = p.pluginAPI.GetSender(p.conf.Verif.Sender)
+		p.verify.sender, ok = p.pluginAPI.GetSender(p.conf.Verify.Sender)
 		if !ok {
-			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verif.Sender)
+			return fmt.Errorf("sender named '%s' is not declared", p.conf.Verify.Sender)
 		}
-		p.verifyConfirmLink = createConfirmLink(VerifyLink, p)
+
+		verifyTmpl, err := os.ReadFile(p.conf.Verify.TmplPath)
+		if err != nil {
+			p.verify.tmpl = defaultVerifyTmpl
+			p.verify.tmplExt = "txt"
+		} else {
+			p.verify.tmpl = string(verifyTmpl)
+			p.verify.tmplExt = path.Ext(p.conf.Verify.TmplPath)
+		}
+
+		p.verify.confirmLink = createConfirmLink(VerifyLink, p)
 		if err != nil {
 			return err
 		}
@@ -158,11 +188,11 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func resetEnabled(p *pwBased) bool {
-	return p.conf.Reset.Sender != "" && p.conf.Reset.Template != ""
+	return p.conf.Reset.Sender != "" && p.conf.Reset.TmplPath != ""
 }
 
 func verifyEnabled(p *pwBased) bool {
-	return p.conf.Verif.Sender != "" && p.conf.Verif.Template != ""
+	return p.conf.Verify.Sender != "" && p.conf.Verify.TmplPath != ""
 }
 
 func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
