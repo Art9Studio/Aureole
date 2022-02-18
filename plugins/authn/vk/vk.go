@@ -4,8 +4,11 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"path"
 
@@ -24,7 +27,14 @@ type vk struct {
 	manager    plugins.IDManager
 	provider   *oauth2.Config
 	authorizer plugins.Authorizer
+	swagger    struct {
+		Paths       *spec.Paths
+		Definitions spec.Definitions
+	}
 }
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (v *vk) Init(api core.PluginAPI) (err error) {
 	v.pluginAPI = api
@@ -43,10 +53,15 @@ func (v *vk) Init(api core.PluginAPI) (err error) {
 	if !ok {
 		return fmt.Errorf("authorizer named for app '%s' is not declared", v.pluginAPI.GetAppName())
 	}
-
 	if err := initProvider(v); err != nil {
 		return err
 	}
+
+	err = json.Unmarshal(swaggerJson, &v.swagger)
+	if err != nil {
+		fmt.Printf("vk authn: cannot marshal swagger docs: %v", err)
+	}
+
 	createRoutes(v)
 	return nil
 }
@@ -58,11 +73,11 @@ func (*vk) GetMetaData() plugins.Meta {
 	}
 }
 
-func (v *vk) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
-	return http.MethodGet, v.login
+func (v *vk) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return v.swagger.Paths, v.swagger.Definitions
 }
 
-func (v *vk) login() plugins.AuthNLoginFunc {
+func (v *vk) LoginWrapper() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		state := c.Query("state")
 		if state != "state" {

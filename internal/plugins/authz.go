@@ -3,7 +3,7 @@ package plugins
 import (
 	"aureole/internal/configs"
 	"fmt"
-
+	"github.com/go-openapi/spec"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 )
@@ -19,6 +19,7 @@ type (
 
 	Authorizer interface {
 		MetaDataGetter
+		GetResponseData() (*spec.Responses, spec.Definitions)
 		GetNativeQueries() map[string]string
 		Authorize(*fiber.Ctx, *Payload) error
 	}

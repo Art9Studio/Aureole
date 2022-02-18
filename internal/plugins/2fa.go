@@ -15,13 +15,14 @@ type (
 
 	SecondFactor interface {
 		MetaDataGetter
+		OpenAPISpecGetter
 		IsEnabled(cred *Credential) (bool, error)
 		Init2FA() MFAInitFunc
 		Verify() MFAVerifyFunc
 	}
 
-	MFAVerifyFunc func(fiber.Ctx) (*Credential, fiber.Map, error)
-	MFAInitFunc   func(c fiber.Ctx) (fiber.Map, error)
+	MFAVerifyFunc func(fiber.Ctx) (cred *Credential, errorData fiber.Map, err error)
+	MFAInitFunc   func(c fiber.Ctx) (mfaData fiber.Map, err error)
 )
 
 func NewSecondFactor(conf *configs.SecondFactor) (SecondFactor, error) {

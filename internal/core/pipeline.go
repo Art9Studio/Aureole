@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func handleLogin(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) error {
+func loginHandler(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		authnResult, err := authFunc(*c)
 		if err != nil {
@@ -40,7 +40,7 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) err
 			if err != nil {
 				return SendError(c, fiber.StatusUnauthorized, err.Error())
 			}
-			return c.JSON(fiber.Map{"token": token, "2fa": enabled2FA})
+			return c.Status(fiber.StatusAccepted).JSON(fiber.Map{"token": token, "2fa": enabled2FA})
 		}
 
 		identity, err := authenticate(app, authnResult)
@@ -51,9 +51,9 @@ func handleLogin(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) err
 	}
 }
 
-func handle2FAInit(mfaFunc plugins.MFAInitFunc, _ *app) func(*fiber.Ctx) error {
+func mfaInitHandler(init2FA plugins.MFAInitFunc, _ *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		mfaData, err := mfaFunc(*c)
+		mfaData, err := init2FA(*c)
 		if err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
 		}
@@ -61,15 +61,14 @@ func handle2FAInit(mfaFunc plugins.MFAInitFunc, _ *app) func(*fiber.Ctx) error {
 	}
 }
 
-func handle2FAVerify(mfaFunc plugins.MFAVerifyFunc, app *app) func(*fiber.Ctx) error {
+func mfaVerificationHandler(verify2FA plugins.MFAVerifyFunc, app *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		cred, mfaData, err := mfaFunc(*c)
-		if err != nil && mfaData == nil {
+		cred, mfaData, err := verify2FA(*c)
+		if err != nil {
+			if mfaData != nil {
+				return sendErrorWithBody(c, fiber.StatusUnauthorized, err.Error(), mfaData)
+			}
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
-		} else if err != nil && mfaData != nil {
-			mfaData["success"] = false
-			mfaData["message"] = err.Error()
-			return c.Status(fiber.StatusUnauthorized).JSON(mfaData)
 		}
 
 		serviceStorage, ok := app.getServiceStorage()
@@ -148,12 +147,9 @@ func authorize(c *fiber.Ctx, app *app, identity *plugins.Identity) error {
 }
 
 func sendErrorWithBody(c *fiber.Ctx, statusCode int, message string, body fiber.Map) error {
-	responseJSON := fiber.Map{
-		"success": false,
-		"message": message,
-	}
+	response := fiber.Map{"error": message}
 	for k, v := range body {
-		responseJSON[k] = v
+		response[k] = v
 	}
-	return c.Status(statusCode).JSON(responseJSON)
+	return c.Status(statusCode).JSON(response)
 }

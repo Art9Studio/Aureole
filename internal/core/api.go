@@ -76,6 +76,7 @@ func (api PluginAPI) Is2FAEnabled(cred *plugins.Credential, mfaID string) (bool,
 }
 
 func (api PluginAPI) GetAppName() string {
+	// todo: удлаить этот метод и сделать логирование через плагин апи, при получении плагина логировать ошибку
 	return api.app.name
 }
 

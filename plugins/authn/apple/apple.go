@@ -5,8 +5,11 @@ import (
 	"aureole/internal/core"
 	"aureole/internal/plugins"
 	"context"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"path"
 	"time"
@@ -27,7 +30,14 @@ type apple struct {
 	secretKey plugins.CryptoKey
 	publicKey plugins.CryptoKey
 	provider  *providerConfig
+	swagger   struct {
+		Paths       *spec.Paths
+		Definitions spec.Definitions
+	}
 }
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (a *apple) Init(api core.PluginAPI) (err error) {
 	a.pluginAPI = api
@@ -47,6 +57,11 @@ func (a *apple) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.PublicKey)
 	}
 
+	err = json.Unmarshal(swaggerJson, &a.swagger)
+	if err != nil {
+		fmt.Printf("apple authn: cannot marshal swagger docs: %v", err)
+	}
+
 	if err := initProvider(a); err != nil {
 		return err
 	}
@@ -61,11 +76,11 @@ func (*apple) GetMetaData() plugins.Meta {
 	}
 }
 
-func (a *apple) GetLoginHandler() (string, func() plugins.AuthNLoginFunc) {
-	return http.MethodPost, a.login
+func (a *apple) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return a.swagger.Paths, a.swagger.Definitions
 }
 
-func (a *apple) login() plugins.AuthNLoginFunc {
+func (a *apple) LoginWrapper() plugins.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
 		input := struct {
 			State string

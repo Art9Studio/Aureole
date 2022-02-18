@@ -1,0 +1,41 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Title",
+    "description": "Title",
+    "version": "1.0.0"
+  },
+  "host": "www",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/login": {
+      "get": {
+        "summary": "Apple ID authentication",
+        "description": "Authenticate user with Apple ID provider",
+        "tags": [
+          "Apple ID AuthN"
+        ]
+      }
+    },
+    "/apple": {
+      "get": {
+        "summary": "Init Apple ID authentication",
+        "description": "Start Apple ID authentication pipeline and provides Apple credentials input prompt",
+        "tags": ["Apple ID AuthN"],
+        "responses": {
+          "302": {
+            "description": "Redirect to /apple/login",
+            "headers": {
+              "Location": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {}
+}

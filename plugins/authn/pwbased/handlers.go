@@ -11,24 +11,24 @@ import (
 
 func register(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var rawCred *credential
+		if err := c.BodyParser(rawCred); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		if input.Password == "" {
+		if rawCred.Password == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "password required")
 		}
 
-		pwHash, err := p.pwHasher.HashPw(input.Password)
+		pwHash, err := p.pwHasher.HashPw(rawCred.Password)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
 		i := &plugins.Identity{
-			ID:         input.Id,
-			Username:   &input.Username,
-			Phone:      &input.Phone,
-			Email:      &input.Email,
+			ID:         rawCred.Id,
+			Username:   &rawCred.Username,
+			Phone:      &rawCred.Phone,
+			Email:      &rawCred.Email,
 			Additional: map[string]interface{}{plugins.Password: pwHash},
 		}
 		cred, err := getCredential(i)
@@ -42,13 +42,13 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		_ = user
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": input.Email}, p.conf.Verify.Exp)
+			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": rawCred.Email}, p.conf.Verify.Exp)
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
 			link := attachToken(p.verify.confirmLink, token)
 
-			err = p.verify.sender.Send(input.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
+			err = p.verify.sender.Send(rawCred.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
 			if err != nil {
 				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -61,21 +61,21 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 			}
 			return p.authorizer.Authorize(c, payload)
 		} else {*/
-		return c.JSON(fiber.Map{"success": true})
+		return c.SendStatus(fiber.StatusOK)
 		//}
 	}
 }
 
 func Reset(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var e *email
+		if err := c.BodyParser(e); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		if input.Email == "" {
+		if e.Email == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
-		i := &plugins.Identity{Email: &input.Email}
+		i := &plugins.Identity{Email: &e.Email}
 
 		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
 		if err != nil {
@@ -87,7 +87,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(fiber.Map{"success": true})
+		return c.SendStatus(fiber.StatusOK)
 	}
 }
 
@@ -95,7 +95,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
-			return core.SendError(c, fiber.StatusNotFound, "token not found")
+			return core.SendError(c, fiber.StatusBadRequest, "token not found")
 		}
 
 		token, err := p.pluginAPI.ParseJWT(rawToken)
@@ -110,7 +110,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		var input *input
+		var input *credential
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
@@ -147,20 +147,20 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if redirectUrl != "" {
 			return c.Redirect(redirectUrl)
 		}
-		return c.JSON(fiber.Map{"success": true})
+		return c.SendStatus(fiber.StatusOK)
 	}
 }
 
 func Verify(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var e *email
+		if err := c.BodyParser(e); err != nil {
 			return core.SendError(c, fiber.StatusBadRequest, err.Error())
 		}
-		if input.Email == "" {
+		if e.Email == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
-		i := &plugins.Identity{Email: &input.Email}
+		i := &plugins.Identity{Email: &e.Email}
 
 		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verify.Exp)
 		if err != nil {
@@ -172,7 +172,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(fiber.Map{"success": true})
+		return c.SendStatus(fiber.StatusOK)
 	}
 }
 
@@ -180,7 +180,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		rawToken := c.Query("token")
 		if rawToken == "" {
-			return core.SendError(c, fiber.StatusNotFound, "token not found")
+			return core.SendError(c, fiber.StatusBadRequest, "token not found")
 		}
 
 		token, err := p.pluginAPI.ParseJWT(rawToken)

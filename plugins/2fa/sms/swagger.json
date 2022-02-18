@@ -1,0 +1,161 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Title",
+    "description": "Title",
+    "version": "1.0.0"
+  },
+  "host": "www",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/start": {
+      "post": {
+        "summary": "Init 2FA",
+        "description": "Initialize SMS 2FA pipeline",
+        "tags": [
+          "2FA SMS"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "description": "JWT that have been received from authentication pipeline",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful initialization return the same token as received",
+            "schema": {
+              "$ref": "#/definitions/token"
+            }
+          }
+        }
+      }
+    },
+    "/verify": {
+      "post": {
+        "summary": "Verify 2FA",
+        "description": "Verify SMS OTP",
+        "tags": [
+          "2FA SMS"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "otp",
+            "description": "JWT that have been received from Init 2FA and OTP entered by user",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/otp"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Error response",
+            "schema": {
+              "description": "JWT, which handles max attempts feature",
+              "$ref": "#/definitions/token"
+            }
+          }
+        }
+      }
+    },
+    "/2fa/sms/resend": {
+      "post": {
+        "summary": "Resend 2FA OTP",
+        "description": "Resend one time password to user",
+        "tags": [
+          "2FA SMS"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "description": "JWT that have been used for the previous requests to Aureole",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful resend send new OTP to user and returns new JWT, which handles max attempts feature",
+            "schema": {
+              "$ref": "#/definitions/token"
+            }
+          },
+          "400": {
+            "description": "Bad request error",
+            "schema": {
+              "$ref": "#/definitions/ErrorMessage"
+            }
+          },
+          "500": {
+            "description": "Internal server error error",
+            "schema": {
+              "$ref": "#/definitions/ErrorMessage"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "token": {
+      "type": "object",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "title": "Json Web Token",
+          "type": "string",
+          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        }
+      }
+    },
+    "otp": {
+      "type": "object",
+      "required": [
+        "token",
+        "otp"
+      ],
+      "properties": {
+        "token": {
+          "title": "Json Web Token",
+          "type": "string",
+          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        },
+        "otp": {
+          "title": "One time password",
+          "type": "string",
+          "example": "A123456B"
+        }
+      }
+    }
+  }
+}
+

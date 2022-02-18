@@ -12,6 +12,12 @@ apps:
       storage: service_store
 
     authN:
+      - type: "email"
+        config:
+          sender: email
+          template: magic_link
+          exp: 3600
+
       - type: "password_based"
         config:
           main_hasher:
@@ -34,12 +40,6 @@ apps:
             sender: email
             template: email_verification
             exp: 3600
-
-      - type: "email"
-        config:
-          sender: email
-          template: magic_link
-          exp: 3600
 
       - type: "phone"
         config:
@@ -102,7 +102,7 @@ apps:
         nbf: 0
         iat: true
         access_bearer: cookie # [cookie, header, both]
-        refresh_bearer: body # [cookie, body, both]
+        refresh_bearer:  body # [cookie, body, both]
         sign_key: local_jwk_keys
         verify_keys:
           - local_jwk_keys
@@ -110,49 +110,34 @@ apps:
         refresh_exp: 7890000
         payload: lab/templates/jwt_payload.json.tmpl
 
-#    2fa:
-#      #  - type: "sms"
-#      #    name: sms
-#      #    config:
-#      #      sender: twilio
-#      #      template: sms_2fa_tmpl
-#      #      max_attempts: 5
-#      #      otp:
-#      #        length: 6
-#      #        alphabet: alphanum
-#      #        exp: 60
-#
-#      #  - type: "yubikey"
-#      #    name: yubikey_2fa
-#      #    config:
-#
-#      - type: "google_authenticator"
-#        name: google_authenticator
-#        config:
-#          alg: hotp
-#          iss: Company Name
-#          window_size: 15
-#          disallow_reuse: false
-#          max_attempts: 5
-#          scratch_code:
-#            num: 5
-#            alphabet: alphanum # todo: support regex range syntax '[a-z1-9]'
+    2fa:
+      - type: "sms"
+        name: sms
+        config:
+          sender: twilio
+          template: sms_2fa_tmpl
+          max_attempts: 5
+          otp:
+            length: 6
+            alphabet: alphanum
+            exp: 60
+
+      - type: "google_authenticator"
+        name: google_authenticator
+        config:
+          alg: hotp
+          iss: Company Name
+          window_size: 15
+          disallow_reuse: false
+          max_attempts: 5
+          scratch_code:
+            num: 5
+            alphabet: alphanum # todo: support regex range syntax '[a-z1-9]'
 
     id_manager:
       type: "standard"
       config:
         db_url: ${DB_URL}
-
-#      type: "jwt_webhook"
-#      config:
-#        address: http://localhost:3001
-#        retries_num: 1
-#        retry_interval: 2
-#        timeout: 10
-#        headers:
-#          header1: value1
-#          header2: value2
-
 
     storages:
       - type: "etcd"

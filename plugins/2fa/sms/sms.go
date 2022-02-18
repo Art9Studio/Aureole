@@ -4,8 +4,11 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"aureole/internal/plugins"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/spec"
 	"net/http"
 	"os"
 	"path"
@@ -23,14 +26,24 @@ type (
 		conf          *config
 		sender        plugins.Sender
 		tmpl, tmplExt string
+		swagger       struct {
+			Paths       *spec.Paths
+			Definitions spec.Definitions
+		}
 	}
 
-	input struct {
-		Phone string `json:"phone"`
+	token struct {
 		Token string `json:"token"`
-		Otp   string `json:"otp"`
+	}
+
+	otp struct {
+		token
+		Otp string `json:"otp"`
 	}
 )
+
+//go:embed swagger.json
+var swaggerJson []byte
 
 func (s *sms) Init(api core.PluginAPI) (err error) {
 	s.pluginAPI = api
@@ -42,6 +55,11 @@ func (s *sms) Init(api core.PluginAPI) (err error) {
 	_, ok := s.pluginAPI.GetIDManager()
 	if !ok {
 		return fmt.Errorf("manager for app '%s' is not declared", s.pluginAPI.GetAppName())
+	}
+
+	err = json.Unmarshal(swaggerJson, &s.swagger)
+	if err != nil {
+		fmt.Printf("sms 2fa: cannot marshal swagger docs: %v", err)
 	}
 
 	tmpl, err := os.ReadFile(s.conf.TmplPath)
@@ -65,8 +83,8 @@ func (s *sms) GetMetaData() plugins.Meta {
 	}
 }
 
-func (s *sms) Clone() interface{} {
-	return &sms{rawConf: s.rawConf}
+func (s *sms) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+	return s.swagger.Paths, s.swagger.Definitions
 }
 
 func (s *sms) IsEnabled(cred *plugins.Credential) (bool, error) {
@@ -75,11 +93,11 @@ func (s *sms) IsEnabled(cred *plugins.Credential) (bool, error) {
 
 func (s *sms) Init2FA() plugins.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var strToken *token
+		if err := c.BodyParser(strToken); err != nil {
 			return nil, err
 		}
-		if input.Token == "" {
+		if strToken.Token == "" {
 			return nil, errors.New("token are required")
 		}
 
@@ -87,7 +105,7 @@ func (s *sms) Init2FA() plugins.MFAInitFunc {
 			provider string
 			cred     plugins.Credential
 		)
-		t, err := s.pluginAPI.ParseJWT(input.Token)
+		t, err := s.pluginAPI.ParseJWT(strToken.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -136,15 +154,15 @@ func (s *sms) Init2FA() plugins.MFAInitFunc {
 
 func (s *sms) Verify() plugins.MFAVerifyFunc {
 	return func(c fiber.Ctx) (*plugins.Credential, fiber.Map, error) {
-		var input *input
-		if err := c.BodyParser(input); err != nil {
+		var otp *otp
+		if err := c.BodyParser(otp); err != nil {
 			return nil, nil, err
 		}
-		if input.Token == "" || input.Otp == "" {
+		if otp.Token == "" || otp.Otp == "" {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := s.pluginAPI.ParseJWT(input.Token)
+		t, err := s.pluginAPI.ParseJWT(otp.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -180,7 +198,7 @@ func (s *sms) Verify() plugins.MFAVerifyFunc {
 			return nil, nil, err
 		}
 
-		if decrOtp == input.Otp {
+		if decrOtp == otp.Otp {
 			return &plugins.Credential{
 				Name:  "phone",
 				Value: phone.(string),
