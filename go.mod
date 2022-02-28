@@ -27,14 +27,14 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
-	github.com/hashicorp/vault/api v1.3.1
+	github.com/hashicorp/vault/api v1.4.1
 	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jackc/tern v1.12.5
 	github.com/jarcoal/httpmock v1.1.0
 	github.com/joho/godotenv v1.4.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
-	github.com/jpillora/overseer v1.1.6 // indirect
+	github.com/jpillora/overseer v1.1.6
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.17
@@ -42,7 +42,6 @@ require (
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
-	github.com/pkg/profile v1.6.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/viper v1.10.1
