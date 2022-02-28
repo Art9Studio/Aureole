@@ -34,7 +34,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
-	github.com/jpillora/overseer v1.1.6 // indirect
+	github.com/jpillora/overseer v1.1.6
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.17
@@ -42,12 +42,11 @@ require (
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pkg/errors v0.9.1
-	github.com/pkg/profile v1.6.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0
-	github.com/swaggo/swag v1.7.8
+	github.com/swaggo/swag v1.8.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.uber.org/multierr v1.7.0
