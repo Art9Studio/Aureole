@@ -11,7 +11,7 @@ replace (
 require (
 	github.com/arsmn/fiber-swagger/v2 v2.24.0
 	github.com/avast/retry-go/v4 v4.0.2
-	github.com/coocood/freecache v1.2.0
+	github.com/coocood/freecache v1.2.1
 	github.com/coreos/etcd v3.3.27+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
