@@ -46,7 +46,7 @@ require (
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.1
-	github.com/swaggo/swag v1.7.8
+	github.com/swaggo/swag v1.8.1
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.uber.org/multierr v1.7.0
