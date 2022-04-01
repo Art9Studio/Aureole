@@ -72,7 +72,7 @@ func (p *pem) Init(api core.PluginAPI) (err error) {
 	if p.conf.RefreshInterval != 0 {
 		p.refreshInterval = time.Duration(p.conf.RefreshInterval) * time.Millisecond
 		p.refreshDone = make(chan struct{})
-		//go refreshKeys(p)
+		go refreshKeys(p)
 	}
 
 	err = json.Unmarshal(swaggerJson, &p.swagger)

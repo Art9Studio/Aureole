@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/go-openapi/spec"
-	"github.com/swaggo/swag"
 	"strings"
 )
 
@@ -47,10 +46,6 @@ func (s *swagger) ReadDoc() string {
 		return ""
 	}
 	return string(docsBytes)
-}
-
-func init() {
-	swag.Register("swagger", &swagger{})
 }
 
 func assembleSwagger() error {

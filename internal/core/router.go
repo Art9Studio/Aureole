@@ -2,16 +2,13 @@ package core
 
 import (
 	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/pprof"
-	"net"
-	_ "net/http/pprof"
 	"os"
 	"path"
 	"sync"
-	"syscall"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 var (
@@ -36,8 +33,13 @@ type (
 	}
 )
 
-func RunServer(ln net.Listener) error {
-	return createServer().Listener(ln)
+func RunServer() error {
+	var port string
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = "3000"
+	}
+	return createServer().Listen(":" + port)
 }
 
 // createServer initializes router and creates routes for each application
@@ -45,7 +47,6 @@ func createServer() *fiber.App {
 	fiberApp := fiber.New(fiber.Config{DisableStartupMessage: true})
 	fiberApp.Use(cors.New())
 	fiberApp.Use(logger.New())
-	fiberApp.Use(pprof.New())
 
 	for appName, routes := range r.appRoutes {
 		pathPrefix := p.apps[appName].pathPrefix
@@ -61,17 +62,7 @@ func createServer() *fiber.App {
 	}
 
 	fiberApp.Get("/swagger/*", fiberSwagger.HandlerDefault)
-	fiberApp.Get("/reload", reload)
 	return fiberApp
-}
-
-func reload(c *fiber.Ctx) error {
-	// todo: make this route secure
-	err := syscall.Kill(os.Getppid(), syscall.SIGUSR2)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.SendStatus(fiber.StatusOK)
 }
 
 func getRouter() *router {

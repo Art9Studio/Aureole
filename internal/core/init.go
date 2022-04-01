@@ -8,12 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jpillora/overseer"
 	"github.com/lestrrat-go/jwx/jwk"
-	"log"
+	"github.com/swaggo/swag"
 	"net/http"
 	"net/url"
-	"os"
 	"reflect"
 	"strings"
 	"unicode/utf8"
@@ -26,32 +24,6 @@ type PluginInitializer interface {
 }
 
 var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
-
-func Run() {
-	var port string
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "3000"
-	}
-
-	overseer.Run(overseer.Config{
-		Program: prog,
-		Address: ":" + port,
-	})
-}
-
-func prog(state overseer.State) {
-	conf, err := configs.LoadMainConfig()
-	if err != nil {
-		log.Panic(err)
-	}
-
-	Init(conf)
-	err = RunServer(state.Listener)
-	if err != nil {
-		log.Panic(err)
-	}
-}
 
 func Init(conf *configs.Project) {
 	p = &project{
@@ -81,6 +53,8 @@ func Init(conf *configs.Project) {
 	err := assembleSwagger()
 	if err != nil {
 		fmt.Printf("cannot assemble swagger docs: %v", err)
+	} else {
+		swag.Register("swagger", &swagger{})
 	}
 }
 

@@ -33,7 +33,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
-	github.com/jpillora/overseer v1.1.6
+	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.21
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -48,7 +48,7 @@ require (
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.uber.org/multierr v1.8.0
-	go.uber.org/zap v1.21.0
+	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/tools v0.1.8 // indirect
