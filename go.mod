@@ -9,7 +9,7 @@ replace (
 )
 
 require (
-	github.com/arsmn/fiber-swagger/v2 v2.24.0
+	github.com/arsmn/fiber-swagger/v2 v2.31.1
 	github.com/avast/retry-go/v4 v4.0.3
 	github.com/coocood/freecache v1.2.1
 	github.com/coreos/etcd v3.3.27+incompatible // indirect
