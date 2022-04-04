@@ -20,7 +20,7 @@ require (
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/go-redis/redis/v8 v8.11.4
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-test/deep v1.0.8
 	github.com/gofiber/fiber/v2 v2.31.0
 	github.com/google/uuid v1.3.0 // indirect
