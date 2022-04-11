@@ -16,7 +16,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fatih/structs v1.1.0
-	github.com/go-openapi/spec v0.20.4
+	github.com/go-openapi/spec v0.20.5
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator v9.31.0+incompatible
