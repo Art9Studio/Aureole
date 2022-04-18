@@ -35,7 +35,7 @@ require (
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/jpillora/overseer v1.1.6
 	github.com/leodido/go-urn v1.2.1 // indirect
-	github.com/lestrrat-go/jwx v1.2.21
+	github.com/lestrrat-go/jwx v1.2.23
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/mapstructure v1.4.3
