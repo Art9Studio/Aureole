@@ -1,0 +1,3 @@
+name: "vk"
+type: auth
+description: "VK Authentication"

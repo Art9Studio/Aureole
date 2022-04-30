@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "e4949b19-4759-4de7-ac55-093bd64cc77f",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "jwt",
+      "uuid": "ea5d6e15-3f6f-4840-8496-7200dd1212a8"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "f7356ab9-c80e-4f81-aa71-2e22dad5f6de",
+      "additionalProperties": false,
+      "required": [
+        "sign_key"
+      ],
+      "properties": {
+        "iss": {
+          "type": "string",
+          "uuid": "baaa2c77-81c9-47cc-a50b-e1728cf1cc83",
+          "minLength": 1,
+          "default": "Aureole Server"
+        },
+        "sub": {
+          "type": "boolean",
+          "uuid": "55080f7a-c5bf-4cb1-93ce-b897bb0b5e54",
+          "default": false
+        },
+        "aud": {
+          "type": "array",
+          "uuid": "e05fb8e8-4e74-4d60-b3e0-d54edb43a2e4",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "nbf": {
+          "type": "integer",
+          "uuid": "6a96fb76-1a2c-4ae7-8a3f-f61a06a1f262",
+          "minimum": 0,
+          "default": 0
+        },
+        "iat": {
+          "type": "boolean",
+          "uuid": "82862fe1-738c-4949-941d-59eea4506d16",
+          "default": false,
+          "contentMediaType": ""
+        },
+        "access_bearer": {
+          "enum": [
+            "cookie",
+            "header",
+            "both"
+          ],
+          "uuid": "b33de830-68d0-40ce-8748-96ea48b067bd",
+          "default": "header"
+        },
+        "refresh_bearer": {
+          "enum": [
+            "cookie",
+            "body",
+            "both"
+          ],
+          "uuid": "058f2f6d-ce79-41f0-94d6-239eea104459",
+          "default": "cookie"
+        },
+        "sign_key": {
+          "type": "string",
+          "uuid": "646423c1-f19b-49c5-a696-6f15565171e5",
+          "minLength": 1,
+          "metatags": "@crypto_key_ref"
+        },
+        "verify_keys": {
+          "type": "array",
+          "uuid": "6f3fc984-1467-4777-a37b-a7e19da0a87f",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "metatags": "@crypto_key_ref"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "access_exp": {
+          "type": "integer",
+          "uuid": "3526e6d4-0f8d-4e24-a236-8e4543fdb3d0",
+          "minimum": 0,
+          "default": 900,
+          "metatags": "@unit:s"
+        },
+        "refresh_exp": {
+          "type": "integer",
+          "uuid": "556c149a-eb6a-4b11-9116-91d1b25baa7f",
+          "minimum": 0,
+          "default": 7890000,
+          "metatags": "@unit:s"
+        },
+        "refresh_url": {
+          "type": "string",
+          "uuid": "3c588a95-86a2-403d-8274-0917496db7e8",
+          "minLength": 1,
+          "default": "/refresh",
+          "metatags": "@rel_url"
+        },
+        "payload": {
+          "type": "string",
+          "uuid": "52d3d25f-257c-4cbe-abd6-54a294920e83",
+          "minLength": 1,
+          "metatags": "@file_path @f_ext:json"
+        },
+        "native_queries": {
+          "type": "string",
+          "uuid": "02b4424a-f59a-4e9f-8ccd-1311d3009f7a",
+          "metatags": "@file_path @f_ext:yaml,yml"
+        }
+      }
+    }
+  },
+  "example": "issuer/jwt"
+}

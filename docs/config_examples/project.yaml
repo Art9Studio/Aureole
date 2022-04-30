@@ -25,5 +25,5 @@ apps:
       # array of crypto keys
     senders:
       # array of senders
-    admin_plugins:
+    root_plugins:
       # array of admin plugins

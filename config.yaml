@@ -6,19 +6,19 @@ apps:
     host: http://localhost:3000
     auth_session_exp: 86400
 
-    service:
+    internal:
       enc_key: service_enc_key
       sign_key: service_sign_key
       storage: service_store
 
-    authN:
-      - type: "email"
+    auth:
+      - plugin: "email"
         config:
           sender: email
           template: magic_link
           exp: 3600
 
-      - type: "password_based"
+      - plugin: "password_based"
         config:
           main_hasher:
             type: "argon2"
@@ -41,7 +41,7 @@ apps:
             template: email_verification
             exp: 3600
 
-      - type: "phone"
+      - plugin: "phone"
         config:
           sender: twilio
           template: phone_otp
@@ -53,17 +53,17 @@ apps:
             postfix: -B
             exp: 300
 
-      - type: "google"
-#        filter:
-#          email: ".*\\.aureole.cloud"
+      - plugin: "google"
         config:
+          #        filter:
+          #          email: ".*\\.aureole.cloud"
           client_id: ${GOOGLE_CLIENT_ID}
           client_secret: ${GOOGLE_SECRET}
           scopes:
             - https://www.googleapis.com/auth/userinfo.email
             - https://www.googleapis.com/auth/userinfo.profile
 
-      - type: "vk"
+      - plugin: "vk"
         config:
           client_id: ${VK_CLIENT_ID}
           client_secret: ${VK_SECRET}
@@ -71,7 +71,7 @@ apps:
             - email
           fields: [ ]
 
-      - type: "facebook"
+      - plugin: "facebook"
         config:
           client_id: ${FACEBOOK_CLIENT_ID}
           client_secret: ${FACEBOOK_SECRET}
@@ -80,7 +80,7 @@ apps:
           fields:
             - email
 
-      - type: "apple"
+      - plugin: "apple"
         config:
           secret_key: apple_private_keys
           public_key: apple_public_keys
@@ -92,7 +92,7 @@ apps:
             - name
 
     authZ:
-      type: "jwt"
+      plugin: "jwt"
       config:
         iss: Aureole Server
         sub: true
@@ -110,8 +110,8 @@ apps:
         refresh_exp: 7890000
         payload: lab/templates/jwt_payload.json.tmpl
 
-    2fa:
-      - type: "sms"
+    mfa:
+      - plugin: "sms"
         name: sms
         config:
           sender: twilio
@@ -122,7 +122,7 @@ apps:
             alphabet: alphanum
             exp: 60
 
-      - type: "google_authenticator"
+      - plugin: "google_authenticator"
         name: google_authenticator
         config:
           alg: hotp
@@ -135,78 +135,70 @@ apps:
             alphabet: alphanum # todo: support regex range syntax '[a-z1-9]'
 
     id_manager:
-      type: "standard"
+      plugin: "standard"
       config:
         db_url: ${DB_URL}
 
     storages:
-      - type: "etcd"
-        name: etcd_store
-        config:
-          endpoints:
-            - localhost:2379
-          timeout: 0.2
-          dial_timeout: 3
-
-      - type: "redis"
+      - plugin: "redis"
         name: redis_store
         config:
           address: localhost:6379
           password: ${REDIS_PASSWORD}
           db: 0
 
-      - type: "redis"
+      - plugin: "redis"
         name: service_store
         config:
           address: localhost:6379
           password: ${REDIS_PASSWORD}
           db: 1
 
-      - type: "memory"
+      - plugin: "memory"
         name: memory_store
         config:
           size: 100
 
     crypto_storages:
-      - type: "file"
+      - plugin: "file"
         name: local_jwk_keys_store
         config:
           path: lab/keys/keys.json
 
-      - type: "file"
+      - plugin: "file"
         name: gen_keys_store
         config:
           path: lab/keys/gen_keys.json
 
-      - type: "url"
+      - plugin: "url"
         name: apple_public_keys_store
         config:
           path: https://appleid.apple.com/auth/keys
 
-      - type: "file"
+      - plugin: "file"
         name: apple_private_keys_store
         config:
           path: lab/keys/apple_private_key.p8
 
-      - type: "vault"
+      - plugin: "vault"
         name: vault_keys_store
         config:
           token: s.5qhJ1R3VcvwwCJQpdAjY7Lw0
           address: http://127.0.0.1:8200
           path: /secret/keys
 
-      - type: "file"
+      - plugin: "file"
         name: service_sign_keys_store
         config:
           path: lab/keys/service_sign_key.json
 
-      - type: "file"
+      - plugin: "file"
         name: service_enc_keys_store
         config:
           path: lab/keys/service_enc_key.json
 
     crypto_keys:
-      - type: "jwk"
+      - plugin: "jwk"
         name: local_jwk_keys
         config:
           refresh_interval: 5
@@ -214,18 +206,18 @@ apps:
           retry_interval: 7
           storage: local_jwk_keys_store
 
-      - type: "pem"
+      - plugin: "pem"
         name: apple_private_keys
         config:
           alg: ES256
           storage: apple_private_keys_store
 
-      - type: "jwk"
+      - plugin: "jwk"
         name: apple_public_keys
         config:
           storage: apple_public_keys_store
 
-      - type: "jwk"
+      - plugin: "jwk"
         name: gen_keys
         config:
           kty: RSA
@@ -234,7 +226,7 @@ apps:
           kid: SHA-256
           storage: gen_keys_store
 
-      - type: "jwk"
+      - plugin: "jwk"
         name: service_enc_key
         config:
           kty: RSA
@@ -244,7 +236,7 @@ apps:
           kid: SHA-256
           storage: service_enc_keys_store
 
-      - type: "jwk"
+      - plugin: "jwk"
         name: service_sign_key
         config:
           kty: RSA
@@ -254,7 +246,7 @@ apps:
           storage: service_sign_keys_store
 
     senders:
-      - type: "email"
+      - plugin: "email"
         name: email
         config:
           host: ${SMTP_HOST}
@@ -270,7 +262,7 @@ apps:
             magic_link: lab/templates/magic_link.txt
             email_verification: lab/templates/email_verification.txt
 
-      - type: "twilio"
+      - plugin: "twilio"
         name: twilio
         config:
           account_sid: ${TEST_TWILIO_ACCOUNT_SID}
@@ -280,6 +272,6 @@ apps:
             phone_otp: lab/templates/phone_otp.txt
             sms_2fa_tmpl: lab/templates/sms_2fa.txt
 
-    admin_plugins:
-      - type: "urls"
+    root_plugins:
+      - plugin: "urls"
         name: get-urls

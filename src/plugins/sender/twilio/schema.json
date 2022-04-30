@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "bbebed5f-b766-4534-9c21-0a3b4ed5df43",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "twilio",
+      "uuid": "fb08d6f3-e715-4c78-8cfc-a207ac497975"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "01ede864-1546-48fe-8d3f-4154446dfd2a",
+      "additionalProperties": false,
+      "required": [
+        "account_sid",
+        "auth_token",
+        "from",
+        "templates"
+      ],
+      "properties": {
+        "account_sid": {
+          "type": "string",
+          "uuid": "d0be3422-e260-47a8-9077-cbcdcb276522",
+          "minLength": 1
+        },
+        "auth_token": {
+          "type": "string",
+          "uuid": "5f9f8fb6-25a3-48f6-bd84-8308530257f5",
+          "minLength": 1
+        },
+        "from": {
+          "type": "string",
+          "uuid": "68856fc8-0c9f-4893-b248-762d6853c6b8",
+          "minLength": 1,
+          "metatags": "@phone"
+        },
+        "templates": {
+          "type": "object",
+          "uuid": "ce0eaf2f-f56f-4b8c-9d10-95851838dea8",
+          "patternProperties": {
+            ".+": {
+              "type": "string",
+              "minLength": 1,
+              "metatags": "@file_path @f_ext:txt,html"
+            }
+          },
+          "minProperties": 1
+        }
+      }
+    }
+  },
+  "example": "sender/twilio"
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "yubikey",
+      "uuid": ""
+    },
+    "config": {
+      "type": "object",
+      "uuid": "",
+      "additionalProperties": false
+    }
+  },
+  "example": "2fa/yubikey"
+}

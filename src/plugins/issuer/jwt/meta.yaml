@@ -1,0 +1,3 @@
+name: "jwt"
+type: issuer
+description: "JWT issuer"

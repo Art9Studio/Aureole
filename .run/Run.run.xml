@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="Aureole" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="AUREOLE_CONF_PATH" value="config.light.yaml" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="aureole" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/src/main.go" />
+    <method v="2" />
+  </configuration>
+</component>

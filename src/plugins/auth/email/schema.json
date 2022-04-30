@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "8dd95afc-ebdd-4886-b8d6-3f6f1ec63601",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "email",
+      "uuid": "0b922b29-91a4-4cfb-9d16-99f5f042f507"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "f213f303-8ecb-46a5-8bbc-7b6360cba5fd",
+      "additionalProperties": false,
+      "required": [
+        "sender",
+        "template"
+      ],
+      "properties": {
+        "sender": {
+          "type": "string",
+          "uuid": "1a405c8d-4b5d-4d0c-8684-7a34870ed542",
+          "minLength": 1,
+          "metatags": "@sender_ref"
+        },
+        "template": {
+          "type": "string",
+          "uuid": "cbc328e5-ec8d-4826-835c-4c45a5231108",
+          "minLength": 1,
+          "metatags": "@template_ref"
+        },
+        "exp": {
+          "type": "integer",
+          "uuid": "c3aa031c-d807-43b8-801d-36bb9711016c",
+          "default": 3600,
+          "minimum": 0,
+          "metatags": "@unit:s"
+        }
+      }
+    }
+  },
+  "example": "auth/email"
+}

@@ -1,0 +1,3 @@
+name: "memory"
+type: storage
+description: "In-memory storage"

@@ -1,0 +1,61 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Aureole API",
+    "description": "The most flexible modern open source authentication server for your cloud.",
+    "contact": {
+      "name": "API Support",
+      "url": "https://www.aureolecloud.io/support",
+      "email": "support@aureolecloud.io"
+    },
+    "license": {
+      "name": "AGPL-3.0 License",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.en.html"
+    },
+    "version": "0.1"
+  },
+  "schemes": [
+    "https"
+  ],
+  "host": "localhost:3000",
+  "paths": {
+    "/": {
+      "post": {
+        "responses": {
+          "202": {
+            "description": "A map of available 2FA plugins and their links, and token for authenticate request to 2FA",
+            "schema": {
+              "$ref": "#/definitions/2FAMap"
+            }
+          }
+        }
+      }
+    }
+  },
+  "basePath": "/",
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "definitions": {
+    "ErrorMessage": {
+      "description": "Message contains error details",
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "2FAMap": {
+      "type": "object",
+      "additionalProperties": true,
+      "example": {
+        "google_authenticator": "app/2fa/google-authenticator/start",
+        "sms": "app/2fa/sms/start"
+      }
+    }
+  }
+}

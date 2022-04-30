@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "71539321-e240-4902-9279-599b56ad2426",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "memory",
+      "uuid": "890aecf3-648b-4744-90e6-3d4d325df284"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "d39d09da-27b4-4803-9b8e-7c9812e6bba8",
+      "properties": {
+        "size": {
+          "type": "number",
+          "uuid": "5ed226ad-6d2f-4700-af1c-0a05bf994f7e",
+          "minimum": 0.5,
+          "default": 128,
+          "metatags": "@unit:MB"
+        }
+      }
+    }
+  },
+  "example": "storage/memory"
+}

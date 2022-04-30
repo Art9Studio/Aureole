@@ -1,13 +1,13 @@
-FROM golang:1.18.0-buster as builder
+FROM golang:1.18.1-buster as builder
 
-WORKDIR /tmp/go
+WORKDIR /tmp/go/
 
-COPY go.mod .
-COPY go.sum .
+COPY src/go.mod .
+COPY src/go.sum .
 
 RUN go mod download
 
-COPY . .
+COPY src .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./aureole .
 

@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "required": [
     "name",
-    "authN"
+    "auth"
   ],
   "properties": {
     "name": {
@@ -31,7 +31,7 @@
       "default": 86400,
       "metatags": "@unit:s"
     },
-    "service": {
+    "internal": {
       "type": "object",
       "uuid": "3096b94f-83f7-488c-8a49-84fdf216e24b",
       "additionalProperties": false,
@@ -57,32 +57,32 @@
         }
       }
     },
-    "authN": {
+    "auth": {
       "type": "array",
       "uuid": "39042e0a-292c-4e9e-9f59-e132fc471938",
       "items": {
-        "$ref": "../../plugins/authn/schema.json"
+        "$ref": "../../src/plugins/auth/schema.json"
       },
       "minItems": 1
     },
-    "authZ": {
-      "$ref": "../../plugins/authz/schema.json"
+    "issuer": {
+      "$ref": "../../src/plugins/issuer/schema.json"
     },
-    "2fa": {
+    "mfa": {
       "type": "array",
       "uuid": "fb0e66dd-e1c7-45f3-a635-4875fcd0b9ce",
       "items": {
-        "$ref": "../../plugins/2fa/schema.json"
+        "$ref": "../../src/plugins/mfa/schema.json"
       }
     },
     "id_manager": {
-      "$ref": "../../plugins/identity/schema.json"
+      "$ref": "../../src/plugins/identity/schema.json"
     },
     "storages": {
       "type": "array",
       "uuid": "df361f60-1628-40ed-b24f-e1a947154e95",
       "items": {
-        "$ref": "../../plugins/storage/schema.json"
+        "$ref": "../../src/plugins/storage/schema.json"
       },
       "minItems": 1
     },
@@ -90,28 +90,28 @@
       "type": "array",
       "uuid": "5d2ef815-0404-45ab-abf2-f28257205f22",
       "items": {
-        "$ref": "../../plugins/crypto-storage/schema.json"
+        "$ref": "../../src/plugins/crypto-storage/schema.json"
       }
     },
     "crypto_keys": {
       "type": "array",
       "uuid": "49bda2a6-5ea4-4899-992f-322424deb332",
       "items": {
-        "$ref": "../../plugins/crypto-key/schema.json"
+        "$ref": "../../src/plugins/crypto-key/schema.json"
       }
     },
     "senders": {
       "type": "array",
       "uuid": "d9404fd9-d6f5-432e-b80e-fa73dba384bd",
       "items": {
-        "$ref": "../../plugins/sender/schema.json"
+        "$ref": "../../src/plugins/sender/schema.json"
       }
     },
-    "admin_plugins": {
+    "root_plugins": {
       "type": "array",
       "uuid": "f83f8913-29d3-4a0e-a0af-9897e8725c95",
       "items": {
-        "$ref": "../../plugins/admin/schema.json"
+        "$ref": "../../src/plugins/admin/schema.json"
       }
     }
   }

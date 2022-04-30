@@ -1,0 +1,100 @@
+api_version: "0.1"
+
+apps:
+  - name: one
+    path_prefix: /one
+    host: http://localhost:3000
+
+    internal:
+      enc_key: internal_enc_key
+      sign_key: internal_sign_key
+      storage: internal
+
+    auth:
+      - plugin: "vk"
+        name: vk_one
+        config:
+          client_id: ${VK_CLIENT_ID}
+          client_secret: ${VK_SECRET}
+          scopes:
+            - email
+          fields: [ ]
+
+      - plugin: "vk"
+        name: vk_two
+        config:
+          client_id: ${VK_CLIENT_ID}
+          client_secret: ${VK_SECRET}
+          scopes:
+            - email
+          fields: [ ]
+
+    issuer:
+      plugin: "jwt"
+      config:
+        iss: Aureole Server
+        sub: true
+        nbf: 0
+        iat: true
+        access_bearer: cookie # [cookie, header, both]
+        refresh_bearer: body # [cookie, body, both]
+        sign_key: local_jwk_keys
+        verify_keys:
+          - local_jwk_keys
+        access_exp: 900000
+        refresh_exp: 7890000
+        payload: lab/templates/jwt_payload.json.tmpl
+
+    crypto_keys:
+      - plugin: "jwk"
+        name: local_jwk_keys
+        config:
+          refresh_interval: 5
+          retries_num: 3
+          retry_interval: 7
+          storage: local_jwk_keys
+
+      - plugin: "jwk"
+        name: internal_enc_key
+        config:
+          kty: RSA
+          alg: RSA-OAEP-256
+          size: 4096
+          use: enc
+          kid: SHA-256
+          storage: internal_enc_keys
+
+      - plugin: "jwk"
+        name: internal_sign_key
+        config:
+          kty: RSA
+          alg: RS256
+          size: 2048
+          kid: SHA-256
+          storage: internal_sign_keys
+
+    storages:
+      - plugin: "memory"
+        name: internal
+        config:
+          size: 100
+
+    crypto_storages:
+      - plugin: "file"
+        name: local_jwk_keys
+        config:
+          path: lab/keys/keys.json
+
+      - plugin: "file"
+        name: internal_sign_keys
+        config:
+          path: lab/keys/service_sign_key.json
+
+      - plugin: "file"
+        name: internal_enc_keys
+        config:
+          path: lab/keys/service_enc_key.json
+    
+    root_plugins:
+      - plugin: "urls"
+        name: get-urls

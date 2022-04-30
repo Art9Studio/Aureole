@@ -1,0 +1,3 @@
+name: "facebook"
+type: auth
+description: "Facebook Authentication"
