@@ -27,7 +27,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/hashicorp/vault/api v1.5.0
-	github.com/jackc/pgx/v4 v4.15.0
+	github.com/jackc/pgx/v4 v4.16.1
 	github.com/jackc/tern v1.12.5
 	github.com/jarcoal/httpmock v1.1.0
 	github.com/joho/godotenv v1.4.0
