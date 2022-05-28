@@ -2,7 +2,6 @@ package phone
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 const (
@@ -24,6 +23,9 @@ type config struct {
 	} `mapstructure:"otp"`
 }
 
-func (pluginCreator) Create(conf configs.PluginConfig) plugins.Plugin {
-	return &authn{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.MaxAttempts, 3)
+	configs.SetDefault(&c.Otp.Length, 6)
+	configs.SetDefault(&c.Otp.Alphabet, "num")
+	configs.SetDefault(&c.Otp.Exp, 300)
 }

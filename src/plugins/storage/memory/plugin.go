@@ -3,7 +3,6 @@ package memory
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	_ "embed"
 	"github.com/coocood/freecache"
 	"github.com/mitchellh/mapstructure"
@@ -15,15 +14,11 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-// pluginCreator represents plugin for bigcache storage
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type memory struct {
@@ -31,6 +26,10 @@ type memory struct {
 	rawConf   configs.PluginConfig
 	conf      *config
 	cache     *freecache.Cache
+}
+
+func Create(conf configs.PluginConfig) core.Storage {
+	return &memory{rawConf: conf}
 }
 
 func (m *memory) Init(api core.PluginAPI) error {
@@ -45,8 +44,12 @@ func (m *memory) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (m memory) GetMetaData() plugins.Meta {
+func (m memory) GetMetaData() core.Meta {
 	return meta
+}
+
+func (m *memory) GetPaths() []*core.Route {
+	return []*core.Route{}
 }
 
 func (m *memory) Set(k string, v interface{}, exp int) error {

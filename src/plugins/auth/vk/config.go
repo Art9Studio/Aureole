@@ -2,7 +2,6 @@ package vk
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 const (
@@ -22,8 +21,4 @@ type (
 
 func (c *config) setDefaults() {
 	configs.SetDefault(&c.Scopes, []string{"email"})
-}
-
-func (pluginCreator) Create(conf configs.PluginConfig) plugins.Plugin {
-	return &vk{rawConf: conf}
 }

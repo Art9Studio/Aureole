@@ -2,7 +2,6 @@ package phone
 
 import (
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -15,7 +14,7 @@ func sendOTP(p *authn) func(*fiber.Ctx) error {
 		if phone.Phone == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "phone required")
 		}
-		i := plugins.Identity{Phone: &phone.Phone}
+		i := core.Identity{Phone: &phone.Phone}
 
 		randStr, err := p.pluginAPI.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {

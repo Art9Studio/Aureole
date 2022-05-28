@@ -3,7 +3,6 @@ package pem
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -16,7 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-openapi/spec"
+	"github.com/getkin/kin-openapi/openapi3"
 	"net/http"
 	"strings"
 	"sync"
@@ -34,21 +33,14 @@ type pem struct {
 	pluginAPI       core.PluginAPI
 	rawConf         configs.PluginConfig
 	conf            *config
-	cryptoStorage   plugins.CryptoStorage
+	cryptoStorage   core.CryptoStorage
 	refreshDone     chan struct{}
 	refreshInterval time.Duration
 	muPrivSet       sync.RWMutex
 	privateSet      jwk.Set
 	muPubSet        sync.RWMutex
 	publicSet       jwk.Set
-	swagger         struct {
-		Paths       *spec.Paths
-		Definitions spec.Definitions
-	}
 }
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 func (p *pem) Init(api core.PluginAPI) (err error) {
 	p.pluginAPI = api
@@ -82,7 +74,7 @@ func (p *pem) Init(api core.PluginAPI) (err error) {
 
 	jwkHandler := p.swagger.Paths.Paths["/jwk"]
 	pemHandler := p.swagger.Paths.Paths["/pem"]
-	p.swagger.Paths.Paths = map[string]spec.PathItem{
+	p.swagger.Paths.Paths = map[string]openapi3.PathItem{
 		p.conf.PathPrefix + "/jwk": jwkHandler,
 		p.conf.PathPrefix + "/pem": pemHandler,
 	}
@@ -90,16 +82,16 @@ func (p *pem) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (p pem) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (p pem) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: p.rawConf.Name,
 		ID:   pluginID,
 	}
 }
 
-func (p *pem) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return p.swagger.Paths, p.swagger.Definitions
+func (p *pem) GetPaths() *openapi3.Paths {
+	return p.swagger.Paths
 }
 
 func (p *pem) GetPrivateSet() jwk.Set {
@@ -164,7 +156,7 @@ func initKeySets(p *pem) (err error) {
 		return err
 	}
 
-	if setType == plugins.Private {
+	if setType == core.Private {
 		p.privateSet = keySet
 		if p.publicSet, err = jwk.PublicSetOf(p.privateSet); err != nil {
 			return err
@@ -176,8 +168,8 @@ func initKeySets(p *pem) (err error) {
 	return nil
 }
 
-func createRoutes(p *pem) {
-	routes := []*core.Route{
+func GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodGet,
 			Path:    p.conf.PathPrefix + "/jwk",
@@ -236,7 +228,7 @@ func refreshKeys(p *pem) {
 				fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
 			}
 
-			if setType == plugins.Private {
+			if setType == core.Private {
 				pubSet, err := jwk.PublicSetOf(keySet)
 				if err != nil {
 					fmt.Printf("pem '%s': an error occured while refreshing keys: %v", p.rawConf.Name, err)
@@ -312,13 +304,13 @@ func generateKid(rawKey interface{}) (string, error) {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
 }
 
-func getKeySetType(keySet jwk.Set) (plugins.KeyType, error) {
+func getKeySetType(keySet jwk.Set) (core.KeyType, error) {
 	isPrivate, err := isPrivateSet(keySet)
 	if err != nil {
 		return "", err
 	}
 	if isPrivate {
-		return plugins.Private, nil
+		return core.Private, nil
 	}
 
 	isPublic, err := isPublicSet(keySet)
@@ -326,7 +318,7 @@ func getKeySetType(keySet jwk.Set) (plugins.KeyType, error) {
 		return "", err
 	}
 	if isPublic {
-		return plugins.Public, nil
+		return core.Public, nil
 	}
 
 	return "", errors.New("public and private keys in the same key set")

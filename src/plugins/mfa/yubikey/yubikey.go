@@ -3,11 +3,10 @@ package yubikey
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"github.com/go-openapi/spec"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 )
@@ -19,9 +18,6 @@ type yubikey struct {
 	rawConf   configs.PluginConfig
 	conf      *config
 }
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 func (y *yubikey) Init(api core.PluginAPI) (err error) {
 	y.pluginAPI = api
@@ -39,18 +35,18 @@ func (y *yubikey) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (y yubikey) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (y yubikey) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: y.rawConf.Name,
 		ID:   pluginID,
 	}
 }
 
-func (y *yubikey) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
+func (y *yubikey) GetPaths() *openapi3.Paths {
 	specs := struct {
-		Paths       *spec.Paths
-		Definitions spec.Definitions
+		Paths       *openapi3.Paths
+		Definitions openapi3.Definitions
 	}{}
 	err := json.Unmarshal(swaggerJson, &specs)
 	if err != nil {
@@ -59,7 +55,7 @@ func (y *yubikey) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
 	return specs.Paths, specs.Definitions
 }
 
-func (y *yubikey) IsEnabled(cred *plugins.Credential) (bool, error) {
+func (y *yubikey) IsEnabled(cred *core.Credential) (bool, error) {
 	return y.pluginAPI.Is2FAEnabled(cred, pluginID)
 }
 
@@ -72,18 +68,18 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func (*yubikey) Init2FA() plugins.MFAInitFunc {
+func (*yubikey) Init2FA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
 		// TODO implement me
 		panic("implement me")
 	}
 }
 
-func (*yubikey) Verify() plugins.MFAVerifyFunc {
+func (*yubikey) Verify() core.MFAVerifyFunc {
 	// TODO implement me
 	panic("implement me")
 }
 
-func createRoutes(*yubikey) {
+func GetPaths() []*core.Route {
 
 }

@@ -3,7 +3,6 @@ package etcd
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"context"
 	"encoding/json"
 	"errors"
@@ -53,8 +52,8 @@ func (e *etcd) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (e etcd) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (e etcd) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: e.rawConf.Name,
 		ID:   pluginID,

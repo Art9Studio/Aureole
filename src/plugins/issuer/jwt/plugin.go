@@ -3,9 +3,9 @@ package jwt
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"fmt"
-	"github.com/go-openapi/spec"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	txtTmpl "text/template"
 	"time"
 
@@ -26,24 +27,17 @@ import (
 	"go.uber.org/zap/buffer"
 )
 
-//go:embed swagger.json
-var swaggerJson []byte
-
 //go:embed meta.yaml
 var rawMeta []byte
 
-//go:embed responses.json
-var responsesJson []byte
+//go:embed default-payload.json.tmpl
+var defaultPayloadTmpl []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-// pluginCreator represents plugin for jwtIssuer authorization
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type (
@@ -51,21 +45,13 @@ type (
 		pluginAPI     core.PluginAPI
 		rawConf       configs.PluginConfig
 		conf          *config
-		signKey       plugins.CryptoKey
-		verifyKeys    map[string]plugins.CryptoKey
+		signKey       core.CryptoKey
+		verifyKeys    map[string]core.CryptoKey
 		nativeQueries map[string]string
-		swagger       struct {
-			Paths       *spec.Paths
-			Definitions spec.Definitions
-		}
-		responses struct {
-			Responses   *spec.Responses
-			Definitions spec.Definitions
-		}
 	}
 
-	tokenType  string
-	bearerType string
+	tokenType string
+	tokenResp string
 )
 
 const (
@@ -74,39 +60,23 @@ const (
 )
 
 const (
-	body   bearerType = "body"
-	header bearerType = "header"
-	cookie bearerType = "cookie"
-	both   bearerType = "both"
+	body   tokenResp = "body"
+	cookie tokenResp = "cookie"
+	//both   tokenResp = "both"
 )
 
-const defaultPayloadTmpl = `{
-  {{ if .ID }}
-    "id": {{ .ID }},
-  {{ end }}
-
-  {{ if .Username }}
-    "username": "{{ .Username }}",
-  {{ end }}
-
-  {{ if .Phone }}
-    "phone": "{{ .Phone }}",
-  {{ end }}
-
-  {{ if .Email }}
-    "email": "{{ .Email }}",
-  {{ end }}
-}`
-
-var keyMap = map[string]map[string]string{
-	"access": {
-		"header": "access",
-		"cookie": "access_token",
+var keyMap = map[tokenType]map[tokenResp]string{
+	accessToken: {
+		cookie: "access_token",
 	},
-	"refresh": {
-		"body":   "refresh",
-		"cookie": "refresh_token",
+	refreshToken: {
+		body:   "refresh",
+		cookie: "refresh_token",
 	},
+}
+
+func Create(conf configs.PluginConfig) core.Issuer {
+	return &jwtIssuer{rawConf: conf}
 }
 
 func (j *jwtIssuer) Init(api core.PluginAPI) (err error) {
@@ -122,12 +92,16 @@ func (j *jwtIssuer) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("cannot get crypto key named %s", j.conf.SignKey)
 	}
 
-	j.verifyKeys = make(map[string]plugins.CryptoKey)
+	j.verifyKeys = make(map[string]core.CryptoKey)
 	for _, keyName := range j.conf.VerifyKeys {
 		j.verifyKeys[keyName], ok = j.pluginAPI.GetCryptoKey(keyName)
 		if !ok {
 			return fmt.Errorf("cannot get crypto key named %s", j.conf.SignKey)
 		}
+	}
+
+	if j.conf.AccessTokenBearer == cookie && j.conf.RefreshTokenBearer == cookie {
+
 	}
 
 	/*if j.conf.NativeQueries != "" {
@@ -136,111 +110,62 @@ func (j *jwtIssuer) Init(api core.PluginAPI) (err error) {
 		}
 	}*/
 
-	err = assembleResponses(j)
-	if err != nil {
-		return err
-	}
-	err = assembleSwagger(j)
-	if err != nil {
-		return err
-	}
-
-	createRoutes(j)
 	return err
 }
 
-func assembleSwagger(j *jwtIssuer) error {
-	err := json.Unmarshal(swaggerJson, &j.swagger)
+func getResponses(j *jwtIssuer) (openapi3.Responses, error) {
+	responses := openapi3.NewResponses()
+
+	okSchema, err := openapi3gen.NewSchemaRefForValue(Response{}, nil)
 	if err != nil {
-		return fmt.Errorf("jwt authz: cannot marshal swagger docs: %v", err)
+		return nil, err
 	}
 
-	handler := j.swagger.Paths.Paths["/jwt/refresh"].Post
-	if j.conf.RefreshBearer == body {
-		handler.Parameters = handler.Parameters[:1]
-	} else if j.conf.RefreshBearer == cookie {
-		handler.Consumes = nil
-		handler.Produces = nil
-		handler.Parameters = handler.Parameters[1:]
+	okResponse := openapi3.NewResponse().
+		WithDescription("Successfully authorize and return refresh and access tokens").
+		WithContent(openapi3.NewContentWithJSONSchema(okSchema.Value))
+
+	okStatus := strconv.Itoa(http.StatusOK)
+
+	if j.conf.AccessTokenBearer == cookie || j.conf.RefreshTokenBearer == cookie {
+		header := &openapi3.Header{}
+		header.Name = "Set-Cookie"
+
+		if j.conf.AccessTokenBearer == cookie && j.conf.RefreshTokenBearer == cookie {
+			header.Description = "Save access JWT and refresh JWT in cookies"
+		} else if j.conf.AccessTokenBearer == cookie {
+			header.Description = "Save access JWT in cookies"
+		} else {
+			header.Description = "Save refresh JWT in cookies"
+		}
+
+		setCookieSchema := openapi3.NewSchema()
+		setCookieSchema.Type = "string"
+		header.Schema.Value = setCookieSchema
+
+		okResponse.Headers["Set-Cookie"].Value = header
 	}
 
-	var resp spec.Responses
-	bytes, err := j.responses.Responses.MarshalJSON()
+	bodySchema, err := openapi3gen.NewSchemaRefForValue(Response{}, nil)
 	if err != nil {
-		return err
-	}
-	err = resp.UnmarshalJSON(bytes)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	errResp := handler.Responses.StatusCodeResponses[400]
-	handler.Responses = &resp
-	handler.Responses.StatusCodeResponses[400] = errResp
-	okResp := handler.Responses.StatusCodeResponses[200]
-	okResp.Description = "Successfully refresh JWT and returns new refresh JWT and old access JWT"
-	handler.Responses.StatusCodeResponses[200] = okResp
+	okResponse.Content["application/json"].Schema.Value = bodySchema.Value
 
-	return nil
+	responses[okStatus].Value = okResponse
+	return responses, nil
 }
 
-func assembleResponses(j *jwtIssuer) error {
-	err := json.Unmarshal(responsesJson, &j.responses)
-	if err != nil {
-		return fmt.Errorf("jwt authz: cannot marshal jwt responses docs: %v", err)
-	}
-
-	okResponse := j.responses.Responses.ResponsesProps.StatusCodeResponses[200]
-
-	if j.conf.AccessBearer == both {
-		okResponse.Headers["Set-Cookie"] = okResponse.Headers["Access-Set-Cookie"]
-	} else if j.conf.AccessBearer == cookie {
-		okResponse.Headers["Set-Cookie"] = okResponse.Headers["Access-Set-Cookie"]
-		delete(okResponse.Headers, "access")
-	}
-
-	if j.conf.RefreshBearer == both {
-		_, ok := okResponse.Headers["Set-Cookie"]
-		if ok {
-			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Both-Set-Cookie"]
-		} else {
-			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Refresh-Set-Cookie"]
-		}
-	} else if j.conf.RefreshBearer == cookie {
-		okResponse.Schema = nil
-		_, ok := okResponse.Headers["Set-Cookie"]
-		if ok {
-			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Both-Set-Cookie"]
-		} else {
-			okResponse.Headers["Set-Cookie"] = okResponse.Headers["Refresh-Set-Cookie"]
-		}
-	}
-
-	delete(okResponse.Headers, "Access-Set-Cookie")
-	delete(okResponse.Headers, "Refresh-Set-Cookie")
-	delete(okResponse.Headers, "Both-Set-Cookie")
-
-	j.responses.Responses.ResponsesProps.StatusCodeResponses[200] = okResponse
-	return nil
-}
-
-func (j jwtIssuer) GetMetaData() plugins.Meta {
+func (j jwtIssuer) GetMetaData() core.Meta {
 	return meta
-}
-
-func (j *jwtIssuer) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return j.swagger.Paths, j.swagger.Definitions
-}
-
-func (j *jwtIssuer) GetResponseData() (*spec.Responses, spec.Definitions) {
-	return j.responses.Responses, j.responses.Definitions
 }
 
 func (j *jwtIssuer) GetNativeQueries() map[string]string {
 	return j.nativeQueries
 }
 
-func (j *jwtIssuer) Authorize(c *fiber.Ctx, payload *plugins.Payload) error {
+func (j *jwtIssuer) Authorize(c *fiber.Ctx, payload *core.IssuerPayload) error {
 	accessT, err := newToken(accessToken, j.conf, payload)
 	if err != nil {
 		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
@@ -259,15 +184,15 @@ func (j *jwtIssuer) Authorize(c *fiber.Ctx, payload *plugins.Payload) error {
 		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
-	bearers := map[string]bearerType{
-		"access":  j.conf.AccessBearer,
-		"refresh": j.conf.RefreshBearer,
+	bearers := map[tokenType]tokenResp{
+		accessToken:  j.conf.AccessTokenBearer,
+		refreshToken: j.conf.RefreshTokenBearer,
 	}
-	tokens := map[string][]byte{
-		"access":  signedAccessT,
-		"refresh": signedRefreshT,
+	tokens := map[tokenType][]byte{
+		accessToken:  signedAccessT,
+		refreshToken: signedRefreshT,
 	}
-	if err := attachTokens(c, bearers, keyMap, tokens); err != nil {
+	if err := attachTokens(c, bearers, tokens); err != nil {
 		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
@@ -300,18 +225,51 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return q, nil
 }*/
 
-func createRoutes(j *jwtIssuer) {
-	routes := []*core.Route{
-		{
-			Method:  http.MethodPost,
-			Path:    refreshUrl,
-			Handler: refresh(j),
-		},
+func buildOperationForRefreshHandler() *openapi3.Operation {
+	operation := openapi3.NewOperation()
+	operation.Description = "Refresh JWT"
+
+	responses := openapi3.NewResponses()
+	{
+		okResp := openapi3.NewResponse().
+			WithDescription("Successfully refreshed JWT and returns new access JWT")
+
+		okSchema, err := openapi3gen.NewSchemaRefForValue(RefreshResponse{}, nil)
+		if err != nil {
+			fmt.Printf("cannot build schema for value: %v", err)
+		} else {
+			okResp = okResp.WithJSONSchema(okSchema.Value)
+		}
+
+		okCode := strconv.Itoa(http.StatusOK)
+
+		responses[okCode].Value = okResp
 	}
-	j.pluginAPI.AddAppRoutes(routes)
+	{
+		badReqResp := openapi3.NewResponse().
+			WithDescription("Failed to refresh JWT")
+
+		badReqCode := strconv.Itoa(http.StatusBadRequest)
+		responses[badReqCode].Value = badReqResp
+	}
+	operation.Responses = responses
+	return operation
 }
 
-func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jwt.Token, err error) {
+func (j *jwtIssuer) GetPaths() []*core.Route {
+	operation := buildOperationForRefreshHandler()
+
+	return []*core.Route{
+		{
+			Method:    http.MethodPost,
+			Path:      refreshUrl,
+			Operation: operation,
+			Handler:   refresh(j),
+		},
+	}
+}
+
+func newToken(tokenType tokenType, conf *config, payload *core.IssuerPayload) (t jwt.Token, err error) {
 	switch tokenType {
 	case accessToken:
 		token := jwt.New()
@@ -397,7 +355,7 @@ func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jw
 			return nil, err
 		}
 
-		payload, err := renderPayload(defaultPayloadTmpl, payload)
+		payload, err := renderPayload(string(defaultPayloadTmpl), payload)
 		if err != nil {
 			return nil, err
 		}
@@ -414,7 +372,7 @@ func newToken(tokenType tokenType, conf *config, payload *plugins.Payload) (t jw
 	return t, err
 }
 
-func parsePayload(tmplPath string, payload *plugins.Payload) (map[string]interface{}, error) {
+func parsePayload(tmplPath string, payload *core.IssuerPayload) (map[string]interface{}, error) {
 	if tmplPath != "" {
 		extension := path.Ext(tmplPath)
 		if extension == ".tmpl" {
@@ -426,11 +384,11 @@ func parsePayload(tmplPath string, payload *plugins.Payload) (map[string]interfa
 		}
 		return nil, fmt.Errorf("jwt: json type expected, '%s' found", extension)
 	} else {
-		return renderPayload(defaultPayloadTmpl, payload)
+		return renderPayload(string(defaultPayloadTmpl), payload)
 	}
 }
 
-func renderPayload(tmplStr string, payload *plugins.Payload) (map[string]interface{}, error) {
+func renderPayload(tmplStr string, payload *core.IssuerPayload) (map[string]interface{}, error) {
 	tmpl, err := txtTmpl.New("payload").Parse(tmplStr)
 	if err != nil {
 		return nil, err
@@ -450,7 +408,8 @@ func renderPayload(tmplStr string, payload *plugins.Payload) (map[string]interfa
 	return p, err
 }
 
-func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
+// todo: move sing functionality to core
+func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 	keySet := signKey.GetPrivateSet()
 
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
@@ -469,7 +428,7 @@ func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
 	return []byte{}, errors.New("key set don't contain sig key")
 }
 
-func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string]map[string]string, tokens map[string][]byte) error {
+func attachTokens(c *fiber.Ctx, bearers map[tokenType]tokenResp, tokens map[tokenType][]byte) error {
 	jsonBody := make(map[string]interface{})
 	if respBody := c.Response().Body(); len(respBody) != 0 {
 		if err := json.Unmarshal(respBody, &jsonBody); err != nil {
@@ -481,17 +440,7 @@ func attachTokens(c *fiber.Ctx, bearers map[string]bearerType, keyMap map[string
 		switch bearers[name] {
 		case body:
 			jsonBody[keyMap[name]["body"]] = string(token)
-		case header:
-			c.Set(keyMap[name]["header"], string(token))
 		case cookie:
-			cookie := &fiber.Cookie{
-				Name:  keyMap[name]["cookie"],
-				Value: string(token),
-			}
-			c.Cookie(cookie)
-		case both:
-			jsonBody[keyMap[name]["header"]] = string(token)
-
 			cookie := &fiber.Cookie{
 				Name:  keyMap[name]["cookie"],
 				Value: string(token),

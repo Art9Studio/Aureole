@@ -1,7 +1,7 @@
 package etcd
 
 import (
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 	"aureole/plugins/storage"
 	"context"
 	"errors"
@@ -21,7 +21,7 @@ func TestStorage(t *testing.T) {
 	storage.TestTypes(s, t)
 }
 
-func createStorage() (plugins.Storage, error) {
+func createStorage() (core.Storage, error) {
 	var err error
 	s := &etcd{}
 	s.client, err = clientv3.New(clientv3.Config{

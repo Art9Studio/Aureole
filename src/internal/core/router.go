@@ -2,6 +2,7 @@ package core
 
 import (
 	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
+	"github.com/getkin/kin-openapi/openapi3"
 	"os"
 	"path"
 
@@ -12,9 +13,14 @@ import (
 
 type (
 	Route struct {
-		Method  string
-		Path    string
-		Handler func(c *fiber.Ctx) error
+		Method    string
+		Path      string
+		Operation *openapi3.Operation
+		Handler   func(c *fiber.Ctx) error
+	}
+
+	PathsGetter interface {
+		GetPaths() []*Route
 	}
 
 	ErrorMessage struct {

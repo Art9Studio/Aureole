@@ -2,7 +2,6 @@ package jwk
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 type config struct {
@@ -33,8 +32,4 @@ func (c *config) setDefaults() {
 	configs.SetDefault(&c.Kid, "SHA-256")
 	configs.SetDefault(&c.RetriesNum, 1)
 	configs.SetDefault(&c.RetryInterval, 100)
-}
-
-func (pluginCreator) Create(conf configs.PluginConfig) plugins.Plugin {
-	return &jwk{rawConf: conf}
 }

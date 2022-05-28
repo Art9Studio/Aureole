@@ -3,9 +3,6 @@ package facebook
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
-	"fmt"
-	"github.com/go-openapi/spec"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
@@ -14,24 +11,17 @@ import (
 	"path"
 
 	_ "embed"
-	"encoding/json"
 	"errors"
 )
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type facebook struct {
@@ -39,10 +29,18 @@ type facebook struct {
 	rawConf   configs.PluginConfig
 	conf      *config
 	provider  *oauth2.Config
-	swagger   struct {
-		Paths       *spec.Paths
-		Definitions spec.Definitions
+}
+
+func (f *facebook) GetAuthRoute() *core.Route {
+	return &core.Route{
+		Path:    "/",
+		Method:  http.MethodGet,
+		Handler: f.LoginWrapper(),
 	}
+}
+
+func Create(conf configs.PluginConfig) core.Authenticator {
+	return &facebook{rawConf: conf}
 }
 
 func (f *facebook) Init(api core.PluginAPI) (err error) {
@@ -55,25 +53,15 @@ func (f *facebook) Init(api core.PluginAPI) (err error) {
 		return err
 	}
 
-	err = json.Unmarshal(swaggerJson, &f.swagger)
-	if err != nil {
-		fmt.Printf("facebook authn: cannot marshal swagger docs: %v", err)
-	}
-
-	createRoutes(f)
 	return nil
 }
 
-func (facebook) GetMetaData() plugins.Meta {
+func (facebook) GetMetaData() core.Meta {
 	return meta
 }
 
-func (f *facebook) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return f.swagger.Paths, f.swagger.Definitions
-}
-
-func (f *facebook) LoginWrapper() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
+func (f *facebook) LoginWrapper() core.AuthNLoginFunc {
+	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		state := c.Query("state")
 		if state != "state" {
 			return nil, errors.New("invalid state")
@@ -96,12 +84,12 @@ func (f *facebook) LoginWrapper() plugins.AuthNLoginFunc {
 		}
 		email := userData["email"].(string)
 
-		return &plugins.AuthNResult{
-			Cred: &plugins.Credential{
-				Name:  plugins.Email,
+		return &core.AuthNResult{
+			Cred: &core.Credential{
+				Name:  core.Email,
 				Value: email,
 			},
-			Identity: &plugins.Identity{
+			Identity: &core.Identity{
 				Email:         &email,
 				EmailVerified: true,
 				Additional:    map[string]interface{}{"social_provider_data": userData},
@@ -133,13 +121,12 @@ func initProvider(f *facebook) error {
 	return nil
 }
 
-func createRoutes(f *facebook) {
-	routes := []*core.Route{
+func (f *facebook) GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodGet,
 			Path:    pathPrefix,
 			Handler: getAuthCode(f),
 		},
 	}
-	f.pluginAPI.AddAppRoutes(routes)
 }

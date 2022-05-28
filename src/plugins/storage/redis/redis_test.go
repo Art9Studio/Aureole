@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 	"aureole/plugins/storage"
 	"context"
 	"testing"
@@ -19,7 +19,7 @@ func TestStorage(t *testing.T) {
 	storage.TestTypes(s, t)
 }
 
-func createStorage() (plugins.Storage, error) {
+func createStorage() (core.Storage, error) {
 	s := &redis{client: redisv8.NewClient(&redisv8.Options{DB: 15})}
 	return s, s.client.Ping(context.Background()).Err()
 }

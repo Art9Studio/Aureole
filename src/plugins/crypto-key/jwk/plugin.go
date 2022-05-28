@@ -3,7 +3,6 @@ package jwk
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -13,7 +12,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/avast/retry-go/v4"
-	"github.com/go-openapi/spec"
 	jwx "github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/x25519"
 	"github.com/mitchellh/mapstructure"
@@ -30,20 +28,14 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-//go:embed swagger.json
-var swaggerJson []byte
-
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type (
@@ -51,19 +43,19 @@ type (
 		pluginAPI       core.PluginAPI
 		rawConf         configs.PluginConfig
 		conf            *config
-		cryptoStorage   plugins.CryptoStorage
+		cryptoStorage   core.CryptoStorage
 		refreshInterval time.Duration
 		muPrivSet       sync.RWMutex
 		privateSet      jwx.Set
 		muPubSet        sync.RWMutex
 		publicSet       jwx.Set
 		refreshDone     chan struct{}
-		swagger         struct {
-			Paths       *spec.Paths
-			Definitions spec.Definitions
-		}
 	}
 )
+
+func Create(conf configs.PluginConfig) core.CryptoKey {
+	return &jwk{rawConf: conf}
+}
 
 func (j *jwk) Init(api core.PluginAPI) (err error) {
 	j.pluginAPI = api
@@ -82,7 +74,6 @@ func (j *jwk) Init(api core.PluginAPI) (err error) {
 	if err != nil {
 		return err
 	}
-	createRoutes(j)
 
 	if j.conf.RefreshInterval != 0 {
 		j.refreshInterval = time.Duration(j.conf.RefreshInterval) * time.Millisecond
@@ -90,27 +81,19 @@ func (j *jwk) Init(api core.PluginAPI) (err error) {
 		go refreshKeys(j)
 	}
 
-	err = json.Unmarshal(swaggerJson, &j.swagger)
-	if err != nil {
-		fmt.Printf("jwk crypto-key: cannot marshal swagger docs: %v", err)
-	}
-
-	jwkHandler := j.swagger.Paths.Paths["/jwk"]
-	pemHandler := j.swagger.Paths.Paths["/pem"]
-	j.swagger.Paths.Paths = map[string]spec.PathItem{
-		j.conf.PathPrefix + "/jwk": jwkHandler,
-		j.conf.PathPrefix + "/pem": pemHandler,
-	}
+	// TODO: IMPORTANT: uncomment it and fix
+	//jwkHandler := j.swagger.Paths.Paths["/jwk"]
+	//pemHandler := j.swagger.Paths.Paths["/pem"]
+	//j.swagger.Paths.Paths = map[string]openapi3.PathItem{
+	//	j.conf.PathPrefix + "/jwk": jwkHandler,
+	//	j.conf.PathPrefix + "/pem": pemHandler,
+	//}
 
 	return nil
 }
 
-func (j *jwk) GetMetaData() plugins.Meta {
+func (j *jwk) GetMetaData() core.Meta {
 	return meta
-}
-
-func (j *jwk) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return j.swagger.Paths, j.swagger.Definitions
 }
 
 func initConfig(conf *configs.RawConfig) (*config, error) {
@@ -173,7 +156,7 @@ func initKeySets(j *jwk) (err error) {
 		return err
 	}
 
-	if setType == plugins.Private {
+	if setType == core.Private {
 		j.privateSet = keySet
 		if j.publicSet, err = jwx.PublicSetOf(j.privateSet); err != nil {
 			return err
@@ -185,8 +168,8 @@ func initKeySets(j *jwk) (err error) {
 	return nil
 }
 
-func createRoutes(j *jwk) {
-	routes := []*core.Route{
+func (j *jwk) GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodGet,
 			Path:    j.conf.PathPrefix + "/jwk",
@@ -198,7 +181,6 @@ func createRoutes(j *jwk) {
 			Handler: getPemKeys(j),
 		},
 	}
-	j.pluginAPI.AddProjectRoutes(routes)
 }
 
 func refreshKeys(j *jwk) {
@@ -242,7 +224,7 @@ func refreshKeys(j *jwk) {
 				continue
 			}
 
-			if setType == plugins.Private {
+			if setType == core.Private {
 				pubSet, err := jwx.PublicSetOf(keySet)
 				if err != nil {
 					fmt.Printf("jwk '%s': an error occured while refreshing keys: %v\n", j.rawConf.Name, err)
@@ -384,13 +366,13 @@ func generateRandomBytes(length int) ([]byte, error) {
 	return ret, nil
 }
 
-func getKeySetType(keySet jwx.Set) (plugins.KeyType, error) {
+func getKeySetType(keySet jwx.Set) (core.KeyType, error) {
 	isPrivate, err := isPrivateSet(keySet)
 	if err != nil {
 		return "", err
 	}
 	if isPrivate {
-		return plugins.Private, nil
+		return core.Private, nil
 	}
 
 	isPublic, err := isPublicSet(keySet)
@@ -398,7 +380,7 @@ func getKeySetType(keySet jwx.Set) (plugins.KeyType, error) {
 		return "", err
 	}
 	if isPublic {
-		return plugins.Public, nil
+		return core.Public, nil
 	}
 
 	return "", errors.New("public and private keys in the same key set")

@@ -2,7 +2,7 @@ package yubikey
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 type (
@@ -10,6 +10,6 @@ type (
 	}
 )
 
-func (yubikeyPlugin) Create(conf configs.PluginConfig) plugins.Plugin {
+func (yubikeyPlugin) Create(conf configs.PluginConfig) core.MFA {
 	return &yubikey{rawConf: conf}
 }

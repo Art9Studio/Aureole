@@ -3,7 +3,6 @@ package twilio
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -43,8 +42,8 @@ func (t *twilio) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (t twilio) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (t twilio) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: t.rawConf.Name,
 		ID:   pluginID,

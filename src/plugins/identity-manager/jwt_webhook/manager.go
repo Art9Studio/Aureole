@@ -3,7 +3,6 @@ package jwt_webhook
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -36,14 +35,14 @@ func (j *manager) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (j manager) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (j manager) GetMetaData() plugin.Meta {
+	return plugin.Meta{
 		Type: name,
 		ID:   pluginID,
 	}
 }
 
-func (j *manager) Register(c *plugins.Credential, i *plugins.Identity, authnProvider string) (*plugins.Identity, error) {
+func (j *manager) Register(c *plugin.Credential, i *plugin.Identity, authnProvider string) (*plugin.Identity, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "Register",
 		"credential":     map[string]string{c.Name: c.Value},
@@ -73,10 +72,10 @@ func (j *manager) Register(c *plugins.Credential, i *plugins.Identity, authnProv
 		return nil, err
 	}
 
-	return plugins.NewIdentity(payload)
+	return core.NewIdentity(payload)
 }
 
-func (j *manager) OnUserAuthenticated(c *plugins.Credential, i *plugins.Identity, authnProvider string) (*plugins.Identity, error) {
+func (j *manager) OnUserAuthenticated(c *plugin.Credential, i *plugin.Identity, authnProvider string) (*plugin.Identity, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "OnUserAuthenticated",
 		"credential":     map[string]string{c.Name: c.Value},
@@ -106,10 +105,10 @@ func (j *manager) OnUserAuthenticated(c *plugins.Credential, i *plugins.Identity
 		return nil, err
 	}
 
-	return plugins.NewIdentity(payload)
+	return core.NewIdentity(payload)
 }
 
-func (j *manager) On2FA(c *plugins.Credential, mfaData *plugins.MFAData) error {
+func (j *manager) On2FA(c *plugin.Credential, mfaData *plugin.MFAData) error {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":      "On2FA",
 		"credential": map[string]string{c.Name: c.Value},
@@ -127,7 +126,7 @@ func (j *manager) On2FA(c *plugins.Credential, mfaData *plugins.MFAData) error {
 	return nil
 }
 
-func (j *manager) GetData(c *plugins.Credential, authnProvider, name string) (interface{}, error) {
+func (j *manager) GetData(c *plugin.Credential, authnProvider, name string) (interface{}, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "GetData",
 		"credential":     map[string]string{c.Name: c.Value},
@@ -159,7 +158,7 @@ func (j *manager) GetData(c *plugins.Credential, authnProvider, name string) (in
 	return data, nil
 }
 
-func (j *manager) Get2FAData(c *plugins.Credential, mfaID string) (*plugins.MFAData, error) {
+func (j *manager) Get2FAData(c *plugin.Credential, mfaID string) (*plugin.MFAData, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":      "Get2FAData",
 		"credential": map[string]string{c.Name: c.Value},
@@ -184,7 +183,7 @@ func (j *manager) Get2FAData(c *plugins.Credential, mfaID string) (*plugins.MFAD
 		return nil, err
 	}
 
-	var data plugins.MFAData
+	var data plugin.MFAData
 	err = j.pluginAPI.GetFromJWT(token, "2fa_data", &data)
 	if err != nil {
 		return nil, err
@@ -192,7 +191,7 @@ func (j *manager) Get2FAData(c *plugins.Credential, mfaID string) (*plugins.MFAD
 	return &data, nil
 }
 
-func (j *manager) Update(c *plugins.Credential, i *plugins.Identity, authnProvider string) (*plugins.Identity, error) {
+func (j *manager) Update(c *plugin.Credential, i *plugin.Identity, authnProvider string) (*plugin.Identity, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "Update",
 		"credential":     map[string]string{c.Name: c.Value},
@@ -223,7 +222,7 @@ func (j *manager) Update(c *plugins.Credential, i *plugins.Identity, authnProvid
 	if err != nil {
 		return nil, err
 	}
-	return plugins.NewIdentity(rawIdent)
+	return core.NewIdentity(rawIdent)
 }
 
 func (j *manager) CheckFeaturesAvailable(features []string) error {

@@ -2,7 +2,6 @@ package core
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 	"crypto/rsa"
 	"crypto/tls"
 	"errors"
@@ -41,7 +40,7 @@ func InitProject(conf *configs.Project, r *router) *project {
 	initApps(p, r)
 	listPluginStatus(conf, p)
 
-	err := assembleSwagger(p)
+	err := assembleDoc(p)
 	if err != nil {
 		fmt.Printf("cannot assemble swagger docs: %v", err)
 	} else {
@@ -55,7 +54,7 @@ func InitProject(conf *configs.Project, r *router) *project {
 func addHealthRoute(r *router) {
 	r.addProjectRoutes([]*Route{
 		{
-			Method: "GET",
+			Method: http.MethodGet,
 			Path:   "/health",
 			Handler: func(c *fiber.Ctx) error {
 				return c.JSON(fiber.Map{"status": "OK"})
@@ -66,6 +65,7 @@ func addHealthRoute(r *router) {
 
 func createApps(conf *configs.Project, p *project) {
 	p.apps = make(map[string]*app, len(conf.Apps))
+	var repository = Repo
 
 	for _, appConf := range conf.Apps {
 		appUrl, err := createAppUrl(appConf)
@@ -80,15 +80,15 @@ func createApps(conf *configs.Project, p *project) {
 			authSessionExp: appConf.AuthSessionExp,
 		}
 
-		createSenders(app, appConf)
-		createCryptoKeys(app, appConf)
-		createStorages(app, appConf)
-		createCryptoStorages(app, appConf)
-		createRootPlugins(app, appConf)
-		createAuthenticators(app, appConf)
-		createIssuer(app, appConf)
-		createMultiFactors(app, appConf)
-		createIDManager(app, appConf)
+		createSenders(repository, app, appConf)
+		createCryptoKeys(repository, app, appConf)
+		createStorages(repository, app, appConf)
+		createCryptoStorages(repository, app, appConf)
+		createRootPlugins(repository, app, appConf)
+		createAuthenticators(repository, app, appConf)
+		createIssuer(repository, app, appConf)
+		createMultiFactors(repository, app, appConf)
+		createIDManager(repository, app, appConf)
 		createAureoleInternals(app, appConf)
 
 		p.apps[appConf.Name] = app
@@ -124,12 +124,12 @@ func createAppUrl(app configs.App) (*url.URL, error) {
 	return appUrl, nil
 }
 
-func createSenders(app *app, conf configs.App) {
-	app.senders = make(map[string]plugins.Sender)
+func createSenders(repository *Repository, app *app, conf configs.App) {
+	app.senders = make(map[string]Sender)
 	for i := range conf.Senders {
 		senderConf := conf.Senders[i]
-		creator := plugins.CreatePlugin[plugins.Sender]
-		sender, err := creator(senderConf, plugins.PluginTypeSender)
+		creator := CreatePlugin[Sender]
+		sender, err := creator(repository, senderConf, TypeSender)
 		if err != nil {
 			fmt.Printf("app %s: cannot create sender %s: %v\n", app.name, senderConf.Name, err)
 		}
@@ -137,12 +137,12 @@ func createSenders(app *app, conf configs.App) {
 	}
 }
 
-func createCryptoKeys(app *app, conf configs.App) {
-	app.cryptoKeys = make(map[string]plugins.CryptoKey)
+func createCryptoKeys(repository *Repository, app *app, conf configs.App) {
+	app.cryptoKeys = make(map[string]CryptoKey)
 	for i := range conf.CryptoKeys {
 		ckeyConf := conf.CryptoKeys[i]
-		creator := plugins.CreatePlugin[plugins.CryptoKey]
-		cryptoKey, err := creator(ckeyConf, plugins.PluginTypeCryptoKey)
+		creator := CreatePlugin[CryptoKey]
+		cryptoKey, err := creator(repository, ckeyConf, TypeCryptoKey)
 		if err != nil {
 			fmt.Printf("app %s: cannot create crypto key %s, %v\n", app.name, ckeyConf.Name, err)
 		}
@@ -150,12 +150,12 @@ func createCryptoKeys(app *app, conf configs.App) {
 	}
 }
 
-func createStorages(app *app, conf configs.App) {
-	app.storages = make(map[string]plugins.Storage)
+func createStorages(repository *Repository, app *app, conf configs.App) {
+	app.storages = make(map[string]Storage)
 	for i := range conf.Storages {
 		storageConf := conf.Storages[i]
-		creator := plugins.CreatePlugin[plugins.Storage]
-		storage, err := creator(storageConf, plugins.PluginTypeStorage)
+		creator := CreatePlugin[Storage]
+		storage, err := creator(repository, storageConf, TypeStorage)
 		if err != nil {
 			fmt.Printf("app %s: cannot create storage %s: %v\n", app.name, storageConf.Name, err)
 		}
@@ -163,12 +163,12 @@ func createStorages(app *app, conf configs.App) {
 	}
 }
 
-func createCryptoStorages(app *app, conf configs.App) {
-	app.cryptoStorages = make(map[string]plugins.CryptoStorage)
+func createCryptoStorages(repository *Repository, app *app, conf configs.App) {
+	app.cryptoStorages = make(map[string]CryptoStorage)
 	for i := range conf.CryptoStorages {
 		storageConf := conf.CryptoStorages[i]
-		creator := plugins.CreatePlugin[plugins.CryptoStorage]
-		cryptoStorage, err := creator(storageConf, plugins.PluginTypeCryptoStorage)
+		creator := CreatePlugin[CryptoStorage]
+		cryptoStorage, err := creator(repository, storageConf, TypeCryptoStorage)
 		if err != nil {
 			fmt.Printf("app %s: cannot create crypto storage %s: %v\n", app.name, storageConf.Name, err)
 		}
@@ -176,12 +176,12 @@ func createCryptoStorages(app *app, conf configs.App) {
 	}
 }
 
-func createRootPlugins(app *app, conf configs.App) {
-	app.rootPlugins = make(map[string]plugins.RootPlugin)
+func createRootPlugins(repository *Repository, app *app, conf configs.App) {
+	app.rootPlugins = make(map[string]RootPlugin)
 	for i := range conf.RootPlugins {
 		rootPluginConf := conf.RootPlugins[i]
-		creator := plugins.CreatePlugin[plugins.RootPlugin]
-		rootPlugin, err := creator(rootPluginConf, plugins.PluginTypeRoot)
+		creator := CreatePlugin[RootPlugin]
+		rootPlugin, err := creator(repository, rootPluginConf, TypeRoot)
 		if err != nil {
 			fmt.Printf("app %s: cannot create rootPlugin plugin %s: %v\n", app.name, rootPluginConf.Name, err)
 		}
@@ -189,14 +189,14 @@ func createRootPlugins(app *app, conf configs.App) {
 	}
 }
 
-func createAuthenticators(app *app, conf configs.App) {
+func createAuthenticators(repository *Repository, app *app, conf configs.App) {
 	//clearAuthnDuplicate(&conf)
 
-	app.authenticators = make(map[string]plugins.Authenticator, len(conf.Auth))
+	app.authenticators = make(map[string]Authenticator, len(conf.Auth))
 	for i := range conf.Auth {
 		authnConf := conf.Auth[i]
-		creator := plugins.CreatePlugin[plugins.Authenticator]
-		authenticator, err := creator(authnConf, plugins.PluginTypeAuth)
+		creator := CreatePlugin[Authenticator]
+		authenticator, err := creator(repository, authnConf, TypeAuth)
 		if err != nil {
 			fmt.Printf("app %s: cannot create authenticator %s: %v\n", app.name, authnConf.Plugin, err)
 		}
@@ -215,10 +215,10 @@ func clearAuthnDuplicate(app *configs.App) {
 	}
 }
 
-func createIssuer(app *app, conf configs.App) {
+func createIssuer(repository *Repository, app *app, conf configs.App) {
 	issuerConf := conf.Issuer
-	creator := plugins.CreatePlugin[plugins.Issuer]
-	issuer, err := creator(issuerConf, plugins.PluginTypeIssuer)
+	creator := CreatePlugin[Issuer]
+	issuer, err := creator(repository, issuerConf, TypeIssuer)
 
 	if err != nil {
 		fmt.Printf("app %s: cannot create issuer: %v\n", app.name, err)
@@ -226,12 +226,12 @@ func createIssuer(app *app, conf configs.App) {
 	app.issuer = issuer
 }
 
-func createMultiFactors(app *app, conf configs.App) {
-	app.mfa = make(map[string]plugins.MFA)
+func createMultiFactors(repository *Repository, app *app, conf configs.App) {
+	app.mfa = make(map[string]MFA)
 	for i := range conf.MFA {
 		mfaConf := conf.MFA[i]
-		creator := plugins.CreatePlugin[plugins.MFA]
-		multiFactor, err := creator(mfaConf, plugins.PluginTypeMFA)
+		creator := CreatePlugin[MFA]
+		multiFactor, err := creator(repository, mfaConf, TypeMFA)
 		if err != nil {
 			fmt.Printf("app %s: cannot create second factor %s: %v\n", app.name, mfaConf.Name, err)
 		}
@@ -240,14 +240,14 @@ func createMultiFactors(app *app, conf configs.App) {
 	}
 }
 
-func createIDManager(app *app, conf configs.App) {
+func createIDManager(repository *Repository, app *app, conf configs.App) {
 	idManagerConf := conf.IDManager
 	// IdManager is optional so skip if not set
 	if idManagerConf.Plugin == "" {
 		return
 	}
-	creator := plugins.CreatePlugin[plugins.IDManager]
-	idManager, err := creator(idManagerConf, plugins.PluginTypeIDManager)
+	creator := CreatePlugin[IDManager]
+	idManager, err := creator(repository, idManagerConf, TypeIDManager)
 	if err != nil {
 		fmt.Printf("app %s: cannot create identity manager: %v\n", app.name, err)
 	}
@@ -378,22 +378,14 @@ func initAuthenticators(app *app, p *project, r *router) {
 				fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
 				app.authenticators[name] = nil
 			} else {
-				pathPrefix := "/" + strings.ReplaceAll(string(authenticator.GetMetaData().Name), "_", "-")
-				specs, _ := authenticator.GetHandlersSpec()
+				pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Name, "_", "-")
+				authRoute := authenticator.GetAuthRoute()
+				authRoute.Path = pathPrefix + "/login"
 				if err != nil {
 					fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
 				}
-				var method string
-				if specs.Paths["/login"].Post != nil {
-					method = http.MethodPost
-				} else {
-					method = http.MethodGet
-				}
-				routes = append(routes, &Route{
-					Method:  method,
-					Path:    pathPrefix + "/login",
-					Handler: loginHandler(authenticator.LoginWrapper(), app),
-				})
+
+				routes = append(routes, authRoute)
 			}
 		} else {
 			fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, PluginInitErr)

@@ -2,7 +2,7 @@ package jwt_webhook
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
+	"aureole/internal/plugin"
 )
 
 type config struct {
@@ -13,6 +13,6 @@ type config struct {
 	Headers       map[string]string `mapstructure:"headers"`
 }
 
-func (plugin) Create(conf configs.PluginConfig) plugins.Plugin {
+func (plugin) Create(conf configs.PluginConfig) plugin.Plugin {
 	return &manager{rawConf: conf}
 }

@@ -3,13 +3,9 @@ package google
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"context"
 	_ "embed"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/go-openapi/spec"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
@@ -18,20 +14,14 @@ import (
 	"path"
 )
 
-//go:embed swagger.json
-var swaggerJson []byte
-
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type google struct {
@@ -39,10 +29,10 @@ type google struct {
 	rawConf   configs.PluginConfig
 	conf      *config
 	provider  *oauth2.Config
-	swagger   struct {
-		Paths       *spec.Paths
-		Definitions spec.Definitions
-	}
+}
+
+func Create(conf configs.PluginConfig) core.Authenticator {
+	return &google{rawConf: conf}
 }
 
 func (g *google) Init(api core.PluginAPI) (err error) {
@@ -55,25 +45,15 @@ func (g *google) Init(api core.PluginAPI) (err error) {
 		return err
 	}
 
-	err = json.Unmarshal(swaggerJson, &g.swagger)
-	if err != nil {
-		fmt.Printf("google authn: cannot marshal swagger docs: %v", err)
-	}
-
-	createRoutes(g)
 	return nil
 }
 
-func (google) GetMetaData() plugins.Meta {
+func (google) GetMetaData() core.Meta {
 	return meta
 }
 
-func (g *google) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return g.swagger.Paths, g.swagger.Definitions
-}
-
-func (g *google) LoginWrapper() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
+func (g *google) LoginWrapper() core.AuthNLoginFunc {
+	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		// todo: save state and compare later #2
 		state := c.Query("state")
 		if state != "state" {
@@ -109,12 +89,12 @@ func (g *google) LoginWrapper() plugins.AuthNLoginFunc {
 			return nil, errors.New("input data doesn't pass filters")
 		}
 
-		return &plugins.AuthNResult{
-			Cred: &plugins.Credential{
-				Name:  plugins.Email,
+		return &core.AuthNResult{
+			Cred: &core.Credential{
+				Name:  core.Email,
 				Value: email,
 			},
-			Identity: &plugins.Identity{
+			Identity: &core.Identity{
 				Email:         &email,
 				EmailVerified: true,
 				Additional: map[string]interface{}{
@@ -150,13 +130,12 @@ func initProvider(g *google) error {
 	return nil
 }
 
-func createRoutes(g *google) {
-	routes := []*core.Route{
+func (g *google) GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodGet,
 			Path:    pathPrefix,
 			Handler: getAuthCode(g),
 		},
 	}
-	g.pluginAPI.AddAppRoutes(routes)
 }

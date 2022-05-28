@@ -3,9 +3,7 @@ package phone
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"fmt"
-	"github.com/go-openapi/spec"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"net/http"
@@ -13,25 +11,17 @@ import (
 	"path"
 
 	_ "embed"
-	"encoding/json"
 	"errors"
 )
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-// pluginCreator represents plugin for password based authentication
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type (
@@ -39,12 +29,8 @@ type (
 		pluginAPI     core.PluginAPI
 		rawConf       configs.PluginConfig
 		conf          *config
-		sender        plugins.Sender
+		sender        core.Sender
 		tmpl, tmplExt string
-		swagger       struct {
-			Paths       *spec.Paths
-			Definitions spec.Definitions
-		}
 	}
 
 	phone struct {
@@ -56,6 +42,10 @@ type (
 		Otp   string `json:"otp"`
 	}
 )
+
+func Create(conf configs.PluginConfig) core.Authenticator {
+	return &authn{rawConf: conf}
+}
 
 func (a *authn) Init(api core.PluginAPI) (err error) {
 	a.pluginAPI = api
@@ -70,11 +60,6 @@ func (a *authn) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("sender named '%s' is not declared", a.conf.Sender)
 	}
 
-	err = json.Unmarshal(swaggerJson, &a.swagger)
-	if err != nil {
-		fmt.Printf("phone authn: cannot marshal swagger docs: %v", err)
-	}
-
 	tmpl, err := os.ReadFile(a.conf.TmplPath)
 	if err != nil {
 		a.tmpl = defaultTmpl
@@ -84,20 +69,15 @@ func (a *authn) Init(api core.PluginAPI) (err error) {
 		a.tmplExt = path.Ext(a.conf.TmplPath)
 	}
 
-	createRoutes(a)
 	return nil
 }
 
-func (authn) GetMetaData() plugins.Meta {
+func (authn) GetMetaData() core.Meta {
 	return meta
 }
 
-func (a *authn) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return a.swagger.Paths, a.swagger.Definitions
-}
-
-func (a *authn) LoginWrapper() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
+func (a *authn) LoginWrapper() core.AuthNLoginFunc {
+	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		var otp otp
 		if err := c.BodyParser(&otp); err != nil {
 			return nil, err
@@ -148,12 +128,12 @@ func (a *authn) LoginWrapper() plugins.AuthNLoginFunc {
 		}
 
 		if decrOtp == otp.Otp {
-			return &plugins.AuthNResult{
-				Cred: &plugins.Credential{
-					Name:  plugins.Phone,
+			return &core.AuthNResult{
+				Cred: &core.Credential{
+					Name:  core.Phone,
 					Value: phone,
 				},
-				Identity: &plugins.Identity{
+				Identity: &core.Identity{
 					Email:         &phone,
 					PhoneVerified: true,
 				},
@@ -169,7 +149,7 @@ func (a *authn) LoginWrapper() plugins.AuthNLoginFunc {
 			if err != nil {
 				return nil, err
 			}
-			return &plugins.AuthNResult{ErrorData: fiber.Map{"token": token}}, errors.New("wrong otp")
+			return &core.AuthNResult{ErrorData: fiber.Map{"token": token}}, errors.New("wrong otp")
 		}
 	}
 }
@@ -184,18 +164,17 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func createRoutes(p *authn) {
-	routes := []*core.Route{
+func (a *authn) GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    sendUrl,
-			Handler: sendOTP(p),
+			Handler: sendOTP(a),
 		},
 		{
 			Method:  http.MethodPost,
 			Path:    resendUrl,
-			Handler: resendOTP(p),
+			Handler: resendOTP(a),
 		},
 	}
-	p.pluginAPI.AddAppRoutes(routes)
 }

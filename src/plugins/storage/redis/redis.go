@@ -3,7 +3,6 @@ package redis
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"context"
 	"encoding/json"
 	"errors"
@@ -39,8 +38,8 @@ func (s *redis) Init(api core.PluginAPI) error {
 	return s.client.Ping(context.Background()).Err()
 }
 
-func (s redis) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (s redis) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: s.rawConf.Name,
 		ID:   pluginID,

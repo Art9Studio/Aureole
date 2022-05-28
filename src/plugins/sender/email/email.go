@@ -3,7 +3,6 @@ package email
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"bytes"
 	"crypto/tls"
 	htmlTmpl "html/template"
@@ -34,8 +33,8 @@ func (e *email) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (e email) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (e email) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: e.rawConf.Name,
 		ID:   pluginID,

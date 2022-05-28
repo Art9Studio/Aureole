@@ -3,67 +3,47 @@ package urls
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
-	"fmt"
-	"github.com/go-openapi/spec"
 	"net/http"
 
 	_ "embed"
-	"encoding/json"
 )
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type urls struct {
 	pluginApi core.PluginAPI
 	rawConf   configs.PluginConfig
-	swagger   struct {
-		Paths       *spec.Paths
-		Definitions spec.Definitions
-	}
+}
+
+// Create returns urls hasher with the given settings
+func Create(conf configs.PluginConfig) core.RootPlugin {
+	return &urls{rawConf: conf}
 }
 
 func (u *urls) Init(api core.PluginAPI) (err error) {
 	u.pluginApi = api
 
-	err = json.Unmarshal(swaggerJson, &u.swagger)
-	if err != nil {
-		fmt.Printf("urls admin plugin: cannot marshal swagger docs: %v", err)
-	}
-
-	createRoutes(u)
 	return nil
 }
 
-func (u urls) GetMetaData() plugins.Meta {
+func (u urls) GetMetaData() core.Meta {
 	return meta
 }
 
-func (u *urls) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return u.swagger.Paths, u.swagger.Definitions
-}
-
-func createRoutes(u *urls) {
-	routes := []*core.Route{
+func (u *urls) GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodGet,
 			Path:    getUrlsPath,
 			Handler: getUrls(u),
 		},
 	}
-	u.pluginApi.AddProjectRoutes(routes)
 }

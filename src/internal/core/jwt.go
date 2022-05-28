@@ -1,7 +1,6 @@
 package core
 
 import (
-	"aureole/internal/plugins"
 	"context"
 	"encoding/json"
 	"errors"
@@ -149,7 +148,7 @@ func newToken(payload map[string]interface{}, exp int) (jwt.Token, error) {
 	return token, err
 }
 
-func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
+func signToken(signKey CryptoKey, token jwt.Token) ([]byte, error) {
 	keySet := signKey.GetPrivateSet()
 
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {

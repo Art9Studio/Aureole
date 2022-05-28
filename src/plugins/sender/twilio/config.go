@@ -2,7 +2,7 @@ package twilio
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 type config struct {
@@ -11,6 +11,6 @@ type config struct {
 	From       string `mapstructure:"from"`
 }
 
-func (twilioPlugin) Create(conf configs.PluginConfig) plugins.Plugin {
+func (twilioPlugin) Create(conf configs.PluginConfig) core.Sender {
 	return &twilio{rawConf: conf}
 }

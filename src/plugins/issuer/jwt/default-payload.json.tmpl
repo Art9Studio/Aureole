@@ -1,0 +1,17 @@
+{
+  {{ if .ID }}
+    "id": {{ .ID }},
+  {{ end }}
+
+  {{ if .Username }}
+    "username": "{{ .Username }}",
+  {{ end }}
+
+  {{ if .Phone }}
+    "phone": "{{ .Phone }}",
+  {{ end }}
+
+  {{ if .Email }}
+    "email": "{{ .Email }}",
+  {{ end }}
+}

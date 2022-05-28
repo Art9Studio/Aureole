@@ -1,7 +1,7 @@
 package pem
 
 import (
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 // name is the internal name of the plugin
@@ -9,7 +9,7 @@ const name = "pem"
 
 // init initializes package by register plugin
 func init() {
-	plugins.Repo.Register(name, pemPlugin{})
+	core.Repo.Register(name, pemPlugin{})
 }
 
 // pemPlugin represents plugin for jwk

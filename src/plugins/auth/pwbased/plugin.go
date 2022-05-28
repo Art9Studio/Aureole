@@ -3,10 +3,8 @@ package pwbased
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"aureole/plugins/auth/pwbased/pwhasher"
 	"fmt"
-	"github.com/go-openapi/spec"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"net/http"
@@ -15,25 +13,17 @@ import (
 	"path"
 
 	_ "embed"
-	"encoding/json"
 	"errors"
 )
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-// pluginCreator represents plugin for password based authentication
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type (
@@ -43,20 +33,16 @@ type (
 		conf      *config
 		pwHasher  pwhasher.PWHasher
 		reset     struct {
-			sender      plugins.Sender
+			sender      core.Sender
 			tmpl        string
 			tmplExt     string
 			confirmLink *url.URL
 		}
 		verify struct {
-			sender      plugins.Sender
+			sender      core.Sender
 			tmpl        string
 			tmplExt     string
 			confirmLink *url.URL
-		}
-		swagger struct {
-			Paths       *spec.Paths
-			Definitions spec.Definitions
 		}
 	}
 
@@ -79,6 +65,10 @@ const (
 	ResetLink  linkType = "reset"
 	VerifyLink linkType = "verify"
 )
+
+func Create(conf configs.PluginConfig) core.Authenticator {
+	return &pwBased{rawConf: conf}
+}
 
 func (p *pwBased) Init(api core.PluginAPI) (err error) {
 	p.pluginAPI = api
@@ -144,25 +134,15 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		}
 	}
 
-	err = json.Unmarshal(swaggerJson, &p.swagger)
-	if err != nil {
-		fmt.Printf("pwbased authn: cannot marshal swagger docs: %v", err)
-	}
-
-	createRoutes(p)
 	return nil
 }
 
-func (pwBased) GetMetaData() plugins.Meta {
+func (pwBased) GetMetaData() core.Meta {
 	return meta
 }
 
-func (p *pwBased) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return p.swagger.Paths, p.swagger.Definitions
-}
-
-func (p *pwBased) LoginWrapper() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
+func (p *pwBased) LoginWrapper() core.AuthNLoginFunc {
+	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		var input *credential
 		if err := c.BodyParser(input); err != nil {
 			return nil, err
@@ -171,7 +151,7 @@ func (p *pwBased) LoginWrapper() plugins.AuthNLoginFunc {
 			return nil, errors.New("password required")
 		}
 
-		ident := &plugins.Identity{
+		ident := &core.Identity{
 			ID:       input.Id,
 			Email:    &input.Email,
 			Phone:    &input.Phone,
@@ -187,7 +167,7 @@ func (p *pwBased) LoginWrapper() plugins.AuthNLoginFunc {
 			return nil, fmt.Errorf("id manager for app '%s' is required but not declared", p.pluginAPI.GetAppName())
 		}
 
-		pw, err := manager.GetData(cred, meta.Name, plugins.Password)
+		pw, err := manager.GetData(cred, meta.Name, core.Password)
 		if err != nil {
 			return nil, err
 		}
@@ -198,7 +178,7 @@ func (p *pwBased) LoginWrapper() plugins.AuthNLoginFunc {
 		}
 
 		if isMatch {
-			return &plugins.AuthNResult{
+			return &core.AuthNResult{
 				Cred:     cred,
 				Identity: ident,
 				Provider: meta.Name,
@@ -238,7 +218,7 @@ func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 	return &u
 }
 
-func createRoutes(p *pwBased) {
+func (p *pwBased) GetPaths() []*core.Route {
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,
@@ -278,6 +258,5 @@ func createRoutes(p *pwBased) {
 		}
 		routes = append(routes, verifRoutes...)
 	}
-
-	p.pluginAPI.AddAppRoutes(routes)
+	return routes
 }

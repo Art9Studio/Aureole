@@ -2,7 +2,7 @@ package redis
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 type config struct {
@@ -11,6 +11,6 @@ type config struct {
 	DB       int    `mapstructure:"db"`
 }
 
-func (redisPlugin) Create(conf configs.PluginConfig) plugins.Plugin {
+func (redisPlugin) Create(conf configs.PluginConfig) core.Storage {
 	return &redis{rawConf: conf}
 }

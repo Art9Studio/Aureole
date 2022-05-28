@@ -2,7 +2,6 @@ package pwbased
 
 import (
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"net/url"
@@ -23,12 +22,12 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 
-		i := &plugins.Identity{
+		i := &core.Identity{
 			ID:         rawCred.Id,
 			Username:   &rawCred.Username,
 			Phone:      &rawCred.Phone,
 			Email:      &rawCred.Email,
-			Additional: map[string]interface{}{plugins.Password: pwHash},
+			Additional: map[string]interface{}{core.Password: pwHash},
 		}
 		cred, err := getCredential(i)
 		if err != nil {
@@ -58,7 +57,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		/*if p.conf.register.IsLoginAfter {
-			payload, err := authzT.NewPayload(user)
+			payload, err := authzT.NewIssuerPayload(user)
 			if err != nil {
 				return router.SendError(c, fiber.StatusInternalServerError, err.Error())
 			}
@@ -78,7 +77,7 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 		if e.Email == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
-		i := &plugins.Identity{Email: &e.Email}
+		i := &core.Identity{Email: &e.Email}
 
 		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
 		if err != nil {
@@ -132,12 +131,12 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		_, err = manager.Update(
-			&plugins.Credential{
-				Name:  plugins.Email,
+			&core.Credential{
+				Name:  core.Email,
 				Value: email.(string),
 			},
-			&plugins.Identity{
-				Additional: map[string]interface{}{plugins.Password: pwHash},
+			&core.Identity{
+				Additional: map[string]interface{}{core.Password: pwHash},
 			},
 			meta.Name)
 		if err != nil {
@@ -168,7 +167,7 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		if e.Email == "" {
 			return core.SendError(c, fiber.StatusBadRequest, "email required")
 		}
-		i := &plugins.Identity{Email: &e.Email}
+		i := &core.Identity{Email: &e.Email}
 
 		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verify.Exp)
 		if err != nil {
@@ -209,11 +208,11 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		_, err = manager.Update(
-			&plugins.Credential{
-				Name:  plugins.Email,
+			&core.Credential{
+				Name:  core.Email,
 				Value: email.(string),
 			},
-			&plugins.Identity{EmailVerified: true},
+			&core.Identity{EmailVerified: true},
 			meta.Name)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
@@ -227,23 +226,23 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func getCredential(i *plugins.Identity) (*plugins.Credential, error) {
+func getCredential(i *core.Identity) (*core.Credential, error) {
 	if *i.Username != "nil" {
-		return &plugins.Credential{
+		return &core.Credential{
 			Name:  "username",
 			Value: *i.Username,
 		}, nil
 	}
 
 	if *i.Email != "nil" {
-		return &plugins.Credential{
+		return &core.Credential{
 			Name:  "email",
 			Value: *i.Email,
 		}, nil
 	}
 
 	if *i.Phone != "nil" {
-		return &plugins.Credential{
+		return &core.Credential{
 			Name:  "phone",
 			Value: *i.Phone,
 		}, nil

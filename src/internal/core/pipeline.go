@@ -1,14 +1,13 @@
 package core
 
 import (
-	"aureole/internal/plugins"
 	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func loginHandler(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) error {
+func loginHandler(authFunc AuthNLoginFunc, app *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		authnResult, err := authFunc(*c)
 		if err != nil {
@@ -51,7 +50,7 @@ func loginHandler(authFunc plugins.AuthNLoginFunc, app *app) func(*fiber.Ctx) er
 	}
 }
 
-func mfaInitHandler(init2FA plugins.MFAInitFunc, _ *app) func(*fiber.Ctx) error {
+func mfaInitHandler(init2FA MFAInitFunc, _ *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		mfaData, err := init2FA(*c)
 		if err != nil {
@@ -61,7 +60,7 @@ func mfaInitHandler(init2FA plugins.MFAInitFunc, _ *app) func(*fiber.Ctx) error 
 	}
 }
 
-func mfaVerificationHandler(verify2FA plugins.MFAVerifyFunc, app *app) func(*fiber.Ctx) error {
+func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		cred, mfaData, err := verify2FA(*c)
 		if err != nil {
@@ -76,7 +75,7 @@ func mfaVerificationHandler(verify2FA plugins.MFAVerifyFunc, app *app) func(*fib
 			return SendError(c, fiber.StatusUnauthorized, "cannot get internal storage")
 		}
 
-		authnResult := &plugins.AuthNResult{}
+		authnResult := &AuthNResult{}
 		ok, err = serviceStorage.Get(app.name+"$auth_pipeline$"+cred.Value, authnResult)
 		if err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
@@ -98,10 +97,10 @@ func mfaVerificationHandler(verify2FA plugins.MFAVerifyFunc, app *app) func(*fib
 	}
 }
 
-func getEnabled2FA(app *app, authnResult *plugins.AuthNResult) (fiber.Map, error) {
+func getEnabled2FA(app *app, authnResult *AuthNResult) (fiber.Map, error) {
 	secondFactors, ok := app.getSecondFactors()
 	if ok {
-		var enabled2FA []plugins.MFA
+		var enabled2FA []MFA
 		for _, secondFactor := range secondFactors {
 			enabled, err := secondFactor.IsEnabled(authnResult.Cred)
 			if err != nil {
@@ -125,7 +124,7 @@ func getEnabled2FA(app *app, authnResult *plugins.AuthNResult) (fiber.Map, error
 	return nil, nil
 }
 
-func authenticate(app *app, authnResult *plugins.AuthNResult) (*plugins.Identity, error) {
+func authenticate(app *app, authnResult *AuthNResult) (*Identity, error) {
 	manager, ok := app.getIDManager()
 	if ok {
 		return manager.OnUserAuthenticated(authnResult.Cred, authnResult.Identity, authnResult.Provider)
@@ -133,13 +132,13 @@ func authenticate(app *app, authnResult *plugins.AuthNResult) (*plugins.Identity
 	return authnResult.Identity, nil
 }
 
-func authorize(c *fiber.Ctx, app *app, identity *plugins.Identity) error {
+func authorize(c *fiber.Ctx, app *app, identity *Identity) error {
 	authz, ok := app.getIssuer()
 	if !ok {
 		return SendError(c, fiber.StatusUnauthorized, fmt.Sprintf("app %s: cannot get issuer", app.name))
 	}
 
-	payload, err := plugins.NewPayload(identity.AsMap())
+	payload, err := NewIssuerPayload(identity.AsMap())
 	if err != nil {
 		return SendError(c, fiber.StatusUnauthorized, err.Error())
 	}

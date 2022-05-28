@@ -2,16 +2,26 @@ package jwt
 
 import (
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
+type (
+	RefreshResponse struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	Response struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}
+)
+
 func refresh(j *jwtIssuer) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		rawRefreshT, err := getRawToken(c, j.conf.RefreshBearer, keyMap["refresh"])
+		rawRefreshT, err := getRawToken(c, j.conf.RefreshTokenBearer, keyMap[refreshToken])
 		if err != nil {
 			return err
 		}
@@ -39,7 +49,7 @@ func refresh(j *jwtIssuer) func(*fiber.Ctx) error {
 		// 	return router.SendError(c, fiber.StatusBadRequest, "can't access username from token")
 		// }
 
-		payload := &plugins.Payload{
+		payload := &core.IssuerPayload{
 			// Username: username.(string),
 			ID: int(id.(float64)),
 		}
@@ -55,13 +65,12 @@ func refresh(j *jwtIssuer) func(*fiber.Ctx) error {
 		}
 
 		return attachTokens(c,
-			map[string]bearerType{"access": j.conf.AccessBearer},
-			keyMap,
-			map[string][]byte{"access": signedAccessT})
+			map[tokenType]tokenResp{accessToken: j.conf.AccessTokenBearer},
+			map[tokenType][]byte{accessToken: signedAccessT})
 	}
 }
 
-func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (token string, err error) {
+func getRawToken(c *fiber.Ctx, bearer tokenResp, names map[tokenResp]string) (token string, err error) {
 	switch bearer {
 	case cookie:
 		rawToken := c.Cookies(names["cookie"])
@@ -69,7 +78,7 @@ func getRawToken(c *fiber.Ctx, bearer bearerType, names map[string]string) (toke
 			return "", core.SendError(c, fiber.StatusBadRequest, fmt.Sprintf("cookie '%s' doesn't exist", names["cookie"]))
 		}
 		token = rawToken
-	case both, body:
+	case body:
 		var input map[string]string
 		if err := c.BodyParser(&input); err != nil {
 			return "", err

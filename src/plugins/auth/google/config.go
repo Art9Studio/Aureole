@@ -1,9 +1,6 @@
 package google
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
+import "aureole/internal/configs"
 
 const (
 	pathPrefix  = "/google"
@@ -19,6 +16,6 @@ type (
 	}
 )
 
-func (pluginCreator) Create(conf configs.PluginConfig) plugins.Plugin {
-	return &google{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Scopes, []string{"https://www.googleapis.com/auth/userinfo.email"})
 }

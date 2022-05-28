@@ -1,7 +1,6 @@
 package core
 
 import (
-	"aureole/internal/plugins"
 	"errors"
 	"github.com/lestrrat-go/jwx/jwt"
 	"net/url"
@@ -57,14 +56,14 @@ func (api PluginAPI) IsTestRun() bool {
 	return api.project.testRun
 }
 
-func (api PluginAPI) Is2FAEnabled(cred *plugins.Credential, mfaID string) (bool, error) {
+func (api PluginAPI) Is2FAEnabled(cred *Credential, mfaID string) (bool, error) {
 	manager, ok := api.app.getIDManager()
 	if !ok {
 		return false, nil
 	}
 
 	mfaData, err := manager.Get2FAData(cred, mfaID)
-	if err != nil && !errors.Is(err, plugins.UserNotExistError) {
+	if err != nil && !errors.Is(err, UserNotExistError) {
 		return false, err
 	}
 	if mfaData != nil {
@@ -91,36 +90,32 @@ func (api PluginAPI) GetAuthSessionExp() int {
 	return api.app.authSessionExp
 }
 
-func (api PluginAPI) GetIssuer() (plugins.Issuer, bool) {
+func (api PluginAPI) GetIssuer() (Issuer, bool) {
 	return api.app.getIssuer()
 }
 
-func (api PluginAPI) GetSecondFactors() (map[string]plugins.MFA, bool) {
+func (api PluginAPI) GetSecondFactors() (map[string]MFA, bool) {
 	return api.app.getSecondFactors()
 }
 
-func (api PluginAPI) GetStorage(name string) (plugins.Storage, bool) {
+func (api PluginAPI) GetStorage(name string) (Storage, bool) {
 	return api.app.getStorage(name)
 }
 
-func (api PluginAPI) GetIDManager() (plugins.IDManager, bool) {
+func (api PluginAPI) GetIDManager() (IDManager, bool) {
 	return api.app.getIDManager()
 }
 
-func (api PluginAPI) GetCryptoStorage(name string) (plugins.CryptoStorage, bool) {
+func (api PluginAPI) GetCryptoStorage(name string) (CryptoStorage, bool) {
 	return api.app.getCryptoStorage(name)
 }
 
-func (api PluginAPI) GetSender(name string) (plugins.Sender, bool) {
+func (api PluginAPI) GetSender(name string) (Sender, bool) {
 	return api.app.getSender(name)
 }
 
-func (api PluginAPI) GetCryptoKey(name string) (plugins.CryptoKey, bool) {
+func (api PluginAPI) GetCryptoKey(name string) (CryptoKey, bool) {
 	return api.app.getCryptoKey(name)
-}
-
-func (api PluginAPI) AddAppRoutes(routes []*Route) {
-	api.router.addAppRoutes(api.app.name, routes)
 }
 
 func (api PluginAPI) AddProjectRoutes(routes []*Route) {

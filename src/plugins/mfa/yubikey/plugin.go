@@ -1,7 +1,7 @@
 package yubikey
 
 import (
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 // name is the internal name of the plugin
@@ -9,7 +9,7 @@ const name = "yubikey"
 
 // init initializes package by register plugin
 func init() {
-	plugins.Repo.Register(name, yubikeyPlugin{})
+	core.Repo.Register(name, yubikeyPlugin{})
 }
 
 type yubikeyPlugin struct {

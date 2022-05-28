@@ -3,9 +3,7 @@ package email
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"fmt"
-	"github.com/go-openapi/spec"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"net/http"
@@ -14,25 +12,17 @@ import (
 	"path"
 
 	_ "embed"
-	"encoding/json"
 	"errors"
 )
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-// pluginCreator represents plugin for password based authentication
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type (
@@ -40,19 +30,19 @@ type (
 		pluginAPI     core.PluginAPI
 		rawConf       configs.PluginConfig
 		conf          *config
-		sender        plugins.Sender
+		sender        core.Sender
 		magicLink     *url.URL
 		tmpl, tmplExt string
-		swagger       struct {
-			Paths       *spec.Paths
-			Definitions spec.Definitions
-		}
 	}
 
 	input struct {
 		Email string `json:"email"`
 	}
 )
+
+func Create(conf configs.PluginConfig) core.Authenticator {
+	return &email{rawConf: conf}
+}
 
 func (e *email) Init(api core.PluginAPI) (err error) {
 	e.pluginAPI = api
@@ -72,11 +62,6 @@ func (e *email) Init(api core.PluginAPI) (err error) {
 		return err
 	}
 
-	err = json.Unmarshal(swaggerJson, &e.swagger)
-	if err != nil {
-		fmt.Printf("email authn: cannot marshal swagger docs: %v", err)
-	}
-
 	tmpl, err := os.ReadFile(e.conf.TmplPath)
 	if err != nil {
 		e.tmpl = defaultTmpl
@@ -86,20 +71,15 @@ func (e *email) Init(api core.PluginAPI) (err error) {
 		e.tmplExt = path.Ext(e.conf.TmplPath)
 	}
 
-	createRoutes(e)
 	return nil
 }
 
-func (email) GetMetaData() plugins.Meta {
+func (email) GetMetaData() core.Meta {
 	return meta
 }
 
-func (e *email) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return e.swagger.Paths, e.swagger.Definitions
-}
-
-func (e *email) LoginWrapper() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
+func (e *email) LoginWrapper() core.AuthNLoginFunc {
+	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		rawToken := c.Query("token")
 		if rawToken == "" {
 			return nil, errors.New("token not found")
@@ -118,12 +98,12 @@ func (e *email) LoginWrapper() plugins.AuthNLoginFunc {
 			return nil, errors.New(err.Error())
 		}
 
-		return &plugins.AuthNResult{
-			Cred: &plugins.Credential{
-				Name:  plugins.Email,
+		return &core.AuthNResult{
+			Cred: &core.Credential{
+				Name:  core.Email,
 				Value: email,
 			},
-			Identity: &plugins.Identity{
+			Identity: &core.Identity{
 				Email:         &email,
 				EmailVerified: true,
 			},
@@ -148,13 +128,12 @@ func createMagicLink(e *email) *url.URL {
 	return &u
 }
 
-func createRoutes(e *email) {
-	routes := []*core.Route{
+func (e *email) GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    sendUrl,
 			Handler: sendMagicLink(e),
 		},
 	}
-	e.pluginAPI.AddAppRoutes(routes)
 }

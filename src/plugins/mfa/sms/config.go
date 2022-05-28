@@ -2,7 +2,7 @@ package sms
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 const (
@@ -21,6 +21,6 @@ type config struct {
 	} `mapstructure:"otp"`
 }
 
-func (smsPlugin) Create(conf configs.PluginConfig) plugins.Plugin {
+func (smsPlugin) Create(conf configs.PluginConfig) core.MFA {
 	return &sms{rawConf: conf}
 }

@@ -2,7 +2,7 @@ package email
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 type config struct {
@@ -15,6 +15,6 @@ type config struct {
 	Cc                 []string `mapstructure:"cc"`
 }
 
-func (emailPlugin) Create(conf configs.PluginConfig) plugins.Plugin {
+func (emailPlugin) Create(conf configs.PluginConfig) core.Sender {
 	return &email{rawConf: conf}
 }

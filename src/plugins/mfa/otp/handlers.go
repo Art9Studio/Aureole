@@ -2,7 +2,6 @@ package authenticator
 
 import (
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"aureole/pkg/dgoogauth"
 	"encoding/base32"
 	"github.com/gofiber/fiber/v2"
@@ -40,14 +39,14 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			response["scratch_code"] = scratchCodes
 		}
 
-		cred := &plugins.Credential{}
+		cred := &core.Credential{}
 		qr, err := qrcode.Encode(otp.ProvisionURIWithIssuer(cred.Value, g.conf.Iss), qrcode.Low, 256)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
 		response["qr"] = qr
 
-		err = g.manager.On2FA(cred, &plugins.MFAData{
+		err = g.manager.On2FA(cred, &core.MFAData{
 			PluginID:     ID,
 			ProviderName: name,
 			Payload:      fa2Data,
@@ -62,13 +61,13 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// check if user already authenticated
-		cred := &plugins.Credential{Name: "email", Value: "www@example.com"}
+		cred := &core.Credential{Name: "email", Value: "www@example.com"}
 
 		scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
-		err = g.manager.On2FA(cred, &plugins.MFAData{
+		err = g.manager.On2FA(cred, &core.MFAData{
 			PluginID:     ID,
 			ProviderName: name,
 			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},

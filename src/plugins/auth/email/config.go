@@ -2,7 +2,6 @@ package email
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 const (
@@ -19,8 +18,4 @@ type config struct {
 
 func (c *config) setDefaults() {
 	configs.SetDefault(&c.Exp, 600)
-}
-
-func (pluginCreator) Create(conf configs.PluginConfig) plugins.Plugin {
-	return &email{rawConf: conf}
 }

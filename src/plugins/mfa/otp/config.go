@@ -2,7 +2,6 @@ package authenticator
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 const (
@@ -29,8 +28,4 @@ func (c *config) setDefaults() {
 	configs.SetDefault(&c.MaxAttempts, 3)
 	configs.SetDefault(&c.ScratchCode.Num, 5)
 	configs.SetDefault(&c.ScratchCode.Alphabet, "alphanum")
-}
-
-func (p pluginCreator) Create(conf configs.PluginConfig) plugins.Plugin {
-	return &otpAuth{rawConf: conf}
 }

@@ -3,12 +3,11 @@ package sms
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-openapi/spec"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"os"
@@ -24,12 +23,8 @@ type (
 		pluginAPI     core.PluginAPI
 		rawConf       configs.PluginConfig
 		conf          *config
-		sender        plugins.Sender
+		sender        core.Sender
 		tmpl, tmplExt string
-		swagger       struct {
-			Paths       *spec.Paths
-			Definitions spec.Definitions
-		}
 	}
 
 	token struct {
@@ -41,9 +36,6 @@ type (
 		Otp string `json:"otp"`
 	}
 )
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 func (s *sms) Init(api core.PluginAPI) (err error) {
 	s.pluginAPI = api
@@ -75,23 +67,23 @@ func (s *sms) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (s sms) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (s sms) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: s.rawConf.Name,
 		ID:   pluginID,
 	}
 }
 
-func (s *sms) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return s.swagger.Paths, s.swagger.Definitions
+func (s *sms) GetPaths() *openapi3.Paths {
+	return s.swagger.Paths
 }
 
-func (s *sms) IsEnabled(cred *plugins.Credential) (bool, error) {
+func (s *sms) IsEnabled(cred *core.Credential) (bool, error) {
 	return s.pluginAPI.Is2FAEnabled(cred, pluginID)
 }
 
-func (s *sms) Init2FA() plugins.MFAInitFunc {
+func (s *sms) Init2FA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
 		var strToken *token
 		if err := c.BodyParser(strToken); err != nil {
@@ -103,7 +95,7 @@ func (s *sms) Init2FA() plugins.MFAInitFunc {
 
 		var (
 			provider string
-			cred     plugins.Credential
+			cred     core.Credential
 		)
 		t, err := s.pluginAPI.ParseJWT(strToken.Token)
 		if err != nil {
@@ -152,8 +144,8 @@ func (s *sms) Init2FA() plugins.MFAInitFunc {
 	}
 }
 
-func (s *sms) Verify() plugins.MFAVerifyFunc {
-	return func(c fiber.Ctx) (*plugins.Credential, fiber.Map, error) {
+func (s *sms) Verify() core.MFAVerifyFunc {
+	return func(c fiber.Ctx) (*core.Credential, fiber.Map, error) {
 		var otp *otp
 		if err := c.BodyParser(otp); err != nil {
 			return nil, nil, err
@@ -199,7 +191,7 @@ func (s *sms) Verify() plugins.MFAVerifyFunc {
 		}
 
 		if decrOtp == otp.Otp {
-			return &plugins.Credential{
+			return &core.Credential{
 				Name:  "phone",
 				Value: phone.(string),
 			}, nil, nil
@@ -227,8 +219,8 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func createRoutes(s *sms) {
-	routes := []*core.Route{
+func GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    resendUrl,

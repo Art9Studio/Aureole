@@ -3,7 +3,6 @@ package vault
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	_ "embed"
 	"github.com/mitchellh/mapstructure"
 
@@ -15,23 +14,22 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
+	meta = core.Repo.Register(rawMeta, Create)
 }
-
-type pluginCreator struct {
-}
-
-const pluginID = "3521"
 
 type storage struct {
 	pluginApi core.PluginAPI
 	rawConf   configs.PluginConfig
 	conf      *config
 	client    *vaultAPI.Client
+}
+
+func Create(conf configs.PluginConfig) core.CryptoStorage {
+	return &storage{rawConf: conf}
 }
 
 func (s *storage) Init(api core.PluginAPI) error {
@@ -52,8 +50,12 @@ func (s *storage) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (s storage) GetMetaData() plugins.Meta {
+func (s storage) GetMetaData() core.Meta {
 	return meta
+}
+
+func (s *storage) GetPaths() []*core.Route {
+	return []*core.Route{}
 }
 
 func (s *storage) Write(v []byte) error {

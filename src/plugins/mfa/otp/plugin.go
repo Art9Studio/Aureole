@@ -3,13 +3,12 @@ package authenticator
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"aureole/pkg/dgoogauth"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-openapi/spec"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"net/http"
@@ -23,10 +22,7 @@ const ID = "1799"
 
 // init initializes package by register plugin
 func init() {
-	plugins.Repo.Register(name, pluginCreator{})
-}
-
-type pluginCreator struct {
+	core.Repo.Register(name, Create)
 }
 
 type (
@@ -34,10 +30,6 @@ type (
 		pluginAPI core.PluginAPI
 		rawConf   configs.PluginConfig
 		conf      *config
-		swagger   struct {
-			Paths       *spec.Paths
-			Definitions spec.Definitions
-		}
 	}
 
 	token struct {
@@ -50,8 +42,9 @@ type (
 	}
 )
 
-//go:embed swagger.json
-var swaggerJson []byte
+func Create(conf configs.PluginConfig) core.MFA {
+	return &otpAuth{rawConf: conf}
+}
 
 func (g *otpAuth) Init(api core.PluginAPI) (err error) {
 	g.pluginAPI = api
@@ -74,23 +67,23 @@ func (g *otpAuth) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (g otpAuth) GetMetaData() plugins.Meta {
-	return plugins.Meta{
+func (g otpAuth) GetMetaData() core.Meta {
+	return core.Meta{
 		Type: name,
 		Name: g.rawConf.Name,
 		ID:   ID,
 	}
 }
 
-func (g otpAuth) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return g.swagger.Paths, g.swagger.Definitions
+func (g otpAuth) GetPaths() *openapi3.Paths {
+	return g.swagger.Paths
 }
 
-func (g *otpAuth) IsEnabled(cred *plugins.Credential) (bool, error) {
+func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
 	return g.pluginAPI.Is2FAEnabled(cred, ID)
 }
 
-func (g *otpAuth) Init2FA() plugins.MFAInitFunc {
+func (g *otpAuth) Init2FA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
 		var strToken *token
 		if err := c.BodyParser(strToken); err != nil {
@@ -117,8 +110,8 @@ func (g *otpAuth) Init2FA() plugins.MFAInitFunc {
 	}
 }
 
-func (g *otpAuth) Verify() plugins.MFAVerifyFunc {
-	return func(c fiber.Ctx) (*plugins.Credential, fiber.Map, error) {
+func (g *otpAuth) Verify() core.MFAVerifyFunc {
+	return func(c fiber.Ctx) (*core.Credential, fiber.Map, error) {
 		var otp *otp
 		if err := c.BodyParser(otp); err != nil {
 			return nil, nil, err
@@ -144,7 +137,7 @@ func (g *otpAuth) Verify() plugins.MFAVerifyFunc {
 		}
 
 		provider := rawProvider.(string)
-		cred := &plugins.Credential{}
+		cred := &core.Credential{}
 		if err := mapstructure.Decode(rawCred, cred); err != nil {
 			return nil, nil, err
 		}
@@ -187,7 +180,7 @@ func (g *otpAuth) Verify() plugins.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("wrong otp")
 		}
-		err = g.manager.On2FA(cred, &plugins.MFAData{
+		err = g.manager.On2FA(cred, &core.MFAData{
 			PluginID:     ID,
 			ProviderName: name,
 			Payload:      map[string]interface{}{"counter": otpConf.HotpCounter, "scratch_code": otpConf.ScratchCodes},
@@ -224,8 +217,8 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func createRoutes(g *otpAuth) {
-	routes := []*core.Route{
+func GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    getQRUrl,

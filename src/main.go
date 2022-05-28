@@ -1,9 +1,10 @@
 package main
 
 import (
-	"aureole/internal/configs"
 	"aureole/internal/core"
 	"log"
+
+	"aureole/internal/configs"
 )
 
 func main() {

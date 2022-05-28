@@ -3,9 +3,7 @@ package apple
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"aureole/internal/plugins"
 	"fmt"
-	"github.com/go-openapi/spec"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -17,37 +15,30 @@ import (
 
 	"context"
 	_ "embed"
-	"encoding/json"
 	"errors"
 )
-
-//go:embed swagger.json
-var swaggerJson []byte
 
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta plugins.Meta
+var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = plugins.Repo.Register(rawMeta, pluginCreator{})
-}
-
-type pluginCreator struct {
+	meta = core.Repo.Register(rawMeta, Create)
 }
 
 type apple struct {
 	pluginAPI core.PluginAPI
 	rawConf   configs.PluginConfig
 	conf      *config
-	secretKey plugins.CryptoKey
-	publicKey plugins.CryptoKey
+	secretKey core.CryptoKey
+	publicKey core.CryptoKey
 	provider  *providerConfig
-	swagger   struct {
-		Paths       *spec.Paths
-		Definitions spec.Definitions
-	}
+}
+
+func Create(conf configs.PluginConfig) core.Authenticator {
+	return &apple{rawConf: conf}
 }
 
 func (a *apple) Init(api core.PluginAPI) (err error) {
@@ -68,28 +59,19 @@ func (a *apple) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("crypto key named '%s' is not declared", a.conf.PublicKey)
 	}
 
-	err = json.Unmarshal(swaggerJson, &a.swagger)
-	if err != nil {
-		fmt.Printf("apple authn: cannot marshal swagger docs: %v", err)
-	}
-
 	if err := initProvider(a); err != nil {
 		return err
 	}
-	createRoutes(a)
+
 	return nil
 }
 
-func (apple) GetMetaData() plugins.Meta {
+func (apple) GetMetaData() core.Meta {
 	return meta
 }
 
-func (a *apple) GetHandlersSpec() (*spec.Paths, spec.Definitions) {
-	return a.swagger.Paths, a.swagger.Definitions
-}
-
-func (a *apple) LoginWrapper() plugins.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*plugins.AuthNResult, error) {
+func (a *apple) LoginWrapper1() core.AuthNLoginFunc {
+	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		input := struct {
 			State string
 			Code  string
@@ -129,12 +111,12 @@ func (a *apple) LoginWrapper() plugins.AuthNLoginFunc {
 			return nil, errors.New("input data doesn't pass filters")
 		}
 
-		return &plugins.AuthNResult{
-			Cred: &plugins.Credential{
-				Name:  plugins.Email,
+		return &core.AuthNResult{
+			Cred: &core.Credential{
+				Name:  core.Email,
 				Value: email,
 			},
-			Identity: &plugins.Identity{
+			Identity: &core.Identity{
 				Email:         &email,
 				EmailVerified: true,
 				Additional:    map[string]interface{}{"social_provider_data": userData},
@@ -170,7 +152,7 @@ func initProvider(a *apple) error {
 	return createSecret(a.provider, a.secretKey)
 }
 
-func createSecret(p *providerConfig, key plugins.CryptoKey) error {
+func createSecret(p *providerConfig, key core.CryptoKey) error {
 	t := jwt.New()
 	claims := []struct {
 		Name string
@@ -199,7 +181,7 @@ func createSecret(p *providerConfig, key plugins.CryptoKey) error {
 	return nil
 }
 
-func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
+func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 	keySet := signKey.GetPrivateSet()
 
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {
@@ -219,13 +201,12 @@ func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
 	return []byte{}, errors.New("key set don't contain sig key")
 }
 
-func createRoutes(a *apple) {
-	routes := []*core.Route{
+func (a *apple) GetPaths() []*core.Route {
+	return []*core.Route{
 		{
 			Method:  http.MethodGet,
 			Path:    pathPrefix,
 			Handler: getAuthCode(a),
 		},
 	}
-	a.pluginAPI.AddAppRoutes(routes)
 }

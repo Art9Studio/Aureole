@@ -7,6 +7,7 @@ require (
 	github.com/avast/retry-go/v4 v4.0.4
 	github.com/coocood/freecache v1.2.1
 	github.com/fatih/structs v1.1.0
+	github.com/getkin/kin-openapi v0.94.0
 	github.com/go-openapi/spec v0.20.4
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
@@ -55,6 +56,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect

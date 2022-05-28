@@ -2,7 +2,7 @@ package pem
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
+	"aureole/internal/core"
 )
 
 type config struct {
@@ -14,6 +14,6 @@ type config struct {
 	PathPrefix      string
 }
 
-func (pemPlugin) Create(conf configs.PluginConfig) plugins.Plugin {
+func (pemPlugin) Create(conf configs.PluginConfig) core.CryptoKey {
 	return &pem{rawConf: conf}
 }
