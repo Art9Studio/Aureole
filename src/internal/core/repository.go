@@ -15,7 +15,9 @@ type (
 		Type Type   `yaml:"type"`
 	}
 
-	PluginCreate = func(configs.PluginConfig) plugin
+	PluginCreate = func(configs.PluginConfig) Plugin
+
+	AuthPluginCreate = func(configs.PluginConfig) Authenticator
 
 	Claim struct {
 		Meta
@@ -44,7 +46,7 @@ func buildPath(name string, pluginType Type) string {
 	return fmt.Sprintf("%s.%s", pluginType, name)
 }
 
-// Get returns kstorage plugin if it exists
+// Get returns kstorage Plugin if it exists
 func (repo *Repository) Get(name string, pluginType Type) (*Claim, error) {
 	repo.pluginsMU.Lock()
 	defer repo.pluginsMU.Unlock()
@@ -55,7 +57,7 @@ func (repo *Repository) Get(name string, pluginType Type) (*Claim, error) {
 	return nil, fmt.Errorf("there is no pluginCreator for %s", name)
 }
 
-// Register registers plugin
+// Register registers Plugin
 func (repo *Repository) Register(metaYaml []byte, p PluginCreate) Meta {
 	var meta = &Meta{}
 	err := yaml.Unmarshal(metaYaml, meta)
@@ -63,7 +65,7 @@ func (repo *Repository) Register(metaYaml []byte, p PluginCreate) Meta {
 		return *meta
 	}
 	if meta.Name == "" {
-		panic("name for a plugin wasn't passed")
+		panic("name for a Plugin wasn't passed")
 	}
 	repo.pluginsMU.Lock()
 	defer repo.pluginsMU.Unlock()
@@ -71,7 +73,7 @@ func (repo *Repository) Register(metaYaml []byte, p PluginCreate) Meta {
 	// todo: validate meta
 	path := buildPath(meta.Name, meta.Type)
 	if _, ok := repo.plugins[path]; ok {
-		panic("multiple Register call for plugin " + path)
+		panic("multiple Register call for Plugin " + path)
 	}
 
 	repo.plugins[path] = &Claim{
@@ -91,7 +93,7 @@ func CreateRepository() *Repository {
 
 var Repo = CreateRepository()
 
-func CreatePlugin[T plugin](repository *Repository, config configs.PluginConfig, pluginType Type) (T, error) {
+func CreatePlugin[T Plugin](repository *Repository, config configs.PluginConfig, pluginType Type) (T, error) {
 	var empty T
 	creator, err := repository.Get(config.Plugin, pluginType)
 	if err != nil {
@@ -103,7 +105,7 @@ func CreatePlugin[T plugin](repository *Repository, config configs.PluginConfig,
 	plugin, ok := abstractPlugin.(T)
 
 	if !ok {
-		return empty, fmt.Errorf("trying to cast plugin was failed")
+		return empty, fmt.Errorf("trying to cast Plugin was failed")
 	}
 
 	return plugin, nil

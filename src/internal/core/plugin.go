@@ -10,7 +10,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type plugin interface {
+type Plugin interface {
 	MetaDataGetter
 	PathsGetter
 }
@@ -21,7 +21,7 @@ type MetaDataGetter interface {
 
 type (
 	Authenticator interface {
-		plugin
+		Plugin
 		GetLoginWrapper() AuthNLoginFunc
 		GetLoginMethod() string
 	}
@@ -43,14 +43,14 @@ const (
 )
 
 type (
-	// CryptoKeyPluginCreator defines methods for authentication plugin
+	// CryptoKeyPluginCreator defines methods for authentication Plugin
 	CryptoKeyPluginCreator interface {
 		// Create returns desired crypto key depends on the given config
 		Create(config *configs.PluginConfig) CryptoKey
 	}
 
 	CryptoKey interface {
-		plugin
+		Plugin
 		GetPrivateSet() jwk.Set
 		GetPublicSet() jwk.Set
 	}
@@ -64,7 +64,7 @@ type (
 	}
 
 	CryptoStorage interface {
-		plugin
+		Plugin
 		Read(v *[]byte) (ok bool, err error)
 		Write(v []byte) error
 	}
@@ -93,7 +93,7 @@ type (
 	}
 
 	IDManager interface {
-		plugin
+		Plugin
 		Register(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 		OnUserAuthenticated(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
@@ -144,7 +144,7 @@ func (i *Identity) AsMap() map[string]interface{} {
 
 type (
 	Issuer interface {
-		plugin
+		Plugin
 		GetResponseData() *openapi3.Responses
 		GetNativeQueries() map[string]string
 		Authorize(*fiber.Ctx, *IssuerPayload) error
@@ -172,7 +172,7 @@ func NewIssuerPayload(data map[string]interface{}) (*IssuerPayload, error) {
 
 type (
 	MFA interface {
-		plugin
+		Plugin
 		IsEnabled(cred *Credential) (bool, error)
 		Init2FA() MFAInitFunc
 		Verify() MFAVerifyFunc
@@ -183,14 +183,14 @@ type (
 )
 
 type (
-	// RootPluginCreator defines methods for admin plugin
+	// RootPluginCreator defines methods for admin Plugin
 	RootPluginCreator interface {
-		// Create returns desired admin plugin depends on the given config
+		// Create returns desired admin Plugin depends on the given config
 		Create(admin *configs.PluginConfig) RootPlugin
 	}
 
 	RootPlugin interface {
-		plugin
+		Plugin
 	}
 )
 
@@ -201,7 +201,7 @@ type (
 	}
 
 	Sender interface {
-		plugin
+		Plugin
 		Send(recipient, subject, tmpl, tmplExtension string, tmplCtx map[string]interface{}) error
 		SendRaw(recipient, subject, message string) error
 	}
@@ -213,7 +213,7 @@ type (
 	}
 
 	Storage interface {
-		plugin
+		Plugin
 		Set(k string, v interface{}, exp int) error
 		Get(k string, v interface{}) (ok bool, err error)
 		Delete(k string) error

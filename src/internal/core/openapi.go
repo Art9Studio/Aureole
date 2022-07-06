@@ -280,8 +280,8 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	return nil
 //}
 //
-//func appendPluginSpec(plugin interface{}, a *app, pluginKind plugin.PluginType, pluginName string) error {
-//	pluginSwagger, ok := plugin.(plugin.OpenAPISpecGetter)
+//func appendPluginSpec(Plugin interface{}, a *app, pluginKind Plugin.PluginType, pluginName string) error {
+//	pluginSwagger, ok := Plugin.(Plugin.OpenAPISpecGetter)
 //	if ok {
 //		paths, defs := pluginSwagger.GetPaths()
 //		pathsJsonBytes, err := paths.MarshalJSON()
@@ -304,7 +304,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	return nil
 //}
 //
-//func appendDefinitions(responses openapi3.Responses, pluginType plugin.PluginType, pluginName string) *openapi3.Responses {
+//func appendDefinitions(responses openapi3.Responses, pluginType Plugin.PluginType, pluginName string) *openapi3.Responses {
 //	for name, d := range defs {
 //		newName := name
 //

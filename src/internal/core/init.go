@@ -21,7 +21,7 @@ type PluginInitializer interface {
 	Init(api PluginAPI) error
 }
 
-var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
+var PluginInitErr = errors.New("Plugin doesn't implement PluginInitializer interface")
 
 func InitProject(conf *configs.Project, r *router) *project {
 	var p = &project{
@@ -183,7 +183,7 @@ func createRootPlugins(repository *Repository, app *app, conf configs.App) {
 		creator := CreatePlugin[RootPlugin]
 		rootPlugin, err := creator(repository, rootPluginConf, TypeRoot)
 		if err != nil {
-			fmt.Printf("app %s: cannot create rootPlugin plugin %s: %v\n", app.name, rootPluginConf.Name, err)
+			fmt.Printf("app %s: cannot create rootPlugin Plugin %s: %v\n", app.name, rootPluginConf.Name, err)
 		}
 		app.rootPlugins[rootPluginConf.Name] = rootPlugin
 	}
@@ -354,11 +354,11 @@ func initAdmins(app *app, p *project, r *router) {
 		if ok {
 			err := pluginInit.Init(initAPI(withProject(p), withApp(app), withRouter(r)))
 			if err != nil {
-				fmt.Printf("app %s: cannot init admin plugin '%s': %v\n", app.name, name, err)
+				fmt.Printf("app %s: cannot init admin Plugin '%s': %v\n", app.name, name, err)
 				app.rootPlugins[name] = nil
 			}
 		} else {
-			fmt.Printf("app %s: cannot init admin plugin '%s': %v\n", app.name, name, PluginInitErr)
+			fmt.Printf("app %s: cannot init admin Plugin '%s': %v\n", app.name, name, PluginInitErr)
 			app.rootPlugins[name] = nil
 		}
 	}
