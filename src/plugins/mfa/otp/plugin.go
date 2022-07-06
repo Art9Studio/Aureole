@@ -5,7 +5,6 @@ import (
 	"aureole/internal/core"
 	"aureole/pkg/dgoogauth"
 	_ "embed"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -16,13 +15,13 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// name is the internal name of the plugin
-const name = "otp"
-const ID = "1799"
+var rawMeta []byte
 
-// init initializes package by register plugin
+var meta core.Meta
+
+// init initializes package by register pluginCreator
 func init() {
-	core.Repo.Register([]byte(name), Create)
+	meta = core.MFARepo.Register(rawMeta, Create)
 }
 
 type (
@@ -58,20 +57,11 @@ func (g *otpAuth) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("manager for app '%s' is not declared", g.pluginAPI.GetAppName())
 	}
 
-	err = json.Unmarshal(swaggerJson, &g.swagger)
-	if err != nil {
-		fmt.Printf("google-auth 2fa: cannot marshal swagger docs: %v", err)
-	}
-
-	createRoutes(g)
 	return nil
 }
 
 func (g otpAuth) GetMetaData() core.Meta {
-	return core.Meta{
-		Type: name,
-		Name: g.rawConf.Name,
-	}
+	return meta
 }
 
 // func (g otpAuth) GetPaths() *openapi3.Paths {
@@ -79,6 +69,7 @@ func (g otpAuth) GetMetaData() core.Meta {
 // }
 
 func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
+	// TODO: Что вместо ID?
 	return g.pluginAPI.Is2FAEnabled(cred, ID)
 }
 

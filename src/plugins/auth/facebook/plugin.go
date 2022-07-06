@@ -3,12 +3,13 @@ package facebook
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
+	"net/http"
+	"path"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
-	"net/http"
-	"path"
 
 	_ "embed"
 	"errors"
@@ -21,7 +22,8 @@ var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = core.Repo.Register(rawMeta, Create)
+	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
+
 }
 
 type facebook struct {
@@ -37,9 +39,9 @@ func (f *facebook) GetLoginMethod() string {
 
 func (f *facebook) GetAuthRoute() *core.Route {
 	return &core.Route{
-		Path:    "/",
-		Method:  http.MethodGet,
-		// 
+		Path:   "/",
+		Method: http.MethodGet,
+		//
 		Handler: f.GetLoginWrapper(),
 	}
 }

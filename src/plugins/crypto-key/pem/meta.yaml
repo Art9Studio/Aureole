@@ -1,0 +1,3 @@
+name: "pem"
+type: crypto_key
+description: "PEM Crypto Key"

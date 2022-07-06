@@ -24,7 +24,8 @@ var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = core.Repo.Register(rawMeta, Create)
+	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
+
 }
 
 type (

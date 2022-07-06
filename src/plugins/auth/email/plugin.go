@@ -4,12 +4,13 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 
 	_ "embed"
 	"errors"
@@ -22,7 +23,8 @@ var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = core.Repo.Register(rawMeta, Create)
+	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
+
 }
 
 type (
@@ -39,6 +41,7 @@ type (
 		Email string `json:"email"`
 	}
 )
+
 func (e *email) GetLoginMethod() string {
 	return http.MethodGet
 }

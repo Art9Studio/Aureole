@@ -20,6 +20,9 @@ type MetaDataGetter interface {
 }
 
 type (
+	AuthenticatorCreator interface {
+		Create(*configs.PluginConfig) CryptoStorage
+	}
 	Authenticator interface {
 		Plugin
 		GetLoginWrapper() AuthNLoginFunc
@@ -143,6 +146,9 @@ func (i *Identity) AsMap() map[string]interface{} {
 }
 
 type (
+	IssuerCreator interface {
+		Create(*configs.PluginConfig) Issuer
+	}
 	Issuer interface {
 		Plugin
 		GetResponseData() (*openapi3.Responses, error)
@@ -171,6 +177,10 @@ func NewIssuerPayload(data map[string]interface{}) (*IssuerPayload, error) {
 }
 
 type (
+	MFACreator interface {
+		Create(*configs.PluginConfig) MFA
+	}
+	
 	MFA interface {
 		Plugin
 		IsEnabled(cred *Credential) (bool, error)

@@ -3,8 +3,9 @@ package core
 import (
 	"aureole/internal/configs"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"sync"
+
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -87,8 +88,15 @@ func CreateRepository[T Plugin]() *Repository[T] {
 	}
 }
 
-var SenderRepo = CreateRepository[Sender]()
+var AuthenticatorRepo = CreateRepository[Authenticator]()
 var CryptoKeyRepo = CreateRepository[CryptoKey]()
+var CryptoStorageRepo = CreateRepository[CryptoStorage]()
+var IDManagerRepo = CreateRepository[IDManager]()
+var IssuerRepo = CreateRepository[Issuer]()
+var MFARepo = CreateRepository[MFA]()
+var RootCreator = CreateRepository[RootPlugin]()
+var SenderRepo = CreateRepository[Sender]()
+var StorageRepo = CreateRepository[Storage]()
 
 func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConfig, pluginType Type) (T, error) {
 	var empty T
