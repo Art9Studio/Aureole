@@ -37,6 +37,10 @@ type apple struct {
 	provider  *providerConfig
 }
 
+func (a *apple) GetLoginMethod() string {
+	return http.MethodGet
+}
+
 func Create(conf configs.PluginConfig) core.Authenticator {
 	return &apple{rawConf: conf}
 }
@@ -70,7 +74,7 @@ func (apple) GetMetaData() core.Meta {
 	return meta
 }
 
-func (a *apple) LoginWrapper1() core.AuthNLoginFunc {
+func (a *apple) GetLoginWrapper() core.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		input := struct {
 			State string

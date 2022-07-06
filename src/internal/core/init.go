@@ -379,9 +379,11 @@ func initAuthenticators(app *app, p *project, r *router) {
 				app.authenticators[name] = nil
 			} else {
 				pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Name, "_", "-")
-				authRoute := authenticator.GetAuthRoute()
-				authRoute.Path = pathPrefix + "/login"
-				authRoute.Handler = loginHandler(authenticator.LoginWrapper(), app)
+				authRoute := &Route{
+					Method:  authenticator.GetLoginMethod(),
+					Path:    pathPrefix + "/login",
+					Handler: loginHandler(authenticator.GetLoginWrapper(), app),
+				}
 				if err != nil {
 					fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
 				}

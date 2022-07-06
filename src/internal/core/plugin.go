@@ -22,8 +22,8 @@ type MetaDataGetter interface {
 type (
 	Authenticator interface {
 		plugin
-		LoginWrapper() AuthNLoginFunc
-		GetAuthRoute() *Route
+		GetLoginWrapper() AuthNLoginFunc
+		GetLoginMethod() string
 	}
 
 	AuthNResult struct {
