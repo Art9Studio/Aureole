@@ -145,7 +145,7 @@ func (i *Identity) AsMap() map[string]interface{} {
 type (
 	Issuer interface {
 		Plugin
-		GetResponseData() *openapi3.Responses
+		GetResponseData() (*openapi3.Responses, error)
 		GetNativeQueries() map[string]string
 		Authorize(*fiber.Ctx, *IssuerPayload) error
 	}

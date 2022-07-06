@@ -3,12 +3,13 @@ package vk
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
+	"net/http"
+	"path"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
-	"net/http"
-	"path"
 
 	_ "embed"
 	"errors"
@@ -29,6 +30,10 @@ type vk struct {
 	rawConf   configs.PluginConfig
 	conf      *config
 	provider  *oauth2.Config
+}
+
+func (v *vk) GetLoginMethod() string {
+	return http.MethodGet
 }
 
 func Create(conf configs.PluginConfig) core.Authenticator {
@@ -53,7 +58,7 @@ func (vk) GetMetaData() core.Meta {
 	return meta
 }
 
-func (v *vk) LoginWrapper() core.AuthNLoginFunc {
+func (v *vk) GetLoginWrapper() core.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		state := c.Query("state")
 		if state != "state" {

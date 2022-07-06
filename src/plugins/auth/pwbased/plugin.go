@@ -5,12 +5,13 @@ import (
 	"aureole/internal/core"
 	"aureole/plugins/auth/pwbased/pwhasher"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 
 	_ "embed"
 	"errors"
@@ -65,6 +66,10 @@ const (
 	ResetLink  linkType = "reset"
 	VerifyLink linkType = "verify"
 )
+
+func (p *pwBased) GetLoginMethod() string {
+	return http.MethodGet
+}
 
 func Create(conf configs.PluginConfig) core.Authenticator {
 	return &pwBased{rawConf: conf}
@@ -141,7 +146,7 @@ func (pwBased) GetMetaData() core.Meta {
 	return meta
 }
 
-func (p *pwBased) LoginWrapper() core.AuthNLoginFunc {
+func (p *pwBased) GetLoginWrapper() core.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		var input *credential
 		if err := c.BodyParser(input); err != nil {

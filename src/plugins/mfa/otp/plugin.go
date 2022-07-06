@@ -8,12 +8,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 // name is the internal name of the plugin
@@ -22,7 +22,7 @@ const ID = "1799"
 
 // init initializes package by register plugin
 func init() {
-	core.Repo.Register(name, Create)
+	core.Repo.Register([]byte(name), Create)
 }
 
 type (
@@ -71,13 +71,12 @@ func (g otpAuth) GetMetaData() core.Meta {
 	return core.Meta{
 		Type: name,
 		Name: g.rawConf.Name,
-		ID:   ID,
 	}
 }
 
-func (g otpAuth) GetPaths() *openapi3.Paths {
-	return g.swagger.Paths
-}
+// func (g otpAuth) GetPaths() *openapi3.Paths {
+// 	return g.swagger.Paths
+// }
 
 func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
 	return g.pluginAPI.Is2FAEnabled(cred, ID)
@@ -217,7 +216,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func GetPaths() []*core.Route {
+func (g *otpAuth) GetPaths() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,
@@ -230,5 +229,4 @@ func GetPaths() []*core.Route {
 			Handler: getScratchCodes(g),
 		},
 	}
-	g.pluginAPI.AddAppRoutes(routes)
 }

@@ -31,11 +31,16 @@ type facebook struct {
 	provider  *oauth2.Config
 }
 
+func (f *facebook) GetLoginMethod() string {
+	return http.MethodGet
+}
+
 func (f *facebook) GetAuthRoute() *core.Route {
 	return &core.Route{
 		Path:    "/",
 		Method:  http.MethodGet,
-		Handler: f.LoginWrapper(),
+		// 
+		Handler: f.GetLoginWrapper(),
 	}
 }
 
@@ -60,7 +65,7 @@ func (facebook) GetMetaData() core.Meta {
 	return meta
 }
 
-func (f *facebook) LoginWrapper() core.AuthNLoginFunc {
+func (f *facebook) GetLoginWrapper() core.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		state := c.Query("state")
 		if state != "state" {

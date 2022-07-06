@@ -4,14 +4,6 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3gen"
-	"github.com/gofiber/fiber/v2"
-	"github.com/lestrrat-go/jwx/jwa"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jwt"
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"os"
 	"path"
@@ -20,10 +12,20 @@ import (
 	txtTmpl "text/template"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
+	"github.com/gofiber/fiber/v2"
+	"github.com/lestrrat-go/jwx/jwa"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/jwt"
+	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/mitchellh/mapstructure"
+
 	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
+
 	"go.uber.org/zap/buffer"
 )
 
@@ -74,7 +76,7 @@ var keyMap = map[tokenType]map[tokenResp]string{
 		cookie: "refresh_token",
 	},
 }
-
+// INFO: надо было менять в интерфейсе  Issure GetResponseData что бы он возвращал ошибку?
 func Create(conf configs.PluginConfig) core.Issuer {
 	return &jwtIssuer{rawConf: conf}
 }
@@ -113,7 +115,7 @@ func (j *jwtIssuer) Init(api core.PluginAPI) (err error) {
 	return err
 }
 
-func getResponses(j *jwtIssuer) (openapi3.Responses, error) {
+func (j *jwtIssuer) GetResponseData() (*openapi3.Responses, error) {
 	responses := openapi3.NewResponses()
 
 	okSchema, err := openapi3gen.NewSchemaRefForValue(Response{}, nil)
@@ -154,7 +156,7 @@ func getResponses(j *jwtIssuer) (openapi3.Responses, error) {
 	okResponse.Content["application/json"].Schema.Value = bodySchema.Value
 
 	responses[okStatus].Value = okResponse
-	return responses, nil
+	return &responses, nil
 }
 
 func (j jwtIssuer) GetMetaData() core.Meta {

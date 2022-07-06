@@ -6,12 +6,13 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"net/http"
+	"path"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/endpoints"
-	"net/http"
-	"path"
 )
 
 //go:embed meta.yaml
@@ -29,6 +30,10 @@ type google struct {
 	rawConf   configs.PluginConfig
 	conf      *config
 	provider  *oauth2.Config
+}
+
+func (g *google) GetLoginMethod() string {
+	return http.MethodGet
 }
 
 func Create(conf configs.PluginConfig) core.Authenticator {
@@ -52,7 +57,7 @@ func (google) GetMetaData() core.Meta {
 	return meta
 }
 
-func (g *google) LoginWrapper() core.AuthNLoginFunc {
+func (g *google) GetLoginWrapper() core.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		// todo: save state and compare later #2
 		state := c.Query("state")

@@ -4,11 +4,12 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 
 	_ "embed"
 	"errors"
@@ -43,6 +44,10 @@ type (
 	}
 )
 
+func (p *authn) GetLoginMethod() string {
+	return http.MethodGet
+}
+
 func Create(conf configs.PluginConfig) core.Authenticator {
 	return &authn{rawConf: conf}
 }
@@ -76,7 +81,7 @@ func (authn) GetMetaData() core.Meta {
 	return meta
 }
 
-func (a *authn) LoginWrapper() core.AuthNLoginFunc {
+func (a *authn) GetLoginWrapper() core.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		var otp otp
 		if err := c.BodyParser(&otp); err != nil {

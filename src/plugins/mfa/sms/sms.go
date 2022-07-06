@@ -4,14 +4,13 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	_ "embed"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -49,7 +48,6 @@ func (s *sms) Init(api core.PluginAPI) (err error) {
 		return fmt.Errorf("manager for app '%s' is not declared", s.pluginAPI.GetAppName())
 	}
 
-	err = json.Unmarshal(swaggerJson, &s.swagger)
 	if err != nil {
 		fmt.Printf("sms 2fa: cannot marshal swagger docs: %v", err)
 	}
@@ -75,9 +73,9 @@ func (s sms) GetMetaData() core.Meta {
 	}
 }
 
-func (s *sms) GetPaths() *openapi3.Paths {
-	return s.swagger.Paths
-}
+// func (s *sms) GetPaths() *openapi3.Paths {
+// 	return s.swagger.Paths
+// }
 
 func (s *sms) IsEnabled(cred *core.Credential) (bool, error) {
 	return s.pluginAPI.Is2FAEnabled(cred, pluginID)
@@ -219,7 +217,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func GetPaths() []*core.Route {
+func (s *sms) GetPaths() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,
@@ -227,5 +225,4 @@ func GetPaths() []*core.Route {
 			Handler: resend(s),
 		},
 	}
-	s.pluginAPI.AddAppRoutes(routes)
 }

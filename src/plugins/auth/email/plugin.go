@@ -39,6 +39,9 @@ type (
 		Email string `json:"email"`
 	}
 )
+func (e *email) GetLoginMethod() string {
+	return http.MethodGet
+}
 
 func Create(conf configs.PluginConfig) core.Authenticator {
 	return &email{rawConf: conf}
@@ -78,7 +81,7 @@ func (email) GetMetaData() core.Meta {
 	return meta
 }
 
-func (e *email) LoginWrapper() core.AuthNLoginFunc {
+func (e *email) GetLoginWrapper() core.AuthNLoginFunc {
 	return func(c fiber.Ctx) (*core.AuthNResult, error) {
 		rawToken := c.Query("token")
 		if rawToken == "" {
