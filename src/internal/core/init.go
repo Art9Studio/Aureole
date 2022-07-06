@@ -65,7 +65,8 @@ func addHealthRoute(r *router) {
 
 func createApps(conf *configs.Project, p *project) {
 	p.apps = make(map[string]*app, len(conf.Apps))
-	var repository = Repo
+	var senderRepository = SenderRepo
+	var cryptoKeyRepository = CryptoKeyRepo
 
 	for _, appConf := range conf.Apps {
 		appUrl, err := createAppUrl(appConf)
@@ -80,8 +81,8 @@ func createApps(conf *configs.Project, p *project) {
 			authSessionExp: appConf.AuthSessionExp,
 		}
 
-		createSenders(repository, app, appConf)
-		createCryptoKeys(repository, app, appConf)
+		createSenders(senderRepository, app, appConf)
+		createCryptoKeys(cryptoKeyRepository, app, appConf)
 		createStorages(repository, app, appConf)
 		createCryptoStorages(repository, app, appConf)
 		createRootPlugins(repository, app, appConf)
@@ -124,7 +125,7 @@ func createAppUrl(app configs.App) (*url.URL, error) {
 	return appUrl, nil
 }
 
-func createSenders(repository *Repository, app *app, conf configs.App) {
+func createSenders(repository *Repository[Sender], app *app, conf configs.App) {
 	app.senders = make(map[string]Sender)
 	for i := range conf.Senders {
 		senderConf := conf.Senders[i]
@@ -137,7 +138,7 @@ func createSenders(repository *Repository, app *app, conf configs.App) {
 	}
 }
 
-func createCryptoKeys(repository *Repository, app *app, conf configs.App) {
+func createCryptoKeys(repository *Repository[CryptoKey], app *app, conf configs.App) {
 	app.cryptoKeys = make(map[string]CryptoKey)
 	for i := range conf.CryptoKeys {
 		ckeyConf := conf.CryptoKeys[i]
@@ -150,7 +151,7 @@ func createCryptoKeys(repository *Repository, app *app, conf configs.App) {
 	}
 }
 
-func createStorages(repository *Repository, app *app, conf configs.App) {
+func createStorages(repository *Repository[Storage], app *app, conf configs.App) {
 	app.storages = make(map[string]Storage)
 	for i := range conf.Storages {
 		storageConf := conf.Storages[i]
@@ -163,7 +164,7 @@ func createStorages(repository *Repository, app *app, conf configs.App) {
 	}
 }
 
-func createCryptoStorages(repository *Repository, app *app, conf configs.App) {
+func createCryptoStorages(repository *Repository[CryptoStorage], app *app, conf configs.App) {
 	app.cryptoStorages = make(map[string]CryptoStorage)
 	for i := range conf.CryptoStorages {
 		storageConf := conf.CryptoStorages[i]
@@ -176,7 +177,7 @@ func createCryptoStorages(repository *Repository, app *app, conf configs.App) {
 	}
 }
 
-func createRootPlugins(repository *Repository, app *app, conf configs.App) {
+func createRootPlugins(repository *Repository[RootPlugin], app *app, conf configs.App) {
 	app.rootPlugins = make(map[string]RootPlugin)
 	for i := range conf.RootPlugins {
 		rootPluginConf := conf.RootPlugins[i]
@@ -189,7 +190,7 @@ func createRootPlugins(repository *Repository, app *app, conf configs.App) {
 	}
 }
 
-func createAuthenticators(repository *Repository, app *app, conf configs.App) {
+func createAuthenticators(repository *Repository[Authenticator], app *app, conf configs.App) {
 	//clearAuthnDuplicate(&conf)
 
 	app.authenticators = make(map[string]Authenticator, len(conf.Auth))
@@ -215,7 +216,7 @@ func clearAuthnDuplicate(app *configs.App) {
 	}
 }
 
-func createIssuer(repository *Repository, app *app, conf configs.App) {
+func createIssuer(repository *Repository[Issuer], app *app, conf configs.App) {
 	issuerConf := conf.Issuer
 	creator := CreatePlugin[Issuer]
 	issuer, err := creator(repository, issuerConf, TypeIssuer)
@@ -226,7 +227,7 @@ func createIssuer(repository *Repository, app *app, conf configs.App) {
 	app.issuer = issuer
 }
 
-func createMultiFactors(repository *Repository, app *app, conf configs.App) {
+func createMultiFactors(repository *Repository[MFA], app *app, conf configs.App) {
 	app.mfa = make(map[string]MFA)
 	for i := range conf.MFA {
 		mfaConf := conf.MFA[i]
@@ -240,7 +241,7 @@ func createMultiFactors(repository *Repository, app *app, conf configs.App) {
 	}
 }
 
-func createIDManager(repository *Repository, app *app, conf configs.App) {
+func createIDManager(repository *Repository[IDManager], app *app, conf configs.App) {
 	idManagerConf := conf.IDManager
 	// IdManager is optional so skip if not set
 	if idManagerConf.Plugin == "" {

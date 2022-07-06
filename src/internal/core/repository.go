@@ -15,18 +15,14 @@ type (
 		Type Type   `yaml:"type"`
 	}
 
-	PluginCreate = func(configs.PluginConfig) Plugin
-
-	AuthPluginCreate = func(configs.PluginConfig) Authenticator
-
-	Claim struct {
+	Claim[T Plugin] struct {
 		Meta
-		PluginCreate
+		PluginCreate func(configs.PluginConfig) T
 	}
 
-	Repository struct {
+	Repository[T Plugin] struct {
 		pluginsMU sync.Mutex
-		plugins   map[string]*Claim
+		plugins   map[string]*Claim[T]
 	}
 )
 
@@ -47,7 +43,7 @@ func buildPath(name string, pluginType Type) string {
 }
 
 // Get returns kstorage Plugin if it exists
-func (repo *Repository) Get(name string, pluginType Type) (*Claim, error) {
+func (repo *Repository[T]) Get(name string, pluginType Type) (*Claim[T], error) {
 	repo.pluginsMU.Lock()
 	defer repo.pluginsMU.Unlock()
 	path := buildPath(name, pluginType)
@@ -58,7 +54,7 @@ func (repo *Repository) Get(name string, pluginType Type) (*Claim, error) {
 }
 
 // Register registers Plugin
-func (repo *Repository) Register(metaYaml []byte, p PluginCreate) Meta {
+func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig) T) Meta {
 	var meta = &Meta{}
 	err := yaml.Unmarshal(metaYaml, meta)
 	if err != nil {
@@ -76,7 +72,7 @@ func (repo *Repository) Register(metaYaml []byte, p PluginCreate) Meta {
 		panic("multiple Register call for Plugin " + path)
 	}
 
-	repo.plugins[path] = &Claim{
+	repo.plugins[path] = &Claim[T]{
 		Meta:         *meta,
 		PluginCreate: p,
 	}
@@ -84,29 +80,24 @@ func (repo *Repository) Register(metaYaml []byte, p PluginCreate) Meta {
 	return *meta
 }
 
-func CreateRepository() *Repository {
-	return &Repository{
-		plugins:   make(map[string]*Claim),
+func CreateRepository[T Plugin]() *Repository[T] {
+	return &Repository[T]{
+		plugins:   make(map[string]*Claim[T]),
 		pluginsMU: sync.Mutex{},
 	}
 }
 
-var Repo = CreateRepository()
+var SenderRepo = CreateRepository[Sender]()
+var CryptoKeyRepo = CreateRepository[CryptoKey]()
 
-func CreatePlugin[T Plugin](repository *Repository, config configs.PluginConfig, pluginType Type) (T, error) {
+func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConfig, pluginType Type) (T, error) {
 	var empty T
 	creator, err := repository.Get(config.Plugin, pluginType)
 	if err != nil {
 		return empty, err
 	}
 
-	abstractPlugin := creator.PluginCreate(config)
-
-	plugin, ok := abstractPlugin.(T)
-
-	if !ok {
-		return empty, fmt.Errorf("trying to cast Plugin was failed")
-	}
+	plugin := creator.PluginCreate(config)
 
 	return plugin, nil
 }
