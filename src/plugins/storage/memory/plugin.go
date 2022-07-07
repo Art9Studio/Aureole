@@ -4,6 +4,7 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	_ "embed"
+
 	"github.com/coocood/freecache"
 	"github.com/mitchellh/mapstructure"
 
@@ -18,7 +19,7 @@ var meta core.Meta
 
 // init initializes package by register pluginCreator
 func init() {
-	meta = core.Repo.Register(rawMeta, Create)
+	meta = core.StorageRepo.Register(rawMeta, Create)
 }
 
 type memory struct {

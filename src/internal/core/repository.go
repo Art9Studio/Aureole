@@ -94,7 +94,7 @@ var CryptoStorageRepo = CreateRepository[CryptoStorage]()
 var IDManagerRepo = CreateRepository[IDManager]()
 var IssuerRepo = CreateRepository[Issuer]()
 var MFARepo = CreateRepository[MFA]()
-var RootCreator = CreateRepository[RootPlugin]()
+var RootRepo= CreateRepository[RootPlugin]()
 var SenderRepo = CreateRepository[Sender]()
 var StorageRepo = CreateRepository[Storage]()
 

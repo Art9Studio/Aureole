@@ -23,7 +23,6 @@ var meta core.Meta
 // init initializes package by register pluginCreator
 func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
-
 }
 
 type facebook struct {
@@ -35,15 +34,6 @@ type facebook struct {
 
 func (f *facebook) GetLoginMethod() string {
 	return http.MethodGet
-}
-
-func (f *facebook) GetAuthRoute() *core.Route {
-	return &core.Route{
-		Path:   "/",
-		Method: http.MethodGet,
-		//
-		Handler: f.GetLoginWrapper(),
-	}
 }
 
 func Create(conf configs.PluginConfig) core.Authenticator {

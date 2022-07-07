@@ -1,9 +1,6 @@
 package sms
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/core"
-)
+import "aureole/internal/configs"
 
 const (
 	resendUrl   = "/2fa/sms/resend"
@@ -21,6 +18,9 @@ type config struct {
 	} `mapstructure:"otp"`
 }
 
-func (smsPlugin) Create(conf configs.PluginConfig) core.MFA {
-	return &sms{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.MaxAttempts, 3)
+	configs.SetDefault(&c.Otp.Length, 6)
+	configs.SetDefault(&c.Otp.Alphabet, "alphanum")
+	configs.SetDefault(&c.Otp.Exp, 300)
 }

@@ -6,15 +6,16 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/swaggo/swag"
-	"github.com/xlab/treeprint"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/swaggo/swag"
+	"github.com/xlab/treeprint"
 )
 
 type PluginInitializer interface {
@@ -67,6 +68,13 @@ func createApps(conf *configs.Project, p *project) {
 	p.apps = make(map[string]*app, len(conf.Apps))
 	var senderRepository = SenderRepo
 	var cryptoKeyRepository = CryptoKeyRepo
+	var storagesRepository = StorageRepo
+	var cryptoStoragesRepository = CryptoStorageRepo
+	var rootPluginsRepository = RootRepo
+	var authenticatorsRepository = AuthenticatorRepo
+	var issuerRepository = IssuerRepo
+	var multiFactorsRepository = MFARepo
+	var idmanagerRepository = IDManagerRepo
 
 	for _, appConf := range conf.Apps {
 		appUrl, err := createAppUrl(appConf)
@@ -83,13 +91,13 @@ func createApps(conf *configs.Project, p *project) {
 
 		createSenders(senderRepository, app, appConf)
 		createCryptoKeys(cryptoKeyRepository, app, appConf)
-		createStorages(repository, app, appConf)
-		createCryptoStorages(repository, app, appConf)
-		createRootPlugins(repository, app, appConf)
-		createAuthenticators(repository, app, appConf)
-		createIssuer(repository, app, appConf)
-		createMultiFactors(repository, app, appConf)
-		createIDManager(repository, app, appConf)
+		createStorages(storagesRepository, app, appConf)
+		createCryptoStorages(cryptoStoragesRepository, app, appConf)
+		createRootPlugins(rootPluginsRepository, app, appConf)
+		createAuthenticators(authenticatorsRepository, app, appConf)
+		createIssuer(issuerRepository, app, appConf)
+		createMultiFactors(multiFactorsRepository, app, appConf)
+		createIDManager(idmanagerRepository, app, appConf)
 		createAureoleInternals(app, appConf)
 
 		p.apps[appConf.Name] = app

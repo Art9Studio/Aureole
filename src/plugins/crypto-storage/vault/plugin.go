@@ -20,7 +20,6 @@ var meta core.Meta
 // init initializes package by register pluginCreator
 func init() {
 	meta = core.CryptoStorageRepo.Register(rawMeta, Create)
-
 }
 
 type storage struct {
