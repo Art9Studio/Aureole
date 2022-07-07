@@ -79,7 +79,7 @@ func (p *pem) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (p pem) GetMetaData() core.Meta {
+func (p *pem) GetMetaData() core.Meta {
 	return meta
 }
 

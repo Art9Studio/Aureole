@@ -83,13 +83,13 @@ func createApps(conf *configs.Project, p *project) {
 
 		createSenders(senderRepository, app, appConf)
 		createCryptoKeys(cryptoKeyRepository, app, appConf)
-		//createStorages(repository, app, appConf)
-		//createCryptoStorages(repository, app, appConf)
-		//createRootPlugins(repository, app, appConf)
-		//createAuthenticators(repository, app, appConf)
-		//createIssuer(repository, app, appConf)
-		//createMultiFactors(repository, app, appConf)
-		//createIDManager(repository, app, appConf)
+		createStorages(repository, app, appConf)
+		createCryptoStorages(repository, app, appConf)
+		createRootPlugins(repository, app, appConf)
+		createAuthenticators(repository, app, appConf)
+		createIssuer(repository, app, appConf)
+		createMultiFactors(repository, app, appConf)
+		createIDManager(repository, app, appConf)
 		createAureoleInternals(app, appConf)
 
 		p.apps[appConf.Name] = app
