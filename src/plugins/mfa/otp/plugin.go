@@ -64,7 +64,7 @@ func (g otpAuth) GetMetaData() core.Meta {
 	return meta
 }
 
-// func (g otpAuth) GetPaths() *openapi3.Paths {
+// func (g otpAuth) GetAppRoutes() *openapi3.Paths {
 // 	return g.swagger.Paths
 // }
 
@@ -207,7 +207,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func (g *otpAuth) GetPaths() []*core.Route {
+func (g *otpAuth) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,

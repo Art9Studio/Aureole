@@ -224,7 +224,7 @@ func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 	return &u
 }
 
-func (p *pwBased) GetPaths() []*core.Route {
+func (p *pwBased) GetAppRoutes() []*core.Route {
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,

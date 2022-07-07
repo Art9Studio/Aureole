@@ -20,7 +20,7 @@ type (
 	}
 
 	PathsGetter interface {
-		GetPaths() []*Route
+		GetAppRoutes() []*Route
 	}
 
 	ErrorMessage struct {

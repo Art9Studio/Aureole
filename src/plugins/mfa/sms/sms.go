@@ -73,7 +73,7 @@ func (s sms) GetMetaData() core.Meta {
 	}
 }
 
-// func (s *sms) GetPaths() *openapi3.Paths {
+// func (s *sms) GetAppRoutes() *openapi3.Paths {
 // 	return s.swagger.Paths
 // }
 
@@ -217,7 +217,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func (s *sms) GetPaths() []*core.Route {
+func (s *sms) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,

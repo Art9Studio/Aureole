@@ -128,7 +128,7 @@ func initProvider(f *facebook) error {
 	return nil
 }
 
-func (f *facebook) GetPaths() []*core.Route {
+func (f *facebook) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

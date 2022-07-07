@@ -134,7 +134,7 @@ func createMagicLink(e *email) *url.URL {
 	return &u
 }
 
-func (e *email) GetPaths() []*core.Route {
+func (e *email) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,

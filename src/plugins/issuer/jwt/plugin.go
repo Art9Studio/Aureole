@@ -41,6 +41,7 @@ var meta core.Meta
 func init() {
 	meta = core.IssuerRepo.Register(rawMeta, Create)
 }
+
 type (
 	jwtIssuer struct {
 		pluginAPI     core.PluginAPI
@@ -75,6 +76,7 @@ var keyMap = map[tokenType]map[tokenResp]string{
 		cookie: "refresh_token",
 	},
 }
+
 // INFO: надо было менять в интерфейсе  Issure GetResponseData что бы он возвращал ошибку?
 func Create(conf configs.PluginConfig) core.Issuer {
 	return &jwtIssuer{rawConf: conf}
@@ -257,7 +259,7 @@ func buildOperationForRefreshHandler() *openapi3.Operation {
 	return operation
 }
 
-func (j *jwtIssuer) GetPaths() []*core.Route {
+func (j *jwtIssuer) GetAppRoutes() []*core.Route {
 	operation := buildOperationForRefreshHandler()
 
 	return []*core.Route{

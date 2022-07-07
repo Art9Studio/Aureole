@@ -168,7 +168,7 @@ func initKeySets(j *jwk) (err error) {
 	return nil
 }
 
-func (j *jwk) GetPaths() []*core.Route {
+func (j *jwk) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

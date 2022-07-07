@@ -205,7 +205,7 @@ func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 	return []byte{}, errors.New("key set don't contain sig key")
 }
 
-func (a *apple) GetPaths() []*core.Route {
+func (a *apple) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

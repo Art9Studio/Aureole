@@ -157,7 +157,8 @@ func initKeySets(p *pem) (err error) {
 	return nil
 }
 
-func (p *pem) GetPaths() []*core.Route {
+func (p *pem) GetAppRoutes() []*core.Route {
+
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,
@@ -170,7 +171,7 @@ func (p *pem) GetPaths() []*core.Route {
 			Handler: getPemKeys(p),
 		},
 	}
-	// TODO: 
+	// TODO:
 	p.pluginAPI.AddProjectRoutes(routes)
 }
 

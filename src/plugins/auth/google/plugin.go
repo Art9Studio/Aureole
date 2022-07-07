@@ -136,7 +136,7 @@ func initProvider(g *google) error {
 	return nil
 }
 
-func (g *google) GetPaths() []*core.Route {
+func (g *google) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

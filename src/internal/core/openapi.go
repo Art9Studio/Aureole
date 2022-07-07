@@ -70,11 +70,11 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 		return nil, fmt.Errorf("cannot get issuer for app %s", a.name)
 	}
 
-	resp := issuer.GetResponseData()
+	resp, err := issuer.GetResponseData()
 
 	//resp = appendDefinitions(resp, issuer.GetMetaData().Type, issuer.GetMetaData().Name)
 
-	return resp, nil
+	return resp, err
 }
 
 //
@@ -86,7 +86,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //				return err
 //			}
 //
-//			paths := authn.GetPaths()
+//			paths := authn.GetAppRoutes()
 //
 //			//pathsJson := appendDefinitions(paths, "authN", authn.GetMetaData().Name)
 //
@@ -131,7 +131,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //				return err
 //			}
 //
-//			paths, defs := mfa.GetPaths()
+//			paths, defs := mfa.GetAppRoutes()
 //			pathsJsonBytes, err := paths.MarshalJSON()
 //			if err != nil {
 //				return err
@@ -283,7 +283,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //func appendPluginSpec(Plugin interface{}, a *app, pluginKind Plugin.PluginType, pluginName string) error {
 //	pluginSwagger, ok := Plugin.(Plugin.OpenAPISpecGetter)
 //	if ok {
-//		paths, defs := pluginSwagger.GetPaths()
+//		paths, defs := pluginSwagger.GetAppRoutes()
 //		pathsJsonBytes, err := paths.MarshalJSON()
 //		if err != nil {
 //			return err

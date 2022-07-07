@@ -120,7 +120,7 @@ func initProvider(v *vk) error {
 	return nil
 }
 
-func (v *vk) GetPaths() []*core.Route {
+func (v *vk) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

@@ -38,7 +38,7 @@ func (u urls) GetMetaData() core.Meta {
 	return meta
 }
 
-func (u *urls) GetPaths() []*core.Route {
+func (u *urls) GetAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

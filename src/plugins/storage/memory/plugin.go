@@ -48,7 +48,7 @@ func (m memory) GetMetaData() core.Meta {
 	return meta
 }
 
-func (m *memory) GetPaths() []*core.Route {
+func (m *memory) GetAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 

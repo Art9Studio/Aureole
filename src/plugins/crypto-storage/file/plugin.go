@@ -25,7 +25,7 @@ type storage struct {
 	conf      *config
 }
 
-func (s *storage) GetPaths() []*core.Route {
+func (s *storage) GetAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 
