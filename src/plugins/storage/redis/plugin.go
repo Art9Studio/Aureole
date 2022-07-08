@@ -4,6 +4,7 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"time"
@@ -14,6 +15,7 @@ import (
 
 // const pluginID = "5979"
 
+//go:embed meta.yaml
 var rawMeta []byte
 
 var meta core.Meta

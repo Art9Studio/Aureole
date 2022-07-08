@@ -5,6 +5,7 @@ import (
 	"aureole/internal/core"
 	"bytes"
 	"crypto/tls"
+	_ "embed"
 	htmlTmpl "html/template"
 	"net/smtp"
 	"strings"
@@ -14,7 +15,9 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// const pluginID = "5151"
+// const pluginID = "5151
+
+//go:embed meta.yaml
 var rawMeta []byte
 
 var meta core.Meta
