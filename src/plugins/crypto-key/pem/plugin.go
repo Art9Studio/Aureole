@@ -171,8 +171,8 @@ func (p *pem) GetAppRoutes() []*core.Route {
 			Handler: getPemKeys(p),
 		},
 	}
-	// TODO:
-	p.pluginAPI.AddProjectRoutes(routes)
+	// TODO: нужен ли?
+	//p.pluginAPI.AddProjectRoutes(routes)
 }
 
 func refreshKeys(p *pem) {

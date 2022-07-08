@@ -106,6 +106,9 @@ func (s *redis) Exists(k string) (bool, error) {
 		return exists == 1, nil
 	}
 }
+func (r *redis) GetAppRoutes() []*core.Route {
+	return []*core.Route{}
+}
 
 func (s *redis) Close() error {
 	return s.client.Close()

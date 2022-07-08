@@ -105,3 +105,6 @@ func (t *twilio) SendRaw(recipient, _, message string) error {
 
 	return nil
 }
+func (t *twilio) GetAppRoutes() []*core.Route {
+	return []*core.Route{}
+}

@@ -112,3 +112,7 @@ func (e *email) SendRaw(recipient, subject, message string) error {
 	}
 	return mail.Send(e.conf.Host, plainAuth)
 }
+func (e *email) GetAppRoutes() []*core.Route {
+	return []*core.Route{}
+
+}

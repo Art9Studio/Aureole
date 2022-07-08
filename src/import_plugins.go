@@ -10,7 +10,7 @@ import (
 	_ "aureole/plugins/auth/vk"
 	//
 	_ "aureole/plugins/crypto-key/jwk"
-	//_ "aureole/plugins/crypto-key/pem"
+	_ "aureole/plugins/crypto-key/pem"
 	_ "aureole/plugins/issuer/jwt"
 	//_ "aureole/plugins/mfa/otp"
 	// _ "aureole/plugins/mfa/sms"
@@ -21,9 +21,9 @@ import (
 	_ "aureole/plugins/crypto-storage/url"
 	_ "aureole/plugins/crypto-storage/vault"
 	_ "aureole/plugins/root/urls"
-	//_ "aureole/plugins/sender/email"
-	//_ "aureole/plugins/sender/twilio"
+	_ "aureole/plugins/sender/email"
+	_ "aureole/plugins/sender/twilio"
 	//_ "aureole/plugins/storage/etcd"
 	_ "aureole/plugins/storage/memory"
-	//_ "aureole/plugins/storage/redis"
+	_ "aureole/plugins/storage/redis"
 )
