@@ -1,3 +1,4 @@
-name: "file"
+name: file
+display_name: file
 type: crypto_storage
 description: "File Crypto Storage"

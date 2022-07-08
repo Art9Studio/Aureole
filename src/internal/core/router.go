@@ -19,6 +19,11 @@ type (
 		Handler   func(c *fiber.Ctx) error
 	}
 
+	ExtendedRoute struct {
+		Route
+		Meta
+	}
+
 	PathsGetter interface {
 		GetAppRoutes() []*Route
 	}
@@ -28,7 +33,7 @@ type (
 	}
 
 	router struct {
-		appRoutes     map[string][]*Route
+		appRoutes     map[string][]*ExtendedRoute
 		projectRoutes []*Route
 	}
 )
@@ -67,12 +72,12 @@ func createServer(p *project, r *router) *fiber.App {
 
 func CreateRouter() *router {
 	return &router{
-		appRoutes:     make(map[string][]*Route),
+		appRoutes:     make(map[string][]*ExtendedRoute),
 		projectRoutes: []*Route{},
 	}
 }
 
-func (r *router) addAppRoutes(appName string, routes []*Route) {
+func (r *router) addAppRoutes(appName string, routes []*ExtendedRoute) {
 	for i := range routes {
 		routes[i].Path = path.Clean(routes[i].Path)
 	}
@@ -92,7 +97,7 @@ func (r *router) addProjectRoutes(routes []*Route) {
 	r.projectRoutes = append(r.projectRoutes, routes...)
 }
 
-func (r *router) getAppRoutes() map[string][]*Route {
+func (r *router) getAppRoutes() map[string][]*ExtendedRoute {
 	return r.appRoutes
 }
 

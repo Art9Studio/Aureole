@@ -122,7 +122,7 @@ func (api PluginAPI) AddProjectRoutes(routes []*Route) {
 	api.router.addProjectRoutes(routes)
 }
 
-func (api PluginAPI) GetAppRoutes() map[string][]*Route {
+func (api PluginAPI) GetAppRoutes() map[string][]*ExtendedRoute {
 	return api.router.getAppRoutes()
 }
 

@@ -1,3 +1,4 @@
-name: "memory"
+name: memory
+display_name: memory
 type: storage
 description: "In-memory storage"

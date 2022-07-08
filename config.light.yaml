@@ -20,14 +20,14 @@ apps:
             - email
           fields: [ ]
 
-      - plugin: "vk"
-        name: vk_two
-        config:
-          client_id: ${VK_CLIENT_ID}
-          client_secret: ${VK_SECRET}
-          scopes:
-            - email
-          fields: [ ]
+#      - plugin: "vk"
+#        name: vk_two
+#        config:
+#          client_id: ${VK_CLIENT_ID}
+#          client_secret: ${VK_SECRET}
+#          scopes:
+#            - email
+#          fields: [ ]
 
     issuer:
       plugin: "jwt"

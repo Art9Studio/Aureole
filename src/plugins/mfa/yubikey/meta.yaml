@@ -1,3 +1,4 @@
-name: "yubikey"
+name: yubikey
+display_name: yubikey
 type: mfa
 description: "yubikey"

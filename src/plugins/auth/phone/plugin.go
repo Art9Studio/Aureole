@@ -142,7 +142,7 @@ func (a *authn) GetLoginWrapper() core.AuthNLoginFunc {
 					Email:         &phone,
 					PhoneVerified: true,
 				},
-				Provider: meta.Name,
+				Provider: meta.ShortName,
 			}, nil
 		} else {
 			token, err := a.pluginAPI.CreateJWT(

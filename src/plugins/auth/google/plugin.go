@@ -104,11 +104,11 @@ func (g *google) GetLoginWrapper() core.AuthNLoginFunc {
 				EmailVerified: true,
 				Additional: map[string]interface{}{
 					"social_provider_data": map[string]interface{}{
-						"plugin_name": meta.Name, "payload": userData,
+						"plugin_name": meta.ShortName, "payload": userData,
 					},
 				},
 			},
-			Provider: "social_provider$" + meta.Name,
+			Provider: "social_provider$" + meta.ShortName,
 		}, nil
 	}
 }

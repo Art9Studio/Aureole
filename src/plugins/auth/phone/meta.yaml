@@ -1,3 +1,4 @@
-name: "phone"
+name: phone
+display_name: phone
 type: auth
 description: "Phone Authentication"

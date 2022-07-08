@@ -1,3 +1,4 @@
-name: "pem"
+name: pem
+display_name: pem
 type: crypto_key
 description: "PEM Crypto Key"

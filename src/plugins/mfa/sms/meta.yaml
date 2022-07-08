@@ -1,3 +1,4 @@
-name: "sms"
+name: sms
+display_name: sms
 type: mfa
 description: "sms"

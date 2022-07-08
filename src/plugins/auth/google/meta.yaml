@@ -1,3 +1,4 @@
-name: "google"
+name: google
+display_name: google
 type: auth
 description: "Google Authentication"

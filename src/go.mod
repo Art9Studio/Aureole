@@ -3,7 +3,6 @@ module aureole
 go 1.18
 
 require (
-	github.com/arsmn/fiber-swagger/v2 v2.31.0
 	github.com/avast/retry-go/v4 v4.0.4
 	github.com/coocood/freecache v1.2.1
 	github.com/fatih/structs v1.1.0
@@ -13,7 +12,8 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-test/deep v1.0.8
-	github.com/gofiber/fiber/v2 v2.31.0
+	github.com/gofiber/fiber/v2 v2.32.0
+	github.com/gofiber/swagger v0.0.1
 	github.com/hashicorp/vault/api v1.5.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jackc/tern v1.12.5
@@ -33,6 +33,7 @@ require (
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
+	golang.org/x/text v0.3.7
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/client-go v11.0.0+incompatible
@@ -48,6 +49,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
+	github.com/arsmn/fiber-swagger/v2 v2.31.1 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -120,12 +122,11 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.34.0 // indirect
+	github.com/valyala/fasthttp v1.35.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/net v0.0.0-20220401154927-543a649e0bdd // indirect
 	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
-	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
 	golang.org/x/tools v0.1.10 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

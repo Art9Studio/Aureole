@@ -21,7 +21,8 @@ const tmpl = `
 func getUrls(u *urls) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		routes := u.pluginApi.GetAppRoutes()
-		routes["Project"] = u.pluginApi.GetProjectRoutes()
+		//todo: transform routes to ExtendedRoutes
+		//routes["Project"] = u.pluginApi.GetProjectRoutes()
 
 		buf := &bytes.Buffer{}
 		t := template.Must(template.New("tmpl").Parse(tmpl))

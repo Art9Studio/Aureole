@@ -54,9 +54,9 @@ func (e *etcd) Init(api core.PluginAPI) (err error) {
 
 func (e etcd) GetMetaData() core.Meta {
 	return core.Meta{
-		Type: name,
-		Name: e.rawConf.Name,
-		ID:   pluginID,
+		Type:      name,
+		ShortName: e.rawConf.Name,
+		ID:        pluginID,
 	}
 }
 

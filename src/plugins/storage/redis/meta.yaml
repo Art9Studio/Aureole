@@ -1,3 +1,4 @@
-name: "redis"
+name: redis
+display_name: redis
 type: storage
 description: "redis storage"

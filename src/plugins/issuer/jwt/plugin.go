@@ -144,9 +144,11 @@ func (j *jwtIssuer) GetResponseData() (*openapi3.Responses, error) {
 
 		setCookieSchema := openapi3.NewSchema()
 		setCookieSchema.Type = "string"
-		header.Schema.Value = setCookieSchema
+		header.Schema = openapi3.NewSchemaRef("", setCookieSchema)
 
-		okResponse.Headers["Set-Cookie"].Value = header
+		okResponse.Headers = openapi3.Headers{
+			"Set-Cookie": &openapi3.HeaderRef{Value: header},
+		}
 	}
 
 	bodySchema, err := openapi3gen.NewSchemaRefForValue(Response{}, nil)
@@ -156,7 +158,9 @@ func (j *jwtIssuer) GetResponseData() (*openapi3.Responses, error) {
 
 	okResponse.Content["application/json"].Schema.Value = bodySchema.Value
 
-	responses[okStatus].Value = okResponse
+	responses[okStatus] = &openapi3.ResponseRef{
+		Value: okResponse,
+	}
 	return &responses, nil
 }
 

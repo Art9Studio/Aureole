@@ -1,3 +1,4 @@
-name: "jwt"
+name: jwt
+display_name: jwt
 type: issuer
 description: "JWT issuer"

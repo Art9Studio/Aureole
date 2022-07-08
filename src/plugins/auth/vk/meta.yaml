@@ -1,3 +1,4 @@
-name: "vk"
+name: vk
+display_name: vk
 type: auth
 description: "VK Authentication"

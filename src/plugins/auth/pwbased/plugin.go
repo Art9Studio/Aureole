@@ -172,7 +172,7 @@ func (p *pwBased) GetLoginWrapper() core.AuthNLoginFunc {
 			return nil, fmt.Errorf("id manager for app '%s' is required but not declared", p.pluginAPI.GetAppName())
 		}
 
-		pw, err := manager.GetData(cred, meta.Name, core.Password)
+		pw, err := manager.GetData(cred, meta.ShortName, core.Password)
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +186,7 @@ func (p *pwBased) GetLoginWrapper() core.AuthNLoginFunc {
 			return &core.AuthNResult{
 				Cred:     cred,
 				Identity: ident,
-				Provider: meta.Name,
+				Provider: meta.ShortName,
 			}, nil
 		} else {
 			return nil, errors.New("wrong password")

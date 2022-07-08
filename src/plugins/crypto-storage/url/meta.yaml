@@ -1,3 +1,4 @@
-name: "url"
+name: url
+display_name: url
 type: crypto_storage
 description: "Url Crypto Storage"

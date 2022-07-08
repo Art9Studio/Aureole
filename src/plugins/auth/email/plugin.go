@@ -112,7 +112,7 @@ func (e *email) GetLoginWrapper() core.AuthNLoginFunc {
 				Email:         &email,
 				EmailVerified: true,
 			},
-			Provider: meta.Name,
+			Provider: meta.ShortName,
 		}, nil
 	}
 }

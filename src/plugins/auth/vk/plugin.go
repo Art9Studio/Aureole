@@ -92,7 +92,7 @@ func (v *vk) GetLoginWrapper() core.AuthNLoginFunc {
 				EmailVerified: true,
 				Additional:    map[string]interface{}{"social_provider_data": userData},
 			},
-			Provider: "social_provider$" + meta.Name,
+			Provider: "social_provider$" + meta.ShortName,
 		}, nil
 	}
 }

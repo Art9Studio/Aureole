@@ -1,3 +1,4 @@
-name: "jwk"
+name: jwk
+display_name: jwk
 type: crypto_key
 description: "JWK Crypto Key"

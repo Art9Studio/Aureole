@@ -1,3 +1,4 @@
-name: "vault"
+name: vault
+display_name: vault
 type: crypto_storage
 description: "Vault Crypto Storage"

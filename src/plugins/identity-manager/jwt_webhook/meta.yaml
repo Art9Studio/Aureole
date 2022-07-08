@@ -1,3 +1,4 @@
-name: "jwt webhook"
+name: jwt_webhook
+display_name: "Jwt Webhook"
 type: identity-manager
 description: "jwt webhoo"

@@ -115,8 +115,8 @@ func getEnabled2FA(app *app, authnResult *AuthNResult) (fiber.Map, error) {
 			enabledFactorsMap := fiber.Map{}
 			for _, enabledFactor := range enabled2FA {
 				path := app.url.String() + "/2fa/" +
-					strings.ReplaceAll(enabledFactor.GetMetaData().Name, "_", "-")
-				enabledFactorsMap[enabledFactor.GetMetaData().Name] = path
+					strings.ReplaceAll(enabledFactor.GetMetaData().ShortName, "_", "-")
+				enabledFactorsMap[enabledFactor.GetMetaData().ShortName] = path
 			}
 			return enabledFactorsMap, nil
 		}

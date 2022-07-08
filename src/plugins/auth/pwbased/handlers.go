@@ -37,7 +37,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		if !ok {
 			return core.SendError(c, fiber.StatusInternalServerError, "could not get ID manager")
 		}
-		user, err := manager.Register(cred, i, meta.Name)
+		user, err := manager.Register(cred, i, meta.ShortName)
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			&core.Identity{
 				Additional: map[string]interface{}{core.Password: pwHash},
 			},
-			meta.Name)
+			meta.ShortName)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}
@@ -213,7 +213,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 				Value: email.(string),
 			},
 			&core.Identity{EmailVerified: true},
-			meta.Name)
+			meta.ShortName)
 		if err != nil {
 			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
 		}

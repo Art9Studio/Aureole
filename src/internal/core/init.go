@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -39,17 +40,17 @@ func InitProject(conf *configs.Project, r *router) *project {
 
 	createApps(conf, p)
 	initApps(p, r)
-	listPluginStatus(conf, p)
 
-	err := assembleDoc(p)
+	err := openapiDocStruct.Assemble(p, r)
 	if err != nil {
-		fmt.Printf("cannot assemble swagger docs: %v", err)
+		log.Println("couldn't assemble openapi3 docs")
 	} else {
-		swag.Register("swagger", &swagger{})
+		swag.Register("swagger", openapiDocStruct)
 	}
 
-	return p
+	listPluginStatus(conf, p)
 
+	return p
 }
 
 func addHealthRoute(r *router) {
@@ -374,24 +375,28 @@ func initAdmins(app *app, p *project, r *router) {
 }
 
 func initAuthenticators(app *app, p *project, r *router) {
-	var routes []*Route
+	var routes []*ExtendedRoute
 
 	for name, authenticator := range app.authenticators {
 		pluginInit, ok := authenticator.(PluginInitializer)
 		if ok {
 			// todo: add runtime ID
-			prefix := fmt.Sprintf("%s$%s$", app.name, authenticator.GetMetaData().Name)
+			prefix := fmt.Sprintf("%s$%s$", app.name, authenticator.GetMetaData().ShortName)
 			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(r))
 			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
 				app.authenticators[name] = nil
 			} else {
-				pathPrefix := "/" + strings.ReplaceAll(authenticator.GetMetaData().Name, "_", "-")
-				authRoute := &Route{
-					Method:  authenticator.GetLoginMethod(),
-					Path:    pathPrefix + "/login",
-					Handler: loginHandler(authenticator.GetLoginWrapper(), app),
+				meta := authenticator.GetMetaData()
+				pathPrefix := "/" + strings.ReplaceAll(meta.ShortName, "_", "-")
+				authRoute := &ExtendedRoute{
+					Route: Route{
+						Method:  authenticator.GetLoginMethod(),
+						Path:    pathPrefix + "/auth",
+						Handler: loginHandler(authenticator.GetLoginWrapper(), app),
+					},
+					Meta: meta,
 				}
 				if err != nil {
 					fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
@@ -411,7 +416,7 @@ func initIssuer(app *app, p *project, r *router) {
 	pluginInit, ok := app.issuer.(PluginInitializer)
 	if ok {
 		// todo: add runtime ID
-		prefix := fmt.Sprintf("%s$%s$", app.name, app.issuer.GetMetaData().Name)
+		prefix := fmt.Sprintf("%s$%s$", app.name, app.issuer.GetMetaData().ShortName)
 		pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(r))
 		err := pluginInit.Init(pluginAPI)
 		if err != nil {
@@ -425,7 +430,7 @@ func initIssuer(app *app, p *project, r *router) {
 }
 
 func initSecondFactor(app *app, p *project, r *router) {
-	var routes []*Route
+	var routes []*ExtendedRoute
 
 	if app.mfa != nil && len(app.mfa) != 0 {
 		for name := range app.mfa {
@@ -433,31 +438,40 @@ func initSecondFactor(app *app, p *project, r *router) {
 			pluginInit, ok := secondFactor.(PluginInitializer)
 			if ok {
 				// todo: add runtime ID
-				prefix := fmt.Sprintf("%s$%s$", app.name, secondFactor.GetMetaData().Name)
+				prefix := fmt.Sprintf("%s$%s$", app.name, secondFactor.GetMetaData().ShortName)
 				pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(r))
 
 				err := pluginInit.Init(pluginAPI)
+				meta := secondFactor.GetMetaData()
 				if err != nil {
 					fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, err)
-					app.mfa[secondFactor.GetMetaData().Name] = nil
+					app.mfa[meta.ShortName] = nil
 				} else {
-					pathPrefix := "/2fa/" + strings.ReplaceAll(string(secondFactor.GetMetaData().Name), "_", "-")
+					pathPrefix := "/2fa/" + strings.ReplaceAll(string(meta.ShortName), "_", "-")
 					routes = append(routes,
-						&Route{
-							Method:  http.MethodPost,
-							Path:    pathPrefix + "/start",
-							Handler: mfaInitHandler(secondFactor.Init2FA(), app),
+						&ExtendedRoute{
+							Route: Route{
+
+								Method:  http.MethodPost,
+								Path:    pathPrefix + "/start",
+								Handler: mfaInitHandler(secondFactor.Init2FA(), app),
+							},
+							Meta: secondFactor.GetMetaData(),
 						},
-						&Route{
-							Method:  http.MethodPost,
-							Path:    pathPrefix + "/verify",
-							Handler: mfaVerificationHandler(secondFactor.Verify(), app),
+
+						&ExtendedRoute{
+							Route: Route{
+								Method:  http.MethodPost,
+								Path:    pathPrefix + "/verify",
+								Handler: mfaVerificationHandler(secondFactor.Verify(), app),
+							},
+							Meta: meta,
 						})
 					app.mfa[name] = secondFactor
 				}
 			} else {
 				fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, PluginInitErr)
-				app.mfa[secondFactor.GetMetaData().Name] = nil
+				app.mfa[secondFactor.GetMetaData().ShortName] = nil
 			}
 		}
 	}

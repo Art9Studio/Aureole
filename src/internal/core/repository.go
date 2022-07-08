@@ -12,8 +12,11 @@ type (
 	Type string
 
 	Meta struct {
-		Name string `yaml:"name"`
-		Type Type   `yaml:"type"`
+		// lowercase name without spaces
+		ShortName string `yaml:"name"`
+		// human readable name
+		DisplayName string `yaml:"display_name"`
+		Type        Type   `yaml:"type"`
 	}
 
 	Claim[T Plugin] struct {
@@ -61,14 +64,22 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 	if err != nil {
 		return *meta
 	}
-	if meta.Name == "" {
-		panic("name for a Plugin wasn't passed")
+	// todo: validate Type. it should be enum.
+	if meta.Type == "" {
+		panic("type for a Plugin wasn't passed")
+	}
+	// todo: validate name. it should has no spaces, should be lowercase
+	if meta.ShortName == "" {
+		panic("name for a Plugin with type " + meta.Type + " wasn't passed")
+	}
+	// todo: validate display name. it should start with upper case
+	if meta.DisplayName == "" {
+		panic("display name for a Plugin " + meta.ShortName + " wasn't passed")
 	}
 	repo.pluginsMU.Lock()
 	defer repo.pluginsMU.Unlock()
 
-	// todo: validate meta
-	path := buildPath(meta.Name, meta.Type)
+	path := buildPath(meta.ShortName, meta.Type)
 	if _, ok := repo.plugins[path]; ok {
 		panic("multiple Register call for Plugin " + path)
 	}
@@ -94,7 +105,7 @@ var CryptoStorageRepo = CreateRepository[CryptoStorage]()
 var IDManagerRepo = CreateRepository[IDManager]()
 var IssuerRepo = CreateRepository[Issuer]()
 var MFARepo = CreateRepository[MFA]()
-var RootRepo= CreateRepository[RootPlugin]()
+var RootRepo = CreateRepository[RootPlugin]()
 var SenderRepo = CreateRepository[Sender]()
 var StorageRepo = CreateRepository[Storage]()
 
@@ -110,10 +121,10 @@ func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConf
 	return plugin, nil
 }
 
-//	if meta.Name == "" {
+//	if meta.ShortName == "" {
 //		rndName, err := gonanoid.New(8)
 //		if err != nil {
 //			panic("could not generate random name")
 //		}
-//		meta.Name = rndName
+//		meta.ShortName = rndName
 //	}

@@ -4,77 +4,94 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"reflect"
 )
 
 var (
-	//go:embed openapi.yaml
-	baseDoc []byte
-
-	doc            openapi3.T
-	defaultErrResp = openapi3.NewResponse().
-			WithDescription("Unauthorized error").
-			WithJSONSchemaRef(&openapi3.SchemaRef{Ref: "#/components/schemas/ErrorMessage"})
+	openapiDocStruct = &openapiDoc{}
+	defaultErrResp   = openapi3.NewResponse().
+				WithDescription("Unauthorized error").
+				WithJSONSchemaRef(&openapi3.SchemaRef{Ref: "#/components/schemas/ErrorMessage"})
 
 	mfaListResp = openapi3.NewResponse().
 			WithDescription("List of MFA methods").
 			WithJSONSchemaRef(&openapi3.SchemaRef{Ref: "#/components/schemas/MFAList"})
 )
 
-type swagger struct{}
+// todo: delete when end up with swagger hub
+type openapiDoc struct {
+	doc *openapi3.T
+}
 
-func (s *swagger) ReadDoc() string {
-	docsBytes, err := doc.MarshalJSON()
+// todo: rename ReadJsonString when end up with swagger hub
+func (s *openapiDoc) ReadDoc() string {
+	docsBytes, err := s.doc.MarshalJSON()
 	if err != nil {
-		fmt.Printf("cannot marshal swagger docs: %v", err)
+		fmt.Printf("cannot marshal openapiDoc docs: %v", err)
 		return ""
 	}
 	return string(docsBytes)
 }
 
-func assembleDoc(p *project) error {
-	err := doc.UnmarshalJSON(baseDoc)
-	if err != nil {
-		return err
+func (s *openapiDoc) Assemble(p *project, r *router) error {
+	s.doc = &openapi3.T{}
+	s.doc.OpenAPI = "3.0.0"
+	s.doc.Info = &openapi3.Info{
+		Title:   "Aureole Public API",
+		Version: p.apiVersion,
 	}
+	s.doc.Paths = openapi3.Paths{}
 
-	doc.Info.Version = p.apiVersion
-	doc.Paths = openapi3.Paths{}
-
-	for _, a := range p.apps {
-		_, err := assembleIssuerResp(a)
+	for _, app := range p.apps {
+		err := assembleRoutes(s.doc, r, app)
 		if err != nil {
 			return err
 		}
-
-		//err = assembleAuthNDoc(a, authzResp)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//err = assemble2FADoc(a, authzResp)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//err = assemblePluginsDoc(a)
-		//if err != nil {
-		//	return err
-		//}
 	}
+
+	//for _, a := range p.apps {
+	//_, err := assembleIssuerResp(a)
+	//if err != nil {
+	//	return err
+	//}
+
+	//err = assembleAuthNDoc(a, authzResp)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = assemble2FADoc(a, authzResp)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = assemblePluginsDoc(a)
+	//if err != nil {
+	//	return err
+	//}
+	//}
 	return nil
 }
 
-func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
-	issuer, ok := a.getIssuer()
-	if !ok {
-		return nil, fmt.Errorf("cannot get issuer for app %s", a.name)
+func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
+	for _, route := range r.getAppRoutes()[app.name] {
+		responseData, err := app.issuer.GetResponseData()
+		if err != nil {
+			return err
+		}
+		operation := &openapi3.Operation{
+			OperationID: "authWith" + route.Meta.DisplayName,
+			Tags:        []string{"App \"" + app.name + "\""},
+			Description: "Authenticate with " + route.Meta.DisplayName,
+			//Summary:     "Authenticate with " + route.Meta.DisplayName,
+			Responses: *responseData,
+		}
+		pathItem := openapi3.PathItem{}
+		fieldName := toCamelCase(route.Method)
+		reflect.ValueOf(&pathItem).Elem().FieldByName(fieldName).Set(reflect.ValueOf(operation))
+		doc.Paths[route.Path] = &pathItem
 	}
-
-	resp, err := issuer.GetResponseData()
-
-	//resp = appendDefinitions(resp, issuer.GetMetaData().Type, issuer.GetMetaData().Name)
-
-	return resp, err
+	return nil
 }
 
 //
@@ -88,7 +105,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //
 //			paths := authn.GetAppRoutes()
 //
-//			//pathsJson := appendDefinitions(paths, "authN", authn.GetMetaData().Name)
+//			//pathsJson := appendDefinitions(paths, "authN", authn.GetMetaData().ShortName)
 //
 //			loginPathItem := (*paths)["/login"]
 //			delete(*paths, "/login")
@@ -111,12 +128,12 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //			handler.Responses.StatusCodeResponses[202] = mfaListResp
 //			handler.Responses.Default = &defaultErrResp
 //
-//			loginPath := fmt.Sprintf("/%s/%s/login", a.pathPrefix, strings.ReplaceAll(authn.GetMetaData().Name, "_", "-"))
-//			doc.Paths[loginPath] = loginPathItem
+//			loginPath := fmt.Sprintf("/%s/%s/login", a.pathPrefix, strings.ReplaceAll(authn.GetMetaData().ShortName, "_", "-"))
+//			s.doc.Paths[loginPath] = loginPathItem
 //
 //			for path, pathItem := range paths.Paths {
 //				path = a.pathPrefix + path
-//				doc.Paths[path] = pathItem
+//				s.doc.Paths[path] = pathItem
 //			}
 //		}
 //	}
@@ -136,7 +153,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //			if err != nil {
 //				return err
 //			}
-//			pathsJson := appendDefinitions(defs, string(pathsJsonBytes), "2fa", mfa.GetMetaData().Name)
+//			pathsJson := appendDefinitions(defs, string(pathsJsonBytes), "2fa", mfa.GetMetaData().ShortName)
 //			err = paths.UnmarshalJSON([]byte(pathsJson))
 //			if err != nil {
 //				return err
@@ -151,16 +168,16 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //				return err
 //			}
 //
-//			pluginType := strings.ReplaceAll(mfa.GetMetaData().Name, "_", "-")
+//			pluginType := strings.ReplaceAll(mfa.GetMetaData().ShortName, "_", "-")
 //			start2FAPath := fmt.Sprintf("/%s/2fa/%s/start", a.pathPrefix, pluginType)
 //			verify2FAPath := fmt.Sprintf("/%s/2fa/%s/verify", a.pathPrefix, pluginType)
 //
-//			doc.Paths.Paths[start2FAPath] = *start2FAPathItem
-//			doc.Paths.Paths[verify2FAPath] = *verify2FAPathItem
+//			s.doc.Paths.Paths[start2FAPath] = *start2FAPathItem
+//			s.doc.Paths.Paths[verify2FAPath] = *verify2FAPathItem
 //
 //			for path, pathItem := range paths.Paths {
 //				path = a.pathPrefix + "/2fa" + path
-//				doc.Paths.Paths[path] = pathItem
+//				s.doc.Paths.Paths[path] = pathItem
 //			}
 //		}
 //	}
@@ -209,14 +226,14 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //
 //func assemblePluginsDoc(a *app) error {
 //	if a.issuer != nil {
-//		err := appendPluginSpec(a.issuer, a, "authZ", a.issuer.GetMetaData().Name)
+//		err := appendPluginSpec(a.issuer, a, "authZ", a.issuer.GetMetaData().ShortName)
 //		if err != nil {
 //			return err
 //		}
 //	}
 //
 //	if a.idManager != nil {
-//		err := appendPluginSpec(a.idManager, a, "id_manager", a.idManager.GetMetaData().Name)
+//		err := appendPluginSpec(a.idManager, a, "id_manager", a.idManager.GetMetaData().ShortName)
 //		if err != nil {
 //			return err
 //		}
@@ -225,7 +242,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	if len(a.cryptoKeys) != 0 {
 //		for _, key := range a.cryptoKeys {
 //			if key != nil {
-//				err := appendPluginSpec(key, a, "crypto_key", key.GetMetaData().Name)
+//				err := appendPluginSpec(key, a, "crypto_key", key.GetMetaData().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -236,7 +253,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	if len(a.cryptoStorages) != 0 {
 //		for _, storage := range a.cryptoStorages {
 //			if storage != nil {
-//				err := appendPluginSpec(storage, a, "crypto_storage", storage.GetMetaData().Name)
+//				err := appendPluginSpec(storage, a, "crypto_storage", storage.GetMetaData().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -247,7 +264,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	if len(a.storages) != 0 {
 //		for _, storage := range a.storages {
 //			if storage != nil {
-//				err := appendPluginSpec(storage, a, "storage", storage.GetMetaData().Name)
+//				err := appendPluginSpec(storage, a, "storage", storage.GetMetaData().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -258,7 +275,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	if len(a.senders) != 0 {
 //		for _, sender := range a.senders {
 //			if sender != nil {
-//				err := appendPluginSpec(sender, a, "sender", sender.GetMetaData().Name)
+//				err := appendPluginSpec(sender, a, "sender", sender.GetMetaData().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -269,7 +286,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	if len(a.rootPlugins) != 0 {
 //		for _, adminPlugin := range a.rootPlugins {
 //			if adminPlugin != nil {
-//				err := appendPluginSpec(adminPlugin, a, adminPlugin.GetMetaData().Type, adminPlugin.GetMetaData().Name)
+//				err := appendPluginSpec(adminPlugin, a, adminPlugin.GetMetaData().Type, adminPlugin.GetMetaData().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -297,7 +314,7 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //
 //		for path, pathItem := range paths.Paths {
 //			path = a.pathPrefix + path
-//			doc.Paths[path] = pathItem
+//			s.doc.Paths[path] = pathItem
 //		}
 //	}
 //
@@ -308,15 +325,15 @@ func assembleIssuerResp(a *app) (*openapi3.Responses, error) {
 //	for name, d := range defs {
 //		newName := name
 //
-//		_, ok := doc.Definitions[name]
+//		_, ok := s.doc.Definitions[name]
 //		if ok {
 //			newName = pluginName + "." + name
-//			_, ok = doc.Definitions[newName]
+//			_, ok = s.doc.Definitions[newName]
 //			if ok {
 //				newName += string(pluginType) + "." + newName
 //			}
 //		}
-//		doc.Definitions[newName] = d
+//		s.doc.Definitions[newName] = d
 //
 //		if newName != name {
 //			responses = renameRefsToDefs(responses, name, newName)

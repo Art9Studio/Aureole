@@ -1,3 +1,4 @@
-name: "standart"
+name: standart
+display_name: standart
 type: identity-manager
 description: "standart"
