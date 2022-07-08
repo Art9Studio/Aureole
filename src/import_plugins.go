@@ -3,7 +3,7 @@ package main
 import (
 	_ "aureole/plugins/auth/phone"
 	_ "aureole/plugins/auth/pwbased"
-	
+
 	_ "aureole/plugins/auth/email"
 	//
 	_ "aureole/plugins/auth/google"
@@ -14,7 +14,7 @@ import (
 
 	_ "aureole/plugins/auth/apple"
 	_ "aureole/plugins/issuer/jwt"
-	_ "aureole/plugins/mfa/otp"
+	//_ "aureole/plugins/mfa/otp"
 	// _ "aureole/plugins/mfa/sms"
 	//_ "aureole/plugins/mfa/yubikey"
 	// _ "aureole/plugins/identity/jwt_webhook"
