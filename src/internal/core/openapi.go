@@ -34,16 +34,17 @@ func (s *openapiDoc) ReadDoc() string {
 }
 
 func (s *openapiDoc) Assemble(p *project, r *router) error {
-	s.doc = &openapi3.T{}
-	s.doc.OpenAPI = "3.0.0"
-	s.doc.Info = &openapi3.Info{
-		Title:   "Aureole Public API",
-		Version: p.apiVersion,
+	s.doc = &openapi3.T{
+		OpenAPI: "3.0.0",
+		Info: &openapi3.Info{
+			Title:   "Aureole Public API",
+			Version: p.apiVersion,
+		},
 	}
-	s.doc.Paths = openapi3.Paths{}
 
 	for _, app := range p.apps {
-		err := assembleRoutes(s.doc, r, app)
+		var err error
+		err, s.doc.Paths = assemblePaths(r, app)
 		if err != nil {
 			return err
 		}
@@ -73,25 +74,15 @@ func (s *openapiDoc) Assemble(p *project, r *router) error {
 	return nil
 }
 
-func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
+func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
+	paths := openapi3.Paths{}
 	for _, route := range r.getAppRoutes()[app.name] {
-		responseData, err := app.issuer.GetResponseData()
-		if err != nil {
-			return err
-		}
-		operation := &openapi3.Operation{
-			OperationID: "authWith" + route.Meta.DisplayName,
-			Tags:        []string{"App \"" + app.name + "\""},
-			Description: "Authenticate with " + route.Meta.DisplayName,
-			//Summary:     "Authenticate with " + route.Meta.DisplayName,
-			Responses: *responseData,
-		}
 		pathItem := openapi3.PathItem{}
 		fieldName := toCamelCase(route.Method)
-		reflect.ValueOf(&pathItem).Elem().FieldByName(fieldName).Set(reflect.ValueOf(operation))
-		doc.Paths[route.Path] = &pathItem
+		reflect.ValueOf(&pathItem).Elem().FieldByName(fieldName).Set(reflect.ValueOf(route.OAS3Operation))
+		paths[route.Path] = &pathItem
 	}
-	return nil
+	return nil, paths
 }
 
 //
@@ -103,14 +94,14 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //				return err
 //			}
 //
-//			paths := authn.GetAppRoutes()
+//			paths := authn.GetCustomAppRoutes()
 //
-//			//pathsJson := appendDefinitions(paths, "authN", authn.GetMetaData().ShortName)
+//			//pathsJson := appendDefinitions(paths, "authN", authn.GetMetadata().ShortName)
 //
 //			loginPathItem := (*paths)["/login"]
 //			delete(*paths, "/login")
 //
-//			var handler *openapi3.Operation
+//			var handler *openapi3.OAS3Operation
 //			if loginPathItem.Get != nil {
 //				handler = loginPathItem.Get
 //			} else if loginPathItem.Post != nil {
@@ -128,7 +119,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //			handler.Responses.StatusCodeResponses[202] = mfaListResp
 //			handler.Responses.Default = &defaultErrResp
 //
-//			loginPath := fmt.Sprintf("/%s/%s/login", a.pathPrefix, strings.ReplaceAll(authn.GetMetaData().ShortName, "_", "-"))
+//			loginPath := fmt.Sprintf("/%s/%s/login", a.pathPrefix, strings.ReplaceAll(authn.GetMetadata().ShortName, "_", "-"))
 //			s.doc.Paths[loginPath] = loginPathItem
 //
 //			for path, pathItem := range paths.Paths {
@@ -148,12 +139,12 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //				return err
 //			}
 //
-//			paths, defs := mfa.GetAppRoutes()
+//			paths, defs := mfa.GetCustomAppRoutes()
 //			pathsJsonBytes, err := paths.MarshalJSON()
 //			if err != nil {
 //				return err
 //			}
-//			pathsJson := appendDefinitions(defs, string(pathsJsonBytes), "2fa", mfa.GetMetaData().ShortName)
+//			pathsJson := appendDefinitions(defs, string(pathsJsonBytes), "2fa", mfa.GetMetadata().ShortName)
 //			err = paths.UnmarshalJSON([]byte(pathsJson))
 //			if err != nil {
 //				return err
@@ -168,7 +159,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //				return err
 //			}
 //
-//			pluginType := strings.ReplaceAll(mfa.GetMetaData().ShortName, "_", "-")
+//			pluginType := strings.ReplaceAll(mfa.GetMetadata().ShortName, "_", "-")
 //			start2FAPath := fmt.Sprintf("/%s/2fa/%s/start", a.pathPrefix, pluginType)
 //			verify2FAPath := fmt.Sprintf("/%s/2fa/%s/verify", a.pathPrefix, pluginType)
 //
@@ -188,7 +179,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //	pathItem := paths.Paths["/verify"]
 //	delete(paths.Paths, "/verify")
 //
-//	var handler *openapi3.Operation
+//	var handler *openapi3.OAS3Operation
 //	if pathItem.Get != nil {
 //		handler = pathItem.Get
 //	} else if pathItem.Post != nil {
@@ -210,7 +201,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //	pathItem := paths.Paths["/start"]
 //	delete(paths.Paths, "/start")
 //
-//	var handler *openapi3.Operation
+//	var handler *openapi3.OAS3Operation
 //	if pathItem.Get != nil {
 //		handler = pathItem.Get
 //	} else if pathItem.Post != nil {
@@ -226,14 +217,14 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //
 //func assemblePluginsDoc(a *app) error {
 //	if a.issuer != nil {
-//		err := appendPluginSpec(a.issuer, a, "authZ", a.issuer.GetMetaData().ShortName)
+//		err := appendPluginSpec(a.issuer, a, "authZ", a.issuer.GetMetadata().ShortName)
 //		if err != nil {
 //			return err
 //		}
 //	}
 //
 //	if a.idManager != nil {
-//		err := appendPluginSpec(a.idManager, a, "id_manager", a.idManager.GetMetaData().ShortName)
+//		err := appendPluginSpec(a.idManager, a, "id_manager", a.idManager.GetMetadata().ShortName)
 //		if err != nil {
 //			return err
 //		}
@@ -242,7 +233,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //	if len(a.cryptoKeys) != 0 {
 //		for _, key := range a.cryptoKeys {
 //			if key != nil {
-//				err := appendPluginSpec(key, a, "crypto_key", key.GetMetaData().ShortName)
+//				err := appendPluginSpec(key, a, "crypto_key", key.GetMetadata().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -253,7 +244,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //	if len(a.cryptoStorages) != 0 {
 //		for _, storage := range a.cryptoStorages {
 //			if storage != nil {
-//				err := appendPluginSpec(storage, a, "crypto_storage", storage.GetMetaData().ShortName)
+//				err := appendPluginSpec(storage, a, "crypto_storage", storage.GetMetadata().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -264,7 +255,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //	if len(a.storages) != 0 {
 //		for _, storage := range a.storages {
 //			if storage != nil {
-//				err := appendPluginSpec(storage, a, "storage", storage.GetMetaData().ShortName)
+//				err := appendPluginSpec(storage, a, "storage", storage.GetMetadata().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -275,7 +266,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //	if len(a.senders) != 0 {
 //		for _, sender := range a.senders {
 //			if sender != nil {
-//				err := appendPluginSpec(sender, a, "sender", sender.GetMetaData().ShortName)
+//				err := appendPluginSpec(sender, a, "sender", sender.GetMetadata().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -286,7 +277,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //	if len(a.rootPlugins) != 0 {
 //		for _, adminPlugin := range a.rootPlugins {
 //			if adminPlugin != nil {
-//				err := appendPluginSpec(adminPlugin, a, adminPlugin.GetMetaData().Type, adminPlugin.GetMetaData().ShortName)
+//				err := appendPluginSpec(adminPlugin, a, adminPlugin.GetMetadata().Type, adminPlugin.GetMetadata().ShortName)
 //				if err != nil {
 //					return err
 //				}
@@ -300,7 +291,7 @@ func assembleRoutes(doc *openapi3.T, r *router, app *app) error {
 //func appendPluginSpec(Plugin interface{}, a *app, pluginKind Plugin.PluginType, pluginName string) error {
 //	pluginSwagger, ok := Plugin.(Plugin.OpenAPISpecGetter)
 //	if ok {
-//		paths, defs := pluginSwagger.GetAppRoutes()
+//		paths, defs := pluginSwagger.GetCustomAppRoutes()
 //		pathsJsonBytes, err := paths.MarshalJSON()
 //		if err != nil {
 //			return err

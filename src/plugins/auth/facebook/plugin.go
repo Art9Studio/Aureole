@@ -18,7 +18,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -32,7 +32,7 @@ type facebook struct {
 	provider  *oauth2.Config
 }
 
-func (f *facebook) GetLoginMethod() string {
+func (f *facebook) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
@@ -53,12 +53,12 @@ func (f *facebook) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (facebook) GetMetaData() core.Meta {
+func (facebook) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (f *facebook) GetLoginWrapper() core.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*core.AuthNResult, error) {
+func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
+	return func(c fiber.Ctx) (*core.AuthResult, error) {
 		state := c.Query("state")
 		if state != "state" {
 			return nil, errors.New("invalid state")
@@ -81,7 +81,7 @@ func (f *facebook) GetLoginWrapper() core.AuthNLoginFunc {
 		}
 		email := userData["email"].(string)
 
-		return &core.AuthNResult{
+		return &core.AuthResult{
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
@@ -118,7 +118,7 @@ func initProvider(f *facebook) error {
 	return nil
 }
 
-func (f *facebook) GetAppRoutes() []*core.Route {
+func (f *facebook) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

@@ -52,8 +52,8 @@ func (e *etcd) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (e etcd) GetMetaData() core.Meta {
-	return core.Meta{
+func (e etcd) GetMetadata() core.Metadata {
+	return core.Metadata{
 		Type:      name,
 		ShortName: e.rawConf.Name,
 		ID:        pluginID,

@@ -1,4 +1,3 @@
 name: facebook
 display_name: facebook
-type: auth
 description: "Facebook Authentication"

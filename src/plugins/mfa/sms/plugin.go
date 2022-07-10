@@ -19,13 +19,12 @@ import (
 
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
 	meta = core.MFARepo.Register(rawMeta, Create)
 }
-
 
 type (
 	sms struct {
@@ -45,6 +44,7 @@ type (
 		Otp string `json:"otp"`
 	}
 )
+
 func Create(conf configs.PluginConfig) core.MFA {
 	return &sms{rawConf: conf}
 }
@@ -77,7 +77,7 @@ func (s *sms) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (s sms) GetMetaData() core.Meta {
+func (s sms) GetMetadata() core.Metadata {
 	return meta
 }
 
@@ -221,7 +221,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func (s *sms) GetAppRoutes() []*core.Route {
+func (s *sms) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,

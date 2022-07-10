@@ -31,7 +31,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -92,7 +92,7 @@ func (j *jwk) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (j *jwk) GetMetaData() core.Meta {
+func (j *jwk) GetMetadata() core.Metadata {
 	return meta
 }
 
@@ -168,7 +168,7 @@ func initKeySets(j *jwk) (err error) {
 	return nil
 }
 
-func (j *jwk) GetAppRoutes() []*core.Route {
+func (j *jwk) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

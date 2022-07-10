@@ -18,7 +18,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -44,7 +44,7 @@ type (
 	}
 )
 
-func (p *authn) GetLoginMethod() string {
+func (p *authn) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
@@ -77,12 +77,12 @@ func (a *authn) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (authn) GetMetaData() core.Meta {
+func (authn) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (a *authn) GetLoginWrapper() core.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*core.AuthNResult, error) {
+func (a *authn) GetAuthHandler() core.AuthHandlerFunc {
+	return func(c fiber.Ctx) (*core.AuthResult, error) {
 		var otp otp
 		if err := c.BodyParser(&otp); err != nil {
 			return nil, err
@@ -133,7 +133,7 @@ func (a *authn) GetLoginWrapper() core.AuthNLoginFunc {
 		}
 
 		if decrOtp == otp.Otp {
-			return &core.AuthNResult{
+			return &core.AuthResult{
 				Cred: &core.Credential{
 					Name:  core.Phone,
 					Value: phone,
@@ -154,7 +154,7 @@ func (a *authn) GetLoginWrapper() core.AuthNLoginFunc {
 			if err != nil {
 				return nil, err
 			}
-			return &core.AuthNResult{ErrorData: fiber.Map{"token": token}}, errors.New("wrong otp")
+			return &core.AuthResult{ErrorData: fiber.Map{"token": token}}, errors.New("wrong otp")
 		}
 	}
 }
@@ -169,7 +169,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func (a *authn) GetAppRoutes() []*core.Route {
+func (a *authn) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,

@@ -1,4 +1,3 @@
 name: jwt
-display_name: jwt
-type: issuer
+display_name: JWT
 description: "JWT issuer"

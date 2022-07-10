@@ -35,7 +35,7 @@ var rawMeta []byte
 //go:embed default-payload.json.tmpl
 var defaultPayloadTmpl []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -77,7 +77,7 @@ var keyMap = map[tokenType]map[tokenResp]string{
 	},
 }
 
-// INFO: надо было менять в интерфейсе  Issure GetResponseData что бы он возвращал ошибку?
+// INFO: надо было менять в интерфейсе  Issure GetResponsesDoc что бы он возвращал ошибку?
 func Create(conf configs.PluginConfig) core.Issuer {
 	return &jwtIssuer{rawConf: conf}
 }
@@ -116,20 +116,8 @@ func (j *jwtIssuer) Init(api core.PluginAPI) (err error) {
 	return err
 }
 
-func (j *jwtIssuer) GetResponseData() (*openapi3.Responses, error) {
-	responses := openapi3.NewResponses()
-
-	okSchema, err := openapi3gen.NewSchemaRefForValue(Response{}, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	okResponse := openapi3.NewResponse().
-		WithDescription("Successfully authorize and return refresh and access tokens").
-		WithContent(openapi3.NewContentWithJSONSchema(okSchema.Value))
-
-	okStatus := strconv.Itoa(http.StatusOK)
-
+// todo: finish this method
+func (j *jwtIssuer) GetResponseHeader() openapi3.Headers {
 	if j.conf.AccessTokenBearer == cookie || j.conf.RefreshTokenBearer == cookie {
 		header := &openapi3.Header{}
 		header.Name = "Set-Cookie"
@@ -146,25 +134,43 @@ func (j *jwtIssuer) GetResponseData() (*openapi3.Responses, error) {
 		setCookieSchema.Type = "string"
 		header.Schema = openapi3.NewSchemaRef("", setCookieSchema)
 
-		okResponse.Headers = openapi3.Headers{
+		return openapi3.Headers{
 			"Set-Cookie": &openapi3.HeaderRef{Value: header},
 		}
 	}
+	return openapi3.Headers{}
+}
 
+func (j *jwtIssuer) GetResponsesDoc() (*openapi3.Responses, error) {
+	// todo: finish body Schema
 	bodySchema, err := openapi3gen.NewSchemaRefForValue(Response{}, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	okResponse.Content["application/json"].Schema.Value = bodySchema.Value
+	okStatusDescription := "Successfully authorize and return refresh and access tokens"
+	okStatus := strconv.Itoa(http.StatusOK)
 
-	responses[okStatus] = &openapi3.ResponseRef{
-		Value: okResponse,
+	responses := openapi3.Responses{
+		okStatus: &openapi3.ResponseRef{
+			Value: &openapi3.Response{
+				Description: &okStatusDescription,
+				Headers:     j.GetResponseHeader(),
+				Content: openapi3.Content{
+					"application/json": {
+						Schema: &openapi3.SchemaRef{
+							Value: bodySchema.Value,
+						},
+					},
+				},
+			},
+		},
 	}
+
 	return &responses, nil
 }
 
-func (j jwtIssuer) GetMetaData() core.Meta {
+func (j jwtIssuer) GetMetadata() core.Metadata {
 	return meta
 }
 
@@ -263,15 +269,15 @@ func buildOperationForRefreshHandler() *openapi3.Operation {
 	return operation
 }
 
-func (j *jwtIssuer) GetAppRoutes() []*core.Route {
+func (j *jwtIssuer) GetCustomAppRoutes() []*core.Route {
 	operation := buildOperationForRefreshHandler()
 
 	return []*core.Route{
 		{
-			Method:    http.MethodPost,
-			Path:      refreshUrl,
-			Operation: operation,
-			Handler:   refresh(j),
+			Method:        http.MethodPost,
+			Path:          refreshUrl,
+			OAS3Operation: operation,
+			Handler:       refresh(j),
 		},
 	}
 }

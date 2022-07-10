@@ -12,7 +12,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -25,7 +25,7 @@ type storage struct {
 	conf      *config
 }
 
-func (s *storage) GetAppRoutes() []*core.Route {
+func (s *storage) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 
@@ -43,7 +43,7 @@ func (s *storage) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (s storage) GetMetaData() core.Meta {
+func (s storage) GetMetadata() core.Metadata {
 	return meta
 }
 

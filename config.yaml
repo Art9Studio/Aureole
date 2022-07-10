@@ -91,7 +91,7 @@ apps:
             - email
             - name
 
-    authZ:
+    issuer:
       plugin: "jwt"
       config:
         iss: Aureole Server

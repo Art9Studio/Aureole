@@ -15,7 +15,7 @@ import (
 // const pluginID = "2734"
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -47,7 +47,7 @@ func (y *yubikey) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (y yubikey) GetMetaData() core.Meta {
+func (y yubikey) GetMetadata() core.Metadata {
 	return meta
 }
 

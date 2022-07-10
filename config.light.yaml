@@ -19,6 +19,9 @@ apps:
           scopes:
             - email
           fields: [ ]
+      - plugin: "apple"
+        name: apple_one
+
 
 #      - plugin: "vk"
 #        name: vk_two

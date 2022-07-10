@@ -1,4 +1,3 @@
 name: pwbased
 display_name: pwbased
-type: auth
 description: "Password-based Authentication"

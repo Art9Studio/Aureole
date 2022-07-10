@@ -11,12 +11,12 @@ import (
 )
 
 type Plugin interface {
-	MetaDataGetter
-	PathsGetter
+	MetadataGetter
+	RoutesGetter
 }
 
-type MetaDataGetter interface {
-	GetMetaData() Meta
+type MetadataGetter interface {
+	GetMetadata() Metadata
 }
 
 type (
@@ -25,11 +25,11 @@ type (
 	}
 	Authenticator interface {
 		Plugin
-		GetLoginWrapper() AuthNLoginFunc
-		GetLoginMethod() string
+		GetAuthHandler() AuthHandlerFunc
+		GetAuthHTTPMethod() string
 	}
 
-	AuthNResult struct {
+	AuthResult struct {
 		Cred       *Credential
 		Identity   *Identity
 		Provider   string
@@ -37,7 +37,7 @@ type (
 		ErrorData  map[string]interface{}
 	}
 
-	AuthNLoginFunc func(fiber.Ctx) (*AuthNResult, error)
+	AuthHandlerFunc func(fiber.Ctx) (*AuthResult, error)
 )
 
 const (
@@ -151,7 +151,7 @@ type (
 	}
 	Issuer interface {
 		Plugin
-		GetResponseData() (*openapi3.Responses, error)
+		GetResponsesDoc() (*openapi3.Responses, error)
 		GetNativeQueries() map[string]string
 		Authorize(*fiber.Ctx, *IssuerPayload) error
 	}
@@ -180,7 +180,7 @@ type (
 	MFACreator interface {
 		Create(*configs.PluginConfig) MFA
 	}
-	
+
 	MFA interface {
 		Plugin
 		IsEnabled(cred *Credential) (bool, error)

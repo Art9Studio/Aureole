@@ -20,7 +20,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 func init() {
 	meta = core.SenderRepo.Register(rawMeta, Create)
@@ -47,7 +47,7 @@ func (e *email) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (e email) GetMetaData() core.Meta {
+func (e email) GetMetadata() core.Metadata {
 	return meta
 }
 
@@ -115,7 +115,7 @@ func (e *email) SendRaw(recipient, subject, message string) error {
 	}
 	return mail.Send(e.conf.Host, plainAuth)
 }
-func (e *email) GetAppRoutes() []*core.Route {
+func (e *email) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 
 }

@@ -29,7 +29,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 func init() {
 	meta = core.CryptoKeyRepo.Register(rawMeta, Create)
@@ -79,7 +79,7 @@ func (p *pem) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (p *pem) GetMetaData() core.Meta {
+func (p *pem) GetMetadata() core.Metadata {
 	return meta
 }
 
@@ -157,7 +157,7 @@ func initKeySets(p *pem) (err error) {
 	return nil
 }
 
-func (p *pem) GetAppRoutes() []*core.Route {
+func (p *pem) GetCustomAppRoutes() []*core.Route {
 
 	return []*core.Route{
 		{

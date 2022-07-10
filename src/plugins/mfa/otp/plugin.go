@@ -17,7 +17,7 @@ import (
 
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -60,11 +60,11 @@ func (g *otpAuth) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (g otpAuth) GetMetaData() core.Meta {
+func (g otpAuth) GetMetadata() core.Metadata {
 	return meta
 }
 
-// func (g otpAuth) GetAppRoutes() *openapi3.Paths {
+// func (g otpAuth) GetCustomAppRoutes() *openapi3.Paths {
 // 	return g.swagger.Paths
 // }
 
@@ -207,7 +207,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
-func (g *otpAuth) GetAppRoutes() []*core.Route {
+func (g *otpAuth) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,

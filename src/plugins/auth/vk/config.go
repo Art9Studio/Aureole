@@ -6,7 +6,7 @@ import (
 
 const (
 	pathPrefix  = "/vk"
-	redirectUrl = "/login"
+	redirectUrl = "/auth"
 )
 
 type (

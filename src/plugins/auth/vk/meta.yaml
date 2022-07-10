@@ -1,4 +1,3 @@
 name: vk
-display_name: vk
-type: auth
+display_name: VK
 description: "VK Authentication"

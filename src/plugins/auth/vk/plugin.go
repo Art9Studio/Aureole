@@ -18,7 +18,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -32,7 +32,7 @@ type vk struct {
 	provider  *oauth2.Config
 }
 
-func (v *vk) GetLoginMethod() string {
+func (v *vk) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
@@ -54,12 +54,12 @@ func (v *vk) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (vk) GetMetaData() core.Meta {
+func (vk) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (v *vk) GetLoginWrapper() core.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*core.AuthNResult, error) {
+func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
+	return func(c fiber.Ctx) (*core.AuthResult, error) {
 		state := c.Query("state")
 		if state != "state" {
 			return nil, errors.New("invalid state")
@@ -82,7 +82,7 @@ func (v *vk) GetLoginWrapper() core.AuthNLoginFunc {
 		}
 		email := userData["email"].(string)
 
-		return &core.AuthNResult{
+		return &core.AuthResult{
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
@@ -92,7 +92,7 @@ func (v *vk) GetLoginWrapper() core.AuthNLoginFunc {
 				EmailVerified: true,
 				Additional:    map[string]interface{}{"social_provider_data": userData},
 			},
-			Provider: "social_provider$" + meta.ShortName,
+			Provider: "social_provider$" + v.GetMetadata().ShortName,
 		}, nil
 	}
 }
@@ -119,7 +119,7 @@ func initProvider(v *vk) error {
 	return nil
 }
 
-func (v *vk) GetAppRoutes() []*core.Route {
+func (v *vk) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

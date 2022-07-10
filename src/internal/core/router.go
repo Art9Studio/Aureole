@@ -13,19 +13,19 @@ import (
 
 type (
 	Route struct {
-		Method    string
-		Path      string
-		Operation *openapi3.Operation
-		Handler   func(c *fiber.Ctx) error
+		Method        string
+		Path          string
+		OAS3Operation *openapi3.Operation
+		Handler       func(c *fiber.Ctx) error
 	}
 
 	ExtendedRoute struct {
 		Route
-		Meta
+		Metadata
 	}
 
-	PathsGetter interface {
-		GetAppRoutes() []*Route
+	RoutesGetter interface {
+		GetCustomAppRoutes() []*Route
 	}
 
 	ErrorMessage struct {
@@ -53,12 +53,9 @@ func createServer(p *project, r *router) *fiber.App {
 	fiberApp.Use(cors.New())
 	fiberApp.Use(logger.New())
 
-	for appName, routes := range r.appRoutes {
-		pathPrefix := p.apps[appName].pathPrefix
-		appGroup := fiberApp.Group(pathPrefix)
-
+	for _, routes := range r.getAppRoutes() {
 		for _, route := range routes {
-			appGroup.Add(route.Method, route.Path, route.Handler)
+			fiberApp.Add(route.Method, route.Path, route.Handler)
 		}
 	}
 

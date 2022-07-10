@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"log"
 	"net/http"
 	"net/url"
@@ -139,7 +140,7 @@ func createSenders(repository *Repository[Sender], app *app, conf configs.App) {
 	for i := range conf.Senders {
 		senderConf := conf.Senders[i]
 		creator := CreatePlugin[Sender]
-		sender, err := creator(repository, senderConf, TypeSender)
+		sender, err := creator(repository, senderConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create sender %s: %v\n", app.name, senderConf.Name, err)
 		}
@@ -152,7 +153,7 @@ func createCryptoKeys(repository *Repository[CryptoKey], app *app, conf configs.
 	for i := range conf.CryptoKeys {
 		ckeyConf := conf.CryptoKeys[i]
 		creator := CreatePlugin[CryptoKey]
-		cryptoKey, err := creator(repository, ckeyConf, TypeCryptoKey)
+		cryptoKey, err := creator(repository, ckeyConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create crypto key %s, %v\n", app.name, ckeyConf.Name, err)
 		}
@@ -165,7 +166,7 @@ func createStorages(repository *Repository[Storage], app *app, conf configs.App)
 	for i := range conf.Storages {
 		storageConf := conf.Storages[i]
 		creator := CreatePlugin[Storage]
-		storage, err := creator(repository, storageConf, TypeStorage)
+		storage, err := creator(repository, storageConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create storage %s: %v\n", app.name, storageConf.Name, err)
 		}
@@ -178,7 +179,7 @@ func createCryptoStorages(repository *Repository[CryptoStorage], app *app, conf 
 	for i := range conf.CryptoStorages {
 		storageConf := conf.CryptoStorages[i]
 		creator := CreatePlugin[CryptoStorage]
-		cryptoStorage, err := creator(repository, storageConf, TypeCryptoStorage)
+		cryptoStorage, err := creator(repository, storageConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create crypto storage %s: %v\n", app.name, storageConf.Name, err)
 		}
@@ -191,7 +192,7 @@ func createRootPlugins(repository *Repository[RootPlugin], app *app, conf config
 	for i := range conf.RootPlugins {
 		rootPluginConf := conf.RootPlugins[i]
 		creator := CreatePlugin[RootPlugin]
-		rootPlugin, err := creator(repository, rootPluginConf, TypeRoot)
+		rootPlugin, err := creator(repository, rootPluginConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create rootPlugin Plugin %s: %v\n", app.name, rootPluginConf.Name, err)
 		}
@@ -206,7 +207,7 @@ func createAuthenticators(repository *Repository[Authenticator], app *app, conf 
 	for i := range conf.Auth {
 		authnConf := conf.Auth[i]
 		creator := CreatePlugin[Authenticator]
-		authenticator, err := creator(repository, authnConf, TypeAuth)
+		authenticator, err := creator(repository, authnConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create authenticator %s: %v\n", app.name, authnConf.Plugin, err)
 		}
@@ -228,7 +229,7 @@ func clearAuthnDuplicate(app *configs.App) {
 func createIssuer(repository *Repository[Issuer], app *app, conf configs.App) {
 	issuerConf := conf.Issuer
 	creator := CreatePlugin[Issuer]
-	issuer, err := creator(repository, issuerConf, TypeIssuer)
+	issuer, err := creator(repository, issuerConf)
 
 	if err != nil {
 		fmt.Printf("app %s: cannot create issuer: %v\n", app.name, err)
@@ -241,7 +242,7 @@ func createMultiFactors(repository *Repository[MFA], app *app, conf configs.App)
 	for i := range conf.MFA {
 		mfaConf := conf.MFA[i]
 		creator := CreatePlugin[MFA]
-		multiFactor, err := creator(repository, mfaConf, TypeMFA)
+		multiFactor, err := creator(repository, mfaConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create second factor %s: %v\n", app.name, mfaConf.Name, err)
 		}
@@ -257,7 +258,7 @@ func createIDManager(repository *Repository[IDManager], app *app, conf configs.A
 		return
 	}
 	creator := CreatePlugin[IDManager]
-	idManager, err := creator(repository, idManagerConf, TypeIDManager)
+	idManager, err := creator(repository, idManagerConf)
 	if err != nil {
 		fmt.Printf("app %s: cannot create identity manager: %v\n", app.name, err)
 	}
@@ -381,28 +382,41 @@ func initAuthenticators(app *app, p *project, r *router) {
 		pluginInit, ok := authenticator.(PluginInitializer)
 		if ok {
 			// todo: add runtime ID
-			prefix := fmt.Sprintf("%s$%s$", app.name, authenticator.GetMetaData().ShortName)
+			prefix := fmt.Sprintf("%s$%s$", app.name, authenticator.GetMetadata().ShortName)
 			pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(r))
 			err := pluginInit.Init(pluginAPI)
 			if err != nil {
 				fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
 				app.authenticators[name] = nil
 			} else {
-				meta := authenticator.GetMetaData()
-				pathPrefix := "/" + strings.ReplaceAll(meta.ShortName, "_", "-")
-				authRoute := &ExtendedRoute{
+				meta := authenticator.GetMetadata()
+				pathPrefix := getPluginPathPrefix(app.pathPrefix, meta.ShortName)
+
+				pipelineAuthRoute := &ExtendedRoute{
 					Route: Route{
-						Method:  authenticator.GetLoginMethod(),
-						Path:    pathPrefix + "/auth",
-						Handler: loginHandler(authenticator.GetLoginWrapper(), app),
+						Method:        authenticator.GetAuthHTTPMethod(),
+						Path:          pathPrefix + "/auth",
+						Handler:       pipelineAuthWrapper(authenticator.GetAuthHandler(), app),
+						OAS3Operation: assembleOAS3Operation(app, meta.DisplayName),
 					},
-					Meta: meta,
+					Metadata: meta,
 				}
-				if err != nil {
-					fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, err)
+				routes = append(routes, pipelineAuthRoute)
+
+				for _, route := range authenticator.GetCustomAppRoutes() {
+					er := &ExtendedRoute{
+						Metadata: meta,
+						Route: Route{
+							Method: route.Method,
+							// todo: check safe concatenation
+							Path:          pathPrefix + route.Path,
+							OAS3Operation: route.OAS3Operation,
+							Handler:       route.Handler,
+						},
+					}
+					routes = append(routes, er)
 				}
 
-				routes = append(routes, authRoute)
 			}
 		} else {
 			fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, PluginInitErr)
@@ -412,11 +426,31 @@ func initAuthenticators(app *app, p *project, r *router) {
 	r.addAppRoutes(app.name, routes)
 }
 
+func assembleOAS3Operation(app *app, displayName string) *openapi3.Operation {
+	// todo: optimize it and do not call every time
+	responseData, err := app.issuer.GetResponsesDoc()
+	if err != nil {
+		log.Println("cannot get responses doc for auth plugin ", displayName)
+		return nil
+	}
+	return &openapi3.Operation{
+		OperationID: "authWith" + displayName,
+		Tags:        []string{"App \"" + app.name + "\""},
+		Description: "Authenticate with " + displayName,
+		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
+		Responses: *responseData,
+	}
+}
+
+func getPluginPathPrefix(appPathPrefix, shortName string) string {
+	return "/" + appPathPrefix + "/" + strings.ReplaceAll(shortName, "_", "-")
+}
+
 func initIssuer(app *app, p *project, r *router) {
 	pluginInit, ok := app.issuer.(PluginInitializer)
 	if ok {
 		// todo: add runtime ID
-		prefix := fmt.Sprintf("%s$%s$", app.name, app.issuer.GetMetaData().ShortName)
+		prefix := fmt.Sprintf("%s$%s$", app.name, app.issuer.GetMetadata().ShortName)
 		pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(r))
 		err := pluginInit.Init(pluginAPI)
 		if err != nil {
@@ -438,11 +472,11 @@ func initSecondFactor(app *app, p *project, r *router) {
 			pluginInit, ok := secondFactor.(PluginInitializer)
 			if ok {
 				// todo: add runtime ID
-				prefix := fmt.Sprintf("%s$%s$", app.name, secondFactor.GetMetaData().ShortName)
+				prefix := fmt.Sprintf("%s$%s$", app.name, secondFactor.GetMetadata().ShortName)
 				pluginAPI := initAPI(withProject(p), withKeyPrefix(prefix), withApp(app), withRouter(r))
 
 				err := pluginInit.Init(pluginAPI)
-				meta := secondFactor.GetMetaData()
+				meta := secondFactor.GetMetadata()
 				if err != nil {
 					fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, err)
 					app.mfa[meta.ShortName] = nil
@@ -456,7 +490,7 @@ func initSecondFactor(app *app, p *project, r *router) {
 								Path:    pathPrefix + "/start",
 								Handler: mfaInitHandler(secondFactor.Init2FA(), app),
 							},
-							Meta: secondFactor.GetMetaData(),
+							Metadata: secondFactor.GetMetadata(),
 						},
 
 						&ExtendedRoute{
@@ -465,13 +499,13 @@ func initSecondFactor(app *app, p *project, r *router) {
 								Path:    pathPrefix + "/verify",
 								Handler: mfaVerificationHandler(secondFactor.Verify(), app),
 							},
-							Meta: meta,
+							Metadata: meta,
 						})
 					app.mfa[name] = secondFactor
 				}
 			} else {
 				fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, PluginInitErr)
-				app.mfa[secondFactor.GetMetaData().ShortName] = nil
+				app.mfa[secondFactor.GetMetadata().ShortName] = nil
 			}
 		}
 	}
@@ -500,25 +534,39 @@ func listPluginStatus(conf *configs.Project, p *project) {
 	tree := treeprint.New()
 	tree.SetValue("PLUGIN STATUSES")
 
+	// iterate through conf because it is a source of truth
 	for _, appConf := range conf.Apps {
 		appName := appConf.Name
 		app := p.apps[appName]
 
 		branch := tree.AddBranch(fmt.Sprintf("APP \"%s\"", appName))
-		if appConf.IDManager.Plugin != "" {
-			branch.AddNode(formatStatus("IDENTITY MANAGER", p.apps[appName].idManager))
+		if app.idManager != nil {
+			displayName := app.idManager.GetMetadata().DisplayName
+			branch.AddNode("IDENTITY MANAGER " + formatStatus(displayName, p.apps[appName].idManager))
 		}
-		issuerPlugin := fmt.Sprintf("ISSUER (%s)", appConf.Issuer.Plugin)
-		branch.AddNode(formatStatus(issuerPlugin, app.issuer))
+		//issuerPlugin := fmt.Sprintf("ISSUER (%s)", appConf.Issuer.Plugin)
+		branch.AddNode("ISSUER " + formatStatus(app.issuer.GetMetadata().DisplayName, app.issuer))
 
-		if len(appConf.Auth) != 0 {
+		if len(app.authenticators) != 0 {
 			subbranch := branch.AddBranch("AUTHENTICATORS")
-			for _, auth := range appConf.Auth {
-				plugin := fmt.Sprintf("%s (%s)", auth.Name, auth.Plugin)
-				subbranch.AddNode(formatStatus(plugin, app.authenticators[auth.Name]))
+			for _, authConf := range appConf.Auth {
+				auth := app.authenticators[authConf.Name]
+				var displayName string
+				if auth != nil {
+					displayName = app.authenticators[authConf.Name].GetMetadata().DisplayName
+				} else {
+					claim, err := AuthenticatorRepo.Get(authConf.Plugin)
+					if err == nil {
+						displayName = claim.DisplayName
+					} else {
+						displayName = "unknown"
+					}
+				}
+				plugin := fmt.Sprintf("%s {name: %s}", displayName, authConf.Name)
+				subbranch.AddNode(formatStatus(plugin, auth))
 			}
 		}
-
+		// todo: finish for all plugins the same as for authenticators
 		if len(appConf.MFA) != 0 {
 			subbranch := branch.AddBranch("MFA")
 			for _, mfa := range appConf.MFA {
@@ -572,7 +620,7 @@ func listPluginStatus(conf *configs.Project, p *project) {
 	fmt.Println(tree.String())
 }
 
-func formatStatus(name string, plugin interface{}) string {
+func formatStatus(name string, plugin Plugin) string {
 	colorRed := "\033[31m"
 	colorGreen := "\033[32m"
 	resetColor := "\033[0m"

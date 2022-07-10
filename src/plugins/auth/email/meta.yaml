@@ -1,4 +1,3 @@
 name: email
 display_name: email
-type: auth
 description: "Email Authentication"

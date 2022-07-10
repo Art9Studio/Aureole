@@ -20,7 +20,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -67,7 +67,7 @@ const (
 	VerifyLink linkType = "verify"
 )
 
-func (p *pwBased) GetLoginMethod() string {
+func (p *pwBased) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
@@ -142,12 +142,12 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (pwBased) GetMetaData() core.Meta {
+func (pwBased) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (p *pwBased) GetLoginWrapper() core.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*core.AuthNResult, error) {
+func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
+	return func(c fiber.Ctx) (*core.AuthResult, error) {
 		var input *credential
 		if err := c.BodyParser(input); err != nil {
 			return nil, err
@@ -183,7 +183,7 @@ func (p *pwBased) GetLoginWrapper() core.AuthNLoginFunc {
 		}
 
 		if isMatch {
-			return &core.AuthNResult{
+			return &core.AuthResult{
 				Cred:     cred,
 				Identity: ident,
 				Provider: meta.ShortName,
@@ -223,7 +223,7 @@ func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 	return &u
 }
 
-func (p *pwBased) GetAppRoutes() []*core.Route {
+func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,

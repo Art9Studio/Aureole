@@ -5,6 +5,7 @@ import (
 	"aureole/internal/core"
 	"aureole/plugins/identity-manager/standard/migrations"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,10 +19,10 @@ import (
 )
 
 // const pluginID = "4634"
-
+//go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 func init() {
 	meta = core.IDManagerRepo.Register(rawMeta, Create)
@@ -35,7 +36,7 @@ type standart struct {
 	features  map[string]bool
 }
 
-func Create (conf configs.PluginConfig) core.IDManager {
+func Create(conf configs.PluginConfig) core.IDManager {
 	return &standart{rawConf: conf}
 }
 
@@ -73,13 +74,17 @@ func (m *standart) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (m standart) GetMetaData() core.Meta {
+func (m standart) GetMetadata() core.Metadata {
 	return meta
-	
+
 }
 
-func (s *standart) Register(c *plugin.Credential, i *plugin.Identity, _ string) (*plugin.Identity, error) {
-	conn, err := m.pool.Acquire(context.Background())
+func (m *standart) GetCustomAppRoutes() []*core.Route {
+	return []*core.Route{}
+}
+
+func (s *standart) Register(c *core.Credential, i *core.Identity, _ string) (*core.Identity, error) {
+	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
 	}
@@ -101,7 +106,7 @@ func (s *standart) Register(c *plugin.Credential, i *plugin.Identity, _ string) 
 	}
 }
 
-func (s *standart) OnUserAuthenticated(c *plugin.Credential, i *plugin.Identity, authnProvider string) (*plugin.Identity, error) {
+func (s *standart) OnUserAuthenticated(c *core.Credential, i *core.Identity, authnProvider string) (*core.Identity, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -113,7 +118,7 @@ func (s *standart) OnUserAuthenticated(c *plugin.Credential, i *plugin.Identity,
 		return nil, fmt.Errorf("cannot check user existence: %v", err)
 	}
 
-	var registeredIdent *plugin.Identity
+	var registeredIdent *core.Identity
 	if exists {
 		registeredIdent, err = getIdentity(conn, c)
 		if err != nil {
@@ -140,7 +145,7 @@ func (s *standart) OnUserAuthenticated(c *plugin.Credential, i *plugin.Identity,
 	return registeredIdent, nil
 }
 
-func (s *standart) On2FA(c *plugin.Credential, mfaData *plugin.MFAData) error {
+func (s *standart) On2FA(c *core.Credential, mfaData *core.MFAData) error {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return fmt.Errorf("cannot acquire connection: %v", err)
@@ -159,7 +164,7 @@ func (s *standart) On2FA(c *plugin.Credential, mfaData *plugin.MFAData) error {
 	}
 }
 
-func (s *standart) GetData(c *plugin.Credential, _, name string) (interface{}, error) {
+func (s *standart) GetData(c *core.Credential, _, name string) (interface{}, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -184,7 +189,7 @@ func (s *standart) GetData(c *plugin.Credential, _, name string) (interface{}, e
 	}
 }
 
-func (s *standart) Get2FAData(c *plugin.Credential, mfaID string) (*plugin.MFAData, error) {
+func (s *standart) Get2FAData(c *core.Credential, mfaID string) (*core.MFAData, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -203,7 +208,7 @@ func (s *standart) Get2FAData(c *plugin.Credential, mfaID string) (*plugin.MFADa
 	}
 }
 
-func (s *standart) Update(c *plugin.Credential, i *plugin.Identity, _ string) (*plugin.Identity, error) {
+func (s *standart) Update(c *core.Credential, i *core.Identity, _ string) (*core.Identity, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -255,7 +260,7 @@ func runDBMigrations(conn *pgx.Conn) error {
 	return migrator.Migrate(context.Background())
 }
 
-func isUserExists(conn *pgxpool.Conn, cred *plugin.Credential) (exists bool, err error) {
+func isUserExists(conn *pgxpool.Conn, cred *core.Credential) (exists bool, err error) {
 	sql := fmt.Sprintf("select exists(select 1 from users where %s=$1)", sanitize(cred.Name))
 	err = conn.QueryRow(context.Background(), sql, cred.Value).Scan(&exists)
 	if err != nil {
@@ -264,7 +269,7 @@ func isUserExists(conn *pgxpool.Conn, cred *plugin.Credential) (exists bool, err
 	return exists, nil
 }
 
-func getIdentity(conn *pgxpool.Conn, cred *plugin.Credential) (*plugin.Identity, error) {
+func getIdentity(conn *pgxpool.Conn, cred *core.Credential) (*core.Identity, error) {
 	sql := fmt.Sprintf(`SELECT u.*, provider_name, payload FROM users u
 							  LEFT JOIN social_providers sp ON u.id = sp.user_id
                               WHERE u.%s = $1;`,
@@ -276,7 +281,7 @@ func getIdentity(conn *pgxpool.Conn, cred *plugin.Credential) (*plugin.Identity,
 	defer rows.Close()
 
 	var (
-		ident               plugin.Identity
+		ident               core.Identity
 		userSocialProviders []map[string]interface{}
 	)
 	for rows.Next() {
@@ -310,8 +315,8 @@ func getIdentity(conn *pgxpool.Conn, cred *plugin.Credential) (*plugin.Identity,
 	return &ident, nil
 }
 
-func registerIdentity(conn *pgxpool.Conn, newIdent *plugin.Identity) (*plugin.Identity, error) {
-	var ident plugin.Identity
+func registerIdentity(conn *pgxpool.Conn, newIdent *core.Identity) (*core.Identity, error) {
+	var ident core.Identity
 	sql, values, err := getCreateQuery(newIdent)
 	if err != nil {
 		return nil, err
@@ -324,7 +329,7 @@ func registerIdentity(conn *pgxpool.Conn, newIdent *plugin.Identity) (*plugin.Id
 	return &ident, nil
 }
 
-func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *plugin.Identity, provider string) (*plugin.Identity, error) {
+func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *core.Identity, provider string) (*core.Identity, error) {
 	socialProviderData, ok := newIdent.Additional["social_provider_data"].(map[string]interface{})
 	if !ok {
 		return nil, errors.New("cannot get social provider data")
@@ -341,7 +346,7 @@ func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *plugin.Identit
 		return nil, err
 	}
 
-	var ident plugin.Identity
+	var ident core.Identity
 	createUserSql, values, err := getCreateQuery(newIdent)
 	if err != nil {
 		return nil, err
@@ -395,7 +400,7 @@ func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *plugin.Identit
 	return &ident, nil
 }
 
-func save2FAData(conn *pgxpool.Conn, cred *plugin.Credential, data *plugin.MFAData) error {
+func save2FAData(conn *pgxpool.Conn, cred *core.Credential, data *core.MFAData) error {
 	bytesPayload, err := json.Marshal(data.Payload)
 	if err != nil {
 		return err
@@ -411,8 +416,8 @@ func save2FAData(conn *pgxpool.Conn, cred *plugin.Credential, data *plugin.MFADa
 	return nil
 }
 
-func updateIdentity(conn *pgxpool.Conn, cred *plugin.Credential, newIdent *plugin.Identity) (*plugin.Identity, error) {
-	var ident plugin.Identity
+func updateIdentity(conn *pgxpool.Conn, cred *core.Credential, newIdent *core.Identity) (*core.Identity, error) {
+	var ident core.Identity
 	sql, values, err := getUpdateQuery(cred, newIdent)
 	if err != nil {
 		return nil, err
@@ -425,8 +430,8 @@ func updateIdentity(conn *pgxpool.Conn, cred *plugin.Credential, newIdent *plugi
 	return &ident, nil
 }
 
-func get2FAData(conn *pgxpool.Conn, cred *plugin.Credential, mfaID string) (*plugin.MFAData, error) {
-	var data plugin.MFAData
+func get2FAData(conn *pgxpool.Conn, cred *core.Credential, mfaID string) (*core.MFAData, error) {
+	var data core.MFAData
 	sql := fmt.Sprintf(`select plugin_id, provider_name, payload from mfa 
 		                      where plugin_id=$1 and user_id=(select id from users where %s=$2);`,
 		sanitize(cred.Name))
@@ -437,7 +442,7 @@ func get2FAData(conn *pgxpool.Conn, cred *plugin.Credential, mfaID string) (*plu
 	return &data, nil
 }
 
-func getCreateQuery(ident *plugin.Identity) (string, []interface{}, error) {
+func getCreateQuery(ident *core.Identity) (string, []interface{}, error) {
 	identMap := ident.AsMap()
 	if ident.Additional != nil && len(ident.Additional) != 0 {
 		bytesAdditionalData, err := json.Marshal(ident.Additional)
@@ -466,7 +471,7 @@ func getCreateQuery(ident *plugin.Identity) (string, []interface{}, error) {
 	return fmt.Sprintf("insert into users(%s) values (%s) returning *;", colsStmt, valsStmt), values, nil
 }
 
-func getUpdateQuery(cred *plugin.Credential, ident *plugin.Identity) (string, []interface{}, error) {
+func getUpdateQuery(cred *core.Credential, ident *core.Identity) (string, []interface{}, error) {
 	identMap := ident.AsMap()
 	if ident.Additional != nil && len(ident.Additional) != 0 {
 		bytesAdditionalData, err := json.Marshal(ident.Additional)

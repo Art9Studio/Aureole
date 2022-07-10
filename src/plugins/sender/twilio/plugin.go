@@ -21,7 +21,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 func init() {
 	meta = core.SenderRepo.Register(rawMeta, Create)
@@ -55,7 +55,7 @@ func (t *twilio) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (t twilio) GetMetaData() core.Meta {
+func (t twilio) GetMetadata() core.Metadata {
 	return meta
 }
 
@@ -107,6 +107,6 @@ func (t *twilio) SendRaw(recipient, _, message string) error {
 
 	return nil
 }
-func (t *twilio) GetAppRoutes() []*core.Route {
+func (t *twilio) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }

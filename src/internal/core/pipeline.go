@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func loginHandler(authFunc AuthNLoginFunc, app *app) func(*fiber.Ctx) error {
+func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		authnResult, err := authFunc(*c)
 		if err != nil {
@@ -75,7 +75,7 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 			return SendError(c, fiber.StatusUnauthorized, "cannot get internal storage")
 		}
 
-		authnResult := &AuthNResult{}
+		authnResult := &AuthResult{}
 		ok, err = serviceStorage.Get(app.name+"$auth_pipeline$"+cred.Value, authnResult)
 		if err != nil {
 			return SendError(c, fiber.StatusUnauthorized, err.Error())
@@ -97,7 +97,7 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 	}
 }
 
-func getEnabled2FA(app *app, authnResult *AuthNResult) (fiber.Map, error) {
+func getEnabled2FA(app *app, authnResult *AuthResult) (fiber.Map, error) {
 	secondFactors, ok := app.getSecondFactors()
 	if ok {
 		var enabled2FA []MFA
@@ -115,8 +115,8 @@ func getEnabled2FA(app *app, authnResult *AuthNResult) (fiber.Map, error) {
 			enabledFactorsMap := fiber.Map{}
 			for _, enabledFactor := range enabled2FA {
 				path := app.url.String() + "/2fa/" +
-					strings.ReplaceAll(enabledFactor.GetMetaData().ShortName, "_", "-")
-				enabledFactorsMap[enabledFactor.GetMetaData().ShortName] = path
+					strings.ReplaceAll(enabledFactor.GetMetadata().ShortName, "_", "-")
+				enabledFactorsMap[enabledFactor.GetMetadata().ShortName] = path
 			}
 			return enabledFactorsMap, nil
 		}
@@ -124,7 +124,7 @@ func getEnabled2FA(app *app, authnResult *AuthNResult) (fiber.Map, error) {
 	return nil, nil
 }
 
-func authenticate(app *app, authnResult *AuthNResult) (*Identity, error) {
+func authenticate(app *app, authnResult *AuthResult) (*Identity, error) {
 	manager, ok := app.getIDManager()
 	if ok {
 		return manager.OnUserAuthenticated(authnResult.Cred, authnResult.Identity, authnResult.Provider)

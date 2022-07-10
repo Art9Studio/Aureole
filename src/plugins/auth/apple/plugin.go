@@ -21,7 +21,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -37,7 +37,7 @@ type apple struct {
 	provider  *providerConfig
 }
 
-func (a *apple) GetLoginMethod() string {
+func (a *apple) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
@@ -70,12 +70,12 @@ func (a *apple) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (apple) GetMetaData() core.Meta {
+func (apple) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (a *apple) GetLoginWrapper() core.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*core.AuthNResult, error) {
+func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
+	return func(c fiber.Ctx) (*core.AuthResult, error) {
 		input := struct {
 			State string
 			Code  string
@@ -115,7 +115,7 @@ func (a *apple) GetLoginWrapper() core.AuthNLoginFunc {
 			return nil, errors.New("input data doesn't pass filters")
 		}
 
-		return &core.AuthNResult{
+		return &core.AuthResult{
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
@@ -205,7 +205,7 @@ func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 	return []byte{}, errors.New("key set don't contain sig key")
 }
 
-func (a *apple) GetAppRoutes() []*core.Route {
+func (a *apple) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

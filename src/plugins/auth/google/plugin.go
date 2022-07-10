@@ -18,7 +18,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -32,7 +32,7 @@ type google struct {
 	provider  *oauth2.Config
 }
 
-func (g *google) GetLoginMethod() string {
+func (g *google) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
@@ -53,12 +53,12 @@ func (g *google) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (google) GetMetaData() core.Meta {
+func (google) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (g *google) GetLoginWrapper() core.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*core.AuthNResult, error) {
+func (g *google) GetAuthHandler() core.AuthHandlerFunc {
+	return func(c fiber.Ctx) (*core.AuthResult, error) {
 		// todo: save state and compare later #2
 		state := c.Query("state")
 		if state != "state" {
@@ -94,7 +94,7 @@ func (g *google) GetLoginWrapper() core.AuthNLoginFunc {
 			return nil, errors.New("input data doesn't pass filters")
 		}
 
-		return &core.AuthNResult{
+		return &core.AuthResult{
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
@@ -135,7 +135,7 @@ func initProvider(g *google) error {
 	return nil
 }
 
-func (g *google) GetAppRoutes() []*core.Route {
+func (g *google) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,

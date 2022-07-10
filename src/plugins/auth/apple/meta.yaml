@@ -1,4 +1,3 @@
 name: apple
 display_name: "Apple"
-type: auth
 description: "Apple Authentication"

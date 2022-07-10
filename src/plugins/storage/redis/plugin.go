@@ -18,7 +18,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -52,7 +52,7 @@ func (s *redis) Init(api core.PluginAPI) error {
 	return s.client.Ping(context.Background()).Err()
 }
 
-func (s redis) GetMetaData() core.Meta {
+func (s redis) GetMetadata() core.Metadata {
 	return meta
 }
 
@@ -108,7 +108,7 @@ func (s *redis) Exists(k string) (bool, error) {
 		return exists == 1, nil
 	}
 }
-func (r *redis) GetAppRoutes() []*core.Route {
+func (r *redis) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 

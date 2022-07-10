@@ -2,6 +2,7 @@ package core
 
 import (
 	"aureole/internal/configs"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -9,18 +10,18 @@ import (
 )
 
 type (
-	Type string
+	PluginType string
 
-	Meta struct {
+	Metadata struct {
 		// lowercase name without spaces
 		ShortName string `yaml:"name"`
 		// human readable name
-		DisplayName string `yaml:"display_name"`
-		Type        Type   `yaml:"type"`
+		DisplayName string     `yaml:"display_name"`
+		Type        PluginType `yaml:"-"`
 	}
 
 	Claim[T Plugin] struct {
-		Meta
+		Metadata
 		PluginCreate func(configs.PluginConfig) T
 	}
 
@@ -31,23 +32,54 @@ type (
 )
 
 const (
-	TypeAuth          Type = "auth"
-	TypeIssuer        Type = "issuer"
-	TypeCryptoKey     Type = "crypto_key"
-	TypeCryptoStorage Type = "crypto_storage"
-	TypeIDManager     Type = "identity"
-	TypeMFA           Type = "mfa"
-	TypeRoot          Type = "root"
-	TypeSender        Type = "sender"
-	TypeStorage       Type = "storage"
+	TypeAuth          PluginType = "auth"
+	TypeIssuer        PluginType = "issuer"
+	TypeCryptoKey     PluginType = "crypto_key"
+	TypeCryptoStorage PluginType = "crypto_storage"
+	TypeIDManager     PluginType = "identity"
+	TypeMFA           PluginType = "mfa"
+	TypeRoot          PluginType = "root"
+	TypeSender        PluginType = "sender"
+	TypeStorage       PluginType = "storage"
+	Invalid           PluginType = ""
 )
 
-func buildPath(name string, pluginType Type) string {
+// https://github.com/golang/go/issues/45380
+func toPluginType[T Plugin]() (PluginType, error) {
+	var p = new(T)
+	switch any(p).(type) {
+	case *Authenticator:
+		return TypeAuth, nil
+	case *Issuer:
+		return TypeIssuer, nil
+	case *CryptoKey:
+		return TypeCryptoKey, nil
+	case *CryptoStorage:
+		return TypeCryptoStorage, nil
+	case *IDManager:
+		return TypeIDManager, nil
+	case *MFA:
+		return TypeMFA, nil
+	case *RootPlugin:
+		return TypeRoot, nil
+	case *Sender:
+		return TypeSender, nil
+	case *Storage:
+		return TypeStorage, nil
+	default:
+		return Invalid, errors.New("Invalid leave type")
+	}
+}
+
+func buildPath(name string, pluginType PluginType) string {
 	return fmt.Sprintf("%s.%s", pluginType, name)
 }
 
-// Get returns kstorage Plugin if it exists
-func (repo *Repository[T]) Get(name string, pluginType Type) (*Claim[T], error) {
+func (repo *Repository[T]) Get(name string) (*Claim[T], error) {
+	pluginType, err := toPluginType[T]()
+	if err != nil {
+		return nil, err
+	}
 	repo.pluginsMU.Lock()
 	defer repo.pluginsMU.Unlock()
 	path := buildPath(name, pluginType)
@@ -58,15 +90,16 @@ func (repo *Repository[T]) Get(name string, pluginType Type) (*Claim[T], error) 
 }
 
 // Register registers Plugin
-func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig) T) Meta {
-	var meta = &Meta{}
+func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig) T) Metadata {
+	var meta = &Metadata{}
 	err := yaml.Unmarshal(metaYaml, meta)
 	if err != nil {
 		return *meta
 	}
 	// todo: validate Type. it should be enum.
-	if meta.Type == "" {
-		panic("type for a Plugin wasn't passed")
+	meta.Type, err = toPluginType[T]()
+	if err != nil {
+		panic("invalid plugin type")
 	}
 	// todo: validate name. it should has no spaces, should be lowercase
 	if meta.ShortName == "" {
@@ -85,7 +118,7 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 	}
 
 	repo.plugins[path] = &Claim[T]{
-		Meta:         *meta,
+		Metadata:     *meta,
 		PluginCreate: p,
 	}
 
@@ -109,9 +142,10 @@ var RootRepo = CreateRepository[RootPlugin]()
 var SenderRepo = CreateRepository[Sender]()
 var StorageRepo = CreateRepository[Storage]()
 
-func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConfig, pluginType Type) (T, error) {
+func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConfig) (T, error) {
 	var empty T
-	creator, err := repository.Get(config.Plugin, pluginType)
+
+	creator, err := repository.Get(config.Plugin)
 	if err != nil {
 		return empty, err
 	}

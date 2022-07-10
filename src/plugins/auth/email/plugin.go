@@ -19,7 +19,7 @@ import (
 //go:embed meta.yaml
 var rawMeta []byte
 
-var meta core.Meta
+var meta core.Metadata
 
 // init initializes package by register pluginCreator
 func init() {
@@ -41,7 +41,7 @@ type (
 	}
 )
 
-func (e *email) GetLoginMethod() string {
+func (e *email) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
@@ -79,12 +79,12 @@ func (e *email) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (email) GetMetaData() core.Meta {
+func (email) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (e *email) GetLoginWrapper() core.AuthNLoginFunc {
-	return func(c fiber.Ctx) (*core.AuthNResult, error) {
+func (e *email) GetAuthHandler() core.AuthHandlerFunc {
+	return func(c fiber.Ctx) (*core.AuthResult, error) {
 		rawToken := c.Query("token")
 		if rawToken == "" {
 			return nil, errors.New("token not found")
@@ -103,7 +103,7 @@ func (e *email) GetLoginWrapper() core.AuthNLoginFunc {
 			return nil, errors.New(err.Error())
 		}
 
-		return &core.AuthNResult{
+		return &core.AuthResult{
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
@@ -133,7 +133,7 @@ func createMagicLink(e *email) *url.URL {
 	return &u
 }
 
-func (e *email) GetAppRoutes() []*core.Route {
+func (e *email) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,
