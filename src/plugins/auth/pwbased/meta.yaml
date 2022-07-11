@@ -1,3 +1,4 @@
 name: pwbased
+plugin_id: 1006
 display_name: pwbased
 description: "Password-based Authentication"

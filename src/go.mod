@@ -3,6 +3,7 @@ module aureole
 go 1.18
 
 require (
+	github.com/arsmn/fiber-swagger/v2 v2.31.1
 	github.com/avast/retry-go/v4 v4.0.4
 	github.com/coocood/freecache v1.2.1
 	github.com/fatih/structs v1.1.0
@@ -13,7 +14,6 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-test/deep v1.0.8
 	github.com/gofiber/fiber/v2 v2.32.0
-	github.com/gofiber/swagger v0.0.1
 	github.com/hashicorp/vault/api v1.5.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jackc/tern v1.12.5
@@ -49,7 +49,6 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
-	github.com/arsmn/fiber-swagger/v2 v2.31.1 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

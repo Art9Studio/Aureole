@@ -1,21 +1,23 @@
 package apple
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"path"
+	"time"
+
 	"aureole/internal/configs"
 	"aureole/internal/core"
-	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/mitchellh/mapstructure"
-	"net/http"
-	"path"
-	"time"
 
-	"context"
 	_ "embed"
-	"errors"
 )
 
 //go:embed meta.yaml

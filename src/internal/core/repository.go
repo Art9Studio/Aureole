@@ -1,22 +1,26 @@
 package core
 
 import (
-	"aureole/internal/configs"
 	"errors"
 	"fmt"
+	"regexp"
 	"sync"
+
+	"aureole/internal/configs"
 
 	"gopkg.in/yaml.v3"
 )
 
 type (
 	PluginType string
+	PluginID   int
 
 	Metadata struct {
 		// lowercase name without spaces
 		ShortName string `yaml:"name"`
-		// human readable name
+		// human-readable name
 		DisplayName string     `yaml:"display_name"`
+		PluginID    PluginID   `yaml:"plugin_id"`
 		Type        PluginType `yaml:"-"`
 	}
 
@@ -28,6 +32,7 @@ type (
 	Repository[T Plugin] struct {
 		pluginsMU sync.Mutex
 		plugins   map[string]*Claim[T]
+		pluginIDs map[PluginID]struct{}
 	}
 )
 
@@ -102,11 +107,11 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 		panic("invalid plugin type")
 	}
 	// todo: validate name. it should has no spaces, should be lowercase
-	if meta.ShortName == "" {
+	if !regexShort.MatchString(meta.ShortName) {
 		panic("name for a Plugin with type " + meta.Type + " wasn't passed")
 	}
 	// todo: validate display name. it should start with upper case
-	if meta.DisplayName == "" {
+	if !regexDisplay.MatchString(meta.DisplayName) {
 		panic("display name for a Plugin " + meta.ShortName + " wasn't passed")
 	}
 	repo.pluginsMU.Lock()
@@ -117,10 +122,16 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 		panic("multiple Register call for Plugin " + path)
 	}
 
+	id := meta.PluginID
+	if _, ok := repo.pluginIDs[id]; ok {
+		panic(fmt.Sprintf("multiple Register call for PluginID %d", id))
+	}
+
 	repo.plugins[path] = &Claim[T]{
 		Metadata:     *meta,
 		PluginCreate: p,
 	}
+	repo.pluginIDs[id] = struct{}{}
 
 	return *meta
 }
@@ -128,6 +139,7 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 func CreateRepository[T Plugin]() *Repository[T] {
 	return &Repository[T]{
 		plugins:   make(map[string]*Claim[T]),
+		pluginIDs: make(map[PluginID]struct{}),
 		pluginsMU: sync.Mutex{},
 	}
 }
@@ -141,6 +153,9 @@ var MFARepo = CreateRepository[MFA]()
 var RootRepo = CreateRepository[RootPlugin]()
 var SenderRepo = CreateRepository[Sender]()
 var StorageRepo = CreateRepository[Storage]()
+
+var regexShort = regexp.MustCompile("^[a-z]+$")
+var regexDisplay = regexp.MustCompile("^[A-Z][a-z]+$")
 
 func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConfig) (T, error) {
 	var empty T

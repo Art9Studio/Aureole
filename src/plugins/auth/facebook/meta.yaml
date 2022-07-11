@@ -1,3 +1,4 @@
 name: facebook
+plugin_id: 1003
 display_name: facebook
 description: "Facebook Authentication"

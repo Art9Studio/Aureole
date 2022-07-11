@@ -1,3 +1,4 @@
 name: email
+plugin_id: 1001
 display_name: email
 description: "Email Authentication"

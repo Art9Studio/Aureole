@@ -1,3 +1,4 @@
 name: memory
+plugin_id: 1022
 display_name: memory
 description: "In-memory storage"

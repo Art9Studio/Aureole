@@ -1,3 +1,4 @@
 name: vault
+plugin_id: 1012
 display_name: vault
 description: "Vault Crypto Storage"

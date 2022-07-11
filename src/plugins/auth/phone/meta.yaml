@@ -1,3 +1,4 @@
 name: phone
+plugin_id: 1005
 display_name: phone
 description: "Phone Authentication"

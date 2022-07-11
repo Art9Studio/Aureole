@@ -1,3 +1,4 @@
 name: jwt
+plugin_id: 1015
 display_name: JWT
 description: "JWT issuer"
