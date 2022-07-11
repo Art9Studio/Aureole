@@ -96,7 +96,7 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 	if err != nil {
 		return *meta
 	}
-	// todo: validate Type. it should be enum.
+
 	meta.Type, err = toPluginType[T]()
 	if err != nil {
 		panic("invalid plugin type")
