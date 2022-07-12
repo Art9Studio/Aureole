@@ -29,7 +29,7 @@ func init() {
 type (
 	email struct {
 		pluginAPI     core.PluginAPI
-		rawConf       configs.PluginConfig
+		rawConf       configs.AuthPluginConfig
 		conf          *config
 		sender        core.Sender
 		magicLink     *url.URL
@@ -45,7 +45,7 @@ func (e *email) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
-func Create(conf configs.PluginConfig) core.Authenticator {
+func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &email{rawConf: conf}
 }
 

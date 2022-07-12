@@ -33,7 +33,7 @@ func init() {
 
 type apple struct {
 	pluginAPI core.PluginAPI
-	rawConf   configs.PluginConfig
+	rawConf   configs.AuthPluginConfig
 	conf      *config
 	secretKey core.CryptoKey
 	publicKey core.CryptoKey
@@ -44,7 +44,7 @@ func (a *apple) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
-func Create(conf configs.PluginConfig) core.Authenticator {
+func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &apple{rawConf: conf}
 }
 

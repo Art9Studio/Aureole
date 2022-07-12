@@ -77,7 +77,6 @@ var keyMap = map[tokenType]map[tokenResp]string{
 	},
 }
 
-// INFO: надо было менять в интерфейсе  Issure GetResponsesDoc что бы он возвращал ошибку?
 func Create(conf configs.PluginConfig) core.Issuer {
 	return &jwtIssuer{rawConf: conf}
 }
@@ -141,7 +140,7 @@ func (j *jwtIssuer) GetResponseHeader() openapi3.Headers {
 	return openapi3.Headers{}
 }
 
-func (j *jwtIssuer) GetResponsesDoc() (*openapi3.Responses, error) {
+func (j *jwtIssuer) GetOAS3SuccessResponse() (*openapi3.Response, error) {
 	// todo: finish body Schema
 	bodySchema, err := openapi3gen.NewSchemaRefForValue(Response{}, nil)
 	if err != nil {
@@ -149,25 +148,20 @@ func (j *jwtIssuer) GetResponsesDoc() (*openapi3.Responses, error) {
 	}
 
 	okStatusDescription := "Successfully authorize and return refresh and access tokens"
-	okStatus := strconv.Itoa(http.StatusOK)
 
-	responses := openapi3.Responses{
-		okStatus: &openapi3.ResponseRef{
-			Value: &openapi3.Response{
-				Description: &okStatusDescription,
-				Headers:     j.GetResponseHeader(),
-				Content: openapi3.Content{
-					"application/json": {
-						Schema: &openapi3.SchemaRef{
-							Value: bodySchema.Value,
-						},
-					},
+	response := &openapi3.Response{
+		Description: &okStatusDescription,
+		Headers:     j.GetResponseHeader(),
+		Content: openapi3.Content{
+			"application/json": {
+				Schema: &openapi3.SchemaRef{
+					Value: bodySchema.Value,
 				},
 			},
 		},
 	}
 
-	return &responses, nil
+	return response, nil
 }
 
 func (j jwtIssuer) GetMetadata() core.Metadata {

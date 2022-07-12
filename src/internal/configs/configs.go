@@ -2,76 +2,77 @@ package configs
 
 import (
 	"fmt"
-	"os"
-
-	"aureole/pkg/configuro"
-
 	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
 type PluginConfig struct {
-	Plugin string    `config:"plugin"`
-	Name   string    `config:"name"`
-	Config RawConfig `config:"config"`
+	Plugin string    `mapstructure:"plugin"`
+	Name   string    `mapstructure:"name"`
+	Config RawConfig `mapstructure:"config"`
+}
+
+type AuthPluginConfig struct {
+	PluginConfig `mapstructure:",squash"`
+	Filter       string `mapstructure:"filter"`
 }
 
 type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion string `config:"api_version"`
-		PingPath   string `config:"-"`
-		TestRun    bool   `config:"test_run"`
-		Apps       []App  `config:"apps"`
+		APIVersion string `mapstructure:"api_version"`
+		PingPath   string `mapstructure:"-"`
+		TestRun    bool   `mapstructure:"test_run"`
+		Apps       []App  `mapstructure:"apps"`
 	}
 
 	App struct {
-		Name           string         `config:"name"`
-		Host           string         `config:"host"`
-		PathPrefix     string         `config:"path_prefix"`
-		AuthSessionExp int            `config:"auth_session_exp"`
-		Internal       Internal       `config:"internal"`
-		Auth           []PluginConfig `config:"auth"`
-		Issuer         PluginConfig   `config:"issuer"`
-		MFA            []PluginConfig `config:"mfa"`
-		IDManager      PluginConfig   `config:"id_manager"`
-		CryptoStorages []PluginConfig `config:"crypto_storages"`
-		Storages       []PluginConfig `config:"storages"`
-		CryptoKeys     []PluginConfig `config:"crypto_keys"`
-		Senders        []PluginConfig `config:"senders"`
-		RootPlugins    []PluginConfig `config:"root_plugins"`
+		Name           string             `mapstructure:"name"`
+		Host           string             `mapstructure:"host"`
+		PathPrefix     string             `mapstructure:"path_prefix"`
+		AuthSessionExp int                `mapstructure:"auth_session_exp"`
+		Internal       Internal           `mapstructure:"internal"`
+		Auth           []AuthPluginConfig `mapstructure:"auth"`
+		Issuer         PluginConfig       `mapstructure:"issuer"`
+		MFA            []PluginConfig     `mapstructure:"mfa"`
+		IDManager      PluginConfig       `mapstructure:"id_manager"`
+		CryptoStorages []PluginConfig     `mapstructure:"crypto_storages"`
+		Storages       []PluginConfig     `mapstructure:"storages"`
+		CryptoKeys     []PluginConfig     `mapstructure:"crypto_keys"`
+		Senders        []PluginConfig     `mapstructure:"senders"`
+		RootPlugins    []PluginConfig     `mapstructure:"root_plugins"`
 	}
 
 	Internal struct {
-		SignKey string `config:"sign_key"`
-		EncKey  string `config:"enc_key"`
-		Storage string `config:"storage"`
+		SignKey string `mapstructure:"sign_key"`
+		EncKey  string `mapstructure:"enc_key"`
+		Storage string `mapstructure:"storage"`
 	}
 )
 
 func LoadMainConfig() (*Project, error) {
 	var (
 		confPath string
-		ok       bool
 	)
-
 	_ = godotenv.Load("./.env")
-	if confPath, ok = os.LookupEnv("AUREOLE_CONF_PATH"); !ok {
+
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("AUREOLE")
+
+	if confPath = viper.GetString("conf_path"); confPath == "" {
 		confPath = "./config.yaml"
 	}
 
-	confLoader, err := configuro.NewConfig(
-		configuro.WithLoadFromConfigFile(confPath, true),
-		configuro.WithoutValidateByTags(),
-		configuro.WithLoadDotEnv(".env"),
-		configuro.WithExpandEnvVars(),
-	)
+	viper.SetConfigType("yaml")
+	viper.SetConfigFile(confPath)
+	err := viper.ReadInConfig()
 	if err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)
 	}
 
 	rawConf := &Project{}
-	if err = confLoader.Load(rawConf); err != nil {
+	if err := viper.Unmarshal(&rawConf); err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)
 	}
 	rawConf.setDefaults()

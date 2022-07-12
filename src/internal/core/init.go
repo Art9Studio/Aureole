@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"log"
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -200,14 +202,13 @@ func createRootPlugins(repository *Repository[RootPlugin], app *app, conf config
 	}
 }
 
-func createAuthenticators(repository *Repository[Authenticator], app *app, conf configs.App) {
+func createAuthenticators(repository *AuthenticatorRepository, app *app, conf configs.App) {
 	//clearAuthnDuplicate(&conf)
 
 	app.authenticators = make(map[string]Authenticator, len(conf.Auth))
 	for i := range conf.Auth {
 		authnConf := conf.Auth[i]
-		creator := CreatePlugin[Authenticator]
-		authenticator, err := creator(repository, authnConf)
+		authenticator, err := CreateAuthPlugin(repository, authnConf)
 		if err != nil {
 			fmt.Printf("app %s: cannot create authenticator %s: %v\n", app.name, authnConf.Plugin, err)
 		}
@@ -428,17 +429,33 @@ func initAuthenticators(app *app, p *project, r *router) {
 
 func assembleOAS3Operation(app *app, displayName string) *openapi3.Operation {
 	// todo: optimize it and do not call every time
-	responseData, err := app.issuer.GetResponsesDoc()
+	successResponseData, err := app.issuer.GetOAS3SuccessResponse()
 	if err != nil {
 		log.Println("cannot get responses doc for auth plugin ", displayName)
 		return nil
 	}
+	unauthorisedDescription := "Could not authenticate with " + displayName
+	unauthorisedSchema, err := openapi3gen.NewSchemaRefForValue(AuthUnauthorizedResult{}, nil)
 	return &openapi3.Operation{
 		OperationID: "authWith" + displayName,
 		Tags:        []string{"App \"" + app.name + "\""},
 		Description: "Authenticate with " + displayName,
 		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
-		Responses: *responseData,
+		Responses: openapi3.Responses{
+			strconv.Itoa(http.StatusOK): &openapi3.ResponseRef{
+				Value: successResponseData,
+			},
+			strconv.Itoa(http.StatusUnauthorized): &openapi3.ResponseRef{
+				Value: &openapi3.Response{
+					Description: &unauthorisedDescription,
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {
+							Schema: unauthorisedSchema,
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -481,7 +498,7 @@ func initSecondFactor(app *app, p *project, r *router) {
 					fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, err)
 					app.mfa[meta.ShortName] = nil
 				} else {
-					pathPrefix := "/2fa/" + strings.ReplaceAll(string(meta.ShortName), "_", "-")
+					pathPrefix := "/2fa/" + strings.ReplaceAll(meta.ShortName, "_", "-")
 					routes = append(routes,
 						&ExtendedRoute{
 							Route: Route{

@@ -151,7 +151,7 @@ type (
 	}
 	Issuer interface {
 		Plugin
-		GetResponsesDoc() (*openapi3.Responses, error)
+		GetOAS3SuccessResponse() (*openapi3.Response, error)
 		GetNativeQueries() map[string]string
 		Authorize(*fiber.Ctx, *IssuerPayload) error
 	}
