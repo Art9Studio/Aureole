@@ -1,4 +1,4 @@
 name: redis
 plugin_id: 1023
-display_name: redis
+display_name: Redis
 description: "redis storage"

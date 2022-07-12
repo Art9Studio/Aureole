@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"sync"
+	"unicode"
 
 	"aureole/internal/configs"
 
@@ -111,7 +112,7 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 		panic("name for a Plugin with type " + meta.Type + " wasn't passed")
 	}
 	// todo: validate display name. it should start with upper case
-	if !regexDisplay.MatchString(meta.DisplayName) {
+	if len(meta.DisplayName) == 0 && !unicode.IsUpper([]rune(meta.DisplayName)[0]) {
 		panic("display name for a Plugin " + meta.ShortName + " wasn't passed")
 	}
 	repo.pluginsMU.Lock()
@@ -154,8 +155,8 @@ var RootRepo = CreateRepository[RootPlugin]()
 var SenderRepo = CreateRepository[Sender]()
 var StorageRepo = CreateRepository[Storage]()
 
-var regexShort = regexp.MustCompile("^[a-z]+$")
-var regexDisplay = regexp.MustCompile("^[A-Z][a-z]+$")
+// regexShort validates only lowercase string with underscore, must start and end with letter
+var regexShort = regexp.MustCompile("^[a-z](?:_?[a-z]+)*$")
 
 func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConfig) (T, error) {
 	var empty T
