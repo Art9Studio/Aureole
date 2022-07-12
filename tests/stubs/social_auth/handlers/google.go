@@ -37,20 +37,20 @@ func GoogleTokenHandler(c *fiber.Ctx) error {
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, "123456"); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 	if err := token.Set("email", "example@gmail.com"); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	signed, err := jwt.Sign(token, jwa.RS256, key)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	jwx "github.com/lestrrat-go/jwx/jwk"
@@ -26,7 +27,7 @@ func getPemKeys(j *jwk) func(*fiber.Ctx) error {
 
 			var rawKey interface{}
 			if err := key.Raw(&rawKey); err != nil {
-				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+				return core.SendError(c, http.StatusInternalServerError, err.Error())
 			}
 
 			var (
@@ -38,7 +39,7 @@ func getPemKeys(j *jwk) func(*fiber.Ctx) error {
 			} else {
 				pemData, err = x509.MarshalPKIXPublicKey(rawKey)
 				if err != nil {
-					return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+					return core.SendError(c, http.StatusInternalServerError, err.Error())
 				}
 			}
 
@@ -47,7 +48,7 @@ func getPemKeys(j *jwk) func(*fiber.Ctx) error {
 				Bytes: pemData,
 			})
 			if pemKey == nil {
-				return core.SendError(c, fiber.StatusInternalServerError, "cannot get pem from jwk")
+				return core.SendError(c, http.StatusInternalServerError, "cannot get pem from jwk")
 			}
 
 			pemKeySet[key.KeyID()] = string(pemKey)

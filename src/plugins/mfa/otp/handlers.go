@@ -21,7 +21,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 
 		secret, err := generateSecret(g.pluginAPI)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		fa2Data["secret"] = secret
 
@@ -33,7 +33,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		if g.conf.ScratchCode.Num != 0 {
 			scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 			if err != nil {
-				return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+				return core.SendError(c, http.StatusInternalServerError, err.Error())
 			}
 			fa2Data["scratch_codes"] = scratchCodes
 			response["scratch_code"] = scratchCodes
@@ -42,7 +42,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		cred := &core.Credential{}
 		qr, err := qrcode.Encode(otp.ProvisionURIWithIssuer(cred.Value, g.conf.Iss), qrcode.Low, 256)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		response["qr"] = qr
 
@@ -52,7 +52,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			Payload:      fa2Data,
 		})
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(response)
 	}
@@ -65,7 +65,7 @@ func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 
 		scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		err = g.manager.On2FA(cred, &core.MFAData{
 			PluginID:     ID,
@@ -73,7 +73,7 @@ func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},
 		})
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(&fiber.Map{"scratch_codes": scratchCodes})
 	}

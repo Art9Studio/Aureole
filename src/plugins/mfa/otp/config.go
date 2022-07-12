@@ -10,15 +10,15 @@ const (
 )
 
 type config struct {
-	Alg           string `mapstructure:"alg"`
-	Iss           string `mapstructure:"iss"`
-	WindowSize    int    `mapstructure:"window_size"`
-	DisallowReuse bool   `mapstructure:"disallow_reuse"`
-	MaxAttempts   int    `mapstructure:"max_attempts"`
+	Alg           string `mapstructure:"alg" json:"alg"`
+	Iss           string `mapstructure:"iss" json:"iss"`
+	WindowSize    int    `mapstructure:"window_size" json:"window_size"`
+	DisallowReuse bool   `mapstructure:"disallow_reuse" json:"disallow_reuse"`
+	MaxAttempts   int    `mapstructure:"max_attempts" json:"max_attempts"`
 	ScratchCode   struct {
-		Num      int    `mapstructure:"num"`
-		Alphabet string `mapstructure:"alphabet"`
-	} `mapstructure:"scratch_code"`
+		Num      int    `mapstructure:"num" json:"num"`
+		Alphabet string `mapstructure:"alphabet" json:"alphabet"`
+	} `mapstructure:"scratch_code" json:"scratch_code"`
 }
 
 func (c *config) setDefaults() {

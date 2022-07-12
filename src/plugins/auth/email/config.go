@@ -11,9 +11,9 @@ const (
 )
 
 type config struct {
-	Sender   string `mapstructure:"sender"`
-	TmplPath string `mapstructure:"template"`
-	Exp      int    `mapstructure:"exp"`
+	Sender   string `mapstructure:"sender" json:"sender"`
+	TmplPath string `mapstructure:"template" json:"template"`
+	Exp      int    `mapstructure:"exp" json:"exp"`
 }
 
 func (c *config) setDefaults() {

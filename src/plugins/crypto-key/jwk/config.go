@@ -5,16 +5,16 @@ import (
 )
 
 type config struct {
-	Kty             string `mapstructure:"kty"`
-	Alg             string `mapstructure:"alg"`
-	Use             string `mapstructure:"use"`
-	Curve           string `mapstructure:"curve"`
-	Size            int    `mapstructure:"size"`
-	Kid             string `mapstructure:"kid"`
-	RefreshInterval int    `mapstructure:"refresh_interval"`
-	RetriesNum      int    `mapstructure:"retries_num"`
-	RetryInterval   int    `mapstructure:"retry_interval"`
-	Storage         string `mapstructure:"storage"`
+	Kty             string `mapstructure:"kty" json:"kty"`
+	Alg             string `mapstructure:"alg" json:"alg"`
+	Use             string `mapstructure:"use" json:"use"`
+	Curve           string `mapstructure:"curve" json:"curve"`
+	Size            int    `mapstructure:"size" json:"size"`
+	Kid             string `mapstructure:"kid" json:"kid"`
+	RefreshInterval int    `mapstructure:"refresh_interval" json:"refresh_interval"`
+	RetriesNum      int    `mapstructure:"retries_num" json:"retries_num"`
+	RetryInterval   int    `mapstructure:"retry_interval" json:"retry_interval"`
+	Storage         string `mapstructure:"storage" json:"storage"`
 	PathPrefix      string
 }
 

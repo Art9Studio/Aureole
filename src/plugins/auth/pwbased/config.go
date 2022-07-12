@@ -17,22 +17,22 @@ const (
 )
 
 type config struct {
-	MainHasher    pwhasher.Config   `mapstructure:"main_hasher"`
-	CompatHashers []pwhasher.Config `mapstructure:"compat_hashers"`
+	MainHasher    pwhasher.Config   `mapstructure:"main_hasher" json:"main_hasher"`
+	CompatHashers []pwhasher.Config `mapstructure:"compat_hashers" json:"compat_hashers"`
 	Register      struct {
-		IsLoginAfter  bool `mapstructure:"login_after"`
-		IsVerifyAfter bool `mapstructure:"verify_after"`
-	} `mapstructure:"register"`
+		IsLoginAfter  bool `mapstructure:"login_after" json:"login_after"`
+		IsVerifyAfter bool `mapstructure:"verify_after" json:"verify_after"`
+	} `mapstructure:"register" json:"register"`
 	Reset struct {
-		Sender   string `mapstructure:"sender"`
-		TmplPath string `mapstructure:"template"`
-		Exp      int    `mapstructure:"exp"`
-	} `mapstructure:"password_reset"`
+		Sender   string `mapstructure:"sender" json:"sender"`
+		TmplPath string `mapstructure:"template" json:"template"`
+		Exp      int    `mapstructure:"exp" json:"exp"`
+	} `mapstructure:"password_reset" json:"password_reset"`
 	Verify struct {
-		Sender   string `mapstructure:"sender"`
-		TmplPath string `mapstructure:"template"`
-		Exp      int    `mapstructure:"exp"`
-	} `mapstructure:"verification"`
+		Sender   string `mapstructure:"sender" json:"sender"`
+		TmplPath string `mapstructure:"template" json:"template"`
+		Exp      int    `mapstructure:"exp" json:"exp"`
+	} `mapstructure:"verification" json:"verification"`
 }
 
 func (c *config) setDefaults() {

@@ -10,7 +10,7 @@ import (
 var (
 	openapiDocStruct = &openapiDoc{}
 	defaultErrResp   = openapi3.NewResponse().
-				WithDescription("Unauthorized error").
+				WithDescription("Unauthorized Error").
 				WithJSONSchemaRef(&openapi3.SchemaRef{Ref: "#/components/schemas/ErrorMessage"})
 
 	mfaListResp = openapi3.NewResponse().
@@ -86,7 +86,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 }
 
 //
-//func assembleAuthNDoc(a *app, authzResp *openapi3.Responses) error {
+//func assembleAuthNDoc(a *app, authzResp *openapi3.Responses) Error {
 //	for _, authn := range a.authenticators {
 //		if authn != nil {
 //			authzRespCopy, err := copyAuthzResp(authzResp)
@@ -131,7 +131,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 //	return nil
 //}
 //
-//func assemble2FADoc(a *app, authzResp *openapi3.Responses) error {
+//func assemble2FADoc(a *app, authzResp *openapi3.Responses) Error {
 //	for _, mfa := range a.mfa {
 //		if mfa != nil {
 //			authzRespCopy, err := copyAuthzResp(authzResp)
@@ -175,7 +175,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 //	return nil
 //}
 //
-//func assemble2FAVerifyDocs(paths *openapi3.Paths, authzResp *openapi3.Responses) (*openapi3.PathItem, error) {
+//func assemble2FAVerifyDocs(paths *openapi3.Paths, authzResp *openapi3.Responses) (*openapi3.PathItem, Error) {
 //	pathItem := paths.Paths["/verify"]
 //	delete(paths.Paths, "/verify")
 //
@@ -197,7 +197,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 //	return &pathItem, nil
 //}
 //
-//func assemble2FAStartDocs(paths *openapi3.Paths) (*openapi3.PathItem, error) {
+//func assemble2FAStartDocs(paths *openapi3.Paths) (*openapi3.PathItem, Error) {
 //	pathItem := paths.Paths["/start"]
 //	delete(paths.Paths, "/start")
 //
@@ -215,7 +215,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 //	return &pathItem, nil
 //}
 //
-//func assemblePluginsDoc(a *app) error {
+//func assemblePluginsDoc(a *app) Error {
 //	if a.issuer != nil {
 //		err := appendPluginSpec(a.issuer, a, "authZ", a.issuer.GetMetadata().ShortName)
 //		if err != nil {
@@ -288,7 +288,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 //	return nil
 //}
 //
-//func appendPluginSpec(Plugin interface{}, a *app, pluginKind Plugin.PluginType, pluginName string) error {
+//func appendPluginSpec(Plugin interface{}, a *app, pluginKind Plugin.PluginType, pluginName string) Error {
 //	pluginSwagger, ok := Plugin.(Plugin.OpenAPISpecGetter)
 //	if ok {
 //		paths, defs := pluginSwagger.GetCustomAppRoutes()
@@ -339,7 +339,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 //	return strings.ReplaceAll(pluginSpecsJson, oldDefRef, newDefRef)
 //}
 //
-//func copyAuthzResp(authzResp *openapi3.Responses) (*openapi3.Responses, error) {
+//func copyAuthzResp(authzResp *openapi3.Responses) (*openapi3.Responses, Error) {
 //	var resp openapi3.Responses
 //	bytes, err := authzResp.MarshalJSON()
 //	if err != nil {

@@ -7,19 +7,19 @@ import (
 const refreshUrl = "/jwt/refresh"
 
 type config struct {
-	Iss                string    `mapstructure:"iss"`
-	Sub                bool      `mapstructure:"sub"`
-	Aud                []string  `mapstructure:"aud"`
-	Nbf                int       `mapstructure:"nbf"`
-	Iat                bool      `mapstructure:"iat"`
-	AccessTokenBearer  tokenResp `mapstructure:"access_bearer"`
-	RefreshTokenBearer tokenResp `mapstructure:"refresh_bearer"`
-	SignKey            string    `mapstructure:"sign_key"`
-	VerifyKeys         []string  `mapstructure:"verify_keys"`
-	AccessExp          int       `mapstructure:"access_exp"`
-	RefreshExp         int       `mapstructure:"refresh_exp"`
-	TmplPath           string    `mapstructure:"payload"`
-	NativeQueries      string    `mapstructure:"native_queries"`
+	Iss                string    `mapstructure:"iss" json:"iss"`
+	Sub                bool      `mapstructure:"sub" json:"sub"`
+	Aud                []string  `mapstructure:"aud" json:"aud"`
+	Nbf                int       `mapstructure:"nbf" json:"nbf"`
+	Iat                bool      `mapstructure:"iat" json:"iat"`
+	AccessTokenBearer  tokenResp `mapstructure:"access_bearer" json:"access_bearer"`
+	RefreshTokenBearer tokenResp `mapstructure:"refresh_bearer" json:"refresh_bearer"`
+	SignKey            string    `mapstructure:"sign_key" json:"sign_key"`
+	VerifyKeys         []string  `mapstructure:"verify_keys" json:"verify_keys"`
+	AccessExp          int       `mapstructure:"access_exp" json:"access_exp"`
+	RefreshExp         int       `mapstructure:"refresh_exp" json:"refresh_exp"`
+	TmplPath           string    `mapstructure:"payload" json:"payload"`
+	NativeQueries      string    `mapstructure:"native_queries" json:"native_queries"`
 }
 
 func (c *config) setDefaults() {

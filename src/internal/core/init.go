@@ -392,13 +392,17 @@ func initAuthenticators(app *app, p *project, r *router) {
 			} else {
 				meta := authenticator.GetMetadata()
 				pathPrefix := getPluginPathPrefix(app.pathPrefix, meta.ShortName)
+				OAS3successResponse, err := app.issuer.GetOAS3SuccessResponse()
+				if err != nil {
+					log.Println("cannot get success response from issuer in app ", app.name)
+				}
 
 				pipelineAuthRoute := &ExtendedRoute{
 					Route: Route{
 						Method:        authenticator.GetAuthHTTPMethod(),
 						Path:          pathPrefix + "/auth",
 						Handler:       pipelineAuthWrapper(authenticator.GetAuthHandler(), app),
-						OAS3Operation: assembleOAS3Operation(app, meta.DisplayName),
+						OAS3Operation: assembleOAS3Operation(app, authenticator, meta, OAS3successResponse),
 					},
 					Metadata: meta,
 				}
@@ -427,30 +431,31 @@ func initAuthenticators(app *app, p *project, r *router) {
 	r.addAppRoutes(app.name, routes)
 }
 
-func assembleOAS3Operation(app *app, displayName string) *openapi3.Operation {
+// todo (Talgat): move to the openapi.go file
+func assembleOAS3Operation(app *app, auth Authenticator, meta Metadata, successResp *openapi3.Response) *openapi3.Operation {
+	displayName := meta.DisplayName
 	// todo: optimize it and do not call every time
-	successResponseData, err := app.issuer.GetOAS3SuccessResponse()
-	if err != nil {
-		log.Println("cannot get responses doc for auth plugin ", displayName)
-		return nil
-	}
 	unauthorisedDescription := "Could not authenticate with " + displayName
-	unauthorisedSchema, err := openapi3gen.NewSchemaRefForValue(AuthUnauthorizedResult{}, nil)
+	unauthorisedSchema, _ := openapi3gen.NewSchemaRefForValue(AuthUnauthorizedResult{}, nil)
 	return &openapi3.Operation{
 		OperationID: "authWith" + displayName,
 		Tags:        []string{"App \"" + app.name + "\""},
 		Description: "Authenticate with " + displayName,
 		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
+		// todo (Talgat): uncomment when it will be implemented
+		//RequestBody: &openapi3.RequestBodyRef{Value: auth.GetOAS3AuthRequestBody()},
 		Responses: openapi3.Responses{
 			strconv.Itoa(http.StatusOK): &openapi3.ResponseRef{
-				Value: successResponseData,
+				Value: successResp,
 			},
 			strconv.Itoa(http.StatusUnauthorized): &openapi3.ResponseRef{
 				Value: &openapi3.Response{
 					Description: &unauthorisedDescription,
 					Content: map[string]*openapi3.MediaType{
 						"application/json": {
-							Schema: unauthorisedSchema,
+							Schema: &openapi3.SchemaRef{
+								Value: unauthorisedSchema.Value,
+							},
 						},
 					},
 				},

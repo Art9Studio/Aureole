@@ -3,32 +3,33 @@ package phone
 import (
 	"aureole/internal/core"
 	"github.com/gofiber/fiber/v2"
+	"net/http"
 )
 
 func sendOTP(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var phone phone
 		if err := c.BodyParser(&phone); err != nil {
-			return core.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
 		if phone.Phone == "" {
-			return core.SendError(c, fiber.StatusBadRequest, "phone required")
+			return core.SendError(c, http.StatusBadRequest, "phone required")
 		}
 		i := core.Identity{Phone: &phone.Phone}
 
 		randStr, err := p.pluginAPI.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		otp := p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix
 		encOtp, err := p.pluginAPI.Encrypt(p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		err = p.pluginAPI.SaveToService(phone.Phone, encOtp, p.conf.Otp.Exp)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		token, err := p.pluginAPI.CreateJWT(
@@ -38,12 +39,12 @@ func sendOTP(p *authn) func(*fiber.Ctx) error {
 			},
 			p.conf.Otp.Exp)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		err = p.sender.Send(*i.Phone, "", p.tmpl, p.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		return c.JSON(fiber.Map{"token": token})
@@ -54,37 +55,37 @@ func resendOTP(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		var input *otp
 		if err := c.BodyParser(input); err != nil {
-			return core.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
 		if input.Token == "" {
-			return core.SendError(c, fiber.StatusBadRequest, "token are required")
+			return core.SendError(c, http.StatusBadRequest, "token are required")
 		}
 
 		t, err := p.pluginAPI.ParseJWT(input.Token)
 		if err != nil {
-			return core.SendError(c, fiber.StatusBadRequest, err.Error())
+			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
 		phone, ok := t.Get("phone")
 		if !ok {
-			return core.SendError(c, fiber.StatusBadRequest, "cannot get phone from token")
+			return core.SendError(c, http.StatusBadRequest, "cannot get phone from token")
 		}
 		if err := p.pluginAPI.InvalidateJWT(t); err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		randStr, err := p.pluginAPI.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		otp := p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix
 		encOtp, err := p.pluginAPI.Encrypt(p.conf.Otp.Prefix + randStr + p.conf.Otp.Postfix)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		err = p.pluginAPI.SaveToService(phone.(string), encOtp, p.conf.Otp.Exp)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		token, err := p.pluginAPI.CreateJWT(
@@ -94,12 +95,12 @@ func resendOTP(p *authn) func(*fiber.Ctx) error {
 			},
 			p.conf.Otp.Exp)
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		err = p.sender.Send(phone.(string), "", p.tmpl, p.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
-			return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(&fiber.Map{"token": token})
 	}

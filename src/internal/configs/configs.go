@@ -7,47 +7,47 @@ import (
 )
 
 type PluginConfig struct {
-	Plugin string    `mapstructure:"plugin"`
-	Name   string    `mapstructure:"name"`
-	Config RawConfig `mapstructure:"config"`
+	Plugin string    `mapstructure:"plugin" json:"plugin"`
+	Name   string    `mapstructure:"name" json:"name"`
+	Config RawConfig `mapstructure:"config" json:"config"`
 }
 
 type AuthPluginConfig struct {
-	PluginConfig `mapstructure:",squash"`
-	Filter       string `mapstructure:"filter"`
+	PluginConfig `mapstructure:",squash" json:",inline"`
+	Filter       string `mapstructure:"filter" json:"filter"`
 }
 
 type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion string `mapstructure:"api_version"`
-		PingPath   string `mapstructure:"-"`
-		TestRun    bool   `mapstructure:"test_run"`
-		Apps       []App  `mapstructure:"apps"`
+		APIVersion string `mapstructure:"api_version" json:"api_version"`
+		PingPath   string `mapstructure:"-" json:"-"`
+		TestRun    bool   `mapstructure:"test_run" json:"test_run"`
+		Apps       []App  `mapstructure:"apps" json:"apps"`
 	}
 
 	App struct {
-		Name           string             `mapstructure:"name"`
-		Host           string             `mapstructure:"host"`
-		PathPrefix     string             `mapstructure:"path_prefix"`
-		AuthSessionExp int                `mapstructure:"auth_session_exp"`
-		Internal       Internal           `mapstructure:"internal"`
-		Auth           []AuthPluginConfig `mapstructure:"auth"`
-		Issuer         PluginConfig       `mapstructure:"issuer"`
-		MFA            []PluginConfig     `mapstructure:"mfa"`
-		IDManager      PluginConfig       `mapstructure:"id_manager"`
-		CryptoStorages []PluginConfig     `mapstructure:"crypto_storages"`
-		Storages       []PluginConfig     `mapstructure:"storages"`
-		CryptoKeys     []PluginConfig     `mapstructure:"crypto_keys"`
-		Senders        []PluginConfig     `mapstructure:"senders"`
-		RootPlugins    []PluginConfig     `mapstructure:"root_plugins"`
+		Name           string             `mapstructure:"name" json:"name"`
+		Host           string             `mapstructure:"host" json:"host"`
+		PathPrefix     string             `mapstructure:"path_prefix" json:"path_prefix"`
+		AuthSessionExp int                `mapstructure:"auth_session_exp" json:"auth_session_exp"`
+		Internal       Internal           `mapstructure:"internal" json:"internal"`
+		Auth           []AuthPluginConfig `mapstructure:"auth" json:"auth"`
+		Issuer         PluginConfig       `mapstructure:"issuer" json:"issuer"`
+		MFA            []PluginConfig     `mapstructure:"mfa" json:"mfa"`
+		IDManager      PluginConfig       `mapstructure:"id_manager" json:"id_manager"`
+		CryptoStorages []PluginConfig     `mapstructure:"crypto_storages" json:"crypto_storages"`
+		Storages       []PluginConfig     `mapstructure:"storages" json:"storages"`
+		CryptoKeys     []PluginConfig     `mapstructure:"crypto_keys" json:"crypto_keys"`
+		Senders        []PluginConfig     `mapstructure:"senders" json:"senders"`
+		RootPlugins    []PluginConfig     `mapstructure:"root_plugins" json:"root_plugins"`
 	}
 
 	Internal struct {
-		SignKey string `mapstructure:"sign_key"`
-		EncKey  string `mapstructure:"enc_key"`
-		Storage string `mapstructure:"storage"`
+		SignKey string `mapstructure:"sign_key" json:"sign_key"`
+		EncKey  string `mapstructure:"enc_key" json:"enc_key"`
+		Storage string `mapstructure:"storage" json:"storage"`
 	}
 )
 

@@ -5,11 +5,11 @@ import (
 )
 
 type config struct {
-	Address       string            `mapstructure:"address"`
-	RetriesNum    int               `mapstructure:"retries_num"`
-	RetryInterval int               `mapstructure:"retry_interval"`
-	Timeout       int               `mapstructure:"timeout"`
-	Headers       map[string]string `mapstructure:"headers"`
+	Address       string            `mapstructure:"address" json:"address"`
+	RetriesNum    int               `mapstructure:"retries_num" json:"retries_num"`
+	RetryInterval int               `mapstructure:"retry_interval" json:"retry_interval"`
+	Timeout       int               `mapstructure:"timeout" json:"timeout"`
+	Headers       map[string]string `mapstructure:"headers" json:"headers"`
 }
 
 func (c *config) setDefaults() {

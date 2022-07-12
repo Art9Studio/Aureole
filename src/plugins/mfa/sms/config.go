@@ -8,14 +8,14 @@ const (
 )
 
 type config struct {
-	Sender      string `mapstructure:"sender"`
-	TmplPath    string `mapstructure:"template"`
-	MaxAttempts int    `mapstructure:"max_attempts"`
+	Sender      string `mapstructure:"sender" json:"sender"`
+	TmplPath    string `mapstructure:"template" json:"template"`
+	MaxAttempts int    `mapstructure:"max_attempts" json:"max_attempts"`
 	Otp         struct {
-		Length   int    `mapstructure:"length"`
-		Alphabet string `mapstructure:"alphabet"`
-		Exp      int    `mapstructure:"exp"`
-	} `mapstructure:"otp"`
+		Length   int    `mapstructure:"length" json:"length"`
+		Alphabet string `mapstructure:"alphabet" json:"alphabet"`
+		Exp      int    `mapstructure:"exp" json:"exp"`
+	} `mapstructure:"otp" json:"otp"`
 }
 
 func (c *config) setDefaults() {
