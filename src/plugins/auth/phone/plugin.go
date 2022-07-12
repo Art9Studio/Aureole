@@ -28,7 +28,7 @@ func init() {
 type (
 	authn struct {
 		pluginAPI     core.PluginAPI
-		rawConf       configs.PluginConfig
+		rawConf       configs.AuthPluginConfig
 		conf          *config
 		sender        core.Sender
 		tmpl, tmplExt string
@@ -48,7 +48,7 @@ func (p *authn) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
-func Create(conf configs.PluginConfig) core.Authenticator {
+func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &authn{rawConf: conf}
 }
 

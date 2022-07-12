@@ -30,9 +30,20 @@ type (
 		PluginCreate func(configs.PluginConfig) T
 	}
 
+	AuthenticatorClaim struct {
+		Metadata
+		PluginCreate func(configs.AuthPluginConfig) Authenticator
+	}
+
 	Repository[T Plugin] struct {
 		pluginsMU sync.Mutex
 		plugins   map[string]*Claim[T]
+		pluginIDs map[PluginID]struct{}
+	}
+
+	AuthenticatorRepository struct {
+		pluginsMU sync.Mutex
+		plugins   map[string]*AuthenticatorClaim
 		pluginIDs map[PluginID]struct{}
 	}
 )
@@ -137,6 +148,58 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 	return *meta
 }
 
+func (repo *AuthenticatorRepository) Get(name string) (*AuthenticatorClaim, error) {
+	repo.pluginsMU.Lock()
+	defer repo.pluginsMU.Unlock()
+	path := buildPath(name, TypeAuth)
+	if p, ok := repo.plugins[path]; ok {
+		return p, nil
+	}
+	return nil, fmt.Errorf("there is no pluginCreator for %s", name)
+}
+
+// Register registers Plugin
+func (repo *AuthenticatorRepository) Register(metaYaml []byte, p func(configs.AuthPluginConfig) Authenticator) Metadata {
+	var meta = &Metadata{}
+	err := yaml.Unmarshal(metaYaml, meta)
+	if err != nil {
+		return *meta
+	}
+
+	meta.Type = TypeAuth
+	if err != nil {
+		panic("invalid plugin type")
+	}
+	// todo: validate name. it should has no spaces, should be lowercase
+	if !regexShort.MatchString(meta.ShortName) {
+		panic("name for a Plugin with type " + meta.Type + " wasn't passed")
+	}
+	// todo: validate display name. it should start with upper case
+	if !regexDisplay.MatchString(meta.DisplayName) {
+		panic("display name for a Plugin " + meta.ShortName + " wasn't passed")
+	}
+	repo.pluginsMU.Lock()
+	defer repo.pluginsMU.Unlock()
+
+	path := buildPath(meta.ShortName, meta.Type)
+	if _, ok := repo.plugins[path]; ok {
+		panic("multiple Register call for Plugin " + path)
+	}
+
+	id := meta.PluginID
+	if _, ok := repo.pluginIDs[id]; ok {
+		panic(fmt.Sprintf("multiple Register call for PluginID %d", id))
+	}
+
+	repo.plugins[path] = &AuthenticatorClaim{
+		Metadata:     *meta,
+		PluginCreate: p,
+	}
+	repo.pluginIDs[id] = struct{}{}
+
+	return *meta
+}
+
 func CreateRepository[T Plugin]() *Repository[T] {
 	return &Repository[T]{
 		plugins:   make(map[string]*Claim[T]),
@@ -145,7 +208,11 @@ func CreateRepository[T Plugin]() *Repository[T] {
 	}
 }
 
-var AuthenticatorRepo = CreateRepository[Authenticator]()
+var AuthenticatorRepo = &AuthenticatorRepository{
+	plugins:   make(map[string]*AuthenticatorClaim),
+	pluginIDs: make(map[PluginID]struct{}),
+	pluginsMU: sync.Mutex{},
+}
 var CryptoKeyRepo = CreateRepository[CryptoKey]()
 var CryptoStorageRepo = CreateRepository[CryptoStorage]()
 var IDManagerRepo = CreateRepository[IDManager]()
@@ -157,6 +224,18 @@ var StorageRepo = CreateRepository[Storage]()
 
 // regexShort validates only lowercase string with underscore, must start and end with letter
 var regexShort = regexp.MustCompile("^[a-z](?:_?[a-z]+)*$")
+var regexDisplay = regexp.MustCompile("^.*$")
+
+func CreateAuthPlugin(repository *AuthenticatorRepository, config configs.AuthPluginConfig) (Authenticator, error) {
+	creator, err := repository.Get(config.Plugin)
+	if err != nil {
+		return nil, err
+	}
+
+	plugin := creator.PluginCreate(config)
+
+	return plugin, nil
+}
 
 func CreatePlugin[T Plugin](repository *Repository[T], config configs.PluginConfig) (T, error) {
 	var empty T

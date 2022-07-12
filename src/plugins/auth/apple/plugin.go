@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"net/http"
 	"path"
 	"time"
@@ -32,7 +33,7 @@ func init() {
 
 type apple struct {
 	pluginAPI core.PluginAPI
-	rawConf   configs.PluginConfig
+	rawConf   configs.AuthPluginConfig
 	conf      *config
 	secretKey core.CryptoKey
 	publicKey core.CryptoKey
@@ -43,7 +44,7 @@ func (a *apple) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
-func Create(conf configs.PluginConfig) core.Authenticator {
+func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &apple{rawConf: conf}
 }
 
@@ -210,9 +211,10 @@ func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 func (a *apple) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
-			Method:  http.MethodGet,
-			Path:    pathPrefix,
-			Handler: getAuthCode(a),
+			Method:        http.MethodGet,
+			Path:          pathPrefix,
+			Handler:       getAuthCode(a),
+			OAS3Operation: &openapi3.Operation{},
 		},
 	}
 }

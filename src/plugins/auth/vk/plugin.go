@@ -27,7 +27,7 @@ func init() {
 
 type vk struct {
 	pluginAPI core.PluginAPI
-	rawConf   configs.PluginConfig
+	rawConf   configs.AuthPluginConfig
 	conf      *config
 	provider  *oauth2.Config
 }
@@ -36,7 +36,7 @@ func (v *vk) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
-func Create(conf configs.PluginConfig) core.Authenticator {
+func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &vk{rawConf: conf}
 }
 

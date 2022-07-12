@@ -3,7 +3,7 @@
     <module name="Aureole" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
-      <env name="AUREOLE_CONF_PATH" value="config.light.yaml" />
+      <env name="AUREOLE_CONF_PATH" value="./config.light.yaml" />
     </envs>
     <kind value="PACKAGE" />
     <package value="aureole" />

@@ -5,6 +5,8 @@ import (
 	"aureole/internal/core"
 	"aureole/plugins/auth/pwbased/pwhasher"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,7 +32,7 @@ func init() {
 type (
 	pwBased struct {
 		pluginAPI core.PluginAPI
-		rawConf   configs.PluginConfig
+		rawConf   configs.AuthPluginConfig
 		conf      *config
 		pwHasher  pwhasher.PWHasher
 		reset     struct {
@@ -71,7 +73,7 @@ func (p *pwBased) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
-func Create(conf configs.PluginConfig) core.Authenticator {
+func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &pwBased{rawConf: conf}
 }
 
@@ -224,11 +226,32 @@ func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 }
 
 func (p *pwBased) GetCustomAppRoutes() []*core.Route {
+	value, _ := openapi3gen.NewSchemaRefForValue(credential{}, nil)
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    pathPrefix + registerUrl,
 			Handler: register(p),
+			OAS3Operation: &openapi3.Operation{
+				RequestBody: &openapi3.RequestBodyRef{
+					Value: &openapi3.RequestBody{
+						Content: map[string]*openapi3.MediaType{
+							"application/json": {
+								Schema: value,
+							},
+						},
+					},
+				},
+				Responses: map[string]*openapi3.ResponseRef{
+					"200": {
+						Value: &openapi3.Response{
+							Content: map[string]*openapi3.MediaType{
+								"application/json": {},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 

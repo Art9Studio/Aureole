@@ -27,7 +27,7 @@ func init() {
 
 type google struct {
 	pluginAPI core.PluginAPI
-	rawConf   configs.PluginConfig
+	rawConf   configs.AuthPluginConfig
 	conf      *config
 	provider  *oauth2.Config
 }
@@ -36,7 +36,7 @@ func (g *google) GetAuthHTTPMethod() string {
 	return http.MethodGet
 }
 
-func Create(conf configs.PluginConfig) core.Authenticator {
+func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &google{rawConf: conf}
 }
 
