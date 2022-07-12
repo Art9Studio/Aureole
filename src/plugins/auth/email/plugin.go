@@ -4,10 +4,13 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -134,11 +137,17 @@ func createMagicLink(e *email) *url.URL {
 }
 
 func (e *email) GetCustomAppRoutes() []*core.Route {
+	reqSchema, _ := openapi3gen.NewSchemaRefForValue(input{}, nil)
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    sendUrl,
 			Handler: sendMagicLink(e),
+			OAS3Operation: core.NewOA3Operation(meta, reqSchema, nil, map[string]*openapi3.SchemaRef{
+				strconv.Itoa(http.StatusOK):                  {},
+				strconv.Itoa(http.StatusBadRequest):          nil,
+				strconv.Itoa(http.StatusInternalServerError): nil,
+			}),
 		},
 	}
 }

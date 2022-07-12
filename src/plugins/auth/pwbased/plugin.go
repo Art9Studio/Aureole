@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -59,6 +60,14 @@ type (
 
 	email struct {
 		Email string `json:"email"`
+	}
+
+	tokenQuery struct {
+		Token string `query:"token"`
+	}
+
+	redirectQuery struct {
+		URL string `query:"redirect_url"`
 	}
 
 	linkType string
@@ -226,32 +235,20 @@ func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 }
 
 func (p *pwBased) GetCustomAppRoutes() []*core.Route {
-	value, _ := openapi3gen.NewSchemaRefForValue(credential{}, nil)
+	credentialSchema, _ := openapi3gen.NewSchemaRefForValue(credential{}, nil)
+	emailSchema, _ := openapi3gen.NewSchemaRefForValue(email{}, nil)
+	tokenQuerySchema, _ := openapi3gen.NewSchemaRefForValue(tokenQuery{}, nil)
+	redirectQuerySchema, _ := openapi3gen.NewSchemaRefForValue(redirectQuery{}, nil)
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    pathPrefix + registerUrl,
 			Handler: register(p),
-			OAS3Operation: &openapi3.Operation{
-				RequestBody: &openapi3.RequestBodyRef{
-					Value: &openapi3.RequestBody{
-						Content: map[string]*openapi3.MediaType{
-							"application/json": {
-								Schema: value,
-							},
-						},
-					},
-				},
-				Responses: map[string]*openapi3.ResponseRef{
-					"200": {
-						Value: &openapi3.Response{
-							Content: map[string]*openapi3.MediaType{
-								"application/json": {},
-							},
-						},
-					},
-				},
-			},
+			OAS3Operation: core.NewOA3Operation(meta, credentialSchema, nil, map[string]*openapi3.SchemaRef{
+				strconv.Itoa(http.StatusOK):                  {},
+				strconv.Itoa(http.StatusBadRequest):          nil,
+				strconv.Itoa(http.StatusInternalServerError): nil,
+			}),
 		},
 	}
 
@@ -261,30 +258,62 @@ func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 				Method:  http.MethodPost,
 				Path:    pathPrefix + resetUrl,
 				Handler: Reset(p),
+				OAS3Operation: core.NewOA3Operation(meta, emailSchema, nil, map[string]*openapi3.SchemaRef{
+					strconv.Itoa(http.StatusOK):                  {},
+					strconv.Itoa(http.StatusBadRequest):          nil,
+					strconv.Itoa(http.StatusInternalServerError): nil,
+				}),
 			},
 			{
 				Method:  http.MethodGet,
 				Path:    pathPrefix + resetConfirmUrl,
 				Handler: ResetConfirm(p),
+				OAS3Operation: core.NewOA3Operation(meta, credentialSchema,
+					//Params
+					map[string]*openapi3.SchemaRef{
+						"token":        tokenQuerySchema,
+						"redirect_url": redirectQuerySchema,
+					},
+					//Responses
+					map[string]*openapi3.SchemaRef{
+						strconv.Itoa(http.StatusOK):                  {},
+						strconv.Itoa(http.StatusBadRequest):          nil,
+						strconv.Itoa(http.StatusInternalServerError): nil,
+					}),
 			},
 		}
 		routes = append(routes, resetRoutes...)
 	}
 
 	if verifyEnabled(p) {
-		verifRoutes := []*core.Route{
+		verifyRoutes := []*core.Route{
 			{
 				Method:  http.MethodPost,
 				Path:    pathPrefix + verifyUrl,
 				Handler: Verify(p),
+				OAS3Operation: core.NewOA3Operation(meta, emailSchema, nil, map[string]*openapi3.SchemaRef{
+					strconv.Itoa(http.StatusOK):                  {},
+					strconv.Itoa(http.StatusBadRequest):          nil,
+					strconv.Itoa(http.StatusInternalServerError): nil,
+				}),
 			},
 			{
 				Method:  http.MethodGet,
 				Path:    pathPrefix + verifyConfirmUrl,
 				Handler: VerifyConfirm(p),
+				OAS3Operation: core.NewOA3Operation(meta, nil,
+					map[string]*openapi3.SchemaRef{
+						"token":        tokenQuerySchema,
+						"redirect_url": redirectQuerySchema,
+					},
+					map[string]*openapi3.SchemaRef{
+						strconv.Itoa(http.StatusOK):                  {},
+						strconv.Itoa(http.StatusBadRequest):          nil,
+						strconv.Itoa(http.StatusInternalServerError): nil,
+					}),
 			},
 		}
-		routes = append(routes, verifRoutes...)
+		routes = append(routes, verifyRoutes...)
 	}
 	return routes
 }

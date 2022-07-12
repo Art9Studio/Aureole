@@ -8,6 +8,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
+	"strconv"
 	"time"
 
 	"aureole/internal/configs"
@@ -210,36 +211,17 @@ func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func (a *apple) GetCustomAppRoutes() []*core.Route {
+	// todo: handle documentation of "redirect"
 	value, _ := openapi3gen.NewSchemaRefForValue(struct{}{}, nil)
 	return []*core.Route{
 		{
-			Method:        http.MethodGet,
-			Path:          pathPrefix,
-			Handler:       getAuthCode(a),
-			OAS3Operation: NewOpenAPIOperation(value),
-		},
-	}
-}
-
-func NewOpenAPIOperation(schema *openapi3.SchemaRef) *openapi3.Operation {
-	return &openapi3.Operation{
-		RequestBody: &openapi3.RequestBodyRef{
-			Value: &openapi3.RequestBody{
-				Content: map[string]*openapi3.MediaType{
-					"application/json": {
-						Schema: schema,
-					},
-				},
-			},
-		},
-		Responses: map[string]*openapi3.ResponseRef{
-			"200": {
-				Value: &openapi3.Response{
-					Content: map[string]*openapi3.MediaType{
-						"application/json": {},
-					},
-				},
-			},
+			Method:  http.MethodGet,
+			Path:    pathPrefix,
+			Handler: getAuthCode(a),
+			// todo: handle documentation of "redirect"
+			OAS3Operation: core.NewOA3Operation(meta, value, nil, map[string]*openapi3.SchemaRef{
+				strconv.Itoa(http.StatusOK): &openapi3.SchemaRef{},
+			}),
 		},
 	}
 }

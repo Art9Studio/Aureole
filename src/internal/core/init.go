@@ -6,13 +6,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3gen"
 	"log"
 	"net/http"
 	"net/url"
 	"reflect"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -402,7 +399,7 @@ func initAuthenticators(app *app, p *project, r *router) {
 						Method:        authenticator.GetAuthHTTPMethod(),
 						Path:          pathPrefix + "/auth",
 						Handler:       pipelineAuthWrapper(authenticator.GetAuthHandler(), app),
-						OAS3Operation: assembleOAS3Operation(app, authenticator, meta, OAS3successResponse),
+						OAS3Operation: assembleOAS3Operation(app, meta, OAS3successResponse),
 					},
 					Metadata: meta,
 				}
@@ -429,39 +426,6 @@ func initAuthenticators(app *app, p *project, r *router) {
 		}
 	}
 	r.addAppRoutes(app.name, routes)
-}
-
-// todo (Talgat): move to the openapi.go file
-func assembleOAS3Operation(app *app, auth Authenticator, meta Metadata, successResp *openapi3.Response) *openapi3.Operation {
-	displayName := meta.DisplayName
-	// todo: optimize it and do not call every time
-	unauthorisedDescription := "Could not authenticate with " + displayName
-	unauthorisedSchema, _ := openapi3gen.NewSchemaRefForValue(AuthUnauthorizedResult{}, nil)
-	return &openapi3.Operation{
-		OperationID: "authWith" + displayName,
-		Tags:        []string{"App \"" + app.name + "\""},
-		Description: "Authenticate with " + displayName,
-		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
-		// todo (Talgat): uncomment when it will be implemented
-		//RequestBody: &openapi3.RequestBodyRef{Value: auth.GetOAS3AuthRequestBody()},
-		Responses: openapi3.Responses{
-			strconv.Itoa(http.StatusOK): &openapi3.ResponseRef{
-				Value: successResp,
-			},
-			strconv.Itoa(http.StatusUnauthorized): &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: &unauthorisedDescription,
-					Content: map[string]*openapi3.MediaType{
-						"application/json": {
-							Schema: &openapi3.SchemaRef{
-								Value: unauthorisedSchema.Value,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 }
 
 func getPluginPathPrefix(appPathPrefix, shortName string) string {

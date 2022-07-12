@@ -141,6 +141,7 @@ func (g *google) GetCustomAppRoutes() []*core.Route {
 			Method:  http.MethodGet,
 			Path:    pathPrefix,
 			Handler: getAuthCode(g),
+			// todo(Talgat): handle "redirect"
 		},
 	}
 }

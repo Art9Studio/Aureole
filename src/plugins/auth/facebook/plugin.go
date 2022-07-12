@@ -119,11 +119,14 @@ func initProvider(f *facebook) error {
 }
 
 func (f *facebook) GetCustomAppRoutes() []*core.Route {
+
 	return []*core.Route{
 		{
 			Method:  http.MethodGet,
 			Path:    pathPrefix,
 			Handler: getAuthCode(f),
+			// todo (Talgat): handle "redirect"
+			//OAS3Operation: core.NewOA3Operation(meta, nil, nil),
 		},
 	}
 }

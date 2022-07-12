@@ -96,7 +96,12 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 
 func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		rawToken := c.Query("token")
+		tokenq := &tokenQuery{}
+		if err := c.QueryParser(tokenq); err != nil {
+			return core.SendError(c, http.StatusBadRequest, "token not found")
+		}
+
+		rawToken := tokenq.Token
 		if rawToken == "" {
 			return core.SendError(c, http.StatusBadRequest, "token not found")
 		}
@@ -151,7 +156,11 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 
 		// todo: add expiring any current user session
-		redirectUrl := c.Query("redirect_url")
+		redirectQuery := &redirectQuery{}
+		if err := c.QueryParser(redirectQuery); err != nil {
+			return core.SendError(c, http.StatusBadRequest, "token not found")
+		}
+		redirectUrl := redirectQuery.URL
 		if redirectUrl != "" {
 			return c.Redirect(redirectUrl)
 		}
@@ -219,7 +228,11 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
-		redirectUrl := c.Query("redirect_url")
+		redirectQuery := &redirectQuery{}
+		if err := c.QueryParser(redirectQuery); err != nil {
+			return core.SendError(c, http.StatusBadRequest, "token not found")
+		}
+		redirectUrl := redirectQuery.URL
 		if redirectUrl != "" {
 			return c.Redirect(redirectUrl)
 		}

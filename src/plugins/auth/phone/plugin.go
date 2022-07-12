@@ -4,9 +4,12 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -41,6 +44,10 @@ type (
 	otp struct {
 		Token string `json:"token"`
 		Otp   string `json:"otp"`
+	}
+
+	token struct {
+		Token string `json:"token"`
 	}
 )
 
@@ -170,16 +177,29 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 }
 
 func (a *authn) GetCustomAppRoutes() []*core.Route {
+	phoneSchema, _ := openapi3gen.NewSchemaRefForValue(phone{}, nil)
+	otpSchema, _ := openapi3gen.NewSchemaRefForValue(otp{}, nil)
+	resSchema, _ := openapi3gen.NewSchemaRefForValue(token{}, nil)
 	return []*core.Route{
 		{
 			Method:  http.MethodPost,
 			Path:    sendUrl,
 			Handler: sendOTP(a),
+			OAS3Operation: core.NewOA3Operation(meta, phoneSchema, nil, map[string]*openapi3.SchemaRef{
+				strconv.Itoa(http.StatusOK):                  resSchema,
+				strconv.Itoa(http.StatusBadRequest):          nil,
+				strconv.Itoa(http.StatusInternalServerError): nil,
+			}),
 		},
 		{
 			Method:  http.MethodPost,
 			Path:    resendUrl,
 			Handler: resendOTP(a),
+			OAS3Operation: core.NewOA3Operation(meta, otpSchema, nil, map[string]*openapi3.SchemaRef{
+				strconv.Itoa(http.StatusOK):                  resSchema,
+				strconv.Itoa(http.StatusBadRequest):          nil,
+				strconv.Itoa(http.StatusInternalServerError): nil,
+			}),
 		},
 	}
 }

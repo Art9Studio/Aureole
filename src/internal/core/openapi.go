@@ -1,10 +1,15 @@
 package core
 
 import (
-	_ "embed"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3"
+	"net/http"
 	"reflect"
+	"strconv"
+
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
+
+	_ "embed"
 )
 
 var (
@@ -16,6 +21,8 @@ var (
 	mfaListResp = openapi3.NewResponse().
 			WithDescription("List of MFA methods").
 			WithJSONSchemaRef(&openapi3.SchemaRef{Ref: "#/components/schemas/MFAList"})
+
+	defaultErrSchema, _ = openapi3gen.NewSchemaRefForValue(ErrorMessage{}, nil)
 )
 
 // todo: delete when end up with swagger hub
@@ -85,27 +92,87 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 	return nil, paths
 }
 
-func NewOpenAPIOperation(schema *openapi3.SchemaRef) *openapi3.Operation {
+func assembleOAS3Operation(app *app, meta Metadata, successResp *openapi3.Response) *openapi3.Operation {
+	displayName := meta.DisplayName
+	// todo: optimize it and do not call every time
+	unauthorisedDescription := "Could not authenticate with " + displayName
+	unauthorisedSchema, _ := openapi3gen.NewSchemaRefForValue(AuthUnauthorizedResult{}, nil)
 	return &openapi3.Operation{
-		RequestBody: &openapi3.RequestBodyRef{
-			Value: &openapi3.RequestBody{
-				Content: map[string]*openapi3.MediaType{
-					"application/json": {
-						Schema: schema,
-					},
-				},
+		OperationID: "authWith" + displayName,
+		Tags:        []string{"App \"" + app.name + "\""},
+		Description: "Authenticate with " + displayName,
+		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
+		// todo (Talgat): uncomment when it will be implemented
+		//RequestBody: &openapi3.RequestBodyRef{},
+		Responses: openapi3.Responses{
+			strconv.Itoa(http.StatusOK): &openapi3.ResponseRef{
+				Value: successResp,
 			},
-		},
-		Responses: map[string]*openapi3.ResponseRef{
-			"200": {
+			strconv.Itoa(http.StatusUnauthorized): &openapi3.ResponseRef{
 				Value: &openapi3.Response{
+					Description: &unauthorisedDescription,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {},
+						"application/json": {
+							Schema: &openapi3.SchemaRef{
+								Value: unauthorisedSchema.Value,
+							},
+						},
 					},
 				},
 			},
 		},
 	}
+}
+
+func NewOA3Operation(meta Metadata, reqSchema *openapi3.SchemaRef, params, resSchemas map[string]*openapi3.SchemaRef) *openapi3.Operation {
+	responses := make(map[string]*openapi3.ResponseRef)
+	for kCode, vSchema := range resSchemas {
+		if kCode == strconv.Itoa(http.StatusBadRequest) && vSchema == nil {
+			vSchema = defaultErrSchema
+		}
+		responses[kCode] = &openapi3.ResponseRef{
+			Value: &openapi3.Response{
+				Content: map[string]*openapi3.MediaType{
+					"application/json": {
+						Schema: vSchema,
+					},
+				},
+			},
+		}
+	}
+
+	var parameters []*openapi3.ParameterRef
+	for kName, vSchema := range params {
+		paramRef := &openapi3.ParameterRef{
+			Value: &openapi3.Parameter{
+				Name: kName,
+				Content: map[string]*openapi3.MediaType{
+					"application/json": {
+						Schema: vSchema,
+					},
+				},
+			},
+		}
+		parameters = append(parameters, paramRef)
+	}
+
+	operation := &openapi3.Operation{
+		OperationID: meta.ShortName,
+		Description: meta.DisplayName,
+		RequestBody: &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Content: map[string]*openapi3.MediaType{
+					"application/json": {
+						Schema: reqSchema,
+					},
+				},
+			},
+		},
+		Responses:  responses,
+		Parameters: parameters,
+	}
+
+	return operation
 }
 
 //

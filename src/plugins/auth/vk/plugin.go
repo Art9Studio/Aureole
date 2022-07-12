@@ -125,6 +125,7 @@ func (v *vk) GetCustomAppRoutes() []*core.Route {
 			Method:  http.MethodGet,
 			Path:    pathPrefix,
 			Handler: getAuthCode(v),
+			// todo(Talgat): handle "redirect"
 		},
 	}
 }
