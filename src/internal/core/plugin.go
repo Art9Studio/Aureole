@@ -27,6 +27,8 @@ type (
 		Plugin
 		GetAuthHandler() AuthHandlerFunc
 		GetAuthHTTPMethod() string
+		// todo (Talgat): implement it for each auth plugin
+		//GetOAS3AuthRequestBody() *openapi3.RequestBody
 	}
 
 	AuthResult struct {
@@ -114,13 +116,13 @@ type (
 	}
 
 	Identity struct {
-		ID            interface{}            `mapstructure:"id,omitempty"`
-		Email         *string                `mapstructure:"email,omitempty"`
-		Phone         *string                `mapstructure:"phone,omitempty"`
-		Username      *string                `mapstructure:"username,omitempty"`
-		EmailVerified bool                   `mapstructure:"email_verified"`
-		PhoneVerified bool                   `mapstructure:"phone_verified"`
-		Additional    map[string]interface{} `mapstructure:"additional,omitempty"`
+		ID            interface{}            `mapstructure:"id,omitempty" json:"id,omitempty"`
+		Email         *string                `mapstructure:"email,omitempty" json:"email,omitempty"`
+		Phone         *string                `mapstructure:"phone,omitempty" json:"phone,omitempty"`
+		Username      *string                `mapstructure:"username,omitempty" json:"username,omitempty"`
+		EmailVerified bool                   `mapstructure:"email_verified" json:"email_verified"`
+		PhoneVerified bool                   `mapstructure:"phone_verified" json:"phone_verified"`
+		Additional    map[string]interface{} `mapstructure:"additional,omitempty" json:"additional,omitempty"`
 	}
 
 	MFAData struct {
@@ -157,13 +159,13 @@ type (
 	}
 
 	IssuerPayload struct {
-		ID            interface{}            `mapstructure:"id,omitempty"`
-		Username      *string                `mapstructure:"username,omitempty"`
-		Phone         *string                `mapstructure:"phone,omitempty"`
-		Email         *string                `mapstructure:"email,omitempty"`
-		EmailVerified bool                   `mapstructure:"email_verified"`
-		PhoneVerified bool                   `mapstructure:"phone_verified"`
-		Additional    map[string]interface{} `mapstructure:"additional,omitempty"`
+		ID            interface{}            `mapstructure:"id,omitempty" json:"id,omitempty"`
+		Username      *string                `mapstructure:"username,omitempty" json:"username,omitempty"`
+		Phone         *string                `mapstructure:"phone,omitempty" json:"phone,omitempty"`
+		Email         *string                `mapstructure:"email,omitempty" json:"email,omitempty"`
+		EmailVerified bool                   `mapstructure:"email_verified" json:"email_verified"`
+		PhoneVerified bool                   `mapstructure:"phone_verified" json:"phone_verified"`
+		Additional    map[string]interface{} `mapstructure:"additional,omitempty" json:"additional,omitempty"`
 		// NativeQ    func(queryName string, args ...interface{}) string
 	}
 )

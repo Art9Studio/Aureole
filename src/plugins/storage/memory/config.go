@@ -5,7 +5,7 @@ import (
 )
 
 type config struct {
-	Size int `mapstructure:"size"`
+	Size int `mapstructure:"size" json:"size"`
 }
 
 func (c *config) setDefaults() {

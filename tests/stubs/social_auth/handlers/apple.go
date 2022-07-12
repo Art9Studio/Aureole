@@ -25,19 +25,19 @@ func AppleAuthUrlHandler(c *fiber.Ctx) error {
 	ctx := context.Background()
 	r, err := http.NewRequestWithContext(ctx, http.MethodPost, redirectUri, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	r.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	res, err := http.DefaultClient.Do(r)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	defer res.Body.Close()
 	bodyBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	c.Response().SetBodyRaw(bodyBytes)
@@ -66,16 +66,16 @@ func AppleTokenHandler(c *fiber.Ctx) error {
 
 	keySet, err := jwk.ReadFile("/resources/keys.json")
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	key, ok := keySet.Get(0)
 	if !ok {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 	signed, err := jwt.Sign(token, jwa.RS256, key)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{

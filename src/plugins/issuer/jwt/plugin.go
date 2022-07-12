@@ -175,20 +175,20 @@ func (j *jwtIssuer) GetNativeQueries() map[string]string {
 func (j *jwtIssuer) Authorize(c *fiber.Ctx, payload *core.IssuerPayload) error {
 	accessT, err := newToken(accessToken, j.conf, payload)
 	if err != nil {
-		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, http.StatusInternalServerError, err.Error())
 	}
 	refreshT, err := newToken(refreshToken, j.conf, payload)
 	if err != nil {
-		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, http.StatusInternalServerError, err.Error())
 	}
 
 	signedAccessT, err := signToken(j.signKey, accessT)
 	if err != nil {
-		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, http.StatusInternalServerError, err.Error())
 	}
 	signedRefreshT, err := signToken(j.signKey, refreshT)
 	if err != nil {
-		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, http.StatusInternalServerError, err.Error())
 	}
 
 	bearers := map[tokenType]tokenResp{
@@ -200,7 +200,7 @@ func (j *jwtIssuer) Authorize(c *fiber.Ctx, payload *core.IssuerPayload) error {
 		refreshToken: signedRefreshT,
 	}
 	if err := attachTokens(c, bearers, tokens); err != nil {
-		return core.SendError(c, fiber.StatusInternalServerError, err.Error())
+		return core.SendError(c, http.StatusInternalServerError, err.Error())
 	}
 
 	return nil

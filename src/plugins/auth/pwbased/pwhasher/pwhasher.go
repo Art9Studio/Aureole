@@ -9,8 +9,8 @@ import (
 
 type (
 	Config struct {
-		Type   string            `mapstructure:"type"`
-		Config configs.RawConfig `mapstructure:"config"`
+		Type   string            `mapstructure:"type" json:"type"`
+		Config configs.RawConfig `mapstructure:"config" json:"config"`
 	}
 
 	PWHasher interface {

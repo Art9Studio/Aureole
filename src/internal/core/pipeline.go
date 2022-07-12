@@ -3,18 +3,19 @@ package core
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type AuthUnauthorizedResult struct {
-	error string
-	data  map[string]interface{}
+	Error string                 `json:"error"`
+	Data  map[string]interface{} `json:"data"`
 }
 
 func ErrorBody(err error, body map[string]interface{}) AuthUnauthorizedResult {
-	return AuthUnauthorizedResult{error: err.Error(), data: body}
+	return AuthUnauthorizedResult{Error: err.Error(), Data: body}
 }
 
 func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) error {
@@ -22,24 +23,24 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 		authnResult, err := authFunc(*c)
 		if err != nil {
 			if authnResult != nil && len(authnResult.ErrorData) != 0 {
-				return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, authnResult.ErrorData))
+				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, authnResult.ErrorData))
 			}
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 
 		enabled2FA, err := getEnabled2FA(app, authnResult)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 
 		if len(enabled2FA) != 0 {
 			serviceStorage, ok := app.getServiceStorage()
 			if !ok {
-				return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(errors.New("cannot get internal storage"), nil))
+				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(errors.New("cannot get internal storage"), nil))
 			}
 			err := serviceStorage.Set(app.name+"$auth_pipeline$"+authnResult.Cred.Value, authnResult, app.authSessionExp)
 			if err != nil {
-				return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 			}
 
 			token, err := createJWT(app, map[string]interface{}{
@@ -47,14 +48,15 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 				"provider":   authnResult.Provider,
 			}, app.authSessionExp)
 			if err != nil {
-				return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 			}
-			return c.Status(fiber.StatusAccepted).JSON(fiber.Map{"token": token, "2fa": enabled2FA})
+			// todo: document this
+			return c.Status(http.StatusAccepted).JSON(fiber.Map{"token": token, "2fa": enabled2FA})
 		}
 
 		identity, err := authenticate(app, authnResult)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 		return authorize(c, app, identity)
 	}
@@ -64,7 +66,7 @@ func mfaInitHandler(init2FA MFAInitFunc, _ *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		mfaData, err := init2FA(*c)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 		return c.JSON(mfaData)
 	}
@@ -75,33 +77,33 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 		cred, mfaData, err := verify2FA(*c)
 		if err != nil {
 			if mfaData != nil {
-				return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, mfaData))
+				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, mfaData))
 			}
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 
 		serviceStorage, ok := app.getServiceStorage()
 		if !ok {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(errors.New("cannot get internal storage"), nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(errors.New("cannot get internal storage"), nil))
 		}
 
 		authnResult := &AuthResult{}
 		ok, err = serviceStorage.Get(app.name+"$auth_pipeline$"+cred.Value, authnResult)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 		if !ok {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(errors.New("auth session has expired, cannot get user data"), nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(errors.New("auth session has expired, cannot get user Data"), nil))
 		}
 
 		err = serviceStorage.Delete(app.name + "$auth_pipeline$" + cred.Value)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 
 		identity, err := authenticate(app, authnResult)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 		return authorize(c, app, identity)
 	}
@@ -145,12 +147,12 @@ func authenticate(app *app, authnResult *AuthResult) (*Identity, error) {
 func authorize(c *fiber.Ctx, app *app, identity *Identity) error {
 	authz, ok := app.getIssuer()
 	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(errors.New(fmt.Sprintf("app %s: cannot get issuer", app.name)), nil))
+		return c.Status(http.StatusUnauthorized).JSON(ErrorBody(errors.New(fmt.Sprintf("app %s: cannot get issuer", app.name)), nil))
 	}
 
 	payload, err := NewIssuerPayload(identity.AsMap())
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(ErrorBody(err, nil))
+		return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 	}
 	return authz.Authorize(c, payload)
 }

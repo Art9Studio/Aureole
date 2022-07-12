@@ -23,18 +23,18 @@ type (
 	}
 
 	Credential struct {
-		Name  string `mapstructure:"name"`
-		Value string `mapstructure:"value"`
+		Name  string `mapstructure:"name" json:"name"`
+		Value string `mapstructure:"value" json:"value"`
 	}
 
 	Identity struct {
-		ID            interface{}            `mapstructure:"id,omitempty"`
-		Email         string                 `mapstructure:"email,omitempty"`
-		Phone         string                 `mapstructure:"phone,omitempty"`
-		Username      string                 `mapstructure:"username,omitempty"`
-		EmailVerified bool                   `mapstructure:"email_verified"`
-		PhoneVerified bool                   `mapstructure:"phone_verified"`
-		Additional    map[string]interface{} `mapstructure:"additional,omitempty"`
+		ID            interface{}            `mapstructure:"id,omitempty" json:"id,omitempty"`
+		Email         string                 `mapstructure:"email,omitempty" json:"email,omitempty"`
+		Phone         string                 `mapstructure:"phone,omitempty" json:"phone,omitempty"`
+		Username      string                 `mapstructure:"username,omitempty" json:"username,omitempty"`
+		EmailVerified bool                   `mapstructure:"email_verified" json:"email_verified"`
+		PhoneVerified bool                   `mapstructure:"phone_verified" json:"phone_verified"`
+		Additional    map[string]interface{} `mapstructure:"additional,omitempty" json:"additional,omitempty"`
 	}
 )
 

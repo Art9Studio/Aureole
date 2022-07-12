@@ -26,13 +26,13 @@ type (
 	// config represents parsed pwhasher config from the config file
 	config struct {
 		// The number of iterations over the memory
-		Iterations int `mapstructure:"iterations"`
+		Iterations int `mapstructure:"iterations" json:"iterations"`
 		// Length of the random salt. 16 bytes is recommended for password hashing
-		SaltLen int `mapstructure:"salt_length"`
+		SaltLen int `mapstructure:"salt_length" json:"salt_length"`
 		// Length of the generated key. 16 bytes or more is recommended
-		KeyLen int `mapstructure:"key_length"`
+		KeyLen int `mapstructure:"key_length" json:"key_length"`
 		// ProviderName of the pseudorandom function
-		FuncName string `mapstructure:"func"`
+		FuncName string `mapstructure:"func" json:"func"`
 	}
 )
 

@@ -20,18 +20,18 @@ type (
 
 	config struct {
 		// AlgName kind (argon2i, argon2id)
-		Kind string `mapstructure:"kind"`
+		Kind string `mapstructure:"kind" json:"kind"`
 		// The number of iterations over the memory
-		Iterations uint32 `mapstructure:"iterations"`
+		Iterations uint32 `mapstructure:"iterations" json:"iterations"`
 		// The number of threads (or lanes) used by the algorithm
 		// Recommended value is between 1 and runtime.NumCPU()
-		Parallelism uint8 `mapstructure:"parallelism"`
+		Parallelism uint8 `mapstructure:"parallelism" json:"parallelism"`
 		// Length of the random salt. 16 bytes is recommended for password hashing
-		SaltLen uint32 `mapstructure:"salt_length"`
+		SaltLen uint32 `mapstructure:"salt_length" json:"salt_length"`
 		// Length of the generated key. 16 bytes or more is recommended
-		KeyLen uint32 `mapstructure:"key_length"`
+		KeyLen uint32 `mapstructure:"key_length" json:"key_length"`
 		// The amount of memory used by the algorithm (in kibibytes)
-		Memory uint32 `mapstructure:"memory"`
+		Memory uint32 `mapstructure:"memory" json:"memory"`
 	}
 )
 

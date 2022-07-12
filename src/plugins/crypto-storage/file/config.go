@@ -1,5 +1,5 @@
 package file
 
 type config struct {
-	Path string `mapstructure:"path"`
+	Path string `mapstructure:"path" json:"path"`
 }
