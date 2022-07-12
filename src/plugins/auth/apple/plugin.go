@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
 	"time"
@@ -209,19 +210,36 @@ func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func (a *apple) GetCustomAppRoutes() []*core.Route {
-	//value, _ := openapi3gen.NewSchemaRefForValue()
+	value, _ := openapi3gen.NewSchemaRefForValue(struct{}{}, nil)
 	return []*core.Route{
 		{
-			Method:  http.MethodGet,
-			Path:    pathPrefix,
-			Handler: getAuthCode(a),
-			OAS3Operation: &openapi3.Operation{
-				RequestBody: &openapi3.RequestBodyRef{},
-			},
+			Method:        http.MethodGet,
+			Path:          pathPrefix,
+			Handler:       getAuthCode(a),
+			OAS3Operation: NewOpenAPIOperation(value),
 		},
 	}
 }
 
-func NewOpenAPIOperation() *openapi3.Operation {
-	return nil
+func NewOpenAPIOperation(schema *openapi3.SchemaRef) *openapi3.Operation {
+	return &openapi3.Operation{
+		RequestBody: &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Content: map[string]*openapi3.MediaType{
+					"application/json": {
+						Schema: schema,
+					},
+				},
+			},
+		},
+		Responses: map[string]*openapi3.ResponseRef{
+			"200": {
+				Value: &openapi3.Response{
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {},
+					},
+				},
+			},
+		},
+	}
 }

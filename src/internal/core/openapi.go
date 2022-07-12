@@ -85,6 +85,29 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 	return nil, paths
 }
 
+func NewOpenAPIOperation(schema *openapi3.SchemaRef) *openapi3.Operation {
+	return &openapi3.Operation{
+		RequestBody: &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Content: map[string]*openapi3.MediaType{
+					"application/json": {
+						Schema: schema,
+					},
+				},
+			},
+		},
+		Responses: map[string]*openapi3.ResponseRef{
+			"200": {
+				Value: &openapi3.Response{
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {},
+					},
+				},
+			},
+		},
+	}
+}
+
 //
 //func assembleAuthNDoc(a *app, authzResp *openapi3.Responses) error {
 //	for _, authn := range a.authenticators {
