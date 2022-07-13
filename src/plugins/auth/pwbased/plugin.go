@@ -62,12 +62,14 @@ type (
 		Email string `json:"email"`
 	}
 
-	tokenQuery struct {
+	ResetConfirmQuery struct {
 		Token string `query:"token"`
+		URL   string `query:"redirect_url"`
 	}
 
-	redirectQuery struct {
-		URL string `query:"redirect_url"`
+	VerifyConfirmQuery struct {
+		Token string `query:"token"`
+		URL   string `query:"redirect_url"`
 	}
 
 	linkType string
@@ -237,8 +239,7 @@ func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 	credentialSchema, _ := openapi3gen.NewSchemaRefForValue(credential{}, nil)
 	emailSchema, _ := openapi3gen.NewSchemaRefForValue(email{}, nil)
-	tokenQuerySchema, _ := openapi3gen.NewSchemaRefForValue(tokenQuery{}, nil)
-	redirectQuerySchema, _ := openapi3gen.NewSchemaRefForValue(redirectQuery{}, nil)
+	resetConfirmQuerySchema, _ := openapi3gen.NewSchemaRefForValue(ResetConfirmQuery{}, nil)
 	routes := []*core.Route{
 		{
 			Method:  http.MethodPost,
