@@ -72,6 +72,14 @@ type (
 		URL   string `query:"redirect_url"`
 	}
 
+	OAS3Operation struct {
+		openapi3.Operation
+	}
+
+	location struct {
+		URL string
+	}
+
 	linkType string
 )
 
@@ -240,47 +248,35 @@ func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 	credentialSchema, _ := openapi3gen.NewSchemaRefForValue(credential{}, nil)
 	emailSchema, _ := openapi3gen.NewSchemaRefForValue(email{}, nil)
 	resetConfirmQuerySchema, _ := openapi3gen.NewSchemaRefForValue(ResetConfirmQuery{}, nil)
+	verifyConfirmQuerySchema, _ := openapi3gen.NewSchemaRefForValue(VerifyConfirmQuery{}, nil)
+
 	routes := []*core.Route{
 		{
-			Method:  http.MethodPost,
-			Path:    pathPrefix + registerUrl,
-			Handler: register(p),
-			OAS3Operation: core.NewOA3Operation(meta, credentialSchema, nil, map[string]*openapi3.SchemaRef{
-				strconv.Itoa(http.StatusOK):                  {},
-				strconv.Itoa(http.StatusBadRequest):          nil,
-				strconv.Itoa(http.StatusInternalServerError): nil,
-			}),
+			Method:        http.MethodPost,
+			Path:          pathPrefix + registerUrl,
+			Handler:       register(p),
+			OAS3Operation: assembleOAS3Operation(credentialSchema),
 		},
 	}
 
 	if resetEnabled(p) {
 		resetRoutes := []*core.Route{
 			{
-				Method:  http.MethodPost,
-				Path:    pathPrefix + resetUrl,
-				Handler: Reset(p),
-				OAS3Operation: core.NewOA3Operation(meta, emailSchema, nil, map[string]*openapi3.SchemaRef{
-					strconv.Itoa(http.StatusOK):                  {},
-					strconv.Itoa(http.StatusBadRequest):          nil,
-					strconv.Itoa(http.StatusInternalServerError): nil,
-				}),
+				Method:        http.MethodPost,
+				Path:          pathPrefix + resetUrl,
+				Handler:       Reset(p),
+				OAS3Operation: assembleOAS3Operation(emailSchema),
 			},
 			{
 				Method:  http.MethodGet,
 				Path:    pathPrefix + resetConfirmUrl,
 				Handler: ResetConfirm(p),
-				OAS3Operation: core.NewOA3Operation(meta, credentialSchema,
-					//Params
-					map[string]*openapi3.SchemaRef{
-						"token":        tokenQuerySchema,
-						"redirect_url": redirectQuerySchema,
-					},
-					//Responses
-					map[string]*openapi3.SchemaRef{
-						strconv.Itoa(http.StatusOK):                  {},
-						strconv.Itoa(http.StatusBadRequest):          nil,
-						strconv.Itoa(http.StatusInternalServerError): nil,
-					}),
+				OAS3Operation: Redirect(
+					Params(
+						assembleOAS3Operation(credentialSchema),
+						resetConfirmQuerySchema,
+					),
+				),
 			},
 		}
 		routes = append(routes, resetRoutes...)
@@ -289,32 +285,119 @@ func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 	if verifyEnabled(p) {
 		verifyRoutes := []*core.Route{
 			{
-				Method:  http.MethodPost,
-				Path:    pathPrefix + verifyUrl,
-				Handler: Verify(p),
-				OAS3Operation: core.NewOA3Operation(meta, emailSchema, nil, map[string]*openapi3.SchemaRef{
-					strconv.Itoa(http.StatusOK):                  {},
-					strconv.Itoa(http.StatusBadRequest):          nil,
-					strconv.Itoa(http.StatusInternalServerError): nil,
-				}),
+				Method:        http.MethodPost,
+				Path:          pathPrefix + verifyUrl,
+				Handler:       Verify(p),
+				OAS3Operation: assembleOAS3Operation(emailSchema),
 			},
 			{
 				Method:  http.MethodGet,
 				Path:    pathPrefix + verifyConfirmUrl,
 				Handler: VerifyConfirm(p),
-				OAS3Operation: core.NewOA3Operation(meta, nil,
-					map[string]*openapi3.SchemaRef{
-						"token":        tokenQuerySchema,
-						"redirect_url": redirectQuerySchema,
-					},
-					map[string]*openapi3.SchemaRef{
-						strconv.Itoa(http.StatusOK):                  {},
-						strconv.Itoa(http.StatusBadRequest):          nil,
-						strconv.Itoa(http.StatusInternalServerError): nil,
-					}),
+				OAS3Operation: Redirect(
+					Params(
+						NoRequestBody(assembleOAS3Operation(nil)),
+						verifyConfirmQuerySchema,
+					),
+				),
 			},
 		}
 		routes = append(routes, verifyRoutes...)
 	}
 	return routes
+}
+
+func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
+	okResponse := "OK"
+	badReqResponse := "BadRequest"
+
+	operation := &openapi3.Operation{
+		OperationID: meta.ShortName,
+		Description: meta.DisplayName,
+		RequestBody: &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Required: true,
+				Content: map[string]*openapi3.MediaType{
+					"application/json": {
+						Schema: reqSchema,
+					},
+				},
+			},
+		},
+		Responses: map[string]*openapi3.ResponseRef{
+			strconv.Itoa(http.StatusOK): {
+				Value: &openapi3.Response{
+					Description: &okResponse,
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {},
+					},
+				},
+			},
+			strconv.Itoa(http.StatusBadRequest): {
+				Value: &openapi3.Response{
+					Description: &badReqResponse,
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {
+							Schema: core.DefaultErrSchema,
+						},
+					},
+				},
+			},
+			strconv.Itoa(http.StatusInternalServerError): {
+				Value: &openapi3.Response{
+					Description: &badReqResponse,
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {
+							Schema: core.DefaultErrSchema,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return operation
+}
+
+// Redirect adds 302 Status found response to openapi3.Operation.Responses
+func Redirect(op *openapi3.Operation) *openapi3.Operation {
+	redirectDesc := "Redirect"
+	locationSchema, _ := openapi3gen.NewSchemaRefForValue(location{}, nil)
+	op.Responses[strconv.Itoa(http.StatusFound)] = &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			Description: &redirectDesc,
+			Headers: map[string]*openapi3.HeaderRef{
+				"Location": {
+					Value: &openapi3.Header{
+						Parameter: openapi3.Parameter{
+							In:     "header",
+							Name:   "Location",
+							Schema: locationSchema,
+						},
+					},
+				},
+			},
+		},
+	}
+	return op
+}
+
+// Params adds query parameters to openapi3.Operation.Parameters
+func Params(op *openapi3.Operation, schema *openapi3.SchemaRef) *openapi3.Operation {
+	op.Parameters = []*openapi3.ParameterRef{
+		{
+			Value: &openapi3.Parameter{
+				In:          "query",
+				Description: "ResetConfirmQuery",
+				Schema:      schema,
+			},
+		},
+	}
+	return op
+}
+
+// NoRequestBody removes RequestBody from openapi3.Operation
+func NoRequestBody(op *openapi3.Operation) *openapi3.Operation {
+	op.RequestBody = nil
+	return op
 }

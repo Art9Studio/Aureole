@@ -137,17 +137,64 @@ func createMagicLink(e *email) *url.URL {
 }
 
 func (e *email) GetCustomAppRoutes() []*core.Route {
-	reqSchema, _ := openapi3gen.NewSchemaRefForValue(input{}, nil)
 	return []*core.Route{
 		{
-			Method:  http.MethodPost,
-			Path:    sendUrl,
-			Handler: sendMagicLink(e),
-			OAS3Operation: core.NewOA3Operation(meta, reqSchema, nil, map[string]*openapi3.SchemaRef{
-				strconv.Itoa(http.StatusOK):                  {},
-				strconv.Itoa(http.StatusBadRequest):          nil,
-				strconv.Itoa(http.StatusInternalServerError): nil,
-			}),
+			Method:        http.MethodPost,
+			Path:          sendUrl,
+			Handler:       sendMagicLink(e),
+			OAS3Operation: assembleOAS3Operation(),
 		},
 	}
+}
+
+func assembleOAS3Operation() *openapi3.Operation {
+	okResponse := "OK"
+	badReqResponse := "BadRequest"
+	inputSchema, _ := openapi3gen.NewSchemaRefForValue(input{}, nil)
+	operation := &openapi3.Operation{
+		OperationID: meta.ShortName,
+		Description: meta.DisplayName,
+		RequestBody: &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Required: true,
+				Content: map[string]*openapi3.MediaType{
+					"application/json": {
+						Schema: inputSchema,
+					},
+				},
+			},
+		},
+		Responses: map[string]*openapi3.ResponseRef{
+			strconv.Itoa(http.StatusOK): {
+				Value: &openapi3.Response{
+					Description: &okResponse,
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {},
+					},
+				},
+			},
+			strconv.Itoa(http.StatusBadRequest): {
+				Value: &openapi3.Response{
+					Description: &badReqResponse,
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {
+							Schema: core.DefaultErrSchema,
+						},
+					},
+				},
+			},
+			strconv.Itoa(http.StatusInternalServerError): {
+				Value: &openapi3.Response{
+					Description: &badReqResponse,
+					Content: map[string]*openapi3.MediaType{
+						"application/json": {
+							Schema: core.DefaultErrSchema,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return operation
 }

@@ -13,7 +13,6 @@ func main() {
 		log.Panic(err)
 	}
 
-
 	router := core.CreateRouter()
 	project := core.InitProject(conf, router)
 	err = core.RunServer(project, router)

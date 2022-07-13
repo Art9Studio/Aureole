@@ -3,8 +3,11 @@ package vk
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -23,6 +26,10 @@ var meta core.Metadata
 // init initializes package by register pluginCreator
 func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
+}
+
+type location struct {
+	URL string
 }
 
 type vk struct {
@@ -122,10 +129,37 @@ func initProvider(v *vk) error {
 func (v *vk) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
-			Method:  http.MethodGet,
-			Path:    pathPrefix,
-			Handler: getAuthCode(v),
-			// todo(Talgat): handle "redirect"
+			Method:        http.MethodGet,
+			Path:          pathPrefix,
+			Handler:       getAuthCode(v),
+			OAS3Operation: assembleOAS3Operation(),
+		},
+	}
+}
+
+func assembleOAS3Operation() *openapi3.Operation {
+	locationSchema, _ := openapi3gen.NewSchemaRefForValue(location{}, nil)
+	redirectDesc := "Redirect"
+	return &openapi3.Operation{
+		OperationID: meta.ShortName,
+		Description: meta.DisplayName,
+		Responses: map[string]*openapi3.ResponseRef{
+			strconv.Itoa(http.StatusFound): {
+				Value: &openapi3.Response{
+					Description: &redirectDesc,
+					Headers: map[string]*openapi3.HeaderRef{
+						"Location": {
+							Value: &openapi3.Header{
+								Parameter: openapi3.Parameter{
+									In:     "header",
+									Name:   "Location",
+									Schema: locationSchema,
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }

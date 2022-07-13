@@ -3,8 +3,11 @@ package facebook
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -23,6 +26,10 @@ var meta core.Metadata
 // init initializes package by register pluginCreator
 func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
+}
+
+type location struct {
+	URL string
 }
 
 type facebook struct {
@@ -122,11 +129,37 @@ func (f *facebook) GetCustomAppRoutes() []*core.Route {
 
 	return []*core.Route{
 		{
-			Method:  http.MethodGet,
-			Path:    pathPrefix,
-			Handler: getAuthCode(f),
-			// todo (Talgat): handle "redirect"
-			//OAS3Operation: core.NewOA3Operation(meta, nil, nil),
+			Method:        http.MethodGet,
+			Path:          pathPrefix,
+			Handler:       getAuthCode(f),
+			OAS3Operation: assembleOAS3Operation(),
+		},
+	}
+}
+
+func assembleOAS3Operation() *openapi3.Operation {
+	locationSchema, _ := openapi3gen.NewSchemaRefForValue(location{}, nil)
+	redirectDesc := "Redirect"
+	return &openapi3.Operation{
+		OperationID: meta.ShortName,
+		Description: meta.DisplayName,
+		Responses: map[string]*openapi3.ResponseRef{
+			strconv.Itoa(http.StatusFound): {
+				Value: &openapi3.Response{
+					Description: &redirectDesc,
+					Headers: map[string]*openapi3.HeaderRef{
+						"Location": {
+							Value: &openapi3.Header{
+								Parameter: openapi3.Parameter{
+									In:     "header",
+									Name:   "Location",
+									Schema: locationSchema,
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }

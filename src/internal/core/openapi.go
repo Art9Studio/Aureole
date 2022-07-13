@@ -22,7 +22,7 @@ var (
 			WithDescription("List of MFA methods").
 			WithJSONSchemaRef(&openapi3.SchemaRef{Ref: "#/components/schemas/MFAList"})
 
-	defaultErrSchema, _ = openapi3gen.NewSchemaRefForValue(ErrorMessage{}, nil)
+	DefaultErrSchema, _ = openapi3gen.NewSchemaRefForValue(ErrorMessage{}, nil)
 )
 
 // todo: delete when end up with swagger hub
@@ -122,57 +122,6 @@ func assembleOAS3Operation(app *app, meta Metadata, successResp *openapi3.Respon
 			},
 		},
 	}
-}
-
-func NewOA3Operation(meta Metadata, reqSchema *openapi3.SchemaRef, params, resSchemas map[string]*openapi3.SchemaRef) *openapi3.Operation {
-	responses := make(map[string]*openapi3.ResponseRef)
-	for kCode, vSchema := range resSchemas {
-		if kCode == strconv.Itoa(http.StatusBadRequest) && vSchema == nil {
-			vSchema = defaultErrSchema
-		}
-		responses[kCode] = &openapi3.ResponseRef{
-			Value: &openapi3.Response{
-				Content: map[string]*openapi3.MediaType{
-					"application/json": {
-						Schema: vSchema,
-					},
-				},
-			},
-		}
-	}
-
-	var parameters []*openapi3.ParameterRef
-	for kName, vSchema := range params {
-		paramRef := &openapi3.ParameterRef{
-			Value: &openapi3.Parameter{
-				Name: kName,
-				Content: map[string]*openapi3.MediaType{
-					"application/json": {
-						Schema: vSchema,
-					},
-				},
-			},
-		}
-		parameters = append(parameters, paramRef)
-	}
-
-	operation := &openapi3.Operation{
-		OperationID: meta.ShortName,
-		Description: meta.DisplayName,
-		RequestBody: &openapi3.RequestBodyRef{
-			Value: &openapi3.RequestBody{
-				Content: map[string]*openapi3.MediaType{
-					"application/json": {
-						Schema: reqSchema,
-					},
-				},
-			},
-		},
-		Responses:  responses,
-		Parameters: parameters,
-	}
-
-	return operation
 }
 
 //

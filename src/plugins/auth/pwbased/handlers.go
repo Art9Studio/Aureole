@@ -100,10 +100,17 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if err := c.QueryParser(query); err != nil {
 			return core.SendError(c, http.StatusBadRequest, "invalid format")
 		}
+		var input *credential
+		if err := c.BodyParser(input); err != nil {
+			return core.SendError(c, http.StatusBadRequest, err.Error())
+		}
 
 		rawToken := query.Token
 		if rawToken == "" {
 			return core.SendError(c, http.StatusBadRequest, "token not found")
+		}
+		if input.Password == "" {
+			return core.SendError(c, http.StatusBadRequest, "password required")
 		}
 
 		token, err := p.pluginAPI.ParseJWT(rawToken)
@@ -116,14 +123,6 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 		if err := p.pluginAPI.InvalidateJWT(token); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
-		}
-
-		var input *credential
-		if err := c.BodyParser(input); err != nil {
-			return core.SendError(c, http.StatusBadRequest, err.Error())
-		}
-		if input.Password == "" {
-			return core.SendError(c, http.StatusBadRequest, "password required")
 		}
 
 		pwHash, err := p.pwHasher.HashPw(input.Password)

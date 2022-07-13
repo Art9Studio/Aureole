@@ -33,6 +33,10 @@ func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
 }
 
+type location struct {
+	URL string
+}
+
 type apple struct {
 	pluginAPI core.PluginAPI
 	rawConf   configs.AuthPluginConfig
@@ -211,17 +215,39 @@ func signToken(signKey core.CryptoKey, token jwt.Token) ([]byte, error) {
 }
 
 func (a *apple) GetCustomAppRoutes() []*core.Route {
-	// todo: handle documentation of "redirect"
-	value, _ := openapi3gen.NewSchemaRefForValue(struct{}{}, nil)
 	return []*core.Route{
 		{
-			Method:  http.MethodGet,
-			Path:    pathPrefix,
-			Handler: getAuthCode(a),
-			// todo: handle documentation of "redirect"
-			OAS3Operation: core.NewOA3Operation(meta, value, nil, map[string]*openapi3.SchemaRef{
-				strconv.Itoa(http.StatusOK): &openapi3.SchemaRef{},
-			}),
+			Method:        http.MethodGet,
+			Path:          pathPrefix,
+			Handler:       getAuthCode(a),
+			OAS3Operation: assembleOAS3Operation(),
+		},
+	}
+}
+
+func assembleOAS3Operation() *openapi3.Operation {
+	locationSchema, _ := openapi3gen.NewSchemaRefForValue(location{}, nil)
+	redirectDesc := "Redirect"
+	return &openapi3.Operation{
+		OperationID: meta.ShortName,
+		Description: meta.DisplayName,
+		Responses: map[string]*openapi3.ResponseRef{
+			strconv.Itoa(http.StatusFound): {
+				Value: &openapi3.Response{
+					Description: &redirectDesc,
+					Headers: map[string]*openapi3.HeaderRef{
+						"Location": {
+							Value: &openapi3.Header{
+								Parameter: openapi3.Parameter{
+									In:     "header",
+									Name:   "Location",
+									Schema: locationSchema,
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }
