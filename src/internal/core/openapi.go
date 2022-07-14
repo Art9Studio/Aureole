@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -92,7 +93,7 @@ func assemblePaths(r *router, app *app) (error, openapi3.Paths) {
 	return nil, paths
 }
 
-func assembleOAS3Operation(app *app, meta Metadata, successResp *openapi3.Response) *openapi3.Operation {
+func assembleOAS3Operation(app *app, meta Metadata, OAS3Parameters openapi3.Parameters, OAS3RequestBody *openapi3.RequestBody, successResp *openapi3.Response) *openapi3.Operation {
 	displayName := meta.DisplayName
 	// todo: optimize it and do not call every time
 	unauthorisedDescription := "Could not authenticate with " + displayName
@@ -103,7 +104,10 @@ func assembleOAS3Operation(app *app, meta Metadata, successResp *openapi3.Respon
 		Description: "Authenticate with " + displayName,
 		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
 		// todo (Talgat): uncomment when it will be implemented
-		//RequestBody: &openapi3.RequestBodyRef{},
+		Parameters: OAS3Parameters,
+		RequestBody: &openapi3.RequestBodyRef{
+			Value: OAS3RequestBody,
+		},
 		Responses: openapi3.Responses{
 			strconv.Itoa(http.StatusOK): &openapi3.ResponseRef{
 				Value: successResp,
@@ -112,9 +116,31 @@ func assembleOAS3Operation(app *app, meta Metadata, successResp *openapi3.Respon
 				Value: &openapi3.Response{
 					Description: &unauthorisedDescription,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {
+						fiber.MIMEApplicationJSON: {
 							Schema: &openapi3.SchemaRef{
 								Value: unauthorisedSchema.Value,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func AssembleOASRedirectResponse(description *string) *openapi3.Response {
+	return &openapi3.Response{
+		Description: description,
+		Headers: map[string]*openapi3.HeaderRef{
+			"Location": {
+				Value: &openapi3.Header{
+					Parameter: openapi3.Parameter{
+						In:   "header",
+						Name: "Location",
+						Schema: &openapi3.SchemaRef{
+							Value: &openapi3.Schema{
+								Type:        "string",
+								Description: "Redirect URL",
 							},
 						},
 					},

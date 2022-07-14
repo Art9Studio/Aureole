@@ -7,7 +7,6 @@ import (
 	_ "embed"
 	"errors"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
 	"strconv"
@@ -154,27 +153,13 @@ func (g *google) GetCustomAppRoutes() []*core.Route {
 }
 
 func assembleOAS3Operation() *openapi3.Operation {
-	locationSchema, _ := openapi3gen.NewSchemaRefForValue(location{}, nil)
-	redirectDesc := "Redirect"
+	description := "Redirect"
 	return &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
 		Responses: map[string]*openapi3.ResponseRef{
 			strconv.Itoa(http.StatusFound): {
-				Value: &openapi3.Response{
-					Description: &redirectDesc,
-					Headers: map[string]*openapi3.HeaderRef{
-						"Location": {
-							Value: &openapi3.Header{
-								Parameter: openapi3.Parameter{
-									In:     "header",
-									Name:   "Location",
-									Schema: locationSchema,
-								},
-							},
-						},
-					},
-				},
+				Value: core.AssembleOASRedirectResponse(&description),
 			},
 		},
 	}

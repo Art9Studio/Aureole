@@ -153,7 +153,7 @@ func (j *jwtIssuer) GetOAS3SuccessResponse() (*openapi3.Response, error) {
 		Description: &okStatusDescription,
 		Headers:     j.GetResponseHeader(),
 		Content: openapi3.Content{
-			"application/json": {
+			fiber.MIMEApplicationJSON: {
 				Schema: &openapi3.SchemaRef{
 					Value: bodySchema.Value,
 				},
@@ -232,7 +232,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return q, nil
 }*/
 
-func buildOperationForRefreshHandler() *openapi3.Operation {
+func assembleOperationForRefreshHandler() *openapi3.Operation {
 	operation := openapi3.NewOperation()
 	operation.Description = "Refresh JWT"
 
@@ -264,13 +264,11 @@ func buildOperationForRefreshHandler() *openapi3.Operation {
 }
 
 func (j *jwtIssuer) GetCustomAppRoutes() []*core.Route {
-	operation := buildOperationForRefreshHandler()
-
 	return []*core.Route{
 		{
 			Method:        http.MethodPost,
 			Path:          refreshUrl,
-			OAS3Operation: operation,
+			OAS3Operation: assembleOperationForRefreshHandler(),
 			Handler:       refresh(j),
 		},
 	}

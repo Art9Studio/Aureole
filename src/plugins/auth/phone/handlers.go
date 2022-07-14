@@ -8,6 +8,7 @@ import (
 
 func sendOTP(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
+		// todo (Talgat): rename all request body types as in email plugin
 		var phone phone
 		if err := c.BodyParser(&phone); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())

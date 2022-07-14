@@ -207,7 +207,7 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 			Value: &openapi3.RequestBody{
 				Required: true,
 				Content: map[string]*openapi3.MediaType{
-					"application/json": {
+					fiber.MIMEApplicationJSON: {
 						Schema: reqSchema,
 					},
 				},
@@ -218,7 +218,7 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 				Value: &openapi3.Response{
 					Description: &okResponse,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {
+						fiber.MIMEApplicationJSON: {
 							Schema: tokenSchema,
 						},
 					},
@@ -228,7 +228,7 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 				Value: &openapi3.Response{
 					Description: &badReqResponse,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {
+						fiber.MIMEApplicationJSON: {
 							Schema: core.DefaultErrSchema,
 						},
 					},
@@ -238,7 +238,7 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 				Value: &openapi3.Response{
 					Description: &badReqResponse,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {
+						fiber.MIMEApplicationJSON: {
 							Schema: core.DefaultErrSchema,
 						},
 					},

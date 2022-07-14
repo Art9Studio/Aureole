@@ -39,7 +39,7 @@ type (
 		tmpl, tmplExt string
 	}
 
-	input struct {
+	SendMagicLinkReqBody struct {
 		Email string `json:"email"`
 	}
 )
@@ -150,7 +150,7 @@ func (e *email) GetCustomAppRoutes() []*core.Route {
 func assembleOAS3Operation() *openapi3.Operation {
 	okResponse := "OK"
 	badReqResponse := "BadRequest"
-	inputSchema, _ := openapi3gen.NewSchemaRefForValue(input{}, nil)
+	inputSchema, _ := openapi3gen.NewSchemaRefForValue(SendMagicLinkReqBody{}, nil)
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
@@ -158,7 +158,7 @@ func assembleOAS3Operation() *openapi3.Operation {
 			Value: &openapi3.RequestBody{
 				Required: true,
 				Content: map[string]*openapi3.MediaType{
-					"application/json": {
+					fiber.MIMEApplicationJSON: {
 						Schema: inputSchema,
 					},
 				},
@@ -169,25 +169,27 @@ func assembleOAS3Operation() *openapi3.Operation {
 				Value: &openapi3.Response{
 					Description: &okResponse,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {},
+						fiber.MIMEApplicationJSON: {},
 					},
 				},
 			},
 			strconv.Itoa(http.StatusBadRequest): {
+				// todo (Talgat): move response to method in core as I did with AssembleOASRedirectResponse
 				Value: &openapi3.Response{
 					Description: &badReqResponse,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {
+						fiber.MIMEApplicationJSON: {
 							Schema: core.DefaultErrSchema,
 						},
 					},
 				},
 			},
 			strconv.Itoa(http.StatusInternalServerError): {
+				// todo (Talgat): move response to method in core as I did with AssembleOASRedirectResponse
 				Value: &openapi3.Response{
 					Description: &badReqResponse,
 					Content: map[string]*openapi3.MediaType{
-						"application/json": {
+						fiber.MIMEApplicationJSON: {
 							Schema: core.DefaultErrSchema,
 						},
 					},

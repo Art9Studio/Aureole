@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"time"
 
@@ -284,7 +285,7 @@ func makeRequest(j *webhook, token string) ([]byte, error) {
 	for k, v := range j.conf.Headers {
 		r.Header.Set(k, v)
 	}
-	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Content-Type", fiber.MIMEApplicationJSON)
 
 	err = retry.Do(
 		func() error {
