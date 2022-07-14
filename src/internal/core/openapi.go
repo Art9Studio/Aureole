@@ -150,6 +150,28 @@ func AssembleOASRedirectResponse(description *string) *openapi3.Response {
 	}
 }
 
+func AssembleOAS3ErrResponse(description *string) *openapi3.Response {
+	return &openapi3.Response{
+		Description: description,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: DefaultErrSchema,
+			},
+		},
+	}
+}
+
+func AssembleOAS3OKResponse(description *string, schema *openapi3.SchemaRef) *openapi3.Response {
+	return &openapi3.Response{
+		Description: description,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: schema,
+			},
+		},
+	}
+}
+
 //
 //func assembleAuthNDoc(a *app, authzResp *openapi3.Responses) Error {
 //	for _, authn := range a.authenticators {

@@ -42,6 +42,10 @@ type (
 	SendMagicLinkReqBody struct {
 		Email string `json:"email"`
 	}
+
+	GetAuthHandlerQuery struct {
+		Token string `query:"token"`
+	}
 )
 
 func (e *email) GetAuthHTTPMethod() string {
@@ -88,7 +92,12 @@ func (email) GetMetadata() core.Metadata {
 
 func (e *email) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		rawToken := c.Query("token")
+		input := &GetAuthHandlerQuery{}
+		if err := c.QueryParser(input); err != nil {
+			return nil, err
+		}
+
+		rawToken := input.Token
 		if rawToken == "" {
 			return nil, errors.New("token not found")
 		}
@@ -98,11 +107,11 @@ func (e *email) GetAuthHandler() core.AuthHandlerFunc {
 		if err != nil {
 			return nil, errors.New(err.Error())
 		}
-		err = e.pluginAPI.GetFromJWT(token, "email", &email)
-		if err != nil {
+
+		if err = e.pluginAPI.GetFromJWT(token, "email", &email); err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		if err := e.pluginAPI.InvalidateJWT(token); err != nil {
+		if err = e.pluginAPI.InvalidateJWT(token); err != nil {
 			return nil, errors.New(err.Error())
 		}
 
@@ -136,6 +145,24 @@ func createMagicLink(e *email) *url.URL {
 	return &u
 }
 
+func (e *email) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	return &openapi3.RequestBody{}
+}
+
+func (e *email) GetOAS3AuthParameters() *openapi3.Parameters {
+	schema, _ := openapi3gen.NewSchemaRefForValue(GetAuthHandlerQuery{}, nil)
+	return &openapi3.Parameters{
+		&openapi3.ParameterRef{
+			Value: &openapi3.Parameter{
+				Name:     "Token",
+				In:       "query",
+				Required: true,
+				Schema:   schema,
+			},
+		},
+	}
+}
+
 func (e *email) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
@@ -149,7 +176,8 @@ func (e *email) GetCustomAppRoutes() []*core.Route {
 
 func assembleOAS3Operation() *openapi3.Operation {
 	okResponse := "OK"
-	badReqResponse := "BadRequest"
+	badReqResponse := "Bad Request"
+	internalErrorResponse := "Internal Server Error"
 	inputSchema, _ := openapi3gen.NewSchemaRefForValue(SendMagicLinkReqBody{}, nil)
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
@@ -166,34 +194,13 @@ func assembleOAS3Operation() *openapi3.Operation {
 		},
 		Responses: map[string]*openapi3.ResponseRef{
 			strconv.Itoa(http.StatusOK): {
-				Value: &openapi3.Response{
-					Description: &okResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {},
-					},
-				},
+				Value: core.AssembleOAS3OKResponse(&okResponse, nil),
 			},
 			strconv.Itoa(http.StatusBadRequest): {
-				// todo (Talgat): move response to method in core as I did with AssembleOASRedirectResponse
-				Value: &openapi3.Response{
-					Description: &badReqResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {
-							Schema: core.DefaultErrSchema,
-						},
-					},
-				},
+				Value: core.AssembleOAS3ErrResponse(&badReqResponse),
 			},
 			strconv.Itoa(http.StatusInternalServerError): {
-				// todo (Talgat): move response to method in core as I did with AssembleOASRedirectResponse
-				Value: &openapi3.Response{
-					Description: &badReqResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {
-							Schema: core.DefaultErrSchema,
-						},
-					},
-				},
+				Value: core.AssembleOAS3ErrResponse(&internalErrorResponse),
 			},
 		},
 	}

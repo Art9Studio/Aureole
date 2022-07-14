@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"errors"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
 	"strconv"
@@ -27,9 +28,18 @@ func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
 }
 
-type location struct {
-	URL string
-}
+type (
+	state struct {
+		State string `query:"state"`
+	}
+	code struct {
+		Code string `query:"code"`
+	}
+	GetAuthHandlerReqBody struct {
+		state
+		code
+	}
+)
 
 type google struct {
 	pluginAPI core.PluginAPI
@@ -65,12 +75,16 @@ func (google) GetMetadata() core.Metadata {
 
 func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
+		input := &GetAuthHandlerReqBody{}
+		if err := c.QueryParser(input); err != nil {
+			return nil, err
+		}
 		// todo: save state and compare later #2
-		state := c.Query("state")
+		state := input.State
 		if state != "state" {
 			return nil, errors.New("invalid state")
 		}
-		code := c.Query("code")
+		code := input.Code
 		if code == "" {
 			return nil, errors.New("code not found")
 		}
@@ -116,6 +130,33 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 			},
 			Provider: "social_provider$" + meta.ShortName,
 		}, nil
+	}
+}
+
+func (g *google) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	return &openapi3.RequestBody{}
+}
+
+func (g *google) GetOAS3AuthParameters() *openapi3.Parameters {
+	stateSchema, _ := openapi3gen.NewSchemaRefForValue(state{}, nil)
+	codeSchema, _ := openapi3gen.NewSchemaRefForValue(code{}, nil)
+	return &openapi3.Parameters{
+		{
+			Value: &openapi3.Parameter{
+				Name:     "State",
+				In:       "query",
+				Required: true,
+				Schema:   stateSchema,
+			},
+		},
+		{
+			Value: &openapi3.Parameter{
+				Name:     "Code",
+				In:       "query",
+				Required: true,
+				Schema:   codeSchema,
+			},
+		},
 	}
 }
 

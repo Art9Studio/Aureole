@@ -50,7 +50,7 @@ type (
 		}
 	}
 
-	credential struct {
+	RegisterReqBody struct {
 		Id       interface{} `json:"id"`
 		Email    string      `json:"email"`
 		Phone    string      `json:"phone"`
@@ -58,8 +58,16 @@ type (
 		Password string      `json:"password"`
 	}
 
-	email struct {
+	ResetConfirmReqBody struct {
+		RegisterReqBody
+	}
+
+	VerifyReqBody struct {
 		Email string `json:"email"`
+	}
+
+	ResetReqBody struct {
+		VerifyReqBody
 	}
 
 	ResetConfirmQuery struct {
@@ -74,10 +82,6 @@ type (
 
 	OAS3Operation struct {
 		openapi3.Operation
-	}
-
-	location struct {
-		URL string
 	}
 
 	linkType string
@@ -169,7 +173,7 @@ func (pwBased) GetMetadata() core.Metadata {
 
 func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		var input *credential
+		var input *RegisterReqBody
 		if err := c.BodyParser(input); err != nil {
 			return nil, err
 		}
@@ -244,9 +248,26 @@ func createConfirmLink(linkType linkType, p *pwBased) *url.URL {
 	return &u
 }
 
+func (p *pwBased) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	credentialSchema, _ := openapi3gen.NewSchemaRefForValue(RegisterReqBody{}, nil)
+	return &openapi3.RequestBody{
+		Description: "Credential Info",
+		Required:    true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: credentialSchema,
+			},
+		},
+	}
+}
+
+func (p *pwBased) GetOAS3AuthParameters() *openapi3.Parameters {
+	return &openapi3.Parameters{}
+}
+
 func (p *pwBased) GetCustomAppRoutes() []*core.Route {
-	credentialSchema, _ := openapi3gen.NewSchemaRefForValue(credential{}, nil)
-	emailSchema, _ := openapi3gen.NewSchemaRefForValue(email{}, nil)
+	credentialSchema, _ := openapi3gen.NewSchemaRefForValue(RegisterReqBody{}, nil)
+	emailSchema, _ := openapi3gen.NewSchemaRefForValue(VerifyReqBody{}, nil)
 	resetConfirmQuerySchema, _ := openapi3gen.NewSchemaRefForValue(ResetConfirmQuery{}, nil)
 	verifyConfirmQuerySchema, _ := openapi3gen.NewSchemaRefForValue(VerifyConfirmQuery{}, nil)
 
@@ -310,6 +331,7 @@ func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 	okResponse := "OK"
 	badReqResponse := "BadRequest"
+	internalErrResponse := "Internal Server Error"
 
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
@@ -326,32 +348,13 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 		},
 		Responses: map[string]*openapi3.ResponseRef{
 			strconv.Itoa(http.StatusOK): {
-				Value: &openapi3.Response{
-					Description: &okResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {},
-					},
-				},
+				Value: core.AssembleOAS3OKResponse(&okResponse, nil),
 			},
 			strconv.Itoa(http.StatusBadRequest): {
-				Value: &openapi3.Response{
-					Description: &badReqResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {
-							Schema: core.DefaultErrSchema,
-						},
-					},
-				},
+				Value: core.AssembleOAS3ErrResponse(&badReqResponse),
 			},
 			strconv.Itoa(http.StatusInternalServerError): {
-				Value: &openapi3.Response{
-					Description: &badReqResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {
-							Schema: core.DefaultErrSchema,
-						},
-					},
-				},
+				Value: core.AssembleOAS3ErrResponse(&internalErrResponse),
 			},
 		},
 	}
@@ -362,22 +365,8 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 // Redirect adds 302 Status found response to openapi3.Operation.Responses
 func Redirect(op *openapi3.Operation) *openapi3.Operation {
 	redirectDesc := "Redirect"
-	locationSchema, _ := openapi3gen.NewSchemaRefForValue(location{}, nil)
 	op.Responses[strconv.Itoa(http.StatusFound)] = &openapi3.ResponseRef{
-		Value: &openapi3.Response{
-			Description: &redirectDesc,
-			Headers: map[string]*openapi3.HeaderRef{
-				"Location": {
-					Value: &openapi3.Header{
-						Parameter: openapi3.Parameter{
-							In:     "header",
-							Name:   "Location",
-							Schema: locationSchema,
-						},
-					},
-				},
-			},
-		},
+		Value: core.AssembleOASRedirectResponse(&redirectDesc),
 	}
 	return op
 }

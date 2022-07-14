@@ -10,7 +10,7 @@ import (
 
 func register(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var rawCred *credential
+		var rawCred *RegisterReqBody
 		if err := c.BodyParser(rawCred); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -71,7 +71,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 
 func Reset(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var e *email
+		var e *ResetReqBody
 		if err := c.BodyParser(e); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -100,7 +100,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if err := c.QueryParser(query); err != nil {
 			return core.SendError(c, http.StatusBadRequest, "invalid format")
 		}
-		var input *credential
+		var input *ResetConfirmReqBody
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -165,7 +165,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 
 func Verify(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var e *email
+		var e *VerifyReqBody
 		if err := c.BodyParser(e); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}

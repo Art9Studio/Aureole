@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
 	"strconv"
@@ -32,8 +33,9 @@ func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
 }
 
-type location struct {
-	URL string
+type GetAuthHandlerReqBody struct {
+	State string `json:"state"`
+	Code  string `json:"code"`
 }
 
 type apple struct {
@@ -84,10 +86,7 @@ func (apple) GetMetadata() core.Metadata {
 
 func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		input := struct {
-			State string
-			Code  string
-		}{}
+		input := GetAuthHandlerReqBody{}
 		if err := c.BodyParser(&input); err != nil {
 			return nil, err
 		}
@@ -136,6 +135,23 @@ func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 			Provider: "social_provider$" + meta.ShortName,
 		}, nil
 	}
+}
+
+func (a *apple) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	schema, _ := openapi3gen.NewSchemaRefForValue(GetAuthHandlerReqBody{}, nil)
+	return &openapi3.RequestBody{
+		Description: "State & Code",
+		Required:    true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: schema,
+			},
+		},
+	}
+}
+
+func (a *apple) GetOAS3AuthParameters() *openapi3.Parameters {
+	return &openapi3.Parameters{}
 }
 
 func initConfig(conf *configs.RawConfig) (*config, error) {

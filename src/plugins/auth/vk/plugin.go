@@ -4,6 +4,7 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"path"
 	"strconv"
@@ -27,9 +28,18 @@ func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
 }
 
-type location struct {
-	URL string
-}
+type (
+	state struct {
+		State string `query:"state"`
+	}
+	code struct {
+		Code string `query:"code"`
+	}
+	GetAuthHandlerReqBody struct {
+		state
+		code
+	}
+)
 
 type vk struct {
 	pluginAPI core.PluginAPI
@@ -66,11 +76,16 @@ func (vk) GetMetadata() core.Metadata {
 
 func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		state := c.Query("state")
+		input := &GetAuthHandlerReqBody{}
+		if err := c.QueryParser(input); err != nil {
+			return nil, err
+		}
+
+		state := input.State
 		if state != "state" {
 			return nil, errors.New("invalid state")
 		}
-		code := c.Query("code")
+		code := input.Code
 		if code == "" {
 			return nil, errors.New("code not found")
 		}
@@ -100,6 +115,33 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 			},
 			Provider: "social_provider$" + v.GetMetadata().ShortName,
 		}, nil
+	}
+}
+
+func (v *vk) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	return &openapi3.RequestBody{}
+}
+
+func (v *vk) GetOAS3AuthParameters() *openapi3.Parameters {
+	stateSchema, _ := openapi3gen.NewSchemaRefForValue(state{}, nil)
+	codeSchema, _ := openapi3gen.NewSchemaRefForValue(code{}, nil)
+	return &openapi3.Parameters{
+		{
+			Value: &openapi3.Parameter{
+				Name:     "State",
+				In:       "query",
+				Required: true,
+				Schema:   stateSchema,
+			},
+		},
+		{
+			Value: &openapi3.Parameter{
+				Name:     "Code",
+				In:       "query",
+				Required: true,
+				Schema:   codeSchema,
+			},
+		},
 	}
 }
 

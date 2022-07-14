@@ -8,8 +8,7 @@ import (
 
 func sendOTP(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		// todo (Talgat): rename all request body types as in email plugin
-		var phone phone
+		var phone sendOTPReqBody
 		if err := c.BodyParser(&phone); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -48,13 +47,13 @@ func sendOTP(p *authn) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
-		return c.JSON(fiber.Map{"token": token})
+		return c.JSON(&OTPResponse{Token: token})
 	}
 }
 
 func resendOTP(p *authn) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *otp
+		var input *resendOTPReqBody
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -103,6 +102,6 @@ func resendOTP(p *authn) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&fiber.Map{"token": token})
+		return c.JSON(&OTPResponse{Token: token})
 	}
 }

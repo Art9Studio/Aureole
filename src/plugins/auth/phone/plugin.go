@@ -37,16 +37,16 @@ type (
 		tmpl, tmplExt string
 	}
 
-	phone struct {
+	sendOTPReqBody struct {
 		Phone string `json:"phone"`
 	}
 
-	otp struct {
+	resendOTPReqBody struct {
 		Token string `json:"token"`
 		Otp   string `json:"otp"`
 	}
 
-	token struct {
+	OTPResponse struct {
 		Token string `json:"token"`
 	}
 )
@@ -90,7 +90,7 @@ func (authn) GetMetadata() core.Metadata {
 
 func (a *authn) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		var otp otp
+		var otp resendOTPReqBody
 		if err := c.BodyParser(&otp); err != nil {
 			return nil, err
 		}
@@ -176,9 +176,26 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 	return PluginConf, nil
 }
 
+func (p *authn) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	credentialSchema, _ := openapi3gen.NewSchemaRefForValue(resendOTPReqBody{}, nil)
+	return &openapi3.RequestBody{
+		Description: "Token & OTP",
+		Required:    true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: credentialSchema,
+			},
+		},
+	}
+}
+
+func (p *authn) GetOAS3AuthParameters() *openapi3.Parameters {
+	return &openapi3.Parameters{}
+}
+
 func (a *authn) GetCustomAppRoutes() []*core.Route {
-	phoneSchema, _ := openapi3gen.NewSchemaRefForValue(phone{}, nil)
-	otpSchema, _ := openapi3gen.NewSchemaRefForValue(otp{}, nil)
+	phoneSchema, _ := openapi3gen.NewSchemaRefForValue(sendOTPReqBody{}, nil)
+	otpSchema, _ := openapi3gen.NewSchemaRefForValue(resendOTPReqBody{}, nil)
 
 	return []*core.Route{
 		{
@@ -198,8 +215,9 @@ func (a *authn) GetCustomAppRoutes() []*core.Route {
 
 func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 	okResponse := "OK"
-	badReqResponse := "BadRequest"
-	tokenSchema, _ := openapi3gen.NewSchemaRefForValue(token{}, nil)
+	badReqResponse := "Bad Request"
+	internalErrResponse := "Internal Server Error"
+	tokenSchema, _ := openapi3gen.NewSchemaRefForValue(OTPResponse{}, nil)
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
@@ -215,34 +233,13 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 		},
 		Responses: map[string]*openapi3.ResponseRef{
 			strconv.Itoa(http.StatusOK): {
-				Value: &openapi3.Response{
-					Description: &okResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {
-							Schema: tokenSchema,
-						},
-					},
-				},
+				Value: core.AssembleOAS3OKResponse(&okResponse, tokenSchema),
 			},
 			strconv.Itoa(http.StatusBadRequest): {
-				Value: &openapi3.Response{
-					Description: &badReqResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {
-							Schema: core.DefaultErrSchema,
-						},
-					},
-				},
+				Value: core.AssembleOAS3ErrResponse(&badReqResponse),
 			},
 			strconv.Itoa(http.StatusInternalServerError): {
-				Value: &openapi3.Response{
-					Description: &badReqResponse,
-					Content: map[string]*openapi3.MediaType{
-						fiber.MIMEApplicationJSON: {
-							Schema: core.DefaultErrSchema,
-						},
-					},
-				},
+				Value: core.AssembleOAS3ErrResponse(&internalErrResponse),
 			},
 		},
 	}

@@ -27,10 +27,8 @@ type (
 		Plugin
 		GetAuthHandler() AuthHandlerFunc
 		GetAuthHTTPMethod() string
-
-		// todo (Talgat): implement them for each auth plugin
-		// GetOAS3AuthRequestBody() *openapi3.RequestBody
-		// GetOAS3AuthParameters() *openapi3.Parameters
+		GetOAS3AuthRequestBody() *openapi3.RequestBody
+		GetOAS3AuthParameters() *openapi3.Parameters
 	}
 
 	AuthResult struct {
