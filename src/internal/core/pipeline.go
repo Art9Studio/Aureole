@@ -54,6 +54,7 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 			return c.Status(http.StatusAccepted).JSON(fiber.Map{"token": token, "2fa": enabled2FA})
 		}
 
+		// todo: I don't like this name
 		identity, err := authenticate(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))

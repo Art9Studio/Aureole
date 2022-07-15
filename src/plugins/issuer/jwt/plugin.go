@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"regexp"
 	"strconv"
-	txtTmpl "text/template"
+	"text/template"
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -394,7 +393,10 @@ func parsePayload(tmplPath string, payload *core.IssuerPayload) (map[string]inte
 }
 
 func renderPayload(tmplStr string, payload *core.IssuerPayload) (map[string]interface{}, error) {
-	tmpl, err := txtTmpl.New("payload").Parse(tmplStr)
+	tmpl, err := template.New("payload").Funcs(template.FuncMap{"json": func(v interface{}) string {
+		a, _ := json.Marshal(v)
+		return string(a)
+	}}).Parse(tmplStr)
 	if err != nil {
 		return nil, err
 	}
@@ -405,9 +407,11 @@ func renderPayload(tmplStr string, payload *core.IssuerPayload) (map[string]inte
 		return nil, err
 	}
 
-	strRawPayload := regexp.MustCompile(`\s+`).ReplaceAllString(bufRawPayload.String(), "")
-	strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
+	strRawPayload := bufRawPayload.String()
+	//strRawPayload = regexp.MustCompile(`\s+`).ReplaceAllString(strRawPayload, "")
+	//strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
 
+	// todo: too many convertions
 	p := make(map[string]interface{})
 	err = json.Unmarshal([]byte(strRawPayload), &p)
 	return p, err
