@@ -61,7 +61,7 @@ func LoadMainConfig() (*Project, error) {
 	viper.SetEnvPrefix("AUREOLE")
 
 	if confPath = viper.GetString("conf_path"); confPath == "" {
-		confPath = "./config.yaml"
+		confPath = "../config.light.yaml"
 	}
 
 	viper.SetConfigType("yaml")

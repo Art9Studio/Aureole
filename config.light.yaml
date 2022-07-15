@@ -14,16 +14,23 @@ apps:
       - plugin: "vk"
         name: vk_one
         config:
-          client_id: "8219491"
-          client_secret: MIifqytrXKukymIFnaYW
+          client_id: ${VK_CLIENT_ID}
+          client_secret: ${VK_SECRET}
           scopes:
             - email
           fields: [ ]
 
-      - plugin: "apple"
-        name: apple_one
-
-
+      - plugin: "phone"
+        config:
+          sender: twilio
+          template: phone_otp
+          max_attempts: 3
+          otp:
+            length: 6
+            alphabet: num
+            prefix: A-
+            postfix: -B
+            exp: 300
 #      - plugin: "vk"
 #        name: vk_two
 #        config:
@@ -32,6 +39,16 @@ apps:
 #          scopes:
 #            - email
 #          fields: [ ]
+    senders:
+      - plugin: "twilio"
+        name: twilio
+        config:
+          account_sid:  ${TEST_TWILIO_ACCOUNT_SID}
+          auth_token: ${TEST_TWILIO_AUTH_TOKEN}
+          from: ${TEST_TWILIO_PHONE_NUMBER}
+          templates:
+            phone_otp: ../lab/templates/phone_otp.txt
+            sms_2fa_tmpl: ../lab/templates/sms_2fa.txt
 
     issuer:
       plugin: "jwt"
@@ -40,14 +57,14 @@ apps:
         sub: true
         nbf: 0
         iat: true
-        access_bearer: cookie # [cookie, header, both]
+        access_bearer: body # [cookie, body, both]
         refresh_bearer: body # [cookie, body, both]
         sign_key: local_jwk_keys
         verify_keys:
           - local_jwk_keys
         access_exp: 900000
         refresh_exp: 7890000
-        payload: lab/templates/jwt_payload.json.tmpl
+        payload: ../lab/templates/jwt_payload.json.tmpl
 
     crypto_keys:
       - plugin: "jwk"
@@ -87,17 +104,17 @@ apps:
       - plugin: "file"
         name: local_jwk_keys
         config:
-          path: lab/keys/keys.json
+          path: ../lab/keys/keys.json
 
       - plugin: "file"
         name: internal_sign_keys
         config:
-          path: lab/keys/service_sign_key.json
+          path: ../lab/keys/service_sign_key.json
 
       - plugin: "file"
         name: internal_enc_keys
         config:
-          path: lab/keys/service_enc_key.json
+          path: ../lab/keys/service_enc_key.json
     
     root_plugins:
       - plugin: "urls"
