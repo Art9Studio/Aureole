@@ -14,8 +14,8 @@ apps:
       - plugin: "vk"
         name: vk_one
         config:
-          client_id: ${VK_CLIENT_ID}
-          client_secret: ${VK_SECRET}
+          client_id: "8219491"
+          client_secret: MIifqytrXKukymIFnaYW
           scopes:
             - email
           fields: [ ]
