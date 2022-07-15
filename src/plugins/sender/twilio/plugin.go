@@ -55,7 +55,7 @@ func (t *twilio) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (t twilio) GetMetadata() core.Metadata {
+func (t *twilio) GetMetadata() core.Metadata {
 	return meta
 }
 

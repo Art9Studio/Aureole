@@ -31,7 +31,13 @@ apps:
             prefix: A-
             postfix: -B
             exp: 300
-#      - plugin: "vk"
+
+      - plugin: email
+        config:
+          sender: email
+          template: magic_link
+          exp: 3600
+    #      - plugin: "vk"
 #        name: vk_two
 #        config:
 #          client_id: ${VK_CLIENT_ID}
@@ -49,6 +55,19 @@ apps:
           templates:
             phone_otp: ../lab/templates/phone_otp.txt
             sms_2fa_tmpl: ../lab/templates/sms_2fa.txt
+      - plugin: "email"
+        name: email
+        config:
+          host: smtp.gmail.com:587
+          username: username@example.com
+          password: ${SMTP_PASSWORD}
+          from: app@example.com
+          templates:
+            default_text: ../lab/templates/default.txt
+            default_html: ../lab/templates/default.html
+            reset: ../lab/templates/password_reset.txt
+            magic_link: ../lab/templates/magic_link.txt
+            email_verification: ../lab/templates/email_verification.txt
 
     issuer:
       plugin: "jwt"
