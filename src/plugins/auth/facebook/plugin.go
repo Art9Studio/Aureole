@@ -35,7 +35,7 @@ type (
 	code struct {
 		Code string `query:"code"`
 	}
-	GetAuthHandlerReqBody struct {
+	GetAuthHandlerQuery struct {
 		state
 		code
 	}
@@ -75,7 +75,7 @@ func (facebook) GetMetadata() core.Metadata {
 
 func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		input := &GetAuthHandlerReqBody{}
+		input := &GetAuthHandlerQuery{}
 		if err := c.QueryParser(input); err != nil {
 			return nil, err
 		}
@@ -118,13 +118,13 @@ func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 }
 
 func (f *facebook) GetOAS3AuthRequestBody() *openapi3.RequestBody {
-	return &openapi3.RequestBody{}
+	return nil
 }
 
-func (f *facebook) GetOAS3AuthParameters() *openapi3.Parameters {
+func (f *facebook) GetOAS3AuthParameters() openapi3.Parameters {
 	stateSchema, _ := openapi3gen.NewSchemaRefForValue(state{}, nil)
 	codeSchema, _ := openapi3gen.NewSchemaRefForValue(code{}, nil)
-	return &openapi3.Parameters{
+	return openapi3.Parameters{
 		{
 			Value: &openapi3.Parameter{
 				Name:     "State",

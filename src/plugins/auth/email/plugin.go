@@ -146,12 +146,12 @@ func createMagicLink(e *email) *url.URL {
 }
 
 func (e *email) GetOAS3AuthRequestBody() *openapi3.RequestBody {
-	return &openapi3.RequestBody{}
+	return nil
 }
 
-func (e *email) GetOAS3AuthParameters() *openapi3.Parameters {
+func (e *email) GetOAS3AuthParameters() openapi3.Parameters {
 	schema, _ := openapi3gen.NewSchemaRefForValue(GetAuthHandlerQuery{}, nil)
-	return &openapi3.Parameters{
+	return openapi3.Parameters{
 		&openapi3.ParameterRef{
 			Value: &openapi3.Parameter{
 				Name:     "Token",

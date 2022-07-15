@@ -35,7 +35,7 @@ type (
 	code struct {
 		Code string `query:"code"`
 	}
-	GetAuthHandlerReqBody struct {
+	GetAuthHandlerQuery struct {
 		state
 		code
 	}
@@ -75,7 +75,7 @@ func (google) GetMetadata() core.Metadata {
 
 func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		input := &GetAuthHandlerReqBody{}
+		input := &GetAuthHandlerQuery{}
 		if err := c.QueryParser(input); err != nil {
 			return nil, err
 		}
@@ -134,13 +134,13 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 }
 
 func (g *google) GetOAS3AuthRequestBody() *openapi3.RequestBody {
-	return &openapi3.RequestBody{}
+	return nil
 }
 
-func (g *google) GetOAS3AuthParameters() *openapi3.Parameters {
+func (g *google) GetOAS3AuthParameters() openapi3.Parameters {
 	stateSchema, _ := openapi3gen.NewSchemaRefForValue(state{}, nil)
 	codeSchema, _ := openapi3gen.NewSchemaRefForValue(code{}, nil)
-	return &openapi3.Parameters{
+	return openapi3.Parameters{
 		{
 			Value: &openapi3.Parameter{
 				Name:     "State",

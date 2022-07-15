@@ -19,6 +19,7 @@ apps:
           scopes:
             - email
           fields: [ ]
+
       - plugin: "apple"
         name: apple_one
 

@@ -103,7 +103,6 @@ func assembleOAS3Operation(app *app, meta Metadata, OAS3Parameters openapi3.Para
 		Tags:        []string{"App \"" + app.name + "\""},
 		Description: "Authenticate with " + displayName,
 		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
-		// todo (Talgat): uncomment when it will be implemented
 		Parameters: OAS3Parameters,
 		RequestBody: &openapi3.RequestBodyRef{
 			Value: OAS3RequestBody,
@@ -141,6 +140,7 @@ func AssembleOASRedirectResponse(description *string) *openapi3.Response {
 							Value: &openapi3.Schema{
 								Type:        "string",
 								Description: "Redirect URL",
+								Format:      "uri",
 							},
 						},
 					},

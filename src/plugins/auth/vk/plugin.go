@@ -29,15 +29,9 @@ func init() {
 }
 
 type (
-	state struct {
+	GetAuthHandlerQuery struct {
 		State string `query:"state"`
-	}
-	code struct {
-		Code string `query:"code"`
-	}
-	GetAuthHandlerReqBody struct {
-		state
-		code
+		Code  string `query:"code"`
 	}
 )
 
@@ -76,7 +70,7 @@ func (vk) GetMetadata() core.Metadata {
 
 func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		input := &GetAuthHandlerReqBody{}
+		input := &GetAuthHandlerQuery{}
 		if err := c.QueryParser(input); err != nil {
 			return nil, err
 		}
@@ -119,13 +113,13 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 }
 
 func (v *vk) GetOAS3AuthRequestBody() *openapi3.RequestBody {
-	return &openapi3.RequestBody{}
+	return nil
 }
 
-func (v *vk) GetOAS3AuthParameters() *openapi3.Parameters {
-	stateSchema, _ := openapi3gen.NewSchemaRefForValue(state{}, nil)
-	codeSchema, _ := openapi3gen.NewSchemaRefForValue(code{}, nil)
-	return &openapi3.Parameters{
+func (v *vk) GetOAS3AuthParameters() openapi3.Parameters {
+	stateSchema, _ := openapi3gen.NewSchemaRefForValue(GetAuthHandlerQuery{}.State, nil)
+	codeSchema, _ := openapi3gen.NewSchemaRefForValue(GetAuthHandlerQuery{}.Code, nil)
+	return openapi3.Parameters{
 		{
 			Value: &openapi3.Parameter{
 				Name:     "State",

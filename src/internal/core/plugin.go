@@ -28,7 +28,7 @@ type (
 		GetAuthHandler() AuthHandlerFunc
 		GetAuthHTTPMethod() string
 		GetOAS3AuthRequestBody() *openapi3.RequestBody
-		GetOAS3AuthParameters() *openapi3.Parameters
+		GetOAS3AuthParameters() openapi3.Parameters
 	}
 
 	AuthResult struct {

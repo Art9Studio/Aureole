@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/getkin/kin-openapi/openapi3"
 	"log"
 	"net/http"
 	"net/url"
@@ -394,11 +393,8 @@ func initAuthenticators(app *app, p *project, r *router) {
 				if err != nil {
 					log.Println("cannot get success response from issuer in app ", app.name)
 				}
-				OAS3RequestBody := openapi3.NewRequestBody()
-				OAS3Parameters := openapi3.NewParameters()
-				// todo (Talgat): call them when implement
-				// OAS3RequestBody, err := app.issuer.GetOAS3AuthRequestBody()
-				// OAS3Parameters, err := app.issuer.GetOAS3AuthParameters()
+				OAS3RequestBody := authenticator.GetOAS3AuthRequestBody()
+				OAS3Parameters := authenticator.GetOAS3AuthParameters()
 
 				pipelineAuthRoute := &ExtendedRoute{
 					Route: Route{

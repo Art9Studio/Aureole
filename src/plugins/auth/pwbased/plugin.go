@@ -261,8 +261,8 @@ func (p *pwBased) GetOAS3AuthRequestBody() *openapi3.RequestBody {
 	}
 }
 
-func (p *pwBased) GetOAS3AuthParameters() *openapi3.Parameters {
-	return &openapi3.Parameters{}
+func (p *pwBased) GetOAS3AuthParameters() openapi3.Parameters {
+	return openapi3.Parameters{}
 }
 
 func (p *pwBased) GetCustomAppRoutes() []*core.Route {

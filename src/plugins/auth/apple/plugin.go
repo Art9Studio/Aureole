@@ -150,8 +150,8 @@ func (a *apple) GetOAS3AuthRequestBody() *openapi3.RequestBody {
 	}
 }
 
-func (a *apple) GetOAS3AuthParameters() *openapi3.Parameters {
-	return &openapi3.Parameters{}
+func (a *apple) GetOAS3AuthParameters() openapi3.Parameters {
+	return openapi3.Parameters{}
 }
 
 func initConfig(conf *configs.RawConfig) (*config, error) {
