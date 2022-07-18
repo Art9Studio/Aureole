@@ -63,15 +63,15 @@ const (
 const (
 	body   tokenResp = "body"
 	cookie tokenResp = "cookie"
-	//both   tokenResp = "both"
 )
 
 var keyMap = map[tokenType]map[tokenResp]string{
 	accessToken: {
+		body:   "access_token",
 		cookie: "access_token",
 	},
 	refreshToken: {
-		body:   "refresh",
+		body:   "refresh_token",
 		cookie: "refresh_token",
 	},
 }

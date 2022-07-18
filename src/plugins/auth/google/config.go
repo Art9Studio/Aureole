@@ -2,11 +2,6 @@ package google
 
 import "aureole/internal/configs"
 
-const (
-	pathPrefix  = "/google"
-	redirectUrl = "/login"
-)
-
 type (
 	config struct {
 		Filter       map[string]string `mapstructure:"filter" json:"filter"`

@@ -7,7 +7,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
-	"path"
 	"strconv"
 	"time"
 
@@ -165,7 +164,8 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 
 func initProvider(a *apple) error {
 	url := a.pluginAPI.GetAppUrl()
-	url.Path = path.Clean(url.Path + pathPrefix + redirectUrl)
+	redirectUri := a.pluginAPI.GetAppUrl()
+	redirectUri.Path = a.pluginAPI.GetAuthRoute(meta.ShortName)
 	a.provider = &providerConfig{
 		clientId: a.conf.ClientId,
 		teamId:   a.conf.TeamId,
@@ -233,7 +233,7 @@ func (a *apple) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:        http.MethodGet,
-			Path:          pathPrefix,
+			Path:          core.GetOAuthPathPostfix(),
 			Handler:       getAuthCode(a),
 			OAS3Operation: assembleOAS3Operation(),
 		},

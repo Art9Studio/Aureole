@@ -11,6 +11,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
+const AuthPipelinePath = "/auth"
+
 type (
 	Route struct {
 		Method        string
@@ -104,4 +106,8 @@ func (r *router) getProjectRoutes() []*Route {
 
 func SendError(c *fiber.Ctx, statusCode int, errorMessage string) error {
 	return c.Status(statusCode).JSON(ErrorMessage{Error: errorMessage})
+}
+
+func GetOAuthPathPostfix() string {
+	return "/oauth"
 }

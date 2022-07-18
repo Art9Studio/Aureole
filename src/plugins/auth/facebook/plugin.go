@@ -6,7 +6,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
-	"path"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -155,7 +154,8 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 
 func initProvider(f *facebook) error {
 	url := f.pluginAPI.GetAppUrl()
-	url.Path = path.Clean(url.Path + pathPrefix + redirectUrl)
+	redirectUri := f.pluginAPI.GetAppUrl()
+	redirectUri.Path = f.pluginAPI.GetAuthRoute(meta.ShortName)
 	f.provider = &oauth2.Config{
 		ClientID:     f.conf.ClientId,
 		ClientSecret: f.conf.ClientSecret,
@@ -171,7 +171,7 @@ func (f *facebook) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:        http.MethodGet,
-			Path:          pathPrefix,
+			Path:          core.GetOAuthPathPostfix(),
 			Handler:       getAuthCode(f),
 			OAS3Operation: assembleOAS3Operation(),
 		},

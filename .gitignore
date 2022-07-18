@@ -88,3 +88,5 @@ Temporary Items
 .apdisk
 
 __pycache__
+
+config.light.yaml

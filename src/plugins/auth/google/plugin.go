@@ -9,7 +9,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
-	"path"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -171,7 +170,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 
 func initProvider(g *google) error {
 	redirectUri := g.pluginAPI.GetAppUrl()
-	redirectUri.Path = path.Clean(redirectUri.Path + pathPrefix + redirectUrl)
+	redirectUri.Path = g.pluginAPI.GetAuthRoute(meta.ShortName)
 	g.provider = &oauth2.Config{
 		ClientID:     g.conf.ClientId,
 		ClientSecret: g.conf.ClientSecret,
@@ -186,7 +185,7 @@ func (g *google) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{
 		{
 			Method:        http.MethodGet,
-			Path:          pathPrefix,
+			Path:          core.GetOAuthPathPostfix(),
 			Handler:       getAuthCode(g),
 			OAS3Operation: assembleOAS3Operation(),
 		},

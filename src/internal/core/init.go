@@ -399,7 +399,7 @@ func initAuthenticators(app *app, p *project, r *router) {
 				pipelineAuthRoute := &ExtendedRoute{
 					Route: Route{
 						Method:        authenticator.GetAuthHTTPMethod(),
-						Path:          pathPrefix + "/auth",
+						Path:          pathPrefix + AuthPipelinePath,
 						Handler:       pipelineAuthWrapper(authenticator.GetAuthHandler(), app),
 						OAS3Operation: assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse),
 					},

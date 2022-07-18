@@ -4,11 +4,6 @@ import (
 	"aureole/internal/configs"
 )
 
-const (
-	pathPrefix  = "/vk"
-	redirectUrl = "/auth"
-)
-
 type (
 	config struct {
 		Filter       map[string]string `mapstructure:"filter" json:"filter"`

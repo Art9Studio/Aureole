@@ -29,7 +29,7 @@ func (c *config) setDefaults() {
 	configs.SetDefault(&c.Iat, true)
 	configs.SetDefault(&c.Sub, true)
 	configs.SetDefault(&c.AccessTokenBearer, body)
-	configs.SetDefault(&c.RefreshTokenBearer, cookie)
+	configs.SetDefault(&c.RefreshTokenBearer, body)
 	configs.SetDefault(&c.AccessExp, 900)
 	configs.SetDefault(&c.RefreshExp, 7890000)
 	configs.SetDefault(&c.VerifyKeys, []string{c.SignKey})

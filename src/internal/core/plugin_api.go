@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/lestrrat-go/jwx/jwt"
 	"net/url"
+	"path"
 	"regexp"
 )
 
@@ -185,4 +186,8 @@ func (api PluginAPI) Filter(fields, filters map[string]string) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (api PluginAPI) GetAuthRoute(shortName string) string {
+	return path.Clean(getPluginPathPrefix(api.app.pathPrefix, shortName) + AuthPipelinePath)
 }
