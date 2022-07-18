@@ -45,7 +45,7 @@ func (m *memory) Init(api core.PluginAPI) error {
 	return nil
 }
 
-func (m memory) GetMetadata() core.Metadata {
+func (m *memory) GetMetadata() core.Metadata {
 	return meta
 }
 

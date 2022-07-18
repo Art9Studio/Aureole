@@ -171,6 +171,10 @@ func (api PluginAPI) InvalidateJWT(token jwt.Token) error {
 	return invalidateJWT(api.app, token)
 }
 
+func (api PluginAPI) InvalidateJWT2(rawToken string) error {
+	return invalidateJWT2(api.app, rawToken)
+}
+
 func (api PluginAPI) GetFromJWT(token jwt.Token, name string, value interface{}) error {
 	return getFromJWT(token, name, value)
 }

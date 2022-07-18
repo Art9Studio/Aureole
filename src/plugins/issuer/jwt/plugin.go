@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
 	"strconv"
 	"text/template"
 	"time"
@@ -408,8 +409,8 @@ func renderPayload(tmplStr string, payload *core.IssuerPayload) (map[string]inte
 	}
 
 	strRawPayload := bufRawPayload.String()
-	//strRawPayload = regexp.MustCompile(`\s+`).ReplaceAllString(strRawPayload, "")
-	//strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
+	strRawPayload = regexp.MustCompile(`\s+`).ReplaceAllString(strRawPayload, "")
+	strRawPayload = regexp.MustCompile(`,}`).ReplaceAllString(strRawPayload, "}")
 
 	// todo: too many convertions
 	p := make(map[string]interface{})
