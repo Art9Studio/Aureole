@@ -111,7 +111,6 @@ func (e *email) GetAuthHandler() core.AuthHandlerFunc {
 		if err = e.pluginAPI.GetFromJWT(token, "email", &email); err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		// todo(Talgat): unnesseccary?
 		if err = e.pluginAPI.InvalidateJWT(token); err != nil {
 			return nil, errors.New(err.Error())
 		}

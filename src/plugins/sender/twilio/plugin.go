@@ -8,6 +8,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -75,7 +76,7 @@ func (t *twilio) Send(recipient, subject, tmplStr, _ string, tmplCtx map[string]
 }
 
 func (t *twilio) SendRaw(recipient, _, message string) error {
-	endpoint := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", t.conf.AccountSid)
+	endpoint := fmt.Sprintf("%s/%s/%s", t.conf.Endpoint, t.conf.AccountSid, t.conf.MessageType)
 	data := url.Values{}
 	data.Set("Body", message)
 	data.Set("From", t.conf.From)
@@ -88,7 +89,7 @@ func (t *twilio) SendRaw(recipient, _, message string) error {
 	}
 
 	r.SetBasicAuth(t.conf.AccountSid, t.conf.AuthToken)
-	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Set("Content-Type", fiber.MIMEApplicationForm)
 	r.Header.Set("Content-Length", strconv.Itoa(len(data.Encode())))
 
 	res, err := http.DefaultClient.Do(r)

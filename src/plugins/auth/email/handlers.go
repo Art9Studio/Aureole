@@ -21,11 +21,6 @@ func sendMagicLink(e *email) func(*fiber.Ctx) error {
 		}
 		link := attachToken(e.magicLink, tokenRaw)
 
-		// todo(Talgat): think how to handle that
-		if err = e.pluginAPI.InvalidateJWT2(tokenRaw); err != nil {
-			return core.SendError(c, http.StatusInternalServerError, err.Error())
-		}
-
 		err = e.sender.Send(i.Email, "", e.tmpl, e.tmplExt, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())

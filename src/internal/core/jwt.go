@@ -35,6 +35,7 @@ func parseJWT(app *app, rawToken string) (jwt.Token, error) {
 	if !ok {
 		return nil, errors.New("cannot get internal sign key")
 	}
+
 	token, err := jwt.ParseString(
 		rawToken,
 		jwt.WithIssuer("Aureole"),
@@ -47,64 +48,19 @@ func parseJWT(app *app, rawToken string) (jwt.Token, error) {
 		return nil, err
 	}
 
-	storage, ok := app.getServiceStorage()
-	if !ok {
-		return nil, errors.New("cannot get internal storage")
-	}
-	ok, err = storage.Exists(token.JwtID())
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, errors.New("jwt: invalid token")
-	} else {
-		return token, nil
-	}
+	//storage, ok := app.getServiceStorage()
+	//if !ok {
+	//	return nil, errors.New("cannot get internal storage")
+	//}
+	//ok, err = storage.Exists(token.JwtID())
+	return token, nil
 }
 
 func invalidateJWT(app *app, token jwt.Token) error {
 	if time.Now().Before(token.Expiration()) {
-		storage, ok := app.getServiceStorage()
-		if !ok {
-			return errors.New("cannot get internal storage")
-		}
-
-		err := storage.Set(token.JwtID(), token, int(time.Until(token.Expiration()).Seconds()))
-		if err != nil {
-			return err
-		}
+		return nil
 	}
-	return nil
-}
-
-// todo(Talgat): Think about how to handle that
-func invalidateJWT2(app *app, tokenRaw string) error {
-	keySet, ok := app.getServiceSignKey()
-	if !ok {
-		return errors.New("cannot get internal sign key")
-	}
-	token, err := jwt.ParseString(
-		tokenRaw,
-		jwt.WithIssuer("Aureole"),
-		jwt.WithAudience("Aureole"),
-		jwt.WithClaimValue("type", "internal"),
-		jwt.WithValidate(true),
-		jwt.WithKeySet(keySet.GetPublicSet()),
-	)
-	if err != nil {
-		return err
-	}
-	if time.Now().Before(token.Expiration()) {
-		storage, ok := app.getServiceStorage()
-		if !ok {
-			return errors.New("cannot get internal storage")
-		}
-
-		err := storage.Set(token.JwtID(), token, int(time.Until(token.Expiration()).Seconds()))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return errors.New("token expired")
 }
 
 func getFromJWT(token jwt.Token, name string, value interface{}) error {

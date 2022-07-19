@@ -52,7 +52,7 @@ type (
 )
 
 func (p *authn) GetAuthHTTPMethod() string {
-	return http.MethodGet
+	return http.MethodPost
 }
 
 func Create(conf configs.AuthPluginConfig) core.Authenticator {
