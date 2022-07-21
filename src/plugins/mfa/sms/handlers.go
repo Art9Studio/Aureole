@@ -2,13 +2,14 @@ package sms
 
 import (
 	"aureole/internal/core"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func resend(s *sms) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *token
+		var input *Init2FAReqBody
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}

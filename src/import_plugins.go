@@ -13,7 +13,7 @@ import (
 	_ "aureole/plugins/crypto-key/pem"
 	_ "aureole/plugins/issuer/jwt"
 	//_ "aureole/plugins/mfa/otp"
-	// _ "aureole/plugins/mfa/sms"
+	_ "aureole/plugins/mfa/sms"
 	//_ "aureole/plugins/mfa/yubikey"
 	_ "aureole/plugins/crypto-storage/file"
 	_ "aureole/plugins/crypto-storage/url"

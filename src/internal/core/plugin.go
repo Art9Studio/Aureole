@@ -188,6 +188,10 @@ type (
 		IsEnabled(cred *Credential) (bool, error)
 		Init2FA() MFAInitFunc
 		Verify() MFAVerifyFunc
+		GetOAS3AuthRequestBody() *openapi3.RequestBody
+		GetOAS3AuthParameters() openapi3.Parameters
+		GetOAS3VerifyRequestBody() *openapi3.RequestBody
+		GetOAS3VerifyParameters() openapi3.Parameters
 	}
 
 	MFAVerifyFunc func(fiber.Ctx) (cred *Credential, errorData fiber.Map, err error)

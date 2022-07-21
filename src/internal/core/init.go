@@ -471,25 +471,37 @@ func initSecondFactor(app *app, p *project, r *router) {
 					app.mfa[meta.ShortName] = nil
 				} else {
 					pathPrefix := "/2fa/" + strings.ReplaceAll(meta.ShortName, "_", "-")
+
+					OAS3successResponse, err := app.issuer.GetOAS3SuccessResponse()
+					if err != nil {
+						log.Println("cannot get success response from issuer in app ", app.name)
+					}
+					OAS3Parameters := secondFactor.GetOAS3AuthParameters()
+					OAS3RequestBody := secondFactor.GetOAS3AuthRequestBody()
+					OAS3VerifyParameters := secondFactor.GetOAS3VerifyParameters()
+					OAS3VerifyRequestBody := secondFactor.GetOAS3VerifyRequestBody()
+
 					routes = append(routes,
 						&ExtendedRoute{
 							Route: Route{
 
-								Method:  http.MethodPost,
-								Path:    pathPrefix + "/start",
-								Handler: mfaInitHandler(secondFactor.Init2FA(), app),
+								Method:        http.MethodPost,
+								Path:          pathPrefix + "/start",
+								Handler:       mfaInitHandler(secondFactor.Init2FA(), app),
+								OAS3Operation: assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse),
 							},
 							Metadata: secondFactor.GetMetadata(),
 						},
-
 						&ExtendedRoute{
 							Route: Route{
-								Method:  http.MethodPost,
-								Path:    pathPrefix + "/verify",
-								Handler: mfaVerificationHandler(secondFactor.Verify(), app),
+								Method:        http.MethodPost,
+								Path:          pathPrefix + "/verify",
+								Handler:       mfaVerificationHandler(secondFactor.Verify(), app),
+								OAS3Operation: assembleOAS3Operation(app, meta, OAS3VerifyParameters, OAS3VerifyRequestBody, OAS3successResponse),
 							},
 							Metadata: meta,
 						})
+
 					app.mfa[name] = secondFactor
 				}
 			} else {

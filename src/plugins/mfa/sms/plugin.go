@@ -6,9 +6,12 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -16,7 +19,7 @@ import (
 )
 
 // const pluginID = "0509"
-
+//go:embed meta.yaml
 var rawMeta []byte
 
 var meta core.Metadata
@@ -24,6 +27,11 @@ var meta core.Metadata
 // init initializes package by register pluginCreator
 func init() {
 	meta = core.MFARepo.Register(rawMeta, Create)
+}
+
+type SmsPluginVerifier interface {
+	GetOAS3VerifyRequestBody() *openapi3.RequestBody
+	GetOAS3VerifyParameters() openapi3.Parameters
 }
 
 type (
@@ -39,9 +47,13 @@ type (
 		Token string `json:"token"`
 	}
 
-	otp struct {
+	VerifyReqBody struct {
 		token
 		Otp string `json:"otp"`
+	}
+
+	Init2FAReqBody struct {
+		token
 	}
 )
 
@@ -77,17 +89,17 @@ func (s *sms) Init(api core.PluginAPI) (err error) {
 	return nil
 }
 
-func (s sms) GetMetadata() core.Metadata {
+func (s *sms) GetMetadata() core.Metadata {
 	return meta
 }
 
 func (s *sms) IsEnabled(cred *core.Credential) (bool, error) {
-	return s.pluginAPI.Is2FAEnabled(cred, pluginID)
+	return s.pluginAPI.Is2FAEnabled(cred, strconv.Itoa(int(meta.PluginID)))
 }
 
 func (s *sms) Init2FA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
-		var strToken *token
+		strToken := &Init2FAReqBody{}
 		if err := c.BodyParser(strToken); err != nil {
 			return nil, err
 		}
@@ -146,9 +158,26 @@ func (s *sms) Init2FA() core.MFAInitFunc {
 	}
 }
 
+func (s *sms) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	schema, _ := openapi3gen.NewSchemaRefForValue(&Init2FAReqBody{}, nil)
+	return &openapi3.RequestBody{
+		Description: "Token",
+		Required:    true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: schema,
+			},
+		},
+	}
+}
+
+func (s *sms) GetOAS3AuthParameters() openapi3.Parameters {
+	return openapi3.Parameters{}
+}
+
 func (s *sms) Verify() core.MFAVerifyFunc {
 	return func(c fiber.Ctx) (*core.Credential, fiber.Map, error) {
-		var otp *otp
+		otp := &VerifyReqBody{}
 		if err := c.BodyParser(otp); err != nil {
 			return nil, nil, err
 		}
@@ -212,6 +241,23 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 	}
 }
 
+func (s *sms) GetOAS3VerifyRequestBody() *openapi3.RequestBody {
+	schema, _ := openapi3gen.NewSchemaRefForValue(&VerifyReqBody{}, nil)
+	return &openapi3.RequestBody{
+		Description: "Token & OTP",
+		Required:    true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: schema,
+			},
+		},
+	}
+}
+
+func (s *sms) GetOAS3VerifyParameters() openapi3.Parameters {
+	return openapi3.Parameters{}
+}
+
 func initConfig(conf *configs.RawConfig) (*config, error) {
 	PluginConf := &config{}
 	if err := mapstructure.Decode(conf, PluginConf); err != nil {
@@ -222,11 +268,48 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 }
 
 func (s *sms) GetCustomAppRoutes() []*core.Route {
+	Init2FASchema, _ := openapi3gen.NewSchemaRefForValue(&Init2FAReqBody{}, nil)
+	resendResSchema, _ := openapi3gen.NewSchemaRefForValue(&token{}, nil)
+
 	return []*core.Route{
 		{
-			Method:  http.MethodPost,
-			Path:    resendUrl,
-			Handler: resend(s),
+			Method:        http.MethodPost,
+			Path:          resendUrl,
+			Handler:       resend(s),
+			OAS3Operation: assembleOAS3Operation(Init2FASchema, resendResSchema),
 		},
 	}
+}
+
+func assembleOAS3Operation(reqSchema, resSchema *openapi3.SchemaRef) *openapi3.Operation {
+	okResponse := "OK"
+	badReqResponse := "Bad Request"
+	internalErrorResponse := "Internal Server Error"
+	operation := &openapi3.Operation{
+		OperationID: meta.ShortName,
+		Description: meta.DisplayName,
+		RequestBody: &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Required: true,
+				Content: map[string]*openapi3.MediaType{
+					fiber.MIMEApplicationJSON: {
+						Schema: resSchema,
+					},
+				},
+			},
+		},
+		Responses: map[string]*openapi3.ResponseRef{
+			strconv.Itoa(http.StatusOK): {
+				Value: core.AssembleOAS3OKResponse(&okResponse, resSchema),
+			},
+			strconv.Itoa(http.StatusBadRequest): {
+				Value: core.AssembleOAS3ErrResponse(&badReqResponse),
+			},
+			strconv.Itoa(http.StatusInternalServerError): {
+				Value: core.AssembleOAS3ErrResponse(&internalErrorResponse),
+			},
+		},
+	}
+
+	return operation
 }
