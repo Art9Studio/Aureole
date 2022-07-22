@@ -7,6 +7,8 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,6 +17,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+//go:embed meta.yaml
 var rawMeta []byte
 
 var meta core.Metadata
@@ -38,6 +41,14 @@ type (
 	otp struct {
 		token
 		Otp string `json:"otp"`
+	}
+
+	Init2FAReqBody struct {
+		token
+	}
+
+	VerifyReqBody struct {
+		otp
 	}
 )
 
@@ -70,12 +81,12 @@ func (g otpAuth) GetMetadata() core.Metadata {
 
 func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
 	// TODO: Что вместо ID?
-	return g.pluginAPI.Is2FAEnabled(cred, ID)
+	return g.pluginAPI.Is2FAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
 }
 
 func (g *otpAuth) Init2FA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
-		var strToken *token
+		strToken := &Init2FAReqBody{}
 		if err := c.BodyParser(strToken); err != nil {
 			return nil, err
 		}
@@ -100,9 +111,26 @@ func (g *otpAuth) Init2FA() core.MFAInitFunc {
 	}
 }
 
+func (g *otpAuth) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	schema, _ := openapi3gen.NewSchemaRefForValue(&Init2FAReqBody{}, nil)
+	return &openapi3.RequestBody{
+		Description: "Token",
+		Required:    true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: schema,
+			},
+		},
+	}
+}
+
+func (g *otpAuth) GetOAS3AuthParameters() openapi3.Parameters {
+	return openapi3.Parameters{}
+}
+
 func (g *otpAuth) Verify() core.MFAVerifyFunc {
 	return func(c fiber.Ctx) (*core.Credential, fiber.Map, error) {
-		var otp *otp
+		otp := &VerifyReqBody{}
 		if err := c.BodyParser(otp); err != nil {
 			return nil, nil, err
 		}
@@ -132,18 +160,22 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 			return nil, nil, err
 		}
 
-		secret, err := g.manager.GetData(cred, provider, "secret")
+		manager, ok := g.pluginAPI.GetIDManager()
+		if !ok {
+			return nil, nil, errors.New("cannot get IDManager")
+		}
+		secret, err := manager.GetData(cred, provider, "secret")
 		if err != nil {
 			return nil, nil, err
 		}
-		scratchCodes, err := g.manager.GetData(cred, provider, "scratch_codes")
+		scratchCodes, err := manager.GetData(cred, provider, "scratch_codes")
 		if err != nil {
 			return nil, nil, err
 		}
 
 		var counter int
 		if g.conf.Alg == "hotp" {
-			rawCounter, err := g.manager.GetData(cred, provider, "counter")
+			rawCounter, err := manager.GetData(cred, provider, "counter")
 			if err != nil {
 				return nil, nil, err
 			}
@@ -170,9 +202,10 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("wrong otp")
 		}
-		err = g.manager.On2FA(cred, &core.MFAData{
-			PluginID:     ID,
-			ProviderName: name,
+		err = manager.On2FA(cred, &core.MFAData{
+			PluginID: fmt.Sprintf("%d", meta.PluginID),
+			// todo (Talgat) : get provider name
+			ProviderName: "name",
 			Payload:      map[string]interface{}{"counter": otpConf.HotpCounter, "scratch_code": otpConf.ScratchCodes},
 		})
 		if err != nil {

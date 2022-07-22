@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"log"
 	"net/http"
 	"net/url"
@@ -458,6 +459,7 @@ func initSecondFactor(app *app, p *project, r *router) {
 	if app.mfa != nil && len(app.mfa) != 0 {
 		for name := range app.mfa {
 			secondFactor := app.mfa[name]
+			verifyRequest, okVerify := secondFactor.(VerifyRequest)
 			pluginInit, ok := secondFactor.(PluginInitializer)
 			if ok {
 				// todo: add runtime ID
@@ -478,8 +480,11 @@ func initSecondFactor(app *app, p *project, r *router) {
 					}
 					OAS3Parameters := secondFactor.GetOAS3AuthParameters()
 					OAS3RequestBody := secondFactor.GetOAS3AuthRequestBody()
-					OAS3VerifyParameters := secondFactor.GetOAS3VerifyParameters()
-					OAS3VerifyRequestBody := secondFactor.GetOAS3VerifyRequestBody()
+					OAS3VerifyParameters, OAS3VerifyRequestBody := openapi3.Parameters{}, &openapi3.RequestBody{}
+					if okVerify {
+						OAS3VerifyParameters = verifyRequest.GetOAS3VerifyParameters()
+						OAS3VerifyRequestBody = verifyRequest.GetOAS3VerifyRequestBody()
+					}
 
 					routes = append(routes,
 						&ExtendedRoute{

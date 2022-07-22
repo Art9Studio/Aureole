@@ -190,6 +190,9 @@ type (
 		Verify() MFAVerifyFunc
 		GetOAS3AuthRequestBody() *openapi3.RequestBody
 		GetOAS3AuthParameters() openapi3.Parameters
+	}
+
+	VerifyRequest interface {
 		GetOAS3VerifyRequestBody() *openapi3.RequestBody
 		GetOAS3VerifyParameters() openapi3.Parameters
 	}

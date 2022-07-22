@@ -18,7 +18,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// const pluginID = "0509"
 //go:embed meta.yaml
 var rawMeta []byte
 
@@ -27,11 +26,6 @@ var meta core.Metadata
 // init initializes package by register pluginCreator
 func init() {
 	meta = core.MFARepo.Register(rawMeta, Create)
-}
-
-type SmsPluginVerifier interface {
-	GetOAS3VerifyRequestBody() *openapi3.RequestBody
-	GetOAS3VerifyParameters() openapi3.Parameters
 }
 
 type (
@@ -47,13 +41,13 @@ type (
 		Token string `json:"token"`
 	}
 
+	Init2FAReqBody struct {
+		token
+	}
+
 	VerifyReqBody struct {
 		token
 		Otp string `json:"otp"`
-	}
-
-	Init2FAReqBody struct {
-		token
 	}
 )
 

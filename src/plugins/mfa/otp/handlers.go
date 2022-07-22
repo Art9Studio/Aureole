@@ -4,8 +4,11 @@ import (
 	"aureole/internal/core"
 	"aureole/pkg/dgoogauth"
 	"encoding/base32"
+	"errors"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/skip2/go-qrcode"
+	"net/http"
 	"strings"
 )
 
@@ -46,9 +49,15 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		}
 		response["qr"] = qr
 
-		err = g.manager.On2FA(cred, &core.MFAData{
-			PluginID:     ID,
-			ProviderName: name,
+		manager, ok := g.pluginAPI.GetIDManager()
+		if !ok {
+			return errors.New("cannot get IDManager")
+		}
+
+		err = manager.On2FA(cred, &core.MFAData{
+			PluginID: fmt.Sprintf("%d", meta.PluginID),
+			// todo (Talgat): get provider name
+			ProviderName: "name",
 			Payload:      fa2Data,
 		})
 		if err != nil {
@@ -67,9 +76,16 @@ func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		err = g.manager.On2FA(cred, &core.MFAData{
-			PluginID:     ID,
-			ProviderName: name,
+
+		manager, ok := g.pluginAPI.GetIDManager()
+		if !ok {
+			return errors.New("cannot get IDManager")
+		}
+
+		err = manager.On2FA(cred, &core.MFAData{
+			PluginID: fmt.Sprintf("%d", meta.PluginID),
+			//todo (Talgat): get provider name
+			ProviderName: "name",
 			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},
 		})
 		if err != nil {

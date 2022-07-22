@@ -12,7 +12,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// const pluginID = "2734"
+//go:embed meta.yaml
 var rawMeta []byte
 
 var meta core.Metadata
@@ -26,6 +26,21 @@ type yubikey struct {
 	pluginAPI core.PluginAPI
 	rawConf   configs.PluginConfig
 	conf      *config
+}
+
+func (y *yubikey) GetCustomAppRoutes() []*core.Route {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (y *yubikey) GetOAS3AuthRequestBody() *openapi3.RequestBody {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (y *yubikey) GetOAS3AuthParameters() openapi3.Parameters {
+	//TODO implement me
+	panic("implement me")
 }
 
 func Create(conf configs.PluginConfig) core.MFA {
@@ -54,7 +69,7 @@ func (y yubikey) GetMetadata() core.Metadata {
 func (y *yubikey) GetPaths() *openapi3.Paths {
 	specs := struct {
 		Paths       *openapi3.Paths
-		Definitions openapi3.Definitions
+		Definitions openapi3.Definition
 	}{}
 	err := json.Unmarshal(swaggerJson, &specs)
 	if err != nil {
@@ -64,7 +79,7 @@ func (y *yubikey) GetPaths() *openapi3.Paths {
 }
 
 func (y *yubikey) IsEnabled(cred *core.Credential) (bool, error) {
-	return y.pluginAPI.Is2FAEnabled(cred, pluginID)
+	return y.pluginAPI.Is2FAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {
