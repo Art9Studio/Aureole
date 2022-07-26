@@ -80,7 +80,6 @@ func (g otpAuth) GetMetadata() core.Metadata {
 // }
 
 func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
-	// TODO: Что вместо ID?
 	return g.pluginAPI.Is2FAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
 }
 
@@ -203,9 +202,8 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 			return nil, nil, errors.New("wrong otp")
 		}
 		err = manager.On2FA(cred, &core.MFAData{
-			PluginID: fmt.Sprintf("%d", meta.PluginID),
-			// todo (Talgat) : get provider name
-			ProviderName: "name",
+			PluginID:     fmt.Sprintf("%d", meta.PluginID),
+			ProviderName: meta.ShortName,
 			Payload:      map[string]interface{}{"counter": otpConf.HotpCounter, "scratch_code": otpConf.ScratchCodes},
 		})
 		if err != nil {

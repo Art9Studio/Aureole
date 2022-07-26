@@ -4,7 +4,6 @@ import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -30,17 +29,20 @@ type yubikey struct {
 
 func (y *yubikey) GetCustomAppRoutes() []*core.Route {
 	//TODO implement me
-	panic("implement me")
+	//panic("implement me")
+	return nil
 }
 
 func (y *yubikey) GetOAS3AuthRequestBody() *openapi3.RequestBody {
 	//TODO implement me
-	panic("implement me")
+	//panic("implement me")
+	return nil
 }
 
 func (y *yubikey) GetOAS3AuthParameters() openapi3.Parameters {
 	//TODO implement me
-	panic("implement me")
+	//panic("implement me")
+	return nil
 }
 
 func Create(conf configs.PluginConfig) core.MFA {
@@ -66,17 +68,17 @@ func (y yubikey) GetMetadata() core.Metadata {
 	return meta
 }
 
-func (y *yubikey) GetPaths() *openapi3.Paths {
-	specs := struct {
-		Paths       *openapi3.Paths
-		Definitions openapi3.Definition
-	}{}
-	err := json.Unmarshal(swaggerJson, &specs)
-	if err != nil {
-		return nil, nil
-	}
-	return specs.Paths, specs.Definitions
-}
+//func (y *yubikey) GetPaths() *openapi3.Paths {
+//	specs := struct {
+//		Paths       *openapi3.Paths
+//		Definitions openapi3.Definition
+//	}{}
+//	err := json.Unmarshal(swaggerJson, &specs)
+//	if err != nil {
+//		return nil, nil
+//	}
+//	return specs.Paths, specs.Definitions
+//}
 
 func (y *yubikey) IsEnabled(cred *core.Credential) (bool, error) {
 	return y.pluginAPI.Is2FAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
@@ -94,15 +96,17 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 func (*yubikey) Init2FA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
 		// TODO implement me
-		panic("implement me")
+		//panic("implement me")
+		return nil, nil
 	}
 }
 
 func (*yubikey) Verify() core.MFAVerifyFunc {
 	// TODO implement me
-	panic("implement me")
+	//panic("implement me")
+	return nil
 }
 
 func GetPaths() []*core.Route {
-
+	return nil
 }

@@ -9,7 +9,7 @@
   ],
   "properties": {
     "plugin": {
-      "const": "google_authenticator",
+      "const": "otp",
       "uuid": "b0aa53ab-4d94-48f0-87cd-294f740338cf"
     },
     "config": {

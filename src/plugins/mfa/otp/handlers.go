@@ -55,9 +55,8 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		}
 
 		err = manager.On2FA(cred, &core.MFAData{
-			PluginID: fmt.Sprintf("%d", meta.PluginID),
-			// todo (Talgat): get provider name
-			ProviderName: "name",
+			PluginID:     fmt.Sprintf("%d", meta.PluginID),
+			ProviderName: meta.ShortName,
 			Payload:      fa2Data,
 		})
 		if err != nil {
@@ -83,9 +82,8 @@ func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 		}
 
 		err = manager.On2FA(cred, &core.MFAData{
-			PluginID: fmt.Sprintf("%d", meta.PluginID),
-			//todo (Talgat): get provider name
-			ProviderName: "name",
+			PluginID:     fmt.Sprintf("%d", meta.PluginID),
+			ProviderName: meta.ShortName,
 			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},
 		})
 		if err != nil {
