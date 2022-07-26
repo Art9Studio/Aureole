@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	getQRUrl        = "/2fa/otp/send"
-	getScratchesUrl = "/2fa/otp/scratch"
+	getQRUrl        = "/send"
+	getScratchesUrl = "/scratch"
 )
 
 type config struct {

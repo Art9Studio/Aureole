@@ -506,6 +506,19 @@ func initSecondFactor(app *app, p *project, r *router) {
 							},
 							Metadata: meta,
 						})
+					for _, route := range secondFactor.GetCustomAppRoutes() {
+						er := &ExtendedRoute{
+							Metadata: meta,
+							Route: Route{
+								Method: route.Method,
+								// todo: check safe concatenation
+								Path:          fmt.Sprintf("%s%s", pathPrefix, route.Path),
+								OAS3Operation: route.OAS3Operation,
+								Handler:       route.Handler,
+							},
+						}
+						routes = append(routes, er)
+					}
 
 					app.mfa[name] = secondFactor
 				}

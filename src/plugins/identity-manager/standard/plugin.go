@@ -406,8 +406,8 @@ func save2FAData(conn *pgxpool.Conn, cred *core.Credential, data *core.MFAData) 
 		return err
 	}
 
-	sql := fmt.Sprintf(`insert into mfa(user_id, plugin_id, provider_name, payload) 
-		                      (select id, $1, $2, $3::json from users where %s=$3);`,
+	sql := fmt.Sprintf(`insert into mfa (user_id, plugin_id, provider_name, payload) 
+		                      values ((select id from users where %s=$4), $1, $2, $3::json);`,
 		sanitize(cred.Name))
 	_, err = conn.Exec(context.Background(), sql, data.PluginID, data.ProviderName, string(bytesPayload), cred.Value)
 	if err != nil {

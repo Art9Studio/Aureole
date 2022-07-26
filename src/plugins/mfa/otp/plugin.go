@@ -50,6 +50,11 @@ type (
 	VerifyReqBody struct {
 		otp
 	}
+
+	getQRReqBody struct {
+		Email string `json:"email"`
+		Phone string `json:"phone"`
+	}
 )
 
 func Create(conf configs.PluginConfig) core.MFA {
