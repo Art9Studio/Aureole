@@ -65,7 +65,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		//	response["scratch_code"] = scratchCodes
 		//}
 
-		qr, err := qrcode.Encode(otp.ProvisionURIWithIssuer(cred.Value, g.conf.Iss), qrcode.Low, 256)
+		qr, err := qrcode.Encode(otp.ProvisionURI(cred.Value), qrcode.Low, 256)
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}

@@ -116,7 +116,7 @@ func (g *otpAuth) Init2FA() core.MFAInitFunc {
 }
 
 func (g *otpAuth) GetOAS3AuthRequestBody() *openapi3.RequestBody {
-	schema, _ := openapi3gen.NewSchemaRefForValue(&Init2FAReqBody{}, nil)
+	schema, _ := openapi3gen.NewSchemaRefForValue(&VerifyReqBody{}, nil)
 	return &openapi3.RequestBody{
 		Description: "Token",
 		Required:    true,
@@ -172,9 +172,15 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		if err != nil {
 			return nil, nil, err
 		}
-		scratchCodes, err := manager.GetData(cred, provider, "scratch_codes")
+		scratchCodesRaw, err := manager.GetData(cred, provider, "scratch_codes")
 		if err != nil {
 			return nil, nil, err
+		}
+		var scratchCodes []string
+		scratchCodesI := scratchCodesRaw.([]interface{})
+		for _, code := range scratchCodesI {
+			temp := code.(string)
+			scratchCodes = append(scratchCodes, temp)
 		}
 
 		var counter int
@@ -183,7 +189,7 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 			if err != nil {
 				return nil, nil, err
 			}
-			counter = rawCounter.(int)
+			counter = int(rawCounter.(float64))
 		}
 
 		var usedOtp []int
@@ -197,7 +203,7 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 			WindowSize:    g.conf.WindowSize,
 			HotpCounter:   counter,
 			DisallowReuse: usedOtp,
-			ScratchCodes:  scratchCodes.([]string),
+			ScratchCodes:  scratchCodes,
 		}
 		ok, err = otpConf.Authenticate(strings.TrimSpace(otp.Otp))
 		if err != nil {

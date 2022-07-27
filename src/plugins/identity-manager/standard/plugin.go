@@ -178,7 +178,7 @@ func (s *standart) GetData(c *core.Credential, _, name string) (interface{}, err
 
 	if exists {
 		var data interface{}
-		sql := fmt.Sprintf("select %s from users where %s=$1", sanitize(name), sanitize(c.Name))
+		sql := fmt.Sprintf("select payload->'%s' from mfa where user_id=(select id from users where %s=$1)", strings.ReplaceAll(name, "\"", ""), strings.ReplaceAll(c.Name, "\"", ""))
 		err := conn.QueryRow(context.Background(), sql, c.Value).Scan(&data)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get '%s' field from db: %v", name, err)
@@ -432,11 +432,14 @@ func updateIdentity(conn *pgxpool.Conn, cred *core.Credential, newIdent *core.Id
 
 func get2FAData(conn *pgxpool.Conn, cred *core.Credential, mfaID string) (*core.MFAData, error) {
 	var data core.MFAData
-	sql := fmt.Sprintf(`select plugin_id, provider_name, payload from mfa 
+	qry := fmt.Sprintf(`select plugin_id, provider_name, payload from mfa 
 		                      where plugin_id=$1 and user_id=(select id from users where %s=$2);`,
 		sanitize(cred.Name))
-	err := conn.QueryRow(context.Background(), sql, mfaID, cred.Value).Scan(&data.PluginID, &data.ProviderName, &data.Payload)
+	err := conn.QueryRow(context.Background(), qry, mfaID, cred.Value).Scan(&data.PluginID, &data.ProviderName, &data.Payload)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("cannot get 2fa data from db: %v", err)
 	}
 	return &data, nil

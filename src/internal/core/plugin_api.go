@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"github.com/jackc/pgx/v4"
 	"github.com/lestrrat-go/jwx/jwt"
 	"net/url"
 	"path"
@@ -64,7 +65,7 @@ func (api PluginAPI) Is2FAEnabled(cred *Credential, mfaID string) (bool, error) 
 	}
 
 	mfaData, err := manager.Get2FAData(cred, mfaID)
-	if err != nil && !errors.Is(err, UserNotExistError) {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return false, err
 	}
 	if mfaData != nil {
