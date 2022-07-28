@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v4"
 	"github.com/skip2/go-qrcode"
 	"net/http"
 	"strings"
@@ -19,7 +20,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		// no -> send error
 		// only authenticated users and users, who doesn't yet enable 2fa, can get qr
 		in := &getQRReqBody{}
-		var idName, idValue string
+		var credName, credValue string
 		if err := c.BodyParser(in); err != nil {
 			return err
 		}
@@ -27,19 +28,11 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			return errors.New("email or phone is required")
 		}
 		if in.Email != "" {
-			idName = "email"
-			idValue = in.Email
+			credName = "email"
+			credValue = in.Email
 		} else {
-			idName = "phone"
-			idValue = in.Phone
-		}
-		cred := &core.Credential{Name: idName, Value: idValue}
-		ok, err := g.IsEnabled(cred)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return errors.New("mfa already enabled")
+			credName = "phone"
+			credValue = in.Phone
 		}
 
 		mfaData := map[string]interface{}{}
@@ -56,15 +49,16 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			otp.HotpCounter = 1
 			mfaData["counter"] = 1
 		}
-		//if g.conf.ScratchCode.Num != 0 {
-		//	scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
-		//	if err != nil {
-		//		return core.SendError(c, http.StatusInternalServerError, err.Error())
-		//	}
-		//	mfaData["scratch_codes"] = scratchCodes
-		//	response["scratch_code"] = scratchCodes
-		//}
+		if g.conf.ScratchCode.Num != 0 {
+			scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
+			if err != nil {
+				return core.SendError(c, http.StatusInternalServerError, err.Error())
+			}
+			mfaData["scratch_codes"] = scratchCodes
+			response["scratch_code"] = scratchCodes
+		}
 
+		cred := &core.Credential{Name: credName, Value: credValue}
 		qr, err := qrcode.Encode(otp.ProvisionURI(cred.Value), qrcode.Low, 256)
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
@@ -82,6 +76,9 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			Payload:      mfaData,
 		})
 		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return core.SendError(c, http.StatusBadRequest, err.Error())
+			}
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		c.Set(fiber.HeaderContentType, "image/png")

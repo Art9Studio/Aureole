@@ -36,6 +36,9 @@ type (
 		sender        core.Sender
 		tmpl, tmplExt string
 	}
+	sendOTPReqBody struct {
+		Phone string `json:"phone"`
+	}
 
 	token struct {
 		Token string `json:"token"`

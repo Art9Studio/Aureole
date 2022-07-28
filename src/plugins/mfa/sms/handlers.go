@@ -2,6 +2,7 @@ package sms
 
 import (
 	"aureole/internal/core"
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -59,5 +60,30 @@ func resend(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(&fiber.Map{"token": token})
+	}
+}
+
+func initMFASMS(s *sms) func(*fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		cred, _, err := s.Verify()(*ctx)
+
+		if err != nil {
+			//todo(Talgat) handle 500 and 400 errors
+			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
+		}
+
+		manager, ok := s.pluginAPI.GetIDManager()
+		if !ok {
+			return core.SendError(ctx, http.StatusInternalServerError, "cannot get IDManager")
+		}
+
+		if err = manager.On2FA(cred, &core.MFAData{
+			PluginID:     fmt.Sprintf("%d", meta.PluginID),
+			ProviderName: meta.ShortName,
+		}); err != nil {
+			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
+		}
+
+		return nil
 	}
 }

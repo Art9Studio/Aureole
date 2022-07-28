@@ -90,3 +90,5 @@ Temporary Items
 __pycache__
 
 config.light.yaml
+
+tutorial*

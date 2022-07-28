@@ -212,14 +212,15 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("wrong otp")
 		}
-		err = manager.On2FA(cred, &core.MFAData{
-			PluginID:     fmt.Sprintf("%d", meta.PluginID),
-			ProviderName: meta.ShortName,
-			Payload:      map[string]interface{}{"counter": otpConf.HotpCounter, "scratch_code": otpConf.ScratchCodes},
-		})
-		if err != nil {
-			return nil, nil, err
-		}
+		//todo (Talgat) purpose of On2FA not clear, inserting same data
+		//err = manager.On2FA(cred, &core.MFAData{
+		//	PluginID:     fmt.Sprintf("%d", meta.PluginID),
+		//	ProviderName: meta.ShortName,
+		//	Payload:      map[string]interface{}{"counter": otpConf.HotpCounter, "scratch_code": otpConf.ScratchCodes},
+		//})
+		//if err != nil {
+		//	return nil, nil, err
+		//}
 
 		if g.conf.DisallowReuse {
 			if usedOtp == nil {

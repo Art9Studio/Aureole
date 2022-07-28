@@ -160,7 +160,7 @@ func (s *standart) On2FA(c *core.Credential, mfaData *core.MFAData) error {
 	if exists {
 		return save2FAData(conn, c, mfaData)
 	} else {
-		return fmt.Errorf("user doesn't exists: %v", err)
+		return fmt.Errorf("user doesn't exists: %w", pgx.ErrNoRows)
 	}
 }
 
