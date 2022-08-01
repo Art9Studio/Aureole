@@ -36,9 +36,6 @@ type (
 		sender        core.Sender
 		tmpl, tmplExt string
 	}
-	sendOTPReqBody struct {
-		Phone string `json:"phone"`
-	}
 
 	token struct {
 		Token string `json:"token"`
@@ -65,9 +62,10 @@ func (s *sms) Init(api core.PluginAPI) (err error) {
 		return err
 	}
 
-	_, ok := s.pluginAPI.GetIDManager()
+	var ok bool
+	s.sender, ok = s.pluginAPI.GetSender(s.conf.Sender)
 	if !ok {
-		return fmt.Errorf("manager for app '%s' is not declared", s.pluginAPI.GetAppName())
+		return fmt.Errorf("sender for app '%s' is not declared", s.pluginAPI.GetAppName())
 	}
 
 	if err != nil {
@@ -145,7 +143,7 @@ func (s *sms) Init2FA() core.MFAInitFunc {
 		if err != nil {
 			return nil, err
 		}
-
+		fmt.Println(otp)
 		err = s.sender.Send(cred.Value, "", s.tmpl, s.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
 			return nil, err
@@ -182,23 +180,28 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
+		var (
+			phone    string
+			attempts int
+		)
+
 		t, err := s.pluginAPI.ParseJWT(otp.Token)
 		if err != nil {
 			return nil, nil, err
 		}
-		phone, ok := t.Get("phone")
-		if !ok {
+		err = s.pluginAPI.GetFromJWT(t, "phone", &phone)
+		if err != nil {
 			return nil, nil, errors.New("cannot get otp from token")
 		}
-		attempts, ok := t.Get("attempts")
-		if !ok {
+		err = s.pluginAPI.GetFromJWT(t, "attempts", &attempts)
+		if err != nil {
 			return nil, nil, errors.New("cannot get attempts from token")
 		}
 		if err := s.pluginAPI.InvalidateJWT(t); err != nil {
 			return nil, nil, err
 		}
 
-		if int(attempts.(float64)) >= s.conf.MaxAttempts {
+		if attempts >= s.conf.MaxAttempts {
 			return nil, nil, errors.New("too much attempts")
 		}
 
@@ -206,7 +209,7 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 			encOtp  []byte
 			decrOtp string
 		)
-		ok, err = s.pluginAPI.GetFromService(phone.(string), &encOtp)
+		ok, err := s.pluginAPI.GetFromService(phone, &encOtp)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -221,13 +224,13 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 		if decrOtp == otp.Otp {
 			return &core.Credential{
 				Name:  "phone",
-				Value: phone.(string),
+				Value: phone,
 			}, nil, nil
 		} else {
 			token, err := s.pluginAPI.CreateJWT(
 				map[string]interface{}{
 					"phone":    phone,
-					"attempts": int(attempts.(float64)) + 1,
+					"attempts": int(attempts) + 1,
 				},
 				s.conf.Otp.Exp)
 			if err != nil {
@@ -267,13 +270,26 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 func (s *sms) GetCustomAppRoutes() []*core.Route {
 	Init2FASchema, _ := openapi3gen.NewSchemaRefForValue(&Init2FAReqBody{}, nil)
 	resendResSchema, _ := openapi3gen.NewSchemaRefForValue(&token{}, nil)
-
+	verifyReqSchema, _ := openapi3gen.NewSchemaRefForValue(&VerifyReqBody{}, nil)
+	sendReqSchema, _ := openapi3gen.NewSchemaRefForValue(&sendOTPReqBody{}, nil)
 	return []*core.Route{
 		{
 			Method:        http.MethodPost,
 			Path:          resendUrl,
 			Handler:       resend(s),
 			OAS3Operation: assembleOAS3Operation(Init2FASchema, resendResSchema),
+		},
+		{
+			Method:        http.MethodPost,
+			Path:          initMFA,
+			Handler:       initMFASMS(s),
+			OAS3Operation: assembleOAS3Operation(verifyReqSchema, nil),
+		},
+		{
+			Method:        http.MethodPost,
+			Path:          send,
+			Handler:       sendOTP(s),
+			OAS3Operation: assembleOAS3Operation(sendReqSchema, resendResSchema),
 		},
 	}
 }
@@ -290,7 +306,7 @@ func assembleOAS3Operation(reqSchema, resSchema *openapi3.SchemaRef) *openapi3.O
 				Required: true,
 				Content: map[string]*openapi3.MediaType{
 					fiber.MIMEApplicationJSON: {
-						Schema: resSchema,
+						Schema: reqSchema,
 					},
 				},
 			},

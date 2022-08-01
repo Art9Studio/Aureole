@@ -146,7 +146,7 @@ func (a *authn) GetAuthHandler() core.AuthHandlerFunc {
 					Value: phone,
 				},
 				Identity: &core.Identity{
-					Email:         &phone,
+					Phone:         &phone,
 					PhoneVerified: true,
 				},
 				Provider: meta.ShortName,

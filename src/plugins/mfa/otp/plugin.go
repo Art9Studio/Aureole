@@ -241,6 +241,23 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 	}
 }
 
+func (g *otpAuth) GetOAS3VerifyRequestBody() *openapi3.RequestBody {
+	schema, _ := openapi3gen.NewSchemaRefForValue(&VerifyReqBody{}, nil)
+	return &openapi3.RequestBody{
+		Description: "Token & OTP",
+		Required:    true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: schema,
+			},
+		},
+	}
+}
+
+func (g *otpAuth) GetOAS3VerifyParameters() openapi3.Parameters {
+	return openapi3.Parameters{}
+}
+
 func initConfig(conf *configs.RawConfig) (*config, error) {
 	PluginConf := &config{}
 	if err := mapstructure.Decode(conf, PluginConf); err != nil {

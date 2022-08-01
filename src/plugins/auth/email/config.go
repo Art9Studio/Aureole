@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	sendUrl     = "/email/send"
-	loginUrl    = "/email/login"
+	sendUrl     = "/send"
+	loginUrl    = "/login"
 	defaultTmpl = "Click and confirm that you want to sign in: {{.link}}"
 )
 

@@ -20,7 +20,9 @@
         "account_sid",
         "auth_token",
         "from",
-        "templates"
+        "templates",
+        "endpoint",
+        "messageType"
       ],
       "properties": {
         "account_sid": {

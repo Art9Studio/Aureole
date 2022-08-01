@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	sendUrl     = "/phone/send"
-	resendUrl   = "/phone/resend"
+	sendUrl     = "/send"
+	resendUrl   = "/resend"
 	defaultTmpl = "Your verification code: {{.otp}}"
 )
 

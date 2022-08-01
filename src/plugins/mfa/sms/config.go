@@ -3,7 +3,9 @@ package sms
 import "aureole/internal/configs"
 
 const (
-	resendUrl   = "/2fa/sms/resend"
+	resendUrl   = "/resend_token"
+	initMFA     = "/init"
+	send        = "/send"
 	defaultTmpl = "Your second factor code: {{.otp}}"
 )
 
@@ -15,6 +17,8 @@ type config struct {
 		Length   int    `mapstructure:"length" json:"length"`
 		Alphabet string `mapstructure:"alphabet" json:"alphabet"`
 		Exp      int    `mapstructure:"exp" json:"exp"`
+		Prefix   string `mapstructure:"prefix" json:"prefix"`
+		Postfix  string `mapstructure:"postfix" json:"postfix"`
 	} `mapstructure:"otp" json:"otp"`
 }
 

@@ -63,6 +63,59 @@ func resend(s *sms) func(*fiber.Ctx) error {
 	}
 }
 
+type sendOTPReqBody struct {
+	Phone string `json:"phone"`
+}
+
+type OTPResponse struct {
+	Token string `json:"token"`
+}
+
+func sendOTP(s *sms) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		var phone sendOTPReqBody
+		if err := c.BodyParser(&phone); err != nil {
+			return core.SendError(c, http.StatusBadRequest, err.Error())
+		}
+		if phone.Phone == "" {
+			return core.SendError(c, http.StatusBadRequest, "phone required")
+		}
+		i := core.Identity{Phone: &phone.Phone}
+
+		randStr, err := s.pluginAPI.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
+		if err != nil {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
+		}
+
+		otp := s.conf.Otp.Prefix + randStr + s.conf.Otp.Postfix
+		encOtp, err := s.pluginAPI.Encrypt(s.conf.Otp.Prefix + randStr + s.conf.Otp.Postfix)
+		if err != nil {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
+		}
+		err = s.pluginAPI.SaveToService(phone.Phone, encOtp, s.conf.Otp.Exp)
+		if err != nil {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
+		}
+
+		token, err := s.pluginAPI.CreateJWT(
+			map[string]interface{}{
+				"phone":    i.Phone,
+				"attempts": 0,
+			},
+			s.conf.Otp.Exp)
+		if err != nil {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
+		}
+		fmt.Println(otp)
+		err = s.sender.Send(*i.Phone, "", s.tmpl, s.tmplExt, map[string]interface{}{"otp": otp})
+		if err != nil {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
+		}
+
+		return c.JSON(&OTPResponse{Token: token})
+	}
+}
+
 func initMFASMS(s *sms) func(*fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
 		cred, _, err := s.Verify()(*ctx)
@@ -84,6 +137,6 @@ func initMFASMS(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
 		}
 
-		return nil
+		return ctx.SendStatus(http.StatusOK)
 	}
 }
