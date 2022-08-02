@@ -131,3 +131,30 @@ func generateScratchCodes(api core.PluginAPI, num int, alphabet string) (scratch
 	}
 	return scratchCodes, err
 }
+
+func authMiddleware(g *otpAuth, h fiber.Handler) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		bearer := ctx.Get(fiber.HeaderAuthorization)
+		tokenSplit := strings.Split(bearer, "Bearer ")
+
+		var rawToken string
+		if len(tokenSplit) == 2 && tokenSplit[1] != "" {
+			rawToken = tokenSplit[1]
+		} else {
+			return ctx.SendStatus(http.StatusForbidden)
+		}
+
+		token, err := g.pluginAPI.ParseJWT(rawToken)
+		if err != nil {
+			return ctx.SendStatus(http.StatusForbidden)
+		}
+
+		var id string
+		if err = g.pluginAPI.GetFromJWT(token, "ID", &id); err != nil {
+			return ctx.SendStatus(http.StatusForbidden)
+		}
+		ctx.Locals(core.UserID, id)
+
+		return h(ctx)
+	}
+}

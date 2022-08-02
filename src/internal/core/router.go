@@ -1,11 +1,11 @@
 package core
 
 import (
-	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
-	"github.com/getkin/kin-openapi/openapi3"
 	"os"
 	"path"
 
+	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"

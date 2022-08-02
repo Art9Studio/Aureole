@@ -272,7 +272,7 @@ func (g *otpAuth) GetCustomAppRoutes() []*core.Route {
 		{
 			Method:  http.MethodPost,
 			Path:    getQRUrl,
-			Handler: getQR(g),
+			Handler: authMiddleware(g, getQR(g)),
 		},
 		{
 			Method:  http.MethodPost,

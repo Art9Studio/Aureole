@@ -4,6 +4,7 @@ import (
 	"aureole/internal/core"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -138,5 +139,32 @@ func initMFASMS(s *sms) func(*fiber.Ctx) error {
 		}
 
 		return ctx.SendStatus(http.StatusOK)
+	}
+}
+
+func authMiddleware(s *sms, h fiber.Handler) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		bearer := ctx.Get(fiber.HeaderAuthorization)
+		tokenSplit := strings.Split(bearer, "Bearer ")
+
+		var rawToken string
+		if len(tokenSplit) == 2 && tokenSplit[1] != "" {
+			rawToken = tokenSplit[1]
+		} else {
+			return ctx.SendStatus(http.StatusForbidden)
+		}
+
+		token, err := s.pluginAPI.ParseJWT(rawToken)
+		if err != nil {
+			return ctx.SendStatus(http.StatusForbidden)
+		}
+
+		var id string
+		if err = s.pluginAPI.GetFromJWT(token, "ID", &id); err != nil {
+			return ctx.SendStatus(http.StatusForbidden)
+		}
+		ctx.Locals(core.UserID, id)
+
+		return h(ctx)
 	}
 }

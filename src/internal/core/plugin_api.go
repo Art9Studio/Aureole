@@ -2,11 +2,14 @@ package core
 
 import (
 	"errors"
+	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
 	"net/url"
 	"path"
 	"regexp"
 )
+
+const UserID = "userID"
 
 type (
 	PluginAPI struct {
@@ -190,4 +193,14 @@ func (api PluginAPI) Filter(fields, filters map[string]string) (bool, error) {
 
 func (api PluginAPI) GetAuthRoute(shortName string) string {
 	return path.Clean(getPluginPathPrefix(api.app.pathPrefix, shortName) + AuthPipelinePath)
+}
+
+func (api PluginAPI) GetUserID(ctx *fiber.Ctx) string {
+	idRaw := ctx.Locals(UserID)
+	id, ok := idRaw.(string)
+
+	if !ok {
+		return ""
+	}
+	return id
 }

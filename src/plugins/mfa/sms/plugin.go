@@ -288,7 +288,7 @@ func (s *sms) GetCustomAppRoutes() []*core.Route {
 		{
 			Method:        http.MethodPost,
 			Path:          send,
-			Handler:       sendOTP(s),
+			Handler:       authMiddleware(s, sendOTP(s)),
 			OAS3Operation: assembleOAS3Operation(sendReqSchema, resendResSchema),
 		},
 	}
