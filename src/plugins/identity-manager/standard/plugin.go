@@ -203,9 +203,9 @@ func (s *standart) Get2FAData(c *core.Credential, mfaID string) (*core.MFAData, 
 
 	if exists {
 		return get2FAData(conn, c, mfaID)
-	} else {
-		return nil, core.UserNotExistError
 	}
+
+	return nil, core.UserNotExistError
 }
 
 func (s *standart) Update(c *core.Credential, i *core.Identity, _ string) (*core.Identity, error) {
@@ -500,7 +500,7 @@ func getUpdateQuery(cred *core.Credential, ident *core.Identity) (string, []inte
 	colsStmt = colsStmt[:len(colsStmt)-1]
 	valsStmt = valsStmt[:len(valsStmt)-1]
 
-	sql := fmt.Sprintf("update users set (%s)=(%s) where %s=$1;", colsStmt, valsStmt, sanitize(cred.Name))
+	sql := fmt.Sprintf("update users set (%s)=(%s) where %s=$1 returning *;", colsStmt, valsStmt, sanitize(cred.Name))
 	return sql, values, nil
 }
 

@@ -81,7 +81,18 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 		if phone.Phone == "" {
 			return core.SendError(c, http.StatusBadRequest, "phone required")
 		}
-		i := core.Identity{Phone: &phone.Phone}
+
+		manager, ok := s.pluginAPI.GetIDManager()
+		if !ok {
+			return core.SendError(c, http.StatusInternalServerError, "cannot get id manager")
+		}
+
+		cred := &core.Credential{Name: "phone", Value: phone.Phone}
+
+		_, err := manager.Get2FAData(cred, fmt.Sprintf("%d", meta.PluginID))
+		if err == nil {
+			return core.SendError(c, http.StatusBadRequest, "sms mfa already enabled")
+		}
 
 		randStr, err := s.pluginAPI.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
 		if err != nil {
@@ -100,7 +111,7 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 
 		token, err := s.pluginAPI.CreateJWT(
 			map[string]interface{}{
-				"phone":    i.Phone,
+				"phone":    phone.Phone,
 				"attempts": 0,
 			},
 			s.conf.Otp.Exp)
@@ -108,10 +119,10 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		fmt.Println(otp)
-		err = s.sender.Send(*i.Phone, "", s.tmpl, s.tmplExt, map[string]interface{}{"otp": otp})
-		if err != nil {
-			return core.SendError(c, http.StatusInternalServerError, err.Error())
-		}
+		//err = s.sender.Send(phone.Phone, "", s.tmpl, s.tmplExt, map[string]interface{}{"otp": otp})
+		//if err != nil {
+		//	return core.SendError(c, http.StatusInternalServerError, err.Error())
+		//}
 
 		return c.JSON(&OTPResponse{Token: token})
 	}
@@ -129,6 +140,19 @@ func initMFASMS(s *sms) func(*fiber.Ctx) error {
 		manager, ok := s.pluginAPI.GetIDManager()
 		if !ok {
 			return core.SendError(ctx, http.StatusInternalServerError, "cannot get IDManager")
+		}
+
+		idRaw := ctx.Locals(core.UserID)
+		fmt.Println(idRaw)
+		id, ok := idRaw.(string)
+		if !ok {
+			return core.SendError(ctx, http.StatusInternalServerError, "cannot get user id")
+		}
+
+		newCred := &core.Credential{Name: "id", Value: id}
+		_, err = manager.Update(newCred, &core.Identity{Phone: &cred.Value, PhoneVerified: true}, "dummy")
+		if err != nil {
+			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
 		}
 
 		if err = manager.On2FA(cred, &core.MFAData{
@@ -154,13 +178,13 @@ func authMiddleware(s *sms, h fiber.Handler) func(ctx *fiber.Ctx) error {
 			return ctx.SendStatus(http.StatusForbidden)
 		}
 
-		token, err := s.pluginAPI.ParseJWT(rawToken)
+		token, err := s.pluginAPI.ParseJWT2(rawToken)
 		if err != nil {
-			return ctx.SendStatus(http.StatusForbidden)
+			return core.SendError(ctx, http.StatusForbidden, err.Error())
 		}
 
 		var id string
-		if err = s.pluginAPI.GetFromJWT(token, "ID", &id); err != nil {
+		if err = s.pluginAPI.GetFromJWT(token, "sub", &id); err != nil {
 			return ctx.SendStatus(http.StatusForbidden)
 		}
 		ctx.Locals(core.UserID, id)

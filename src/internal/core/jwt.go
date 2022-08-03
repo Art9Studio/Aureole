@@ -30,6 +30,26 @@ func createJWT(app *app, payload map[string]interface{}, exp int) (string, error
 	return string(signedToken), nil
 }
 
+func parseJWT2(app *app, rawToken string) (jwt.Token, error) {
+	keySet, ok := app.getCryptoKey("local_jwk_keys")
+	if !ok {
+		return nil, errors.New("cannot get internal sign key")
+	}
+
+	token, err := jwt.ParseString(
+		rawToken,
+		jwt.WithIssuer("Aureole Server"),
+		//jwt.WithClaimValue("type", "internal"),
+		jwt.WithValidate(true),
+		jwt.WithKeySet(keySet.GetPublicSet()),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
 func parseJWT(app *app, rawToken string) (jwt.Token, error) {
 	keySet, ok := app.getServiceSignKey()
 	if !ok {

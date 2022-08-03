@@ -101,7 +101,10 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
-
+		id := c.Locals(UserID)
+		if id != "" {
+			authnResult.Identity.ID = id
+		}
 		identity, err := authenticate(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))

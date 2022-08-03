@@ -282,7 +282,7 @@ func (s *sms) GetCustomAppRoutes() []*core.Route {
 		{
 			Method:        http.MethodPost,
 			Path:          initMFA,
-			Handler:       initMFASMS(s),
+			Handler:       authMiddleware(s, initMFASMS(s)),
 			OAS3Operation: assembleOAS3Operation(verifyReqSchema, nil),
 		},
 		{

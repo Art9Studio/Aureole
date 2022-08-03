@@ -170,6 +170,10 @@ func (api PluginAPI) ParseJWT(rawToken string) (jwt.Token, error) {
 	return parseJWT(api.app, rawToken)
 }
 
+func (api PluginAPI) ParseJWT2(rawToken string) (jwt.Token, error) {
+	return parseJWT2(api.app, rawToken)
+}
+
 func (api PluginAPI) InvalidateJWT(token jwt.Token) error {
 	return invalidateJWT(api.app, token)
 }
