@@ -126,9 +126,9 @@ func (j *webhook) OnUserAuthenticated(c *core.Credential, i *core.Identity, auth
 	return core.NewIdentity(payload)
 }
 
-func (j *webhook) On2FA(c *core.Credential, mfaData *core.MFAData) error {
+func (j *webhook) OnMFA(c *core.Credential, mfaData *core.MFAData) error {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
-		"event":      "On2FA",
+		"event":      "OnMFA",
 		"credential": map[string]string{c.Name: c.Value},
 		"2fa_data":   mfaData,
 	},
@@ -176,9 +176,9 @@ func (j *webhook) GetData(c *core.Credential, authnProvider, name string) (inter
 	return data, nil
 }
 
-func (j *webhook) Get2FAData(c *core.Credential, mfaID string) (*core.MFAData, error) {
+func (j *webhook) GetMFAData(c *core.Credential, mfaID string) (*core.MFAData, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
-		"event":      "Get2FAData",
+		"event":      "GetMFAData",
 		"credential": map[string]string{c.Name: c.Value},
 		"2fa_id":     mfaID,
 	},

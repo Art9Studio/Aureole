@@ -43,7 +43,7 @@ type (
 		Otp string `json:"otp"`
 	}
 
-	Init2FAReqBody struct {
+	InitMFAReqBody struct {
 		token
 	}
 
@@ -85,12 +85,12 @@ func (g otpAuth) GetMetadata() core.Metadata {
 // }
 
 func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
-	return g.pluginAPI.Is2FAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
+	return g.pluginAPI.IsMFAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
 }
 
-func (g *otpAuth) Init2FA() core.MFAInitFunc {
+func (g *otpAuth) InitMFA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
-		strToken := &Init2FAReqBody{}
+		strToken := &InitMFAReqBody{}
 		if err := c.BodyParser(strToken); err != nil {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func (g *otpAuth) Init2FA() core.MFAInitFunc {
 			return nil, errors.New("token are required")
 		}
 
-		token, err := g.pluginAPI.ParseJWT(strToken.Token)
+		token, err := g.pluginAPI.ParseJWTService(strToken.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +142,7 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 			return nil, nil, errors.New("token and otp are required")
 		}
 
-		t, err := g.pluginAPI.ParseJWT(otp.Token)
+		t, err := g.pluginAPI.ParseJWTService(otp.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -212,8 +212,8 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("wrong otp")
 		}
-		//todo (Talgat) purpose of On2FA not clear, inserting same data
-		//err = manager.On2FA(cred, &core.MFAData{
+		//todo (Talgat) purpose of OnMFA not clear, inserting same data
+		//err = manager.OnMFA(cred, &core.MFAData{
 		//	PluginID:     fmt.Sprintf("%d", meta.PluginID),
 		//	ProviderName: meta.ShortName,
 		//	Payload:      map[string]interface{}{"counter": otpConf.HotpCounter, "scratch_code": otpConf.ScratchCodes},

@@ -176,6 +176,7 @@ func assembleOAS3Operation() *openapi3.Operation {
 	return &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
+		Tags:        []string{meta.DisplayName},
 		Responses: map[string]*openapi3.ResponseRef{
 			strconv.Itoa(http.StatusFound): {
 				Value: core.AssembleOASRedirectResponse(&description),

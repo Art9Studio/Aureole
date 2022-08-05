@@ -74,9 +74,9 @@ func newIDManager() (*IDManager, error) {
 		features: map[string]bool{
 			"Register":            true,
 			"OnUserAuthenticated": true,
-			"On2FA":               true,
+			"OnMFA":               true,
 			"GetData":             true,
-			"Get2FAData":          true,
+			"GetMFAData":          true,
 			"Update":              true,
 		},
 	}

@@ -30,18 +30,36 @@ func createJWT(app *app, payload map[string]interface{}, exp int) (string, error
 	return string(signedToken), nil
 }
 
-func parseJWT2(app *app, rawToken string) (jwt.Token, error) {
-	keySet, ok := app.getCryptoKey("local_jwk_keys")
+func parseJWT(app *app, rawToken string) (jwt.Token, error) {
+	issuer, ok := app.getIssuer()
 	if !ok {
-		return nil, errors.New("cannot get internal sign key")
+		return nil, errors.New("cannot get issuer")
+	}
+	keys := issuer.GetVerifyKeys()
+	ctx := context.Background()
+	var keyset jwk.Set
+	for _, v := range keys {
+		if keyset == nil {
+			keyset = v.GetPublicSet()
+			continue
+		}
+		set := v.GetPublicSet()
+		iter := set.Iterate(ctx)
+		for iter.Next(ctx) {
+			pair := iter.Pair()
+			key, ok := pair.Value.(jwk.Key)
+			if !ok {
+				return nil, errors.New("cannot get verify key")
+			}
+			keyset.Add(key)
+		}
 	}
 
 	token, err := jwt.ParseString(
 		rawToken,
 		jwt.WithIssuer("Aureole Server"),
-		//jwt.WithClaimValue("type", "internal"),
 		jwt.WithValidate(true),
-		jwt.WithKeySet(keySet.GetPublicSet()),
+		jwt.WithKeySet(keyset),
 	)
 	if err != nil {
 		return nil, err
@@ -50,7 +68,7 @@ func parseJWT2(app *app, rawToken string) (jwt.Token, error) {
 	return token, nil
 }
 
-func parseJWT(app *app, rawToken string) (jwt.Token, error) {
+func parseJWTService(app *app, rawToken string) (jwt.Token, error) {
 	keySet, ok := app.getServiceSignKey()
 	if !ok {
 		return nil, errors.New("cannot get internal sign key")

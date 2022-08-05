@@ -15,10 +15,6 @@ import (
 
 func getQR(g *otpAuth) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		// check if user authenticated:
-		// yes -> generate new data and persist it, send user qr
-		// no -> send error
-		// only authenticated users and users, who doesn't yet enable 2fa, can get qr
 		in := &getQRReqBody{}
 		var credName, credValue string
 		if err := c.BodyParser(in); err != nil {
@@ -70,7 +66,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			return errors.New("cannot get IDManager")
 		}
 
-		err = manager.On2FA(cred, &core.MFAData{
+		err = manager.OnMFA(cred, &core.MFAData{
 			PluginID:     fmt.Sprintf("%d", meta.PluginID),
 			ProviderName: meta.ShortName,
 			Payload:      mfaData,
@@ -101,7 +97,7 @@ func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 			return errors.New("cannot get IDManager")
 		}
 
-		err = manager.On2FA(cred, &core.MFAData{
+		err = manager.OnMFA(cred, &core.MFAData{
 			PluginID:     fmt.Sprintf("%d", meta.PluginID),
 			ProviderName: meta.ShortName,
 			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},
@@ -132,7 +128,7 @@ func generateScratchCodes(api core.PluginAPI, num int, alphabet string) (scratch
 	return scratchCodes, err
 }
 
-func authMiddleware(g *otpAuth, h fiber.Handler) func(ctx *fiber.Ctx) error {
+func authMiddleware(g *otpAuth, next fiber.Handler) func(ctx *fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
 		bearer := ctx.Get(fiber.HeaderAuthorization)
 		tokenSplit := strings.Split(bearer, "Bearer ")
@@ -146,15 +142,15 @@ func authMiddleware(g *otpAuth, h fiber.Handler) func(ctx *fiber.Ctx) error {
 
 		token, err := g.pluginAPI.ParseJWT(rawToken)
 		if err != nil {
-			return ctx.SendStatus(http.StatusForbidden)
+			return core.SendError(ctx, http.StatusForbidden, err.Error())
 		}
 
 		var id string
-		if err = g.pluginAPI.GetFromJWT(token, "ID", &id); err != nil {
+		if err = g.pluginAPI.GetFromJWT(token, "sub", &id); err != nil {
 			return ctx.SendStatus(http.StatusForbidden)
 		}
 		ctx.Locals(core.UserID, id)
 
-		return h(ctx)
+		return next(ctx)
 	}
 }

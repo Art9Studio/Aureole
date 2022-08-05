@@ -65,9 +65,9 @@ func (m *standart) Init(api core.PluginAPI) (err error) {
 	m.features = map[string]bool{
 		"Register":            true,
 		"OnUserAuthenticated": true,
-		"On2FA":               true,
+		"OnMFA":               true,
 		"GetData":             true,
-		"Get2FAData":          true,
+		"GetMFAData":          true,
 		"Update":              true,
 	}
 
@@ -145,7 +145,7 @@ func (s *standart) OnUserAuthenticated(c *core.Credential, i *core.Identity, aut
 	return registeredIdent, nil
 }
 
-func (s *standart) On2FA(c *core.Credential, mfaData *core.MFAData) error {
+func (s *standart) OnMFA(c *core.Credential, mfaData *core.MFAData) error {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return fmt.Errorf("cannot acquire connection: %v", err)
@@ -158,7 +158,7 @@ func (s *standart) On2FA(c *core.Credential, mfaData *core.MFAData) error {
 	}
 
 	if exists {
-		return save2FAData(conn, c, mfaData)
+		return saveMFAData(conn, c, mfaData)
 	} else {
 		return fmt.Errorf("user doesn't exists: %w", pgx.ErrNoRows)
 	}
@@ -189,7 +189,7 @@ func (s *standart) GetData(c *core.Credential, _, name string) (interface{}, err
 	}
 }
 
-func (s *standart) Get2FAData(c *core.Credential, mfaID string) (*core.MFAData, error) {
+func (s *standart) GetMFAData(c *core.Credential, mfaID string) (*core.MFAData, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -202,7 +202,7 @@ func (s *standart) Get2FAData(c *core.Credential, mfaID string) (*core.MFAData, 
 	}
 
 	if exists {
-		return get2FAData(conn, c, mfaID)
+		return getMFAData(conn, c, mfaID)
 	}
 
 	return nil, core.UserNotExistError
@@ -400,7 +400,7 @@ func registerSocialProviderIdentity(conn *pgxpool.Conn, newIdent *core.Identity,
 	return &ident, nil
 }
 
-func save2FAData(conn *pgxpool.Conn, cred *core.Credential, data *core.MFAData) error {
+func saveMFAData(conn *pgxpool.Conn, cred *core.Credential, data *core.MFAData) error {
 	bytesPayload, err := json.Marshal(data.Payload)
 	if err != nil {
 		return err
@@ -430,7 +430,7 @@ func updateIdentity(conn *pgxpool.Conn, cred *core.Credential, newIdent *core.Id
 	return &ident, nil
 }
 
-func get2FAData(conn *pgxpool.Conn, cred *core.Credential, mfaID string) (*core.MFAData, error) {
+func getMFAData(conn *pgxpool.Conn, cred *core.Credential, mfaID string) (*core.MFAData, error) {
 	var data core.MFAData
 	qry := fmt.Sprintf(`select plugin_id, provider_name, payload from mfa 
 		                      where plugin_id=$1 and user_id=(select id from users where %s=$2);`,

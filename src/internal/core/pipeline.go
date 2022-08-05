@@ -28,7 +28,7 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 
-		enabled2FA, err := getEnabled2FA(app, authnResult)
+		enabled2FA, err := getEnabledMFA(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
@@ -113,7 +113,7 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 	}
 }
 
-func getEnabled2FA(app *app, authnResult *AuthResult) (fiber.Map, error) {
+func getEnabledMFA(app *app, authnResult *AuthResult) (fiber.Map, error) {
 	secondFactors, ok := app.getSecondFactors()
 	if ok {
 		var enabled2FA []MFA

@@ -60,13 +60,13 @@ func (api PluginAPI) IsTestRun() bool {
 	return api.project.testRun
 }
 
-func (api PluginAPI) Is2FAEnabled(cred *Credential, mfaID string) (bool, error) {
+func (api PluginAPI) IsMFAEnabled(cred *Credential, mfaID string) (bool, error) {
 	manager, ok := api.app.getIDManager()
 	if !ok {
 		return false, nil
 	}
 
-	mfaData, err := manager.Get2FAData(cred, mfaID)
+	mfaData, err := manager.GetMFAData(cred, mfaID)
 	if err != nil && !errors.Is(err, UserNotExistError) {
 		return false, nil
 	}
@@ -166,12 +166,12 @@ func (api PluginAPI) CreateJWT(payload map[string]interface{}, exp int) (string,
 	return createJWT(api.app, payload, exp)
 }
 
-func (api PluginAPI) ParseJWT(rawToken string) (jwt.Token, error) {
-	return parseJWT(api.app, rawToken)
+func (api PluginAPI) ParseJWTService(rawToken string) (jwt.Token, error) {
+	return parseJWTService(api.app, rawToken)
 }
 
-func (api PluginAPI) ParseJWT2(rawToken string) (jwt.Token, error) {
-	return parseJWT2(api.app, rawToken)
+func (api PluginAPI) ParseJWT(rawToken string) (jwt.Token, error) {
+	return parseJWT(api.app, rawToken)
 }
 
 func (api PluginAPI) InvalidateJWT(token jwt.Token) error {

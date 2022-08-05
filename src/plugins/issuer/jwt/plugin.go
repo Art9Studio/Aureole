@@ -172,6 +172,10 @@ func (j *jwtIssuer) GetNativeQueries() map[string]string {
 	return j.nativeQueries
 }
 
+func (j *jwtIssuer) GetVerifyKeys() map[string]core.CryptoKey {
+	return j.verifyKeys
+}
+
 func (j *jwtIssuer) Authorize(c *fiber.Ctx, payload *core.IssuerPayload) error {
 	accessT, err := newToken(accessToken, j.conf, payload)
 	if err != nil {

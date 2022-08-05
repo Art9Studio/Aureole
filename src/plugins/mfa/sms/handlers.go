@@ -11,7 +11,7 @@ import (
 
 func resend(s *sms) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var input *Init2FAReqBody
+		var input *InitMFAReqBody
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -19,7 +19,7 @@ func resend(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusBadRequest, "token are required")
 		}
 
-		t, err := s.pluginAPI.ParseJWT(input.Token)
+		t, err := s.pluginAPI.ParseJWTService(input.Token)
 		if err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -89,7 +89,7 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 
 		cred := &core.Credential{Name: "phone", Value: phone.Phone}
 
-		_, err := manager.Get2FAData(cred, fmt.Sprintf("%d", meta.PluginID))
+		_, err := manager.GetMFAData(cred, fmt.Sprintf("%d", meta.PluginID))
 		if err == nil {
 			return core.SendError(c, http.StatusBadRequest, "sms mfa already enabled")
 		}
@@ -155,7 +155,7 @@ func initMFASMS(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
 		}
 
-		if err = manager.On2FA(cred, &core.MFAData{
+		if err = manager.OnMFA(cred, &core.MFAData{
 			PluginID:     fmt.Sprintf("%d", meta.PluginID),
 			ProviderName: meta.ShortName,
 		}); err != nil {
@@ -178,7 +178,7 @@ func authMiddleware(s *sms, h fiber.Handler) func(ctx *fiber.Ctx) error {
 			return ctx.SendStatus(http.StatusForbidden)
 		}
 
-		token, err := s.pluginAPI.ParseJWT2(rawToken)
+		token, err := s.pluginAPI.ParseJWT(rawToken)
 		if err != nil {
 			return core.SendError(ctx, http.StatusForbidden, err.Error())
 		}

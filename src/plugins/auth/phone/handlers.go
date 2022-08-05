@@ -61,7 +61,7 @@ func resendOTP(p *authn) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusBadRequest, "token are required")
 		}
 
-		t, err := p.pluginAPI.ParseJWT(input.Token)
+		t, err := p.pluginAPI.ParseJWTService(input.Token)
 		if err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}

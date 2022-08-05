@@ -100,7 +100,6 @@ func assembleOAS3Operation(app *app, meta Metadata, OAS3Parameters openapi3.Para
 	unauthorisedSchema, _ := openapi3gen.NewSchemaRefForValue(AuthUnauthorizedResult{}, nil)
 	return &openapi3.Operation{
 		OperationID: "authWith" + displayName,
-		Tags:        []string{"App \"" + app.name + "\""},
 		Description: "Authenticate with " + displayName,
 		//Summary:     "Authenticate with " + route.Metadata.DisplayName,
 		Parameters: OAS3Parameters,

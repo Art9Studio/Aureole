@@ -113,7 +113,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusBadRequest, "password required")
 		}
 
-		token, err := p.pluginAPI.ParseJWT(rawToken)
+		token, err := p.pluginAPI.ParseJWTService(rawToken)
 		if err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -200,7 +200,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusBadRequest, "token not found")
 		}
 
-		token, err := p.pluginAPI.ParseJWT(rawToken)
+		token, err := p.pluginAPI.ParseJWTService(rawToken)
 		if err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}

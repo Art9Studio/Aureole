@@ -102,7 +102,7 @@ func (a *authn) GetAuthHandler() core.AuthHandlerFunc {
 			phone    string
 			attempts int
 		)
-		t, err := a.pluginAPI.ParseJWT(otp.Token)
+		t, err := a.pluginAPI.ParseJWTService(otp.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -221,6 +221,7 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
+		Tags:        []string{meta.DisplayName},
 		RequestBody: &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
 				Required: true,

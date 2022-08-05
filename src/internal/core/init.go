@@ -396,13 +396,15 @@ func initAuthenticators(app *app, p *project, r *router) {
 				}
 				OAS3RequestBody := authenticator.GetOAS3AuthRequestBody()
 				OAS3Parameters := authenticator.GetOAS3AuthParameters()
+				OAS3operation := assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse)
+				OAS3operation.Tags = []string{fmt.Sprintf("Auth by %s", authenticator.GetMetadata().DisplayName)}
 
 				pipelineAuthRoute := &ExtendedRoute{
 					Route: Route{
 						Method:        authenticator.GetAuthHTTPMethod(),
 						Path:          pathPrefix + AuthPipelinePath,
 						Handler:       pipelineAuthWrapper(authenticator.GetAuthHandler(), app),
-						OAS3Operation: assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse),
+						OAS3Operation: OAS3operation,
 					},
 					Metadata: meta,
 				}
@@ -419,7 +421,6 @@ func initAuthenticators(app *app, p *project, r *router) {
 							Handler:       route.Handler,
 						},
 					}
-					er.OAS3Operation.Tags = []string{"App \"" + app.name + "\""}
 					routes = append(routes, er)
 				}
 
@@ -472,7 +473,7 @@ func initSecondFactor(app *app, p *project, r *router) {
 					fmt.Printf("app %s: cannot init second factor %s: %v\n", app.name, name, err)
 					app.mfa[meta.ShortName] = nil
 				} else {
-					pathPrefix := "/2fa/" + strings.ReplaceAll(meta.ShortName, "_", "-")
+					pathPrefix := fmt.Sprintf("/%s%s%s", app.name, "/mfa/", strings.ReplaceAll(meta.ShortName, "_", "-"))
 
 					OAS3successResponse, err := app.issuer.GetOAS3SuccessResponse()
 					if err != nil {
@@ -492,7 +493,7 @@ func initSecondFactor(app *app, p *project, r *router) {
 
 								Method:        http.MethodPost,
 								Path:          pathPrefix + "/start",
-								Handler:       mfaInitHandler(secondFactor.Init2FA(), app),
+								Handler:       mfaInitHandler(secondFactor.InitMFA(), app),
 								OAS3Operation: assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse),
 							},
 							Metadata: secondFactor.GetMetadata(),

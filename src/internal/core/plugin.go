@@ -104,8 +104,8 @@ type (
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 		Update(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 
-		On2FA(c *Credential, data *MFAData) error
-		Get2FAData(c *Credential, mfaID string) (*MFAData, error)
+		OnMFA(c *Credential, data *MFAData) error
+		GetMFAData(c *Credential, mfaID string) (*MFAData, error)
 
 		CheckFeaturesAvailable(features []string) error
 	}
@@ -155,6 +155,7 @@ type (
 		Plugin
 		GetOAS3SuccessResponse() (*openapi3.Response, error)
 		GetNativeQueries() map[string]string
+		GetVerifyKeys() map[string]CryptoKey
 		Authorize(*fiber.Ctx, *IssuerPayload) error
 	}
 
@@ -186,7 +187,7 @@ type (
 	MFA interface {
 		Plugin
 		IsEnabled(cred *Credential) (bool, error)
-		Init2FA() MFAInitFunc
+		InitMFA() MFAInitFunc
 		Verify() MFAVerifyFunc
 		GetOAS3AuthRequestBody() *openapi3.RequestBody
 		GetOAS3AuthParameters() openapi3.Parameters

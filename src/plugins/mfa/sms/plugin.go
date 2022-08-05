@@ -41,7 +41,7 @@ type (
 		Token string `json:"token"`
 	}
 
-	Init2FAReqBody struct {
+	InitMFAReqBody struct {
 		token
 	}
 
@@ -89,12 +89,12 @@ func (s *sms) GetMetadata() core.Metadata {
 }
 
 func (s *sms) IsEnabled(cred *core.Credential) (bool, error) {
-	return s.pluginAPI.Is2FAEnabled(cred, strconv.Itoa(int(meta.PluginID)))
+	return s.pluginAPI.IsMFAEnabled(cred, strconv.Itoa(int(meta.PluginID)))
 }
 
-func (s *sms) Init2FA() core.MFAInitFunc {
+func (s *sms) InitMFA() core.MFAInitFunc {
 	return func(c fiber.Ctx) (fiber.Map, error) {
-		strToken := &Init2FAReqBody{}
+		strToken := &InitMFAReqBody{}
 		if err := c.BodyParser(strToken); err != nil {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func (s *sms) Init2FA() core.MFAInitFunc {
 			provider string
 			cred     core.Credential
 		)
-		t, err := s.pluginAPI.ParseJWT(strToken.Token)
+		t, err := s.pluginAPI.ParseJWTService(strToken.Token)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (s *sms) Init2FA() core.MFAInitFunc {
 }
 
 func (s *sms) GetOAS3AuthRequestBody() *openapi3.RequestBody {
-	schema, _ := openapi3gen.NewSchemaRefForValue(&Init2FAReqBody{}, nil)
+	schema, _ := openapi3gen.NewSchemaRefForValue(&InitMFAReqBody{}, nil)
 	return &openapi3.RequestBody{
 		Description: "Token",
 		Required:    true,
@@ -185,7 +185,7 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 			attempts int
 		)
 
-		t, err := s.pluginAPI.ParseJWT(otp.Token)
+		t, err := s.pluginAPI.ParseJWTService(otp.Token)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -268,7 +268,7 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 }
 
 func (s *sms) GetCustomAppRoutes() []*core.Route {
-	Init2FASchema, _ := openapi3gen.NewSchemaRefForValue(&Init2FAReqBody{}, nil)
+	Init2FASchema, _ := openapi3gen.NewSchemaRefForValue(&InitMFAReqBody{}, nil)
 	resendResSchema, _ := openapi3gen.NewSchemaRefForValue(&token{}, nil)
 	verifyReqSchema, _ := openapi3gen.NewSchemaRefForValue(&VerifyReqBody{}, nil)
 	sendReqSchema, _ := openapi3gen.NewSchemaRefForValue(&sendOTPReqBody{}, nil)
@@ -301,6 +301,7 @@ func assembleOAS3Operation(reqSchema, resSchema *openapi3.SchemaRef) *openapi3.O
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
+		Tags:        []string{meta.DisplayName},
 		RequestBody: &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
 				Required: true,

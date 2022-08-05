@@ -44,12 +44,12 @@ func handleRequest(m *IDManager) func(ctx *fiber.Ctx) error {
 			return m.register(c, token)
 		case "OnUserAuthenticated":
 			return m.onUserAuthenticated(c, token)
-		case "On2FA":
-			return m.on2FA(c, token)
+		case "OnMFA":
+			return m.onMFA(c, token)
 		case "GetData":
 			return m.getData(c, token)
-		case "Get2FAData":
-			return m.get2FAData(c, token)
+		case "GetMFAData":
+			return m.getMFAData(c, token)
 		case "Update":
 			return m.update(c, token)
 		case "CheckFeaturesAvailable":
@@ -128,7 +128,7 @@ func (m *IDManager) onUserAuthenticated(c *fiber.Ctx, token jwt.Token) error {
 	return c.JSON(fiber.Map{"token": token})
 }
 
-func (m *IDManager) on2FA(c *fiber.Ctx, token jwt.Token) error {
+func (m *IDManager) onMFA(c *fiber.Ctx, token jwt.Token) error {
 	var (
 		cred        *Credential
 		mfaProvider string
@@ -148,7 +148,7 @@ func (m *IDManager) on2FA(c *fiber.Ctx, token jwt.Token) error {
 		return sendError(c, http.StatusBadRequest, "cannot get 2fa_data from token: "+err.Error())
 	}
 
-	fmt.Printf("'On2FA' event request with parameters: \n"+
+	fmt.Printf("'OnMFA' event request with parameters: \n"+
 		"Credential: %v\n"+
 		"2FA provider: %v\n"+
 		"2FA data: %v\n", cred, mfaProvider, mfaData)
@@ -195,7 +195,7 @@ func (m *IDManager) getData(c *fiber.Ctx, token jwt.Token) error {
 	return c.JSON(fiber.Map{"token": token})
 }
 
-func (m *IDManager) get2FAData(c *fiber.Ctx, token jwt.Token) error {
+func (m *IDManager) getMFAData(c *fiber.Ctx, token jwt.Token) error {
 	var (
 		cred        *Credential
 		mfaProvider string
@@ -210,7 +210,7 @@ func (m *IDManager) get2FAData(c *fiber.Ctx, token jwt.Token) error {
 		return sendError(c, http.StatusBadRequest, "cannot get 2fa_provider from token: "+err.Error())
 	}
 
-	fmt.Printf("'Get2FAData' event request with parameters: \n"+
+	fmt.Printf("'GetMFAData' event request with parameters: \n"+
 		"Credential: %v\n"+
 		"2FA provider: %s\n", cred, mfaProvider)
 
