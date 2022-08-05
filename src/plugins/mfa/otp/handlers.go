@@ -65,7 +65,8 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		if !ok {
 			return errors.New("cannot get IDManager")
 		}
-
+		// todo(Talgat) when mfa already enabled, err is interpreted as 500
+		// todo(Talgat) if possible, extract mfa status check as separate func
 		err = manager.OnMFA(cred, &core.MFAData{
 			PluginID:     fmt.Sprintf("%d", meta.PluginID),
 			ProviderName: meta.ShortName,
@@ -139,7 +140,8 @@ func authMiddleware(g *otpAuth, next fiber.Handler) func(ctx *fiber.Ctx) error {
 		} else {
 			return ctx.SendStatus(http.StatusForbidden)
 		}
-
+		// todo(Talgat) token created after auth by google cannot be parsed
+		// todo(Talgat) Error": "jwt.Parse: cannot proceed with JWE encrypted payload without decryption parameters"
 		token, err := g.pluginAPI.ParseJWT(rawToken)
 		if err != nil {
 			return core.SendError(ctx, http.StatusForbidden, err.Error())
@@ -147,7 +149,7 @@ func authMiddleware(g *otpAuth, next fiber.Handler) func(ctx *fiber.Ctx) error {
 
 		var id string
 		if err = g.pluginAPI.GetFromJWT(token, "sub", &id); err != nil {
-			return ctx.SendStatus(http.StatusForbidden)
+			return core.SendError(ctx, http.StatusForbidden, err.Error())
 		}
 		ctx.Locals(core.UserID, id)
 

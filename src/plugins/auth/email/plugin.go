@@ -182,7 +182,7 @@ func assembleOAS3Operation() *openapi3.Operation {
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
-		Tags:        []string{meta.DisplayName},
+		Tags:        []string{fmt.Sprintf("auth by %s", meta.DisplayName)},
 		RequestBody: &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
 				Required: true,

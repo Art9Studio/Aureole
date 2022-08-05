@@ -396,15 +396,15 @@ func initAuthenticators(app *app, p *project, r *router) {
 				}
 				OAS3RequestBody := authenticator.GetOAS3AuthRequestBody()
 				OAS3Parameters := authenticator.GetOAS3AuthParameters()
-				OAS3operation := assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse)
-				OAS3operation.Tags = []string{fmt.Sprintf("Auth by %s", authenticator.GetMetadata().DisplayName)}
+				OAS3Operation := assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse)
+				OAS3Operation.Tags = []string{fmt.Sprintf("auth by %s", authenticator.GetMetadata().DisplayName)}
 
 				pipelineAuthRoute := &ExtendedRoute{
 					Route: Route{
 						Method:        authenticator.GetAuthHTTPMethod(),
 						Path:          pathPrefix + AuthPipelinePath,
 						Handler:       pipelineAuthWrapper(authenticator.GetAuthHandler(), app),
-						OAS3Operation: OAS3operation,
+						OAS3Operation: OAS3Operation,
 					},
 					Metadata: meta,
 				}
@@ -486,6 +486,11 @@ func initSecondFactor(app *app, p *project, r *router) {
 						OAS3VerifyParameters = verifyRequest.GetOAS3VerifyParameters()
 						OAS3VerifyRequestBody = verifyRequest.GetOAS3VerifyRequestBody()
 					}
+					OAS3Operation := assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse)
+					OAS3Operation.Tags = []string{fmt.Sprintf("mfa by %s", secondFactor.GetMetadata().DisplayName)}
+
+					OAS3VerifyOperation := assembleOAS3Operation(app, meta, OAS3VerifyParameters, OAS3VerifyRequestBody, OAS3successResponse)
+					OAS3VerifyOperation.Tags = []string{fmt.Sprintf("mfa by %s", secondFactor.GetMetadata().DisplayName)}
 
 					routes = append(routes,
 						&ExtendedRoute{
@@ -494,7 +499,7 @@ func initSecondFactor(app *app, p *project, r *router) {
 								Method:        http.MethodPost,
 								Path:          pathPrefix + "/start",
 								Handler:       mfaInitHandler(secondFactor.InitMFA(), app),
-								OAS3Operation: assembleOAS3Operation(app, meta, OAS3Parameters, OAS3RequestBody, OAS3successResponse),
+								OAS3Operation: OAS3Operation,
 							},
 							Metadata: secondFactor.GetMetadata(),
 						},
@@ -503,7 +508,7 @@ func initSecondFactor(app *app, p *project, r *router) {
 								Method:        http.MethodPost,
 								Path:          pathPrefix + "/verify",
 								Handler:       mfaVerificationHandler(secondFactor.Verify(), app),
-								OAS3Operation: assembleOAS3Operation(app, meta, OAS3VerifyParameters, OAS3VerifyRequestBody, OAS3successResponse),
+								OAS3Operation: OAS3VerifyOperation,
 							},
 							Metadata: meta,
 						})

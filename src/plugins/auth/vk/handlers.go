@@ -50,6 +50,7 @@ func getUserData(v *vk, code string) (map[string]interface{}, error) {
 	userData := userArr[0].(map[string]interface{})
 	userData["email"] = t.Extra("email")
 	userData["user_id"] = t.Extra("user_id")
+	userData["plugin_id"] = fmt.Sprintf("%d", v.GetMetadata().PluginID)
 	return userData, nil
 }
 

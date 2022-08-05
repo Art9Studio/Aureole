@@ -42,6 +42,7 @@ func (s *openapiDoc) ReadDoc() string {
 }
 
 func (s *openapiDoc) Assemble(p *project, r *router) error {
+	//todo(Talgat) add ordering with Tags
 	s.doc = &openapi3.T{
 		OpenAPI: "3.0.0",
 		Info: &openapi3.Info{

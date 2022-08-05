@@ -6,6 +6,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
@@ -35,8 +36,8 @@ type (
 		Code string `query:"code"`
 	}
 	GetAuthHandlerQuery struct {
-		state
-		code
+		State string `query:"state"`
+		Code  string `query:"code"`
 	}
 )
 
@@ -197,6 +198,7 @@ func assembleOAS3Operation() *openapi3.Operation {
 	return &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
+		Tags:        []string{fmt.Sprintf("auth by %s", meta.DisplayName)},
 		Responses: map[string]*openapi3.ResponseRef{
 			strconv.Itoa(http.StatusFound): {
 				Value: core.AssembleOASRedirectResponse(&description),

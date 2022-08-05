@@ -150,6 +150,7 @@ func initMFASMS(s *sms) func(*fiber.Ctx) error {
 		}
 
 		newCred := &core.Credential{Name: "id", Value: id}
+		//todo(Talgat) Update updates EmailVerified as false, if not explicitly indicated in Identity
 		_, err = manager.Update(newCred, &core.Identity{Phone: &cred.Value, PhoneVerified: true}, "dummy")
 		if err != nil {
 			return core.SendError(ctx, http.StatusInternalServerError, err.Error())

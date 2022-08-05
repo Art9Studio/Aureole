@@ -301,7 +301,7 @@ func assembleOAS3Operation(reqSchema, resSchema *openapi3.SchemaRef) *openapi3.O
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
-		Tags:        []string{meta.DisplayName},
+		Tags:        []string{fmt.Sprintf("mfa by %s", meta.DisplayName)},
 		RequestBody: &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
 				Required: true,
