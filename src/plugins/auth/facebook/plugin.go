@@ -36,8 +36,8 @@ type (
 		Code string `query:"code"`
 	}
 	GetAuthHandlerQuery struct {
-		state
-		code
+		State string `query:"state"`
+		Code  string `query:"code"`
 	}
 )
 
