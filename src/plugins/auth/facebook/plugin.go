@@ -3,6 +3,7 @@ package facebook
 import (
 	"aureole/internal/configs"
 	"aureole/internal/core"
+	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"net/http"
@@ -153,21 +154,19 @@ func initConfig(conf *configs.RawConfig) (*config, error) {
 }
 
 func initProvider(f *facebook) error {
-	url := f.pluginAPI.GetAppUrl()
 	redirectUri := f.pluginAPI.GetAppUrl()
 	redirectUri.Path = f.pluginAPI.GetAuthRoute(meta.ShortName)
 	f.provider = &oauth2.Config{
 		ClientID:     f.conf.ClientId,
 		ClientSecret: f.conf.ClientSecret,
 		Endpoint:     endpoints.Facebook,
-		RedirectURL:  url.String(),
+		RedirectURL:  redirectUri.String(),
 		Scopes:       f.conf.Scopes,
 	}
 	return nil
 }
 
 func (f *facebook) GetCustomAppRoutes() []*core.Route {
-
 	return []*core.Route{
 		{
 			Method:        http.MethodGet,
@@ -183,6 +182,7 @@ func assembleOAS3Operation() *openapi3.Operation {
 	return &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
+		Tags:        []string{fmt.Sprintf("auth by %s", meta.ShortName)},
 		Responses: map[string]*openapi3.ResponseRef{
 			strconv.Itoa(http.StatusFound): {
 				Value: core.AssembleOASRedirectResponse(&description),
