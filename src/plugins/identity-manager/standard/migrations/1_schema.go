@@ -4,12 +4,21 @@ const upSchema1 = `
 CREATE TABLE users
 (
     id             SERIAL PRIMARY KEY,
+	aureole_id     VARCHAR,
     username       VARCHAR UNIQUE,
     phone          VARCHAR UNIQUE,
     email          VARCHAR UNIQUE,
     email_verified BOOLEAN DEFAULT FALSE,
-    phone_verified BOOLEAN DEFAULT FALSE,
-    additional     jsonb
+    phone_verified BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE imported_users
+(
+	aureole_id VARCHAR UNIQUE,
+	provider_name VARCHAR,
+	provider_id VARCHAR,
+	user_id VARCHAR,
+	payload jsonb
 );
 
 CREATE TABLE passwords

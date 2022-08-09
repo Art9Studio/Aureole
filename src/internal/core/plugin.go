@@ -20,6 +20,28 @@ type MetadataGetter interface {
 }
 
 type (
+	User struct {
+		ID            interface{} `json:"id" mapstructure:"id"`
+		AureoleId     string      `json:"aureole_id" mapstructure:"aureole_id"`
+		Email         string      `json:"email" mapstructure:"email"`
+		Phone         string      `json:"phone" mapstructure:"phone"`
+		Username      string      `json:"username" mapstructure:"username"`
+		EmailVerified bool        `json:"email_verified" mapstructure:"email_verified"`
+		PhoneVerified bool        `json:"phone_verified" mapstructure:"phone_verified"`
+	}
+
+	ImportedUser struct {
+		AureoleId    string                 `json:"aureole_id" db:"aureole_id"`
+		ProviderName string                 `json:"provider_name" db:"provider_name"`
+		ProviderId   string                 `json:"provider_id" db:"provider_id"`
+		UserId       string                 `json:"user_id" db:"user_id"`
+		Additional   map[string]interface{} `json:"payload" db:"payload"`
+	}
+
+	Secrets map[string]interface{}
+)
+
+type (
 	AuthenticatorCreator interface {
 		Create(*configs.PluginConfig) CryptoStorage
 	}
@@ -32,11 +54,14 @@ type (
 	}
 
 	AuthResult struct {
-		Cred       *Credential
-		Identity   *Identity
-		Provider   string
-		Additional map[string]interface{}
-		ErrorData  map[string]interface{}
+		User         *User
+		ImportedUser *ImportedUser
+		Secrets      *Secrets
+		Cred         *Credential
+		Identity     *Identity
+		Provider     string
+		Additional   map[string]interface{}
+		ErrorData    map[string]interface{}
 	}
 
 	AuthHandlerFunc func(fiber.Ctx) (*AuthResult, error)
@@ -100,7 +125,7 @@ type (
 	IDManager interface {
 		Plugin
 		Register(c *Credential, i *Identity, authnProvider string) (*Identity, error)
-		OnUserAuthenticated(c *Credential, i *Identity, authnProvider string) (*Identity, error)
+		OnUserAuthenticated(authRes *AuthResult) (*Identity, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 		Update(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 
@@ -139,6 +164,12 @@ func NewIdentity(data map[string]interface{}) (*Identity, error) {
 		return nil, err
 	}
 	return ident, nil
+}
+
+func (u *User) AsMap() map[string]interface{} {
+	structsConf := structs.New(u)
+	structsConf.TagName = "mapstructure"
+	return structsConf.Map()
 }
 
 func (i *Identity) AsMap() map[string]interface{} {

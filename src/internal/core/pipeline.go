@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type AuthUnauthorizedResult struct {
@@ -109,7 +110,8 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
-		return authorize(c, app, identity)
+		//todo(Talgat) add User instead of nil
+		return authorize(c, app, identity, nil)
 	}
 }
 
@@ -141,6 +143,12 @@ func getEnabledMFA(app *app, authnResult *AuthResult) (fiber.Map, error) {
 }
 
 func authenticate(app *app, authnResult *AuthResult) (*Identity, error) {
+	aureoleId, err := gonanoid.New()
+	if err != nil {
+		return nil, err
+	}
+	authnResult.User.AureoleId = aureoleId
+
 	manager, ok := app.getIDManager()
 	if ok {
 		return manager.OnUserAuthenticated(authnResult.Cred, authnResult.Identity, authnResult.Provider)
@@ -148,7 +156,7 @@ func authenticate(app *app, authnResult *AuthResult) (*Identity, error) {
 	return authnResult.Identity, nil
 }
 
-func authorize(c *fiber.Ctx, app *app, identity *Identity) error {
+func authorize(c *fiber.Ctx, app *app, identity *Identity, user *User) error {
 	authz, ok := app.getIssuer()
 	if !ok {
 		return c.Status(http.StatusUnauthorized).JSON(ErrorBody(errors.New(fmt.Sprintf("app %s: cannot get issuer", app.name)), nil))
