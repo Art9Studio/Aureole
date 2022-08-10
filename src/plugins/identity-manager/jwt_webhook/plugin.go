@@ -60,7 +60,7 @@ func (j *webhook) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 
-func (j *webhook) Register(c *core.Credential, i *core.Identity, authnProvider string) (*core.Identity, error) {
+func (j *webhook) Register(c *core.Credential, i *core.Identity, u *core.User, authnProvider string) (*core.User, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "Register",
 		"credential":     map[string]string{c.Name: c.Value},
@@ -90,15 +90,15 @@ func (j *webhook) Register(c *core.Credential, i *core.Identity, authnProvider s
 		return nil, err
 	}
 
-	return core.NewIdentity(payload)
+	return core.NewUser(payload)
 }
 
-func (j *webhook) OnUserAuthenticated(c *core.Credential, i *core.Identity, authnProvider string) (*core.Identity, error) {
+func (j *webhook) OnUserAuthenticated(authRes *core.AuthResult) (*core.User, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "OnUserAuthenticated",
-		"credential":     map[string]string{c.Name: c.Value},
-		"identity":       i.AsMap(),
-		"authn_provider": authnProvider,
+		"credential":     map[string]string{authRes.Cred.Name: authRes.Cred.Value},
+		"identity":       authRes.Identity.AsMap(),
+		"authn_provider": authRes.Provider,
 	},
 		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
@@ -123,7 +123,7 @@ func (j *webhook) OnUserAuthenticated(c *core.Credential, i *core.Identity, auth
 		return nil, err
 	}
 
-	return core.NewIdentity(payload)
+	return core.NewUser(payload)
 }
 
 func (j *webhook) OnMFA(c *core.Credential, mfaData *core.MFAData) error {

@@ -89,8 +89,8 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, errors.New("code not found")
 		}
 
+		pluginId := fmt.Sprintf("%d", meta.PluginID)
 		var email string
-		var importedId string
 		jwtT, err := getJwt(g, code)
 		if err != nil {
 			return nil, errors.New("error while exchange")
@@ -99,7 +99,6 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 		if err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		_ = g.pluginAPI.GetFromJWT(jwtT, "sub", &importedId)
 
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
@@ -115,12 +114,12 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 
 		return &core.AuthResult{
 			User: &core.User{
-				Email: email,
+				Email:         &email,
+				EmailVerified: true,
 			},
 			ImportedUser: &core.ImportedUser{
-				ProviderId:   fmt.Sprintf("%d", meta.PluginID),
-				ProviderName: meta.ShortName,
-				UserId:       importedId,
+				ProviderId:   &pluginId,
+				ProviderName: &meta.ShortName,
 				Additional: map[string]interface{}{
 					"social_provider_data": map[string]interface{}{
 						"plugin_name": meta.ShortName, "payload": userData,

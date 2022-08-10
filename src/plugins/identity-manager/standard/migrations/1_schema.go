@@ -14,11 +14,12 @@ CREATE TABLE users
 
 CREATE TABLE imported_users
 (
+    id            SERIAL PRIMARY KEY,
 	aureole_id VARCHAR UNIQUE,
-	provider_name VARCHAR,
-	provider_id VARCHAR,
-	user_id VARCHAR,
-	payload jsonb
+	provider_name VARCHAR NOT NULL,
+	provider_id VARCHAR NOT NULL,
+	user_id INT REFERENCES users ON DELETE CASCADE,
+	payload jsonb NOT NULL
 );
 
 CREATE TABLE passwords

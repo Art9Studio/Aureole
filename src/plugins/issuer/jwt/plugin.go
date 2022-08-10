@@ -287,20 +287,19 @@ func newToken(tokenType tokenType, conf *config, payload *core.IssuerPayload) (t
 		if err != nil {
 			return nil, err
 		}
-		err = token.Set(jwt.JwtIDKey, jti)
-		if err != nil {
+		if err = token.Set(jwt.JwtIDKey, jti); err != nil {
 			return nil, err
 		}
-		err = token.Set(jwt.IssuerKey, conf.Iss)
-		if err != nil {
+		if err = token.Set(jwt.IssuerKey, conf.Iss); err != nil {
 			return nil, err
 		}
-		err = token.Set(jwt.AudienceKey, conf.Aud)
-		if err != nil {
+		if err = token.Set(jwt.AudienceKey, conf.Aud); err != nil {
 			return nil, err
 		}
-		err = token.Set(jwt.NotBeforeKey, conf.Nbf)
-		if err != nil {
+		if err = token.Set(jwt.NotBeforeKey, conf.Nbf); err != nil {
+			return nil, err
+		}
+		if err = token.Set("aureole_id", payload.AureoleID); err != nil {
 			return nil, err
 		}
 
@@ -330,7 +329,7 @@ func newToken(tokenType tokenType, conf *config, payload *core.IssuerPayload) (t
 		if err != nil {
 			return nil, err
 		}
-
+		//todo(Talgat) doesn't work?
 		p, err := parsePayload(conf.TmplPath, payload)
 		if err != nil {
 			return nil, err

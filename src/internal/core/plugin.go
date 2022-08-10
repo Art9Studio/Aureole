@@ -21,21 +21,21 @@ type MetadataGetter interface {
 
 type (
 	User struct {
-		ID            interface{} `json:"id" mapstructure:"id"`
-		AureoleId     string      `json:"aureole_id" mapstructure:"aureole_id"`
-		Email         string      `json:"email" mapstructure:"email"`
-		Phone         string      `json:"phone" mapstructure:"phone"`
-		Username      string      `json:"username" mapstructure:"username"`
-		EmailVerified bool        `json:"email_verified" mapstructure:"email_verified"`
-		PhoneVerified bool        `json:"phone_verified" mapstructure:"phone_verified"`
+		ID            interface{} `json:"id,omitempty" mapstructure:"id,omitempty"`
+		AureoleId     *string     `json:"aureole_id,omitempty" mapstructure:"aureole_id,omitempty"`
+		Email         *string     `json:"email,omitempty" mapstructure:"email,omitempty"`
+		Phone         *string     `json:"phone,omitempty" mapstructure:"phone,omitempty"`
+		Username      *string     `json:"username,omitempty" mapstructure:"username,omitempty"`
+		EmailVerified bool        `json:"email_verified,omitempty" mapstructure:"email_verified,omitempty"`
+		PhoneVerified bool        `json:"phone_verified,omitempty" mapstructure:"phone_verified,omitempty"`
 	}
 
 	ImportedUser struct {
-		AureoleId    string                 `json:"aureole_id" db:"aureole_id"`
-		ProviderName string                 `json:"provider_name" db:"provider_name"`
-		ProviderId   string                 `json:"provider_id" db:"provider_id"`
-		UserId       string                 `json:"user_id" db:"user_id"`
-		Additional   map[string]interface{} `json:"payload" db:"payload"`
+		AureoleId    *string                `json:"aureole_id,omitempty" db:"aureole_id,omitempty"`
+		ProviderName *string                `json:"provider_name,omitempty" db:"provider_name,omitempty"`
+		ProviderId   *string                `json:"provider_id,omitempty" db:"provider_id,omitempty"`
+		UserId       *string                `json:"user_id,omitempty" db:"user_id,omitempty"`
+		Additional   map[string]interface{} `json:"payload,omitempty" db:"payload,omitempty"`
 	}
 
 	Secrets map[string]interface{}
@@ -124,8 +124,8 @@ type (
 
 	IDManager interface {
 		Plugin
-		Register(c *Credential, i *Identity, authnProvider string) (*Identity, error)
-		OnUserAuthenticated(authRes *AuthResult) (*Identity, error)
+		Register(c *Credential, i *Identity, u *User, authnProvider string) (*User, error)
+		OnUserAuthenticated(authRes *AuthResult) (*User, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 		Update(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 
@@ -166,6 +166,15 @@ func NewIdentity(data map[string]interface{}) (*Identity, error) {
 	return ident, nil
 }
 
+func NewUser(data map[string]interface{}) (*User, error) {
+	user := &User{}
+	err := mapstructure.Decode(data, user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (u *User) AsMap() map[string]interface{} {
 	structsConf := structs.New(u)
 	structsConf.TagName = "mapstructure"
@@ -192,13 +201,13 @@ type (
 
 	IssuerPayload struct {
 		ID            interface{}            `mapstructure:"id,omitempty" json:"id,omitempty"`
+		AureoleID     *string                `mapstructure:"aureole_id,omitempty" json:"aureole_id,omitempty"`
 		Username      *string                `mapstructure:"username,omitempty" json:"username,omitempty"`
 		Phone         *string                `mapstructure:"phone,omitempty" json:"phone,omitempty"`
 		Email         *string                `mapstructure:"email,omitempty" json:"email,omitempty"`
 		EmailVerified bool                   `mapstructure:"email_verified" json:"email_verified"`
 		PhoneVerified bool                   `mapstructure:"phone_verified" json:"phone_verified"`
 		Additional    map[string]interface{} `mapstructure:"additional,omitempty" json:"additional,omitempty"`
-		// NativeQ    func(queryName string, args ...interface{}) string
 	}
 )
 

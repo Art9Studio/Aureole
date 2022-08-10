@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type AuthUnauthorizedResult struct {
@@ -56,11 +55,11 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 		}
 
 		// todo: I don't like this name
-		identity, err := authenticate(app, authnResult)
+		user, err := authenticate(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
-		return authorize(c, app, identity)
+		return authorize(c, app, user)
 	}
 }
 
@@ -106,12 +105,12 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 		if id != "" {
 			authnResult.Identity.ID = id
 		}
-		identity, err := authenticate(app, authnResult)
+		user, err := authenticate(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 		//todo(Talgat) add User instead of nil
-		return authorize(c, app, identity, nil)
+		return authorize(c, app, user)
 	}
 }
 
@@ -142,27 +141,21 @@ func getEnabledMFA(app *app, authnResult *AuthResult) (fiber.Map, error) {
 	return nil, nil
 }
 
-func authenticate(app *app, authnResult *AuthResult) (*Identity, error) {
-	aureoleId, err := gonanoid.New()
-	if err != nil {
-		return nil, err
-	}
-	authnResult.User.AureoleId = aureoleId
-
+func authenticate(app *app, authnResult *AuthResult) (*User, error) {
 	manager, ok := app.getIDManager()
 	if ok {
-		return manager.OnUserAuthenticated(authnResult.Cred, authnResult.Identity, authnResult.Provider)
+		return manager.OnUserAuthenticated(authnResult)
 	}
-	return authnResult.Identity, nil
+	return authnResult.User, nil
 }
 
-func authorize(c *fiber.Ctx, app *app, identity *Identity, user *User) error {
+func authorize(c *fiber.Ctx, app *app, user *User) error {
 	authz, ok := app.getIssuer()
 	if !ok {
 		return c.Status(http.StatusUnauthorized).JSON(ErrorBody(errors.New(fmt.Sprintf("app %s: cannot get issuer", app.name)), nil))
 	}
 
-	payload, err := NewIssuerPayload(identity.AsMap())
+	payload, err := NewIssuerPayload(user.AsMap())
 	if err != nil {
 		return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 	}

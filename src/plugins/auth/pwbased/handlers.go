@@ -38,7 +38,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		if !ok {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
-		user, err := manager.Register(cred, i, meta.ShortName)
+		user, err := manager.Register(cred, i, nil, meta.ShortName)
 		if err != nil {
 			return err
 		}
