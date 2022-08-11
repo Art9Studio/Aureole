@@ -93,7 +93,7 @@ func (j *webhook) Register(c *core.Credential, i *core.Identity, u *core.User, a
 	return core.NewUser(payload)
 }
 
-func (j *webhook) OnUserAuthenticated(authRes *core.AuthResult) (*core.User, error) {
+func (j *webhook) OnUserAuthenticated(authRes *core.AuthResult) (*core.AuthResult, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "OnUserAuthenticated",
 		"credential":     map[string]string{authRes.Cred.Name: authRes.Cred.Value},
@@ -122,8 +122,10 @@ func (j *webhook) OnUserAuthenticated(authRes *core.AuthResult) (*core.User, err
 	if err != nil {
 		return nil, err
 	}
+	newUser, err := core.NewUser(payload)
+	authRes.User = newUser
 
-	return core.NewUser(payload)
+	return authRes, nil
 }
 
 func (j *webhook) OnMFA(c *core.Credential, mfaData *core.MFAData) error {

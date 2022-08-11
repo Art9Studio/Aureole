@@ -95,9 +95,22 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 		} else if !ok {
 			return nil, errors.New("input data doesn't pass filters")
 		}
+		pluginId := fmt.Sprintf("%d", meta.PluginID)
 		email := userData["email"].(string)
+		providerId := userData["id"].(string)
 
+		//todo if no email
 		return &core.AuthResult{
+			User: &core.User{
+				Email:         &email,
+				EmailVerified: true,
+			},
+			ImportedUser: &core.ImportedUser{
+				ProviderId:   &providerId,
+				PluginID:     &pluginId,
+				ProviderName: &meta.ShortName,
+				Additional:   userData,
+			},
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,

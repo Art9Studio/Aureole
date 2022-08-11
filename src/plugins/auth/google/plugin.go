@@ -99,6 +99,8 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 		if err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
+		var providerId string
+		err = g.pluginAPI.GetFromJWT(jwtT, "sub", &providerId)
 
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
@@ -118,13 +120,10 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 				EmailVerified: true,
 			},
 			ImportedUser: &core.ImportedUser{
-				ProviderId:   &pluginId,
+				ProviderId:   &providerId,
+				PluginID:     &pluginId,
 				ProviderName: &meta.ShortName,
-				Additional: map[string]interface{}{
-					"social_provider_data": map[string]interface{}{
-						"plugin_name": meta.ShortName, "payload": userData,
-					},
-				},
+				Additional:   userData,
 			},
 			Cred: &core.Credential{
 				Name:  core.Email,

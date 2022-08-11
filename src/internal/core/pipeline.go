@@ -55,11 +55,11 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 		}
 
 		// todo: I don't like this name
-		user, err := authenticate(app, authnResult)
+		authRes, err := authenticate(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
-		return authorize(c, app, user)
+		return authorize(c, app, authRes.User)
 	}
 }
 
@@ -105,12 +105,12 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 		if id != "" {
 			authnResult.Identity.ID = id
 		}
-		user, err := authenticate(app, authnResult)
+		authRes, err := authenticate(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 		//todo(Talgat) add User instead of nil
-		return authorize(c, app, user)
+		return authorize(c, app, authRes.User)
 	}
 }
 
@@ -141,12 +141,12 @@ func getEnabledMFA(app *app, authnResult *AuthResult) (fiber.Map, error) {
 	return nil, nil
 }
 
-func authenticate(app *app, authnResult *AuthResult) (*User, error) {
+func authenticate(app *app, authnResult *AuthResult) (*AuthResult, error) {
 	manager, ok := app.getIDManager()
 	if ok {
 		return manager.OnUserAuthenticated(authnResult)
 	}
-	return authnResult.User, nil
+	return authnResult, nil
 }
 
 func authorize(c *fiber.Ctx, app *app, user *User) error {

@@ -4,7 +4,6 @@ const upSchema1 = `
 CREATE TABLE users
 (
     id             SERIAL PRIMARY KEY,
-	aureole_id     VARCHAR,
     username       VARCHAR UNIQUE,
     phone          VARCHAR UNIQUE,
     email          VARCHAR UNIQUE,
@@ -15,11 +14,11 @@ CREATE TABLE users
 CREATE TABLE imported_users
 (
     id            SERIAL PRIMARY KEY,
-	aureole_id VARCHAR UNIQUE,
+	plugin_id VARCHAR NOT NULL,
 	provider_name VARCHAR NOT NULL,
 	provider_id VARCHAR NOT NULL,
 	user_id INT REFERENCES users ON DELETE CASCADE,
-	payload jsonb NOT NULL
+	additional jsonb NOT NULL
 );
 
 CREATE TABLE passwords

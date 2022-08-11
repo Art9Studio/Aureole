@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"strings"
 
 	"github.com/jackc/pgx/v4"
@@ -108,7 +107,7 @@ func (s *standart) Register(c *core.Credential, i *core.Identity, u *core.User, 
 	}
 }
 
-func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.User, error) {
+func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.AuthResult, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -120,24 +119,26 @@ func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.User, er
 		return nil, fmt.Errorf("cannot check user existence: %v", err)
 	}
 
-	var registeredUser *core.User
+	var (
+		registeredUser *core.User
+		importedUser   *core.ImportedUser
+	)
+
 	if exists {
 		registeredUser, err = getUser(conn, authRes.Cred)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get user data: %v", err)
 		}
-	} else {
-		aureoleId, err := gonanoid.New()
+		importedUser, err = getImportedUser(conn, *registeredUser.ID, *authRes.ImportedUser.PluginID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot get imported user: %v", err)
 		}
-		authRes.User.AureoleId = &aureoleId
-		authRes.ImportedUser.AureoleId = &aureoleId
-
+		authRes.User = registeredUser
+		authRes.ImportedUser = importedUser
+	} else {
 		if authRes.Provider != "password_based" && (authRes.Identity.EmailVerified || authRes.Identity.PhoneVerified) {
 			if strings.HasPrefix(authRes.Provider, "social_provider$") {
-				provider := strings.TrimPrefix(authRes.Provider, "social_provider$")
-				registeredUser, err = registerOauth2User(conn, authRes.User, authRes.ImportedUser, provider)
+				authRes, err = registerOauth2User(conn, authRes)
 				if err != nil {
 					return nil, fmt.Errorf("cannot register social provider user: %v", err)
 				}
@@ -146,12 +147,13 @@ func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.User, er
 				if err != nil {
 					return nil, fmt.Errorf("cannot register user: %v", err)
 				}
+				authRes.User = registeredUser
 			}
 		} else {
 			return nil, errors.New("user doesn't exists")
 		}
 	}
-	return registeredUser, nil
+	return authRes, nil
 }
 
 func (s *standart) OnMFA(c *core.Credential, mfaData *core.MFAData) error {
@@ -278,16 +280,16 @@ func isUserExists(conn *pgxpool.Conn, cred *core.Credential) (exists bool, err e
 	return exists, nil
 }
 
-func getImportedUsers(conn *pgxpool.Conn, aureoleId string) ([]*core.ImportedUser, error) {
+func getImportedUser(conn *pgxpool.Conn, userId, pluginId string) (*core.ImportedUser, error) {
 	//todo(Talgat) replace with sql constructors
-	sql := `SELECT provider_name, payload FROM imported_users WHERE aureole_id = $1;`
+	sql := `SELECT provider_name, payload FROM imported_users WHERE user_id = $1 and plugin_id = $2;`
 
-	rows, err := conn.Query(context.Background(), sql, aureoleId)
+	rows, err := conn.Query(context.Background(), sql, userId, pluginId)
 	if err != nil {
 		return nil, err
 	}
 
-	var importedUsers []*core.ImportedUser
+	var importedUser *core.ImportedUser
 
 	for rows.Next() {
 		var (
@@ -299,16 +301,14 @@ func getImportedUsers(conn *pgxpool.Conn, aureoleId string) ([]*core.ImportedUse
 		}
 
 		if providerName != "" && payload != nil {
-			importedUsers = append(importedUsers, &core.ImportedUser{
-				ProviderName: &providerName,
-				Additional:   payload,
-			})
+			importedUser.ProviderName = &providerName
+			importedUser.Additional = payload
 		}
 	}
 	if rows.Err() != nil {
 		return nil, err
 	}
-	return importedUsers, nil
+	return importedUser, nil
 }
 
 func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
@@ -318,7 +318,7 @@ func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
 	var user core.User
 
 	if err := row.Scan(
-		&user.ID, &user.AureoleId,
+		&user.ID,
 		&user.Username,
 		&user.Phone, &user.Email,
 		&user.EmailVerified,
@@ -331,87 +331,55 @@ func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
 }
 
 func registerUser(conn *pgxpool.Conn, newUser *core.User) (*core.User, error) {
-	var user core.User
 	sql, values, err := getCreateQuery(newUser)
 	if err != nil {
 		return nil, err
 	}
-	err = conn.QueryRow(context.Background(), sql, values...).Scan(&user.ID, &user.AureoleId)
+	err = conn.QueryRow(context.Background(), sql, values...).Scan(&newUser.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return newUser, nil
 }
 
-func registerOauth2User(conn *pgxpool.Conn, newUser *core.User, importedU *core.ImportedUser, provider string) (*core.User, error) {
-	importedUserData, ok := importedU.Additional["social_provider_data"].(map[string]interface{})
-	if !ok {
-		return nil, errors.New("cannot get social provider data")
-	}
-	oauth2PayloadBytes, err := json.Marshal(importedUserData["payload"])
+func registerOauth2User(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.AuthResult, error) {
+	importedUserData := authRes.ImportedUser.Additional
+	oauth2PayloadBytes, err := json.Marshal(importedUserData)
 	if err != nil {
 		return nil, err
 	}
-	pluginID := importedU.ProviderId
-	delete(importedU.Additional, "social_provider_data")
 
 	tx, err := conn.Begin(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	var user core.User
-	createUserSql, values, err := getCreateQuery(newUser)
+	createUserSql, values, err := getCreateQuery(authRes.User)
 
 	if err != nil {
 		return nil, err
 	}
-	err = tx.QueryRow(context.Background(), createUserSql, values...).Scan(&user.ID, &user.AureoleId)
+	err = tx.QueryRow(context.Background(), createUserSql, values...).Scan(&authRes.User.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	saveImportedUser := "insert into imported_users(user_id, aureole_id, provider_id, provider_name, payload) values ($1, $2, $3, $4, $5);"
-	_, err = tx.Exec(context.Background(), saveImportedUser, user.ID, user.AureoleId, pluginID, provider, string(oauth2PayloadBytes))
+	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
+	_, err = tx.Exec(context.Background(), saveImportedUser,
+		authRes.User.ID,
+		authRes.ImportedUser.PluginID,
+		authRes.ImportedUser.ProviderId,
+		authRes.Provider,
+		string(oauth2PayloadBytes))
 	if err != nil {
 		return nil, err
 	}
-
-	getImportedUsersSql := "select provider_name, payload from imported_users where user_id=$1"
-	rows, err := tx.Query(context.Background(), getImportedUsersSql, user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	var importedUsers []map[string]interface{}
-	for rows.Next() {
-		var (
-			providerName string
-			payload      map[string]interface{}
-		)
-		err = rows.Scan(&providerName, &payload)
-		if err != nil {
-			return nil, err
-		}
-
-		if providerName != "" && payload != nil {
-			importedUsers = append(importedUsers, map[string]interface{}{
-				"provider_name": providerName,
-				"payload":       payload,
-			})
-		}
-	}
-
-	if rows.Err() != nil {
-		return nil, err
-	}
-	importedU.Additional["social_providers"] = importedUsers
 
 	err = tx.Commit(context.Background())
 	if err != nil {
 		return nil, tx.Rollback(context.Background())
 	}
-	return &user, nil
+	return authRes, nil
 }
 
 func saveMFAData(conn *pgxpool.Conn, cred *core.Credential, data *core.MFAData) error {
@@ -479,7 +447,7 @@ func getCreateQuery(user *core.User) (string, []interface{}, error) {
 	colsStmt = colsStmt[:len(colsStmt)-1]
 	valsStmt = valsStmt[:len(valsStmt)-1]
 
-	return fmt.Sprintf("insert into users(%s) values (%s) returning id, aureole_id;", colsStmt, valsStmt), values, nil
+	return fmt.Sprintf("insert into users(%s) values (%s) returning id;", colsStmt, valsStmt), values, nil
 }
 
 func getUpdateQuery(cred *core.Credential, ident *core.Identity) (string, []interface{}, error) {

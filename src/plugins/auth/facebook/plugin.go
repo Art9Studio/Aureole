@@ -94,6 +94,7 @@ func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
+		pluginId := fmt.Sprintf("%d", meta.PluginID)
 		ok, err := f.pluginAPI.Filter(convertUserData(userData), f.conf.Filter)
 		if err != nil {
 			return nil, err
@@ -101,8 +102,19 @@ func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, errors.New("input data doesn't pass filters")
 		}
 		email := userData["email"].(string)
+		providerId := userData["id"].(string)
 
 		return &core.AuthResult{
+			User: &core.User{
+				Email:         &email,
+				EmailVerified: true,
+			},
+			ImportedUser: &core.ImportedUser{
+				ProviderId:   &providerId,
+				PluginID:     &pluginId,
+				ProviderName: &meta.ShortName,
+				Additional:   userData,
+			},
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,

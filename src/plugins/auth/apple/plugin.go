@@ -96,7 +96,11 @@ func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, errors.New("code not found")
 		}
 
-		var email string
+		pluginId := fmt.Sprintf("%d", meta.PluginID)
+		var (
+			email      string
+			providerId string
+		)
 		jwtT, err := getJwt(a, input.Code)
 		if err != nil {
 			return nil, err
@@ -105,10 +109,10 @@ func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 		if err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		/*socialId, ok := jwtT.Get("sub")
-		if !ok {
-			return nil, errors.New("can't get 'social_id' from token")
-		}*/
+		err = a.pluginAPI.GetFromJWT(jwtT, "sub", &email)
+		if err != nil {
+			return nil, errors.New("cannot get sub from token")
+		}
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
 			return nil, err
@@ -122,6 +126,16 @@ func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 		}
 
 		return &core.AuthResult{
+			User: &core.User{
+				Email:         &email,
+				EmailVerified: true,
+			},
+			ImportedUser: &core.ImportedUser{
+				ProviderId:   &providerId,
+				PluginID:     &pluginId,
+				ProviderName: &meta.ShortName,
+				Additional:   userData,
+			},
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
