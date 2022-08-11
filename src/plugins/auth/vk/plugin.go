@@ -111,6 +111,10 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 				ProviderName: &meta.ShortName,
 				Additional:   userData,
 			},
+			Cred: &core.Credential{
+				Name:  core.Email,
+				Value: email,
+			},
 			Provider: "social_provider$" + v.GetMetadata().ShortName,
 		}, nil
 	}

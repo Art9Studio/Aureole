@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v4"
@@ -136,7 +137,7 @@ func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.AuthResu
 		authRes.User = registeredUser
 		authRes.ImportedUser = importedUser
 	} else {
-		if authRes.Provider != "password_based" && (authRes.Identity.EmailVerified || authRes.Identity.PhoneVerified) {
+		if authRes.Provider != "password_based" && (authRes.User.EmailVerified || authRes.User.PhoneVerified) {
 			if strings.HasPrefix(authRes.Provider, "social_provider$") {
 				authRes, err = registerOauth2User(conn, authRes)
 				if err != nil {
@@ -317,15 +318,23 @@ func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
 
 	var user core.User
 
+	var (
+		userId    int
+		userIdStr string
+	)
+
 	if err := row.Scan(
-		&user.ID,
-		&user.Username,
-		&user.Phone, &user.Email,
-		&user.EmailVerified,
-		&user.PhoneVerified,
+		&userId,
+		user.Username,
+		user.Phone, &user.Email,
+		user.EmailVerified,
+		user.PhoneVerified,
 	); err != nil {
 		return nil, err
 	}
+
+	userIdStr = strconv.Itoa(userId)
+	user.ID = &userIdStr
 
 	return &user, nil
 }
@@ -359,16 +368,22 @@ func registerOauth2User(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.Aut
 	if err != nil {
 		return nil, err
 	}
-	err = tx.QueryRow(context.Background(), createUserSql, values...).Scan(&authRes.User.ID)
+	var (
+		userId    int
+		userIdStr string
+	)
+	err = tx.QueryRow(context.Background(), createUserSql, values...).Scan(&userId)
 	if err != nil {
 		return nil, err
 	}
+	userIdStr = strconv.Itoa(userId)
+	authRes.User.ID = &userIdStr
 
 	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
 	_, err = tx.Exec(context.Background(), saveImportedUser,
-		authRes.User.ID,
-		authRes.ImportedUser.PluginID,
-		authRes.ImportedUser.ProviderId,
+		*authRes.User.ID,
+		*authRes.ImportedUser.PluginID,
+		*authRes.ImportedUser.ProviderId,
 		authRes.Provider,
 		string(oauth2PayloadBytes))
 	if err != nil {
