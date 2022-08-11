@@ -80,27 +80,29 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 		// todo: save state and compare later #2
-		state := input.State
-		if state != "state" {
+		if input.State != "state" {
 			return nil, errors.New("invalid state")
 		}
-		code := input.Code
-		if code == "" {
+		if input.Code == "" {
 			return nil, errors.New("code not found")
 		}
 
-		pluginId := fmt.Sprintf("%d", meta.PluginID)
-		var email string
-		jwtT, err := getJwt(g, code)
+		var (
+			pluginId   = fmt.Sprintf("%d", meta.PluginID)
+			email      string
+			providerId string
+		)
+
+		jwtT, err := getJwt(g, input.Code)
 		if err != nil {
 			return nil, errors.New("error while exchange")
 		}
-		err = g.pluginAPI.GetFromJWT(jwtT, "email", &email)
-		if err != nil {
+		if err = g.pluginAPI.GetFromJWT(jwtT, "email", &email); err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		var providerId string
-		err = g.pluginAPI.GetFromJWT(jwtT, "sub", &providerId)
+		if err = g.pluginAPI.GetFromJWT(jwtT, "sub", &providerId); err != nil {
+			return nil, errors.New("cannot get sub from token")
+		}
 
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
@@ -124,19 +126,6 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 				PluginID:     &pluginId,
 				ProviderName: &meta.ShortName,
 				Additional:   userData,
-			},
-			Cred: &core.Credential{
-				Name:  core.Email,
-				Value: email,
-			},
-			Identity: &core.Identity{
-				Email:         &email,
-				EmailVerified: true,
-				Additional: map[string]interface{}{
-					"social_provider_data": map[string]interface{}{
-						"plugin_name": meta.ShortName, "payload": userData,
-					},
-				},
 			},
 			Provider: "social_provider$" + meta.ShortName,
 		}, nil

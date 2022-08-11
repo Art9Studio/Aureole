@@ -75,19 +75,23 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
-		state := input.State
-		if state != "state" {
+		if input.State != "state" {
 			return nil, errors.New("invalid state")
 		}
-		code := input.Code
-		if code == "" {
+		if input.Code == "" {
 			return nil, errors.New("code not found")
 		}
 
-		userData, err := getUserData(v, code)
+		userData, err := getUserData(v, input.Code)
 		if err != nil {
 			return nil, err
 		}
+
+		var (
+			pluginId   = fmt.Sprintf("%d", meta.PluginID)
+			email      = userData["email"].(string)
+			providerId = userData["id"].(string)
+		)
 
 		ok, err := v.pluginAPI.Filter(convertUserData(userData), v.conf.Filter)
 		if err != nil {
@@ -95,11 +99,7 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 		} else if !ok {
 			return nil, errors.New("input data doesn't pass filters")
 		}
-		pluginId := fmt.Sprintf("%d", meta.PluginID)
-		email := userData["email"].(string)
-		providerId := userData["id"].(string)
 
-		//todo if no email
 		return &core.AuthResult{
 			User: &core.User{
 				Email:         &email,
@@ -110,15 +110,6 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 				PluginID:     &pluginId,
 				ProviderName: &meta.ShortName,
 				Additional:   userData,
-			},
-			Cred: &core.Credential{
-				Name:  core.Email,
-				Value: email,
-			},
-			Identity: &core.Identity{
-				Email:         &email,
-				EmailVerified: true,
-				Additional:    map[string]interface{}{"social_provider_data": userData},
 			},
 			Provider: "social_provider$" + v.GetMetadata().ShortName,
 		}, nil

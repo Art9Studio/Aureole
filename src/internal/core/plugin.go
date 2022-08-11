@@ -30,7 +30,6 @@ type (
 	}
 
 	ImportedUser struct {
-		AureoleId    *string                `json:"aureole_id,omitempty" db:"aureole_id,omitempty"`
 		PluginID     *string                `json:"plugin_id,omitempty" db:"plugin_id,omitempty"`
 		ProviderName *string                `json:"provider_name,omitempty" db:"provider_name,omitempty"`
 		ProviderId   *string                `json:"provider_id,omitempty" db:"provider_id,omitempty"`

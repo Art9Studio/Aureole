@@ -85,8 +85,8 @@ func (apple) GetMetadata() core.Metadata {
 
 func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		input := GetAuthHandlerReqBody{}
-		if err := c.BodyParser(&input); err != nil {
+		input := &GetAuthHandlerReqBody{}
+		if err := c.BodyParser(input); err != nil {
 			return nil, err
 		}
 		if input.State != "state" {
@@ -96,23 +96,23 @@ func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, errors.New("code not found")
 		}
 
-		pluginId := fmt.Sprintf("%d", meta.PluginID)
 		var (
+			pluginId   = fmt.Sprintf("%d", meta.PluginID)
 			email      string
 			providerId string
 		)
+
 		jwtT, err := getJwt(a, input.Code)
 		if err != nil {
 			return nil, err
 		}
-		err = a.pluginAPI.GetFromJWT(jwtT, "email", &email)
-		if err != nil {
+		if err = a.pluginAPI.GetFromJWT(jwtT, "email", &email); err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		err = a.pluginAPI.GetFromJWT(jwtT, "sub", &email)
-		if err != nil {
+		if err = a.pluginAPI.GetFromJWT(jwtT, "sub", &providerId); err != nil {
 			return nil, errors.New("cannot get sub from token")
 		}
+
 		userData, err := jwtT.AsMap(context.Background())
 		if err != nil {
 			return nil, err
@@ -135,15 +135,6 @@ func (a *apple) GetAuthHandler() core.AuthHandlerFunc {
 				PluginID:     &pluginId,
 				ProviderName: &meta.ShortName,
 				Additional:   userData,
-			},
-			Cred: &core.Credential{
-				Name:  core.Email,
-				Value: email,
-			},
-			Identity: &core.Identity{
-				Email:         &email,
-				EmailVerified: true,
-				Additional:    map[string]interface{}{"social_provider_data": userData},
 			},
 			Provider: "social_provider$" + meta.ShortName,
 		}, nil

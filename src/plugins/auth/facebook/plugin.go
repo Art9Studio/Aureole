@@ -80,29 +80,30 @@ func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
-		state := input.State
-		if state != "state" {
+		if input.State != "state" {
 			return nil, errors.New("invalid state")
 		}
-		code := input.Code
-		if code == "" {
+		if input.Code == "" {
 			return nil, errors.New("code not found")
 		}
 
-		userData, err := getUserData(f, code)
+		userData, err := getUserData(f, input.Code)
 		if err != nil {
 			return nil, err
 		}
 
-		pluginId := fmt.Sprintf("%d", meta.PluginID)
+		var (
+			pluginId   = fmt.Sprintf("%d", meta.PluginID)
+			email      = userData["email"].(string)
+			providerId = userData["id"].(string)
+		)
+
 		ok, err := f.pluginAPI.Filter(convertUserData(userData), f.conf.Filter)
 		if err != nil {
 			return nil, err
 		} else if !ok {
 			return nil, errors.New("input data doesn't pass filters")
 		}
-		email := userData["email"].(string)
-		providerId := userData["id"].(string)
 
 		return &core.AuthResult{
 			User: &core.User{
@@ -114,15 +115,6 @@ func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 				PluginID:     &pluginId,
 				ProviderName: &meta.ShortName,
 				Additional:   userData,
-			},
-			Cred: &core.Credential{
-				Name:  core.Email,
-				Value: email,
-			},
-			Identity: &core.Identity{
-				Email:         &email,
-				EmailVerified: true,
-				Additional:    map[string]interface{}{"social_provider_data": userData},
 			},
 			Provider: "social_provider$" + meta.ShortName,
 		}, nil
