@@ -90,7 +90,7 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 		var (
 			pluginId   = fmt.Sprintf("%d", meta.PluginID)
 			email      = userData["email"].(string)
-			providerId = userData["id"].(string)
+			providerId = fmt.Sprintf("%f", userData["id"].(float64))
 		)
 
 		ok, err := v.pluginAPI.Filter(convertUserData(userData), v.conf.Filter)
@@ -106,16 +106,16 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 				EmailVerified: true,
 			},
 			ImportedUser: &core.ImportedUser{
-				ProviderId:   &providerId,
-				PluginID:     &pluginId,
-				ProviderName: &meta.ShortName,
+				ProviderId:   providerId,
+				PluginID:     pluginId,
+				ProviderName: meta.ShortName,
 				Additional:   userData,
 			},
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
 			},
-			Provider: "social_provider$" + v.GetMetadata().ShortName,
+			Provider: meta.ShortName,
 		}, nil
 	}
 }

@@ -33,6 +33,10 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 
 		mfaData := map[string]interface{}{}
 		response := fiber.Map{}
+		userId := g.pluginAPI.GetUserID(c)
+		if userId == "" {
+			return core.SendError(c, http.StatusForbidden, "auth id not found")
+		}
 
 		secret, err := generateSecret(g.pluginAPI)
 		if err != nil {
@@ -78,6 +82,11 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			}
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
+
+		if err = manager.RegisterSecrets(userId, fmt.Sprintf("%d", meta.PluginID), mfaData); err != nil {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
+		}
+
 		c.Set(fiber.HeaderContentType, "image/png")
 		return c.Send(qr)
 	}

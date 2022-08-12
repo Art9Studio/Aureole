@@ -21,7 +21,7 @@ type MetadataGetter interface {
 
 type (
 	User struct {
-		ID            *string `json:"id,omitempty" mapstructure:"id,omitempty"`
+		ID            string  `json:"id,omitempty" mapstructure:"id,omitempty"`
 		Email         *string `json:"email,omitempty" mapstructure:"email,omitempty"`
 		Phone         *string `json:"phone,omitempty" mapstructure:"phone,omitempty"`
 		Username      *string `json:"username,omitempty" mapstructure:"username,omitempty"`
@@ -30,10 +30,10 @@ type (
 	}
 
 	ImportedUser struct {
-		PluginID     *string                `json:"plugin_id,omitempty" db:"plugin_id,omitempty"`
-		ProviderName *string                `json:"provider_name,omitempty" db:"provider_name,omitempty"`
-		ProviderId   *string                `json:"provider_id,omitempty" db:"provider_id,omitempty"`
-		UserId       *string                `json:"user_id,omitempty" db:"user_id,omitempty"`
+		PluginID     string                 `json:"plugin_id,omitempty" db:"plugin_id,omitempty"`
+		ProviderName string                 `json:"provider_name,omitempty" db:"provider_name,omitempty"`
+		ProviderId   string                 `json:"provider_id,omitempty" db:"provider_id,omitempty"`
+		UserId       string                 `json:"user_id,omitempty" db:"user_id,omitempty"`
 		Additional   map[string]interface{} `json:"additional,omitempty" db:"additional,omitempty"`
 	}
 
@@ -124,6 +124,7 @@ type (
 	IDManager interface {
 		Plugin
 		Register(c *Credential, i *Identity, u *User, authnProvider string) (*User, error)
+		RegisterSecrets(userId, pluginId string, payload map[string]interface{}) error
 		OnUserAuthenticated(authRes *AuthResult) (*AuthResult, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 		Update(c *Credential, i *Identity, authnProvider string) (*Identity, error)

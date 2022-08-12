@@ -111,9 +111,9 @@ func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 				EmailVerified: true,
 			},
 			ImportedUser: &core.ImportedUser{
-				ProviderId:   &providerId,
-				PluginID:     &pluginId,
-				ProviderName: &meta.ShortName,
+				ProviderId:   providerId,
+				PluginID:     pluginId,
+				ProviderName: meta.ShortName,
 				Additional:   userData,
 			},
 			Cred: &core.Credential{

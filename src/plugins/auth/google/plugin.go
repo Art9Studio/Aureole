@@ -122,16 +122,16 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 				EmailVerified: true,
 			},
 			ImportedUser: &core.ImportedUser{
-				ProviderId:   &providerId,
-				PluginID:     &pluginId,
-				ProviderName: &meta.ShortName,
+				ProviderId:   providerId,
+				PluginID:     pluginId,
+				ProviderName: meta.ShortName,
 				Additional:   userData,
 			},
 			Cred: &core.Credential{
 				Name:  core.Email,
 				Value: email,
 			},
-			Provider: "social_provider$" + meta.ShortName,
+			Provider: meta.ShortName,
 		}, nil
 	}
 }

@@ -14,11 +14,26 @@ CREATE TABLE users
 CREATE TABLE imported_users
 (
     id            SERIAL PRIMARY KEY,
-	plugin_id VARCHAR NOT NULL,
+	plugin_id     VARCHAR NOT NULL,
 	provider_name VARCHAR NOT NULL,
-	provider_id VARCHAR NOT NULL,
+	provider_id   VARCHAR NOT NULL,
+	user_id INT   REFERENCES users ON DELETE CASCADE,
+	additional    jsonb NOT NULL,
+	UNIQUE (user_id, plugin_id)
+);
+
+CREATE TABLE secrets
+(
 	user_id INT REFERENCES users ON DELETE CASCADE,
-	additional jsonb NOT NULL
+	plugin_id VARCHAR NOT NULL,
+	payload jsonb NOT NULL,
+	UNIQUE (user_id, plugin_id)
+);
+
+CREATE TABLE plugins
+(
+	id VARCHAR UNIQUE NOT NULL,
+	plugin_name VARCHAR NOT NULL
 );
 
 CREATE TABLE passwords

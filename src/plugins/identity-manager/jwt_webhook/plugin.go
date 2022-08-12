@@ -211,6 +211,10 @@ func (j *webhook) GetMFAData(c *core.Credential, mfaID string) (*core.MFAData, e
 	return &data, nil
 }
 
+func (j *webhook) RegisterSecrets(userId, pluginId string, payload map[string]interface{}) error {
+	return nil
+}
+
 func (j *webhook) Update(c *core.Credential, i *core.Identity, authnProvider string) (*core.Identity, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "Update",

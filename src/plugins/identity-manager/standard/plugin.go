@@ -120,22 +120,26 @@ func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.AuthResu
 		return nil, fmt.Errorf("cannot check user existence: %v", err)
 	}
 
-	var (
-		registeredUser *core.User
-		importedUser   *core.ImportedUser
-	)
+	var registeredUser *core.User
 
 	if exists {
 		registeredUser, err = getUser(conn, authRes.Cred)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get user data: %v", err)
 		}
-		importedUser, err = getImportedUser(conn, *registeredUser.ID, *authRes.ImportedUser.PluginID)
-		if err != nil {
-			return nil, fmt.Errorf("cannot get imported user: %v", err)
-		}
 		authRes.User = registeredUser
-		authRes.ImportedUser = importedUser
+
+		importedUserExists, err := isImportedUserExists(conn, authRes.User.ID, authRes.ImportedUser.PluginID)
+		if err != nil {
+			return nil, fmt.Errorf("cannot check imported_user existence: %v", err)
+		}
+
+		if !importedUserExists {
+			_, err := registerImportedUser(conn, authRes)
+			if err != nil {
+				return nil, fmt.Errorf("cannot get imported user: %v", err)
+			}
+		}
 	} else {
 		if authRes.Provider != "password_based" && (authRes.User.EmailVerified || authRes.User.PhoneVerified) {
 			if strings.HasPrefix(authRes.Provider, "social_provider$") {
@@ -220,6 +224,16 @@ func (s *standart) GetMFAData(c *core.Credential, mfaID string) (*core.MFAData, 
 	return nil, core.UserNotExistError
 }
 
+func (s *standart) RegisterSecrets(userId, pluginId string, payload map[string]interface{}) error {
+	conn, err := s.pool.Acquire(context.Background())
+	if err != nil {
+		return fmt.Errorf("cannot acquire connection: %v", err)
+	}
+	defer conn.Release()
+
+	return registerSecrets(conn, userId, pluginId, payload)
+}
+
 func (s *standart) Update(c *core.Credential, i *core.Identity, _ string) (*core.Identity, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
@@ -272,25 +286,34 @@ func runDBMigrations(conn *pgx.Conn) error {
 	return migrator.Migrate(context.Background())
 }
 
-func isUserExists(conn *pgxpool.Conn, cred *core.Credential) (exists bool, err error) {
+func isUserExists(conn *pgxpool.Conn, cred *core.Credential) (bool, error) {
+	var ret bool
 	sql := fmt.Sprintf("select exists(select 1 from users where %s=$1)", sanitize(cred.Name))
-	err = conn.QueryRow(context.Background(), sql, cred.Value).Scan(&exists)
-	if err != nil {
+	if err := conn.QueryRow(context.Background(), sql, cred.Value).Scan(&ret); err != nil {
 		return false, err
 	}
-	return exists, nil
+	return ret, nil
+}
+
+func isImportedUserExists(conn *pgxpool.Conn, userId, pluginId string) (bool, error) {
+	var ret bool
+	sql := "select exists(select 1 from imported_users where user_id=$1 and plugin_id=$2)"
+	if err := conn.QueryRow(context.Background(), sql, userId, pluginId).Scan(&ret); err != nil {
+		return false, err
+	}
+	return ret, nil
 }
 
 func getImportedUser(conn *pgxpool.Conn, userId, pluginId string) (*core.ImportedUser, error) {
 	//todo(Talgat) replace with sql constructors
-	sql := `SELECT provider_name, payload FROM imported_users WHERE user_id = $1 and plugin_id = $2;`
+	sql := `SELECT provider_name, additional FROM imported_users WHERE user_id = $1 and plugin_id = $2;`
 
 	rows, err := conn.Query(context.Background(), sql, userId, pluginId)
 	if err != nil {
 		return nil, err
 	}
 
-	var importedUser *core.ImportedUser
+	var importedUser core.ImportedUser
 
 	for rows.Next() {
 		var (
@@ -302,14 +325,14 @@ func getImportedUser(conn *pgxpool.Conn, userId, pluginId string) (*core.Importe
 		}
 
 		if providerName != "" && payload != nil {
-			importedUser.ProviderName = &providerName
+			importedUser.ProviderName = providerName
 			importedUser.Additional = payload
 		}
 	}
 	if rows.Err() != nil {
 		return nil, err
 	}
-	return importedUser, nil
+	return &importedUser, nil
 }
 
 func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
@@ -325,18 +348,38 @@ func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
 
 	if err := row.Scan(
 		&userId,
-		user.Username,
-		user.Phone, &user.Email,
-		user.EmailVerified,
-		user.PhoneVerified,
+		&user.Username,
+		&user.Phone, &user.Email,
+		&user.EmailVerified,
+		&user.PhoneVerified,
 	); err != nil {
 		return nil, err
 	}
 
 	userIdStr = strconv.Itoa(userId)
-	user.ID = &userIdStr
+	user.ID = userIdStr
 
 	return &user, nil
+}
+
+func getSecret(conn *pgxpool.Conn, userId, pluginId, secret string) (interface{}, error) {
+	var ret interface{}
+	qry := fmt.Sprintf("SELECT payload -> %s FROM secrets WHERE user_id=$1 AND plugin_id=$2;", secret)
+	row := conn.QueryRow(context.Background(), qry, userId, pluginId)
+	if err := row.Scan(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func getSecrets(conn *pgxpool.Conn, userId, pluginId string) (map[string]interface{}, error) {
+	ret := map[string]interface{}{}
+	qry := "SELECT payload FROM secrets WHERE user_id=$1 AND plugin_id=$2;"
+	row := conn.QueryRow(context.Background(), qry, userId, pluginId)
+	if err := row.Scan(&ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func registerUser(conn *pgxpool.Conn, newUser *core.User) (*core.User, error) {
@@ -351,9 +394,37 @@ func registerUser(conn *pgxpool.Conn, newUser *core.User) (*core.User, error) {
 	return newUser, nil
 }
 
+func registerImportedUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.ImportedUser, error) {
+	oauth2PayloadBytes, err := json.Marshal(authRes.ImportedUser.Additional)
+	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
+	_, err = conn.Exec(context.Background(), saveImportedUser,
+		authRes.User.ID,
+		authRes.ImportedUser.PluginID,
+		authRes.ImportedUser.ProviderId,
+		authRes.Provider,
+		string(oauth2PayloadBytes))
+	if err != nil {
+		return nil, err
+	}
+	return authRes.ImportedUser, nil
+}
+
+func registerSecrets(conn *pgxpool.Conn, userId, pluginId string, payload map[string]interface{}) error {
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	saveSecretsQry := `insert into secrets(user_id, plugin_id, payload) values ($1, $2, $3)
+						on conflict (user_id, plugin_id) do update set payload = $3;`
+	_, err = conn.Exec(context.Background(), saveSecretsQry, userId, pluginId, payloadBytes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func registerOauth2User(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.AuthResult, error) {
-	importedUserData := authRes.ImportedUser.Additional
-	oauth2PayloadBytes, err := json.Marshal(importedUserData)
+	oauth2PayloadBytes, err := json.Marshal(authRes.ImportedUser.Additional)
 	if err != nil {
 		return nil, err
 	}
@@ -377,13 +448,13 @@ func registerOauth2User(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.Aut
 		return nil, err
 	}
 	userIdStr = strconv.Itoa(userId)
-	authRes.User.ID = &userIdStr
+	authRes.User.ID = userIdStr
 
 	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
 	_, err = tx.Exec(context.Background(), saveImportedUser,
-		*authRes.User.ID,
-		*authRes.ImportedUser.PluginID,
-		*authRes.ImportedUser.ProviderId,
+		authRes.User.ID,
+		authRes.ImportedUser.PluginID,
+		authRes.ImportedUser.ProviderId,
 		authRes.Provider,
 		string(oauth2PayloadBytes))
 	if err != nil {
