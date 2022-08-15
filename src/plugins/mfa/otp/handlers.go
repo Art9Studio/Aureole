@@ -83,7 +83,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
-		if err = manager.RegisterSecrets(userId, fmt.Sprintf("%d", meta.PluginID), mfaData); err != nil {
+		if err = manager.SetSecrets(userId, fmt.Sprintf("%d", meta.PluginID), mfaData); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 

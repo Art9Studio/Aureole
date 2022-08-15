@@ -64,12 +64,11 @@ func (m *standart) Init(api core.PluginAPI) (err error) {
 	}
 
 	m.features = map[string]bool{
-		"Register":            true,
-		"OnUserAuthenticated": true,
-		"OnMFA":               true,
-		"GetData":             true,
-		"GetMFAData":          true,
-		"Update":              true,
+		"Register":   true,
+		"OnMFA":      true,
+		"GetData":    true,
+		"GetMFAData": true,
+		"Update":     true,
 	}
 
 	return nil
@@ -84,31 +83,7 @@ func (m *standart) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 
-// Register todo(Talgat) add Secrets
-func (s *standart) Register(c *core.Credential, i *core.Identity, u *core.User, _ string) (*core.User, error) {
-	conn, err := s.pool.Acquire(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("cannot acquire connection: %v", err)
-	}
-	defer conn.Release()
-
-	exists, err := isUserExists(conn, c)
-	if err != nil {
-		return nil, fmt.Errorf("cannot check user existence: %v", err)
-	}
-
-	if exists {
-		return nil, errors.New("user already exists")
-	} else {
-		registeredIdent, err := registerUser(conn, u)
-		if err != nil {
-			return nil, fmt.Errorf("cannot register user: %v", err)
-		}
-		return registeredIdent, nil
-	}
-}
-
-func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.AuthResult, error) {
+func (s *standart) Register(authRes *core.AuthResult) (*core.AuthResult, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
@@ -141,7 +116,7 @@ func (s *standart) OnUserAuthenticated(authRes *core.AuthResult) (*core.AuthResu
 			}
 		}
 	} else {
-		if authRes.Provider != "password_based" && (authRes.User.EmailVerified || authRes.User.PhoneVerified) {
+		if authRes.User.EmailVerified || authRes.User.PhoneVerified {
 			if strings.HasPrefix(authRes.Provider, "social_provider$") {
 				authRes, err = registerOauth2User(conn, authRes)
 				if err != nil {
@@ -205,33 +180,28 @@ func (s *standart) GetData(c *core.Credential, _, name string) (interface{}, err
 	}
 }
 
-func (s *standart) GetMFAData(c *core.Credential, mfaID string) (*core.MFAData, error) {
-	conn, err := s.pool.Acquire(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("cannot acquire connection: %v", err)
-	}
-	defer conn.Release()
-
-	exists, err := isUserExists(conn, c)
-	if err != nil {
-		return nil, fmt.Errorf("cannot check user existence: %v", err)
-	}
-
-	if exists {
-		return getMFAData(conn, c, mfaID)
-	}
-
-	return nil, core.UserNotExistError
-}
-
-func (s *standart) RegisterSecrets(userId, pluginId string, payload map[string]interface{}) error {
+func (s *standart) SetSecrets(userId, pluginId string, payload map[string]interface{}) error {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return fmt.Errorf("cannot acquire connection: %v", err)
 	}
 	defer conn.Release()
 
-	return registerSecrets(conn, userId, pluginId, payload)
+	return setSecrets(conn, userId, pluginId, payload)
+}
+
+func (s *standart) GetSecrets(userId, pluginId string) (map[string]interface{}, error) {
+	conn, err := s.pool.Acquire(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("cannot acquire connection: %v", err)
+	}
+	defer conn.Release()
+
+	secrets, err := getSecrets(conn, userId, pluginId)
+	if err != nil {
+		return nil, err
+	}
+	return secrets, nil
 }
 
 func (s *standart) Update(c *core.Credential, i *core.Identity, _ string) (*core.Identity, error) {
@@ -257,13 +227,103 @@ func (s *standart) Update(c *core.Credential, i *core.Identity, _ string) (*core
 	}
 }
 
-func (s *standart) CheckFeaturesAvailable(requiredFeatures []string) error {
-	for _, f := range requiredFeatures {
-		if available, ok := s.features[f]; !ok || !available {
-			return fmt.Errorf("feature %s hasn't implemented", f)
-		}
+func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
+	conn, err := s.pool.Acquire(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("cannot acquire connection: %v", err)
 	}
-	return nil
+	defer conn.Release()
+
+	exists, err := isUserExists(conn, authRes.Cred)
+	if err != nil {
+		return nil, fmt.Errorf("cannot check user existence: %v", err)
+	}
+	if !exists {
+		return nil, errors.New("user doesn't exists")
+	}
+	tx, err := conn.Begin(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("cannot bagin tx: %w", err)
+	}
+
+	if authRes.User != nil {
+		var user *core.User
+		sql, values, err := getUpdateQuery(authRes.Cred, authRes.User)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.QueryRow(context.Background(), sql, values...).Scan(
+			&user.ID, &user.Username,
+			&user.Phone, &user.Email,
+			&user.EmailVerified,
+			&user.PhoneVerified,
+			&user.IsMFAEnabled,
+		)
+		if err != nil {
+			if err = tx.Rollback(context.Background()); err != nil {
+				return nil, fmt.Errorf("cannot rollback: %w", err)
+			}
+			return nil, err
+		}
+		authRes.User = user
+	}
+	if authRes.ImportedUser != nil {
+		var (
+			importedUser *core.ImportedUser
+			user         *core.User
+			err          error
+		)
+		if user, err = getUser(conn, authRes.Cred); err != nil {
+			if err = tx.Rollback(context.Background()); err != nil {
+				return nil, fmt.Errorf("cannot rollback: %w", err)
+			}
+			return nil, fmt.Errorf("cannot get user: %w", err)
+		}
+		sql, values, err := getImportedUserUpdateQuery(user.ID, authRes.ImportedUser)
+		if err != nil {
+			if err = tx.Rollback(context.Background()); err != nil {
+				return nil, fmt.Errorf("cannot rollback: %w", err)
+			}
+			return nil, err
+		}
+		err = tx.QueryRow(context.Background(), sql, values...).Scan(
+			&importedUser.UserId,
+			&importedUser.PluginID,
+			&importedUser.ProviderName,
+			&importedUser.ProviderId,
+			&importedUser.Additional,
+		)
+		if err != nil {
+			if err = tx.Rollback(context.Background()); err != nil {
+				return nil, fmt.Errorf("cannot rollback: %w", err)
+			}
+			return nil, err
+		}
+		authRes.ImportedUser = importedUser
+	}
+	return authRes, nil
+}
+
+func (s *standart) IsMFAEnabled(cred *core.Credential) (bool, error) {
+	conn, err := s.pool.Acquire(context.Background())
+	if err != nil {
+		return false, fmt.Errorf("cannot acquire connection: %v", err)
+	}
+	defer conn.Release()
+
+	return isMFAEnabled(conn, cred)
+}
+
+func isMFAEnabled(conn *pgxpool.Conn, cred *core.Credential) (bool, error) {
+	var ret bool
+	qry := fmt.Sprintf("select is_mfa_enabled from users where %s=$1;", cred.Name)
+	if err := conn.QueryRow(context.Background(), qry, cred.Value).Scan(&ret); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return ret, nil
 }
 
 func initConfig(conf *configs.RawConfig) (*config, error) {
@@ -409,7 +469,7 @@ func registerImportedUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.I
 	return authRes.ImportedUser, nil
 }
 
-func registerSecrets(conn *pgxpool.Conn, userId, pluginId string, payload map[string]interface{}) error {
+func setSecrets(conn *pgxpool.Conn, userId, pluginId string, payload map[string]interface{}) error {
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -498,19 +558,49 @@ func updateIdentity(conn *pgxpool.Conn, cred *core.Credential, newIdent *core.Id
 	return &ident, nil
 }
 
-func getMFAData(conn *pgxpool.Conn, cred *core.Credential, mfaID string) (*core.MFAData, error) {
-	var data core.MFAData
-	qry := fmt.Sprintf(`select plugin_id, provider_name, payload from mfa 
-		                      where plugin_id=$1 and user_id=(select id from users where %s=$2);`,
-		sanitize(cred.Name))
-	err := conn.QueryRow(context.Background(), qry, mfaID, cred.Value).Scan(&data.PluginID, &data.ProviderName, &data.Payload)
+func updateUser(conn *pgxpool.Tx, cred *core.Credential, newUser *core.User) (*core.User, error) {
+	var user core.User
+	sql, values, err := getUpdateQuery(cred, newUser)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, err
-		}
-		return nil, fmt.Errorf("cannot get 2fa data from db: %v", err)
+		return nil, err
 	}
-	return &data, nil
+	err = conn.QueryRow(context.Background(), sql, values...).Scan(
+		&user.ID, &user.Username,
+		&user.Phone, &user.Email,
+		&user.EmailVerified,
+		&user.PhoneVerified,
+		&user.IsMFAEnabled,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func updateImportedUser(conn *pgxpool.Conn, cred *core.Credential, newImported *core.ImportedUser) (*core.ImportedUser, error) {
+	var (
+		importedUser core.ImportedUser
+		user         *core.User
+		err          error
+	)
+	if user, err = getUser(conn, cred); err != nil {
+		return nil, fmt.Errorf("cannot get user: %w", err)
+	}
+	sql, values, err := getImportedUserUpdateQuery(user.ID, newImported)
+	if err != nil {
+		return nil, err
+	}
+	err = conn.QueryRow(context.Background(), sql, values...).Scan(
+		&importedUser.UserId,
+		&importedUser.PluginID,
+		&importedUser.ProviderName,
+		&importedUser.ProviderId,
+		&importedUser.Additional,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &importedUser, nil
 }
 
 //todo(Talgat) create for ImportedUser
@@ -536,15 +626,8 @@ func getCreateQuery(user *core.User) (string, []interface{}, error) {
 	return fmt.Sprintf("insert into users(%s) values (%s) returning id;", colsStmt, valsStmt), values, nil
 }
 
-func getUpdateQuery(cred *core.Credential, ident *core.Identity) (string, []interface{}, error) {
-	identMap := ident.AsMap()
-	if ident.Additional != nil && len(ident.Additional) != 0 {
-		bytesAdditionalData, err := json.Marshal(ident.Additional)
-		if err != nil {
-			return "", nil, err
-		}
-		identMap["additional"] = string(bytesAdditionalData)
-	}
+func getUpdateQuery(cred *core.Credential, user *core.User) (string, []interface{}, error) {
+	userMap := user.AsMap()
 
 	var (
 		colsStmt string
@@ -552,7 +635,7 @@ func getUpdateQuery(cred *core.Credential, ident *core.Identity) (string, []inte
 		values   = []interface{}{cred.Value}
 		n        = 2
 	)
-	for k, v := range identMap {
+	for k, v := range userMap {
 		colsStmt += sanitize(k) + ","
 		valsStmt += fmt.Sprintf("$%d,", n)
 		values = append(values, v)
@@ -563,6 +646,29 @@ func getUpdateQuery(cred *core.Credential, ident *core.Identity) (string, []inte
 	valsStmt = valsStmt[:len(valsStmt)-1]
 
 	sql := fmt.Sprintf("update users set (%s)=(%s) where %s=$1 returning *;", colsStmt, valsStmt, sanitize(cred.Name))
+	return sql, values, nil
+}
+
+func getImportedUserUpdateQuery(userId string, newImported *core.ImportedUser) (string, []interface{}, error) {
+	importedMap := newImported.AsMap()
+
+	var (
+		colsStmt string
+		valsStmt string
+		values   []interface{}
+		n        = 1
+	)
+	for k, v := range importedMap {
+		colsStmt += sanitize(k) + ","
+		valsStmt += fmt.Sprintf("$%d,", n)
+		values = append(values, v)
+		n++
+	}
+
+	colsStmt = colsStmt[:len(colsStmt)-1]
+	valsStmt = valsStmt[:len(valsStmt)-1]
+
+	sql := fmt.Sprintf("update imported_users set (%s)=(%s) where %s=$1 returning *;", colsStmt, valsStmt, userId)
 	return sql, values, nil
 }
 

@@ -60,21 +60,20 @@ func (api PluginAPI) IsTestRun() bool {
 	return api.project.testRun
 }
 
-func (api PluginAPI) IsMFAEnabled(cred *Credential, mfaID string) (bool, error) {
+func (api PluginAPI) IsMFAEnabled(cred *Credential, _ string) (bool, error) {
 	manager, ok := api.app.getIDManager()
 	if !ok {
 		return false, nil
 	}
 
-	mfaData, err := manager.GetMFAData(cred, mfaID)
+	ret, err := manager.IsMFAEnabled(cred)
 	if err != nil && !errors.Is(err, UserNotExistError) {
 		return false, nil
 	}
-	if mfaData != nil {
+	if ret {
 		return true, nil
-	} else {
-		return false, nil
 	}
+	return false, nil
 }
 
 func (api PluginAPI) GetAppName() string {

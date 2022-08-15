@@ -27,6 +27,7 @@ type (
 		Username      *string `json:"username,omitempty" mapstructure:"username,omitempty"`
 		EmailVerified bool    `json:"email_verified,omitempty" mapstructure:"email_verified,omitempty"`
 		PhoneVerified bool    `json:"phone_verified,omitempty" mapstructure:"phone_verified,omitempty"`
+		IsMFAEnabled  bool    `json:"is_mfa_enabled,omitempty" mapstructure:"is_mfa_enabled,omitempty"`
 	}
 
 	ImportedUser struct {
@@ -123,16 +124,14 @@ type (
 
 	IDManager interface {
 		Plugin
-		Register(c *Credential, i *Identity, u *User, authnProvider string) (*User, error)
-		RegisterSecrets(userId, pluginId string, payload map[string]interface{}) error
-		OnUserAuthenticated(authRes *AuthResult) (*AuthResult, error)
+		SetSecrets(userId, pluginId string, payload map[string]interface{}) error
+		Register(authRes *AuthResult) (*AuthResult, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 		Update(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 
 		OnMFA(c *Credential, data *MFAData) error
-		GetMFAData(c *Credential, mfaID string) (*MFAData, error)
-
-		CheckFeaturesAvailable(features []string) error
+		GetSecrets(userId, pluginId string) (map[string]interface{}, error)
+		IsMFAEnabled(c *Credential) (bool, error)
 	}
 
 	Credential struct {
@@ -177,6 +176,12 @@ func NewUser(data map[string]interface{}) (*User, error) {
 
 func (u *User) AsMap() map[string]interface{} {
 	structsConf := structs.New(u)
+	structsConf.TagName = "mapstructure"
+	return structsConf.Map()
+}
+
+func (iu *ImportedUser) AsMap() map[string]interface{} {
+	structsConf := structs.New(iu)
 	structsConf.TagName = "mapstructure"
 	return structsConf.Map()
 }

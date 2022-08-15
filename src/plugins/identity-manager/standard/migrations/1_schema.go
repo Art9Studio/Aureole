@@ -8,16 +8,16 @@ CREATE TABLE users
     phone          VARCHAR UNIQUE,
     email          VARCHAR UNIQUE,
     email_verified BOOLEAN DEFAULT FALSE,
-    phone_verified BOOLEAN DEFAULT FALSE
+    phone_verified BOOLEAN DEFAULT FALSE,
+	is_mfa_enabled BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE imported_users
 (
-    id            SERIAL PRIMARY KEY,
+	user_id INT   REFERENCES users ON DELETE CASCADE,
 	plugin_id     VARCHAR NOT NULL,
 	provider_name VARCHAR NOT NULL,
 	provider_id   VARCHAR NOT NULL,
-	user_id INT   REFERENCES users ON DELETE CASCADE,
 	additional    jsonb NOT NULL,
 	UNIQUE (user_id, plugin_id)
 );
@@ -51,16 +51,6 @@ CREATE TABLE social_providers
 	plugin_id 	  VARCHAR(4) NOT NULL,
     provider_name VARCHAR NOT NULL,
     payload       jsonb   NOT NULL
-);
-
-CREATE TABLE mfa
-(
-    id       SERIAL PRIMARY KEY,
-    user_id  INT REFERENCES users ON DELETE CASCADE,
-	plugin_id VARCHAR(4) NOT NULL,
-    provider_name VARCHAR NOT NULL,
-    payload  jsonb   NOT NULL,
-	UNIQUE (user_id, plugin_id)
 );
 `
 

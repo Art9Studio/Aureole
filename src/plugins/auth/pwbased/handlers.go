@@ -232,7 +232,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if redirectUrl != "" {
 			return c.Redirect(redirectUrl)
 		}
-		return c.JSON(fiber.Map{"success": true})
+		return c.JSON(VerifyConfirmRes{Success: true})
 	}
 }
 

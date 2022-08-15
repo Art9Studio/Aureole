@@ -60,42 +60,42 @@ func (j *webhook) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 
-func (j *webhook) Register(c *core.Credential, i *core.Identity, u *core.User, authnProvider string) (*core.User, error) {
+//func (j *webhook) Register(c *core.Credential, i *core.Identity, u *core.User, authnProvider string) (*core.User, error) {
+//	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
+//		"event":          "Register",
+//		"credential":     map[string]string{c.Name: c.Value},
+//		"identity":       i.AsMap(),
+//		"authn_provider": authnProvider,
+//	},
+//		j.pluginAPI.GetAuthSessionExp())
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	respData, err := makeRequest(j, requestToken)
+//	if err != nil {
+//		return nil, err
+//	}
+//	rawToken, err := getJWT(j.pluginAPI, respData)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	token, err := jwt.ParseString(rawToken)
+//	if err != nil {
+//		return nil, err
+//	}
+//	payload, err := token.AsMap(context.Background())
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return core.NewUser(payload)
+//}
+
+func (j *webhook) Register(authRes *core.AuthResult) (*core.AuthResult, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "Register",
-		"credential":     map[string]string{c.Name: c.Value},
-		"identity":       i.AsMap(),
-		"authn_provider": authnProvider,
-	},
-		j.pluginAPI.GetAuthSessionExp())
-	if err != nil {
-		return nil, err
-	}
-
-	respData, err := makeRequest(j, requestToken)
-	if err != nil {
-		return nil, err
-	}
-	rawToken, err := getJWT(j.pluginAPI, respData)
-	if err != nil {
-		return nil, err
-	}
-
-	token, err := jwt.ParseString(rawToken)
-	if err != nil {
-		return nil, err
-	}
-	payload, err := token.AsMap(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	return core.NewUser(payload)
-}
-
-func (j *webhook) OnUserAuthenticated(authRes *core.AuthResult) (*core.AuthResult, error) {
-	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
-		"event":          "OnUserAuthenticated",
 		"credential":     map[string]string{authRes.Cred.Name: authRes.Cred.Value},
 		"identity":       authRes.Identity.AsMap(),
 		"authn_provider": authRes.Provider,
@@ -211,7 +211,7 @@ func (j *webhook) GetMFAData(c *core.Credential, mfaID string) (*core.MFAData, e
 	return &data, nil
 }
 
-func (j *webhook) RegisterSecrets(userId, pluginId string, payload map[string]interface{}) error {
+func (j *webhook) SetSecrets(userId, pluginId string, payload map[string]interface{}) error {
 	return nil
 }
 
@@ -247,23 +247,6 @@ func (j *webhook) Update(c *core.Credential, i *core.Identity, authnProvider str
 		return nil, err
 	}
 	return core.NewIdentity(rawIdent)
-}
-
-func (j *webhook) CheckFeaturesAvailable(features []string) error {
-	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
-		"event":    "CheckFeaturesAvailable",
-		"features": features,
-	},
-		j.pluginAPI.GetAuthSessionExp())
-	if err != nil {
-		return err
-	}
-
-	_, err = makeRequest(j, requestToken)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func initConfig(conf *configs.RawConfig) (*config, error) {

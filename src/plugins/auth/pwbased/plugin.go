@@ -87,6 +87,12 @@ type (
 	linkType string
 )
 
+type (
+	VerifyConfirmRes struct {
+		Success bool `json:"success"`
+	}
+)
+
 const (
 	ResetLink  linkType = "reset"
 	VerifyLink linkType = "verify"
@@ -107,14 +113,9 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		return err
 	}
 
-	manager, ok := p.pluginAPI.GetIDManager()
+	_, ok := p.pluginAPI.GetIDManager()
 	if !ok {
 		return fmt.Errorf("manager for app '%s' is not declared", p.pluginAPI.GetAppName())
-	}
-
-	err = manager.CheckFeaturesAvailable([]string{"OnUserAuthenticated", "Register", "GetData", "Update"})
-	if err != nil {
-		return fmt.Errorf("cannot check id manager features available: %v", err)
 	}
 
 	p.pwHasher, err = pwhasher.NewPWHasher(p.conf.MainHasher)

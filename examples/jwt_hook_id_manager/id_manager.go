@@ -72,12 +72,12 @@ func newIDManager() (*IDManager, error) {
 		publicSet:  pubSet,
 		jwtExp:     exp,
 		features: map[string]bool{
-			"Register":            true,
-			"OnUserAuthenticated": true,
-			"OnMFA":               true,
-			"GetData":             true,
-			"GetMFAData":          true,
-			"Update":              true,
+			"Register":   true,
+			"Register":   true,
+			"OnMFA":      true,
+			"GetData":    true,
+			"GetMFAData": true,
+			"Update":     true,
 		},
 	}
 	return manager, nil

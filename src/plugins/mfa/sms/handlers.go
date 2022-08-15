@@ -2,7 +2,9 @@ package sms
 
 import (
 	"aureole/internal/core"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v4"
 	"net/http"
 	"strings"
 
@@ -60,7 +62,7 @@ func resend(s *sms) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&fiber.Map{"token": token})
+		return core.SendToken(c, token)
 	}
 }
 
@@ -89,9 +91,11 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 
 		cred := &core.Credential{Name: "phone", Value: phone.Phone}
 
-		_, err := manager.GetMFAData(cred, fmt.Sprintf("%d", meta.PluginID))
-		if err == nil {
+		MFAEnabled, err := manager.IsMFAEnabled(cred)
+		if MFAEnabled {
 			return core.SendError(c, http.StatusBadRequest, "sms mfa already enabled")
+		} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		randStr, err := s.pluginAPI.GetRandStr(s.conf.Otp.Length, s.conf.Otp.Alphabet)
