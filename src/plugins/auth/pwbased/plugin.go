@@ -30,6 +30,8 @@ func init() {
 	meta = core.AuthenticatorRepo.Register(rawMeta, Create)
 }
 
+const password = "password"
+
 type (
 	pwBased struct {
 		pluginAPI core.PluginAPI
@@ -178,27 +180,28 @@ func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
 		if err := c.BodyParser(input); err != nil {
 			return nil, err
 		}
-		if input.Password == "" {
-			return nil, errors.New("password required")
+		if input.Password == "" || input.Email == "" {
+			return nil, errors.New("password and email are required")
 		}
 
-		ident := &core.Identity{
-			ID:       input.Id,
-			Email:    &input.Email,
-			Phone:    &input.Phone,
-			Username: &input.Username,
-		}
-		cred, err := getCredential(ident)
-		if err != nil {
-			return nil, err
-		}
+		var (
+			user = &core.User{
+				Email:    &input.Email,
+				Phone:    &input.Phone,
+				Username: &input.Username,
+			}
+			cred = &core.Credential{
+				Name:  "email",
+				Value: input.Email,
+			}
+		)
 
 		manager, ok := p.pluginAPI.GetIDManager()
 		if !ok {
 			return nil, fmt.Errorf("id manager for app '%s' is required but not declared", p.pluginAPI.GetAppName())
 		}
 
-		pw, err := manager.GetData(cred, meta.ShortName, core.Password)
+		pw, err := manager.GetSecret(cred, fmt.Sprintf("%d", meta.PluginID), password)
 		if err != nil {
 			return nil, err
 		}
@@ -210,8 +213,8 @@ func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
 
 		if isMatch {
 			return &core.AuthResult{
+				User:     user,
 				Cred:     cred,
-				Identity: ident,
 				Provider: meta.ShortName,
 			}, nil
 		} else {

@@ -146,19 +146,18 @@ func initMFASMS(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(ctx, http.StatusInternalServerError, "cannot get IDManager")
 		}
 
-		idRaw := ctx.Locals(core.UserID)
-		fmt.Println(idRaw)
-		id, ok := idRaw.(string)
-		if !ok {
-			return core.SendError(ctx, http.StatusInternalServerError, "cannot get user id")
-		}
+		//idRaw := ctx.Locals(core.UserID)
+		//id, ok := idRaw.(string)
+		//if !ok {
+		//	return core.SendError(ctx, http.StatusInternalServerError, "cannot get user id")
+		//}
 
-		newCred := &core.Credential{Name: "id", Value: id}
+		//newCred := &core.Credential{Name: "id", Value: id}
 		//todo(Talgat) Update updates EmailVerified as false, if not explicitly indicated in Identity
-		_, err = manager.Update(newCred, &core.Identity{Phone: &cred.Value, PhoneVerified: true}, "dummy")
-		if err != nil {
-			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
-		}
+		//_, err = manager.Update(newCred, &core.Identity{Phone: &cred.Value, PhoneVerified: true}, "dummy")
+		//if err != nil {
+		//	return core.SendError(ctx, http.StatusInternalServerError, err.Error())
+		//}
 
 		if err = manager.OnMFA(cred, &core.MFAData{
 			PluginID:     fmt.Sprintf("%d", meta.PluginID),

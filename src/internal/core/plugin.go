@@ -27,7 +27,7 @@ type (
 		Username      *string `json:"username,omitempty" mapstructure:"username,omitempty"`
 		EmailVerified bool    `json:"email_verified,omitempty" mapstructure:"email_verified,omitempty"`
 		PhoneVerified bool    `json:"phone_verified,omitempty" mapstructure:"phone_verified,omitempty"`
-		IsMFAEnabled  bool    `json:"is_mfa_enabled,omitempty" mapstructure:"is_mfa_enabled,omitempty"`
+		IsMFAEnabled  *bool   `json:"is_mfa_enabled,omitempty" mapstructure:"is_mfa_enabled,omitempty"`
 	}
 
 	ImportedUser struct {
@@ -127,10 +127,10 @@ type (
 		SetSecrets(userId, pluginId string, payload map[string]interface{}) error
 		Register(authRes *AuthResult) (*AuthResult, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
-		Update(c *Credential, i *Identity, authnProvider string) (*Identity, error)
 
 		OnMFA(c *Credential, data *MFAData) error
 		GetSecrets(userId, pluginId string) (map[string]interface{}, error)
+		GetSecret(cred *Credential, pluginId, secret string) (interface{}, error)
 		IsMFAEnabled(c *Credential) (bool, error)
 	}
 

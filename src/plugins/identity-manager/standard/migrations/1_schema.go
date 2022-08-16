@@ -9,7 +9,7 @@ CREATE TABLE users
     email          VARCHAR UNIQUE,
     email_verified BOOLEAN DEFAULT FALSE,
     phone_verified BOOLEAN DEFAULT FALSE,
-	is_mfa_enabled BOOLEAN DEFAULT FALSE
+	is_mfa_enabled BOOLEAN DEFAULT NULL
 );
 
 CREATE TABLE imported_users
@@ -41,7 +41,6 @@ CREATE TABLE passwords
     id       SERIAL PRIMARY KEY,
     user_id  INT REFERENCES users ON DELETE CASCADE,
     password VARCHAR NOT NULL
-
 );
 
 CREATE TABLE social_providers
@@ -58,6 +57,8 @@ const downSchema1 = `
 DROP TABLE passwords;
 DROP TABLE social_providers;
 DROP TABLE mfa;
+DROP TABLE imported_users;
+DROP TABLE secrets;
 DROP TABLE users;
 `
 

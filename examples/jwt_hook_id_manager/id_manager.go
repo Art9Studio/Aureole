@@ -19,7 +19,6 @@ type (
 		privateSet jwk.Set
 		publicSet  jwk.Set
 		jwtExp     int
-		features   map[string]bool
 	}
 
 	Credential struct {
@@ -71,14 +70,6 @@ func newIDManager() (*IDManager, error) {
 		privateSet: privSet,
 		publicSet:  pubSet,
 		jwtExp:     exp,
-		features: map[string]bool{
-			"Register":   true,
-			"Register":   true,
-			"OnMFA":      true,
-			"GetData":    true,
-			"GetMFAData": true,
-			"Update":     true,
-		},
 	}
 	return manager, nil
 }

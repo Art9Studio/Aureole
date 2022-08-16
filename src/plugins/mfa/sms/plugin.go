@@ -89,7 +89,7 @@ func (s *sms) GetMetadata() core.Metadata {
 }
 
 func (s *sms) IsEnabled(cred *core.Credential) (bool, error) {
-	return s.pluginAPI.IsMFAEnabled(cred, strconv.Itoa(int(meta.PluginID)))
+	return s.pluginAPI.IsMFAEnabled(cred)
 }
 
 func (s *sms) InitMFA() core.MFAInitFunc {

@@ -85,7 +85,7 @@ func (g otpAuth) GetMetadata() core.Metadata {
 // }
 
 func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
-	return g.pluginAPI.IsMFAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
+	return g.pluginAPI.IsMFAEnabled(cred)
 }
 
 func (g *otpAuth) InitMFA() core.MFAInitFunc {

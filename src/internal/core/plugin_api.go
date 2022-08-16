@@ -60,7 +60,7 @@ func (api PluginAPI) IsTestRun() bool {
 	return api.project.testRun
 }
 
-func (api PluginAPI) IsMFAEnabled(cred *Credential, _ string) (bool, error) {
+func (api PluginAPI) IsMFAEnabled(cred *Credential) (bool, error) {
 	manager, ok := api.app.getIDManager()
 	if !ok {
 		return false, nil

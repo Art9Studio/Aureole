@@ -14,7 +14,7 @@ import (
 	_ "aureole/plugins/crypto-storage/file"
 	_ "aureole/plugins/crypto-storage/url"
 	_ "aureole/plugins/crypto-storage/vault"
-	_ "aureole/plugins/identity-manager/jwt_webhook"
+	//_ "aureole/plugins/identity-manager/jwt_webhook"
 	_ "aureole/plugins/identity-manager/standard"
 	_ "aureole/plugins/issuer/jwt"
 	_ "aureole/plugins/mfa/otp"

@@ -49,6 +49,8 @@ type (
 	OTPResponse struct {
 		Token string `json:"token"`
 	}
+
+	GetAuthHandlerErrRes map[string]interface{}
 )
 
 func (p *authn) GetAuthHTTPMethod() string {
@@ -161,7 +163,7 @@ func (a *authn) GetAuthHandler() core.AuthHandlerFunc {
 			if err != nil {
 				return nil, err
 			}
-			return &core.AuthResult{ErrorData: fiber.Map{"token": token}}, errors.New("wrong otp")
+			return &core.AuthResult{ErrorData: GetAuthHandlerErrRes{"token": token}}, errors.New("wrong otp")
 		}
 	}
 }

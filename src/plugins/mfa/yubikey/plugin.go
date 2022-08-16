@@ -81,7 +81,7 @@ func (y yubikey) GetMetadata() core.Metadata {
 //}
 
 func (y *yubikey) IsEnabled(cred *core.Credential) (bool, error) {
-	return y.pluginAPI.IsMFAEnabled(cred, fmt.Sprintf("%d", meta.PluginID))
+	return y.pluginAPI.IsMFAEnabled(cred)
 }
 
 func initConfig(rawConf *configs.RawConfig) (*config, error) {

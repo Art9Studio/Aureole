@@ -104,10 +104,6 @@ func (r *router) getProjectRoutes() []*Route {
 	return r.projectRoutes
 }
 
-func SendError(c *fiber.Ctx, statusCode int, errorMessage string) error {
-	return c.Status(statusCode).JSON(ErrorMessage{Error: errorMessage})
-}
-
 func SendToken(c *fiber.Ctx, token string) error {
 	return c.JSON(&fiber.Map{"token": token})
 }

@@ -14,8 +14,8 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		if err := c.BodyParser(rawCred); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
-		if rawCred.Password == "" {
-			return core.SendError(c, http.StatusBadRequest, "password required")
+		if rawCred.Password == "" || rawCred.Email == "" {
+			return core.SendError(c, http.StatusBadRequest, "password and email required")
 		}
 
 		pwHash, err := p.pwHasher.HashPw(rawCred.Password)
@@ -23,22 +23,22 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
-		i := &core.Identity{
-			ID:         rawCred.Id,
-			Username:   &rawCred.Username,
-			Phone:      &rawCred.Phone,
-			Email:      &rawCred.Email,
-			Additional: map[string]interface{}{core.Password: pwHash},
-		}
-		cred, err := getCredential(i)
-		if err != nil {
-			return core.SendError(c, http.StatusBadRequest, err.Error())
-		}
+		var (
+			u = &core.User{
+				Username: &rawCred.Username,
+				Phone:    &rawCred.Phone,
+				Email:    &rawCred.Email,
+			}
+			secret = &core.Secrets{password: pwHash}
+			cred   = &core.Credential{Name: "email", Value: rawCred.Email}
+		)
+
 		manager, ok := p.pluginAPI.GetIDManager()
 		if !ok {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
-		user, err := manager.Register(cred, i, nil, meta.ShortName)
+
+		user, err := manager.Register(&core.AuthResult{Cred: cred, User: u, Secrets: secret})
 		if err != nil {
 			return err
 		}
@@ -236,25 +236,25 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 	}
 }
 
-func getCredential(i *core.Identity) (*core.Credential, error) {
-	if *i.Username != "nil" {
+func getCredential(u *core.User) (*core.Credential, error) {
+	if *u.Username != "nil" {
 		return &core.Credential{
 			Name:  "username",
-			Value: *i.Username,
+			Value: *u.Username,
 		}, nil
 	}
 
-	if *i.Email != "nil" {
+	if *u.Email != "nil" {
 		return &core.Credential{
 			Name:  "email",
-			Value: *i.Email,
+			Value: *u.Email,
 		}, nil
 	}
 
-	if *i.Phone != "nil" {
+	if *u.Phone != "nil" {
 		return &core.Credential{
 			Name:  "phone",
-			Value: *i.Phone,
+			Value: *u.Phone,
 		}, nil
 	}
 

@@ -34,7 +34,6 @@ type standart struct {
 	rawConf   configs.PluginConfig
 	conf      *config
 	pool      *pgxpool.Pool
-	features  map[string]bool
 }
 
 func Create(conf configs.PluginConfig) core.IDManager {
@@ -61,14 +60,6 @@ func (m *standart) Init(api core.PluginAPI) (err error) {
 	err = runDBMigrations(conn.Conn())
 	if err != nil {
 		return fmt.Errorf("cannot migrate db: %v", err)
-	}
-
-	m.features = map[string]bool{
-		"Register":   true,
-		"OnMFA":      true,
-		"GetData":    true,
-		"GetMFAData": true,
-		"Update":     true,
 	}
 
 	return nil
@@ -116,21 +107,9 @@ func (s *standart) Register(authRes *core.AuthResult) (*core.AuthResult, error) 
 			}
 		}
 	} else {
-		if authRes.User.EmailVerified || authRes.User.PhoneVerified {
-			if strings.HasPrefix(authRes.Provider, "social_provider$") {
-				authRes, err = registerOauth2User(conn, authRes)
-				if err != nil {
-					return nil, fmt.Errorf("cannot register social provider user: %v", err)
-				}
-			} else {
-				registeredUser, err = registerUser(conn, authRes.User)
-				if err != nil {
-					return nil, fmt.Errorf("cannot register user: %v", err)
-				}
-				authRes.User = registeredUser
-			}
-		} else {
-			return nil, errors.New("user doesn't exists")
+		authRes, err = registerOauth2User(conn, authRes)
+		if err != nil {
+			return nil, fmt.Errorf("cannot register social provider user: %v", err)
 		}
 	}
 	return authRes, nil
@@ -190,6 +169,28 @@ func (s *standart) SetSecrets(userId, pluginId string, payload map[string]interf
 	return setSecrets(conn, userId, pluginId, payload)
 }
 
+func (s *standart) GetSecret(cred *core.Credential, pluginId, secret string) (interface{}, error) {
+	conn, err := s.pool.Acquire(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("cannot acquire connection: %v", err)
+	}
+	defer conn.Release()
+
+	user, err := getUser(conn, cred)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, core.ErrNoUser
+		}
+		return nil, core.WrapErrDB(err.Error())
+	}
+
+	out, err := getSecret(conn, user.ID, pluginId, secret)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (s *standart) GetSecrets(userId, pluginId string) (map[string]interface{}, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
@@ -204,36 +205,14 @@ func (s *standart) GetSecrets(userId, pluginId string) (map[string]interface{}, 
 	return secrets, nil
 }
 
-func (s *standart) Update(c *core.Credential, i *core.Identity, _ string) (*core.Identity, error) {
-	conn, err := s.pool.Acquire(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("cannot acquire connection: %v", err)
-	}
-	defer conn.Release()
-
-	exists, err := isUserExists(conn, c)
-	if err != nil {
-		return nil, fmt.Errorf("cannot check user existence: %v", err)
-	}
-
-	if exists {
-		registeredIdent, err := updateIdentity(conn, c, i)
-		if err != nil {
-			return nil, fmt.Errorf("cannot update user data: %v", err)
-		}
-		return registeredIdent, nil
-	} else {
-		return nil, errors.New("user doesn't exists")
-	}
-}
-
 func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
-	conn, err := s.pool.Acquire(context.Background())
+	ctx := context.Background()
+	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
 	}
 	defer conn.Release()
-
+	//todo(Talgat) do we need that check?
 	exists, err := isUserExists(conn, authRes.Cred)
 	if err != nil {
 		return nil, fmt.Errorf("cannot check user existence: %v", err)
@@ -241,65 +220,77 @@ func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
 	if !exists {
 		return nil, errors.New("user doesn't exists")
 	}
-	tx, err := conn.Begin(context.Background())
+
+	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("cannot bagin tx: %w", err)
 	}
 
-	if authRes.User != nil {
-		var user *core.User
-		sql, values, err := getUpdateQuery(authRes.Cred, authRes.User)
+	if authRes.User == nil {
+		err = tx.Rollback(context.Background())
 		if err != nil {
-			return nil, err
+			return nil, tx.Rollback(context.Background())
 		}
-		err = tx.QueryRow(context.Background(), sql, values...).Scan(
-			&user.ID, &user.Username,
-			&user.Phone, &user.Email,
-			&user.EmailVerified,
-			&user.PhoneVerified,
-			&user.IsMFAEnabled,
-		)
-		if err != nil {
-			if err = tx.Rollback(context.Background()); err != nil {
-				return nil, fmt.Errorf("cannot rollback: %w", err)
-			}
-			return nil, err
-		}
-		authRes.User = user
+		return nil, errors.New("nil user found")
 	}
-	if authRes.ImportedUser != nil {
-		var (
-			importedUser *core.ImportedUser
-			user         *core.User
-			err          error
-		)
-		if user, err = getUser(conn, authRes.Cred); err != nil {
-			if err = tx.Rollback(context.Background()); err != nil {
-				return nil, fmt.Errorf("cannot rollback: %w", err)
-			}
-			return nil, fmt.Errorf("cannot get user: %w", err)
+
+	var user *core.User
+	sql, values, err := getUpdateQuery(authRes.Cred, authRes.User)
+	if err != nil {
+		return nil, err
+	}
+	if err = tx.QueryRow(context.Background(), sql, values...).Scan(
+		&user.ID, &user.Username,
+		&user.Phone, &user.Email,
+		&user.EmailVerified,
+		&user.PhoneVerified,
+		&user.IsMFAEnabled,
+	); err != nil {
+		if err = tx.Rollback(context.Background()); err != nil {
+			return nil, fmt.Errorf("cannot rollback: %w", err)
 		}
-		sql, values, err := getImportedUserUpdateQuery(user.ID, authRes.ImportedUser)
+		return nil, err
+	}
+	authRes.User = user
+
+	if authRes.ImportedUser == nil {
+		err = tx.Commit(context.Background())
 		if err != nil {
-			if err = tx.Rollback(context.Background()); err != nil {
-				return nil, fmt.Errorf("cannot rollback: %w", err)
-			}
-			return nil, err
+			return nil, tx.Rollback(ctx)
 		}
-		err = tx.QueryRow(context.Background(), sql, values...).Scan(
-			&importedUser.UserId,
-			&importedUser.PluginID,
-			&importedUser.ProviderName,
-			&importedUser.ProviderId,
-			&importedUser.Additional,
-		)
-		if err != nil {
-			if err = tx.Rollback(context.Background()); err != nil {
-				return nil, fmt.Errorf("cannot rollback: %w", err)
-			}
-			return nil, err
+		return nil, errors.New("nil user found")
+	}
+
+	var importedUser *core.ImportedUser
+	if user, err = getUser(conn, authRes.Cred); err != nil {
+		if err = tx.Rollback(ctx); err != nil {
+			return nil, fmt.Errorf("cannot rollback: %w", err)
 		}
-		authRes.ImportedUser = importedUser
+		return nil, fmt.Errorf("cannot get user: %w", err)
+	}
+	sql, values, err = getImportedUserUpdateQuery(user.ID, authRes.ImportedUser)
+	if err != nil {
+		if err = tx.Rollback(ctx); err != nil {
+			return nil, fmt.Errorf("cannot rollback: %w", err)
+		}
+		return nil, err
+	}
+	if err = tx.QueryRow(ctx, sql, values...).Scan(
+		&importedUser.UserId,
+		&importedUser.PluginID,
+		&importedUser.ProviderName,
+		&importedUser.ProviderId,
+		&importedUser.Additional,
+	); err != nil {
+		if err = tx.Rollback(ctx); err != nil {
+			return nil, fmt.Errorf("cannot rollback: %w", err)
+		}
+		return nil, err
+	}
+	authRes.ImportedUser = importedUser
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, tx.Rollback(ctx)
 	}
 	return authRes, nil
 }
@@ -442,18 +433,6 @@ func getSecrets(conn *pgxpool.Conn, userId, pluginId string) (map[string]interfa
 	return ret, nil
 }
 
-func registerUser(conn *pgxpool.Conn, newUser *core.User) (*core.User, error) {
-	sql, values, err := getCreateQuery(newUser)
-	if err != nil {
-		return nil, err
-	}
-	err = conn.QueryRow(context.Background(), sql, values...).Scan(&newUser.ID)
-	if err != nil {
-		return nil, err
-	}
-	return newUser, nil
-}
-
 func registerImportedUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.ImportedUser, error) {
 	oauth2PayloadBytes, err := json.Marshal(authRes.ImportedUser.Additional)
 	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
@@ -495,20 +474,29 @@ func registerOauth2User(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.Aut
 	}
 
 	createUserSql, values, err := getCreateQuery(authRes.User)
-
 	if err != nil {
 		return nil, err
 	}
+
 	var (
 		userId    int
 		userIdStr string
 	)
+
 	err = tx.QueryRow(context.Background(), createUserSql, values...).Scan(&userId)
 	if err != nil {
 		return nil, err
 	}
 	userIdStr = strconv.Itoa(userId)
 	authRes.User.ID = userIdStr
+
+	if authRes.ImportedUser == nil {
+		err = tx.Commit(context.Background())
+		if err != nil {
+			return nil, tx.Rollback(context.Background())
+		}
+		return authRes, nil
+	}
 
 	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
 	_, err = tx.Exec(context.Background(), saveImportedUser,
@@ -542,65 +530,6 @@ func saveMFAData(conn *pgxpool.Conn, cred *core.Credential, data *core.MFAData) 
 		return err
 	}
 	return nil
-}
-
-func updateIdentity(conn *pgxpool.Conn, cred *core.Credential, newIdent *core.Identity) (*core.Identity, error) {
-	var ident core.Identity
-	sql, values, err := getUpdateQuery(cred, newIdent)
-	if err != nil {
-		return nil, err
-	}
-	err = conn.QueryRow(context.Background(), sql, values...).Scan(&ident.ID, &ident.Username, &ident.Phone,
-		&ident.Email, &ident.EmailVerified, &ident.PhoneVerified, &ident.Additional)
-	if err != nil {
-		return nil, err
-	}
-	return &ident, nil
-}
-
-func updateUser(conn *pgxpool.Tx, cred *core.Credential, newUser *core.User) (*core.User, error) {
-	var user core.User
-	sql, values, err := getUpdateQuery(cred, newUser)
-	if err != nil {
-		return nil, err
-	}
-	err = conn.QueryRow(context.Background(), sql, values...).Scan(
-		&user.ID, &user.Username,
-		&user.Phone, &user.Email,
-		&user.EmailVerified,
-		&user.PhoneVerified,
-		&user.IsMFAEnabled,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
-func updateImportedUser(conn *pgxpool.Conn, cred *core.Credential, newImported *core.ImportedUser) (*core.ImportedUser, error) {
-	var (
-		importedUser core.ImportedUser
-		user         *core.User
-		err          error
-	)
-	if user, err = getUser(conn, cred); err != nil {
-		return nil, fmt.Errorf("cannot get user: %w", err)
-	}
-	sql, values, err := getImportedUserUpdateQuery(user.ID, newImported)
-	if err != nil {
-		return nil, err
-	}
-	err = conn.QueryRow(context.Background(), sql, values...).Scan(
-		&importedUser.UserId,
-		&importedUser.PluginID,
-		&importedUser.ProviderName,
-		&importedUser.ProviderId,
-		&importedUser.Additional,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &importedUser, nil
 }
 
 //todo(Talgat) create for ImportedUser
