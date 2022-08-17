@@ -81,6 +81,10 @@ func (s *standart) Register(authRes *core.AuthResult) (*core.AuthResult, error) 
 	}
 	defer conn.Release()
 
+	if authRes.User == nil || authRes.Cred == nil {
+		return nil, errors.New("nil user or cred found")
+	}
+
 	exists, err := isUserExists(conn, authRes.Cred)
 	if err != nil {
 		return nil, fmt.Errorf("cannot check user existence: %v", err)
@@ -95,19 +99,21 @@ func (s *standart) Register(authRes *core.AuthResult) (*core.AuthResult, error) 
 		}
 		authRes.User = registeredUser
 
-		importedUserExists, err := isImportedUserExists(conn, authRes.User.ID, authRes.ImportedUser.PluginID)
-		if err != nil {
-			return nil, fmt.Errorf("cannot check imported_user existence: %v", err)
-		}
-
-		if !importedUserExists {
-			_, err := registerImportedUser(conn, authRes)
+		if authRes.ImportedUser != nil {
+			importedUserExists, err := isImportedUserExists(conn, authRes.User.ID, authRes.ProviderId)
 			if err != nil {
-				return nil, fmt.Errorf("cannot get imported user: %v", err)
+				return nil, fmt.Errorf("cannot check imported_user existence: %v", err)
+			}
+
+			if !importedUserExists {
+				_, err := registerImportedUser(conn, authRes)
+				if err != nil {
+					return nil, fmt.Errorf("cannot get imported user: %v", err)
+				}
 			}
 		}
 	} else {
-		authRes, err = registerOauth2User(conn, authRes)
+		authRes, err = registerUser(conn, authRes)
 		if err != nil {
 			return nil, fmt.Errorf("cannot register social provider user: %v", err)
 		}
@@ -212,7 +218,7 @@ func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
 	}
 	defer conn.Release()
-	//todo(Talgat) do we need that check?
+
 	exists, err := isUserExists(conn, authRes.Cred)
 	if err != nil {
 		return nil, fmt.Errorf("cannot check user existence: %v", err)
@@ -229,9 +235,9 @@ func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
 	if authRes.User == nil {
 		err = tx.Rollback(context.Background())
 		if err != nil {
-			return nil, tx.Rollback(context.Background())
+			return nil, fmt.Errorf("cannot rollback: %w", err)
 		}
-		return nil, errors.New("nil user found")
+		return nil, core.ErrNoUser
 	}
 
 	var user *core.User
@@ -258,7 +264,7 @@ func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
 		if err != nil {
 			return nil, tx.Rollback(ctx)
 		}
-		return nil, errors.New("nil user found")
+		return authRes, nil
 	}
 
 	var importedUser *core.ImportedUser
@@ -291,6 +297,41 @@ func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
 
 	if err = tx.Commit(ctx); err != nil {
 		return nil, tx.Rollback(ctx)
+	}
+	return authRes, nil
+}
+
+//todo(Talgat) use setSecret
+func (s *standart) SetSecret(authRes *core.AuthResult) (*core.AuthResult, error) {
+	ctx := context.Background()
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cannot acquire connection: %v", err)
+	}
+	defer conn.Release()
+
+	exists, err := isUserExists(conn, authRes.Cred)
+	if err != nil {
+		return nil, fmt.Errorf("cannot check user existence: %v", err)
+	}
+	if !exists {
+		return nil, errors.New("user doesn't exists")
+	}
+
+	var user *core.User
+	if user, err = getUser(conn, authRes.Cred); err != nil {
+		return nil, fmt.Errorf("cannot get user: %w", err)
+	}
+
+	payload, err := json.Marshal(authRes.Secrets)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := `update secrets set payload=$1 where user_id=$2;`
+	_, err = conn.Exec(ctx, sql, payload, user.ID)
+	if err != nil {
+		return nil, core.WrapErrDB(err.Error())
 	}
 	return authRes, nil
 }
@@ -415,7 +456,7 @@ func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
 
 func getSecret(conn *pgxpool.Conn, userId, pluginId, secret string) (interface{}, error) {
 	var ret interface{}
-	qry := fmt.Sprintf("SELECT payload -> %s FROM secrets WHERE user_id=$1 AND plugin_id=$2;", secret)
+	qry := fmt.Sprintf("SELECT payload -> '%s' FROM secrets WHERE user_id=$1 AND plugin_id=$2;", secret)
 	row := conn.QueryRow(context.Background(), qry, userId, pluginId)
 	if err := row.Scan(&ret); err != nil {
 		return nil, err
@@ -462,13 +503,27 @@ func setSecrets(conn *pgxpool.Conn, userId, pluginId string, payload map[string]
 	return nil
 }
 
-func registerOauth2User(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.AuthResult, error) {
-	oauth2PayloadBytes, err := json.Marshal(authRes.ImportedUser.Additional)
+func setSecretsTx(tx pgx.Tx, userId, pluginId string, payload map[string]interface{}) error {
+	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	saveSecretsQry := `insert into secrets(user_id, plugin_id, payload) values ($1, $2, $3)
+						on conflict (user_id, plugin_id) do update set payload = $3;`
+	_, err = tx.Exec(context.Background(), saveSecretsQry, userId, pluginId, payloadBytes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-	tx, err := conn.Begin(context.Background())
+func registerUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.AuthResult, error) {
+	if authRes.User == nil {
+		return nil, errors.New("nil user found")
+	}
+	ctx := context.Background()
+
+	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -483,35 +538,44 @@ func registerOauth2User(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.Aut
 		userIdStr string
 	)
 
-	err = tx.QueryRow(context.Background(), createUserSql, values...).Scan(&userId)
+	err = tx.QueryRow(ctx, createUserSql, values...).Scan(&userId)
 	if err != nil {
 		return nil, err
 	}
 	userIdStr = strconv.Itoa(userId)
 	authRes.User.ID = userIdStr
 
-	if authRes.ImportedUser == nil {
-		err = tx.Commit(context.Background())
+	if authRes.ImportedUser != nil {
+		oauth2PayloadBytes, err := json.Marshal(authRes.ImportedUser.Additional)
 		if err != nil {
-			return nil, tx.Rollback(context.Background())
+			if err = tx.Rollback(ctx); err != nil {
+				return nil, fmt.Errorf("cannot rollback in registerUser: %w", err)
+			}
+			return nil, err
 		}
-		return authRes, nil
+		saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
+		_, err = tx.Exec(context.Background(), saveImportedUser,
+			authRes.User.ID,
+			authRes.ImportedUser.PluginID,
+			authRes.ImportedUser.ProviderId,
+			authRes.Provider,
+			string(oauth2PayloadBytes))
+		if err != nil {
+			if err = tx.Rollback(ctx); err != nil {
+				return nil, fmt.Errorf("cannot rollback in registerUser: %w", err)
+			}
+			return nil, err
+		}
+	}
+	if authRes.Secrets != nil {
+		if err = setSecretsTx(tx, userIdStr, authRes.ProviderId, *authRes.Secrets); err != nil {
+			return nil, tx.Rollback(ctx)
+		}
 	}
 
-	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
-	_, err = tx.Exec(context.Background(), saveImportedUser,
-		authRes.User.ID,
-		authRes.ImportedUser.PluginID,
-		authRes.ImportedUser.ProviderId,
-		authRes.Provider,
-		string(oauth2PayloadBytes))
+	err = tx.Commit(ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit(context.Background())
-	if err != nil {
-		return nil, tx.Rollback(context.Background())
+		return nil, tx.Rollback(ctx)
 	}
 	return authRes, nil
 }

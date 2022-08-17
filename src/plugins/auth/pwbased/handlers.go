@@ -2,7 +2,7 @@ package pwbased
 
 import (
 	"aureole/internal/core"
-	"errors"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"net/url"
@@ -10,7 +10,7 @@ import (
 
 func register(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var rawCred *RegisterReqBody
+		rawCred := &RegisterReqBody{}
 		if err := c.BodyParser(rawCred); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -38,7 +38,11 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
 
-		user, err := manager.Register(&core.AuthResult{Cred: cred, User: u, Secrets: secret})
+		user, err := manager.Register(&core.AuthResult{
+			Cred: cred, User: u,
+			Secrets:    secret,
+			ProviderId: fmt.Sprintf("%d", meta.PluginID),
+		})
 		if err != nil {
 			return err
 		}
@@ -78,15 +82,14 @@ func Reset(p *pwBased) func(*fiber.Ctx) error {
 		if e.Email == "" {
 			return core.SendError(c, http.StatusBadRequest, "email required")
 		}
-		i := &core.Identity{Email: &e.Email}
 
-		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Reset.Exp)
+		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": e.Email}, p.conf.Reset.Exp)
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		link := attachToken(p.reset.confirmLink, token)
-		err = p.reset.sender.Send(*i.Email, "", p.reset.tmpl, p.reset.tmplExt, map[string]interface{}{"link": link})
+		err = p.reset.sender.Send(e.Email, "", p.reset.tmpl, p.reset.tmplExt, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
@@ -100,7 +103,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if err := c.QueryParser(query); err != nil {
 			return core.SendError(c, http.StatusBadRequest, "invalid format")
 		}
-		var input *ResetConfirmReqBody
+		input := &ResetConfirmReqBody{}
 		if err := c.BodyParser(input); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -110,7 +113,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusBadRequest, "token not found")
 		}
 		if input.Password == "" {
-			return core.SendError(c, http.StatusBadRequest, "password required")
+			return core.SendError(c, http.StatusBadRequest, "password and email required")
 		}
 
 		token, err := p.pluginAPI.ParseJWTService(rawToken)
@@ -135,16 +138,14 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
 
-		_, err = manager.Update(
-			&core.Credential{
-				Name:  core.Email,
-				Value: email.(string),
-			},
-			&core.Identity{
-				Additional: map[string]interface{}{core.Password: pwHash},
-			},
-			meta.ShortName)
-		if err != nil {
+		if _, err = manager.Set(
+			&core.AuthResult{
+				Cred: &core.Credential{
+					Name:  core.Email,
+					Value: email.(string),
+				},
+				Secrets: &core.Secrets{core.Password: pwHash},
+			}); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
@@ -172,15 +173,14 @@ func Verify(p *pwBased) func(*fiber.Ctx) error {
 		if e.Email == "" {
 			return core.SendError(c, http.StatusBadRequest, "email required")
 		}
-		i := &core.Identity{Email: &e.Email}
 
-		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, p.conf.Verify.Exp)
+		token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": e.Email}, p.conf.Verify.Exp)
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
 		link := attachToken(p.verify.confirmLink, token)
-		err = p.verify.sender.Send(*i.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
+		err = p.verify.sender.Send(e.Email, "", p.verify.tmpl, p.verify.tmplExt, map[string]interface{}{"link": link})
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
@@ -217,13 +217,15 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
 
-		_, err = manager.Update(
-			&core.Credential{
-				Name:  core.Email,
-				Value: email.(string),
+		_, err = manager.Set(
+			&core.AuthResult{
+				Cred: &core.Credential{
+					Name:  core.Email,
+					Value: email.(string),
+				},
+				User: &core.User{EmailVerified: true},
 			},
-			&core.Identity{EmailVerified: true},
-			meta.ShortName)
+		)
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
@@ -234,31 +236,6 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 		}
 		return c.JSON(VerifyConfirmRes{Success: true})
 	}
-}
-
-func getCredential(u *core.User) (*core.Credential, error) {
-	if *u.Username != "nil" {
-		return &core.Credential{
-			Name:  "username",
-			Value: *u.Username,
-		}, nil
-	}
-
-	if *u.Email != "nil" {
-		return &core.Credential{
-			Name:  "email",
-			Value: *u.Email,
-		}, nil
-	}
-
-	if *u.Phone != "nil" {
-		return &core.Credential{
-			Name:  "phone",
-			Value: *u.Phone,
-		}, nil
-	}
-
-	return nil, errors.New("credential not found")
 }
 
 func attachToken(u *url.URL, token string) string {

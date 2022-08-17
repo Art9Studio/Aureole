@@ -24,7 +24,7 @@ type PluginInitializer interface {
 	Init(api PluginAPI) error
 }
 
-var PluginInitErr = errors.New("Plugin doesn't implement PluginInitializer interface")
+var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
 
 func InitProject(conf *configs.Project, r *router) *project {
 	var p = &project{

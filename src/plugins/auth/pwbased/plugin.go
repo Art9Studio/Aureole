@@ -101,14 +101,15 @@ const (
 )
 
 func (p *pwBased) GetAuthHTTPMethod() string {
-	return http.MethodGet
+	return http.MethodPost
 }
 
 func Create(conf configs.AuthPluginConfig) core.Authenticator {
 	return &pwBased{rawConf: conf}
 }
 
-func (p *pwBased) Init(api core.PluginAPI) (err error) {
+func (p *pwBased) Init(api core.PluginAPI) error {
+	var err error
 	p.pluginAPI = api
 	p.conf, err = initConfig(&p.rawConf.Config)
 	if err != nil {
@@ -141,9 +142,6 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		}
 
 		p.reset.confirmLink = createConfirmLink(ResetLink, p)
-		if err != nil {
-			return err
-		}
 	}
 
 	if verifyEnabled(p) {
@@ -162,9 +160,6 @@ func (p *pwBased) Init(api core.PluginAPI) (err error) {
 		}
 
 		p.verify.confirmLink = createConfirmLink(VerifyLink, p)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -176,7 +171,7 @@ func (pwBased) GetMetadata() core.Metadata {
 
 func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
 	return func(c fiber.Ctx) (*core.AuthResult, error) {
-		var input *RegisterReqBody
+		input := &RegisterReqBody{}
 		if err := c.BodyParser(input); err != nil {
 			return nil, err
 		}
@@ -340,6 +335,7 @@ func assembleOAS3Operation(reqSchema *openapi3.SchemaRef) *openapi3.Operation {
 	operation := &openapi3.Operation{
 		OperationID: meta.ShortName,
 		Description: meta.DisplayName,
+		Tags:        []string{fmt.Sprintf("auth by %s", meta.DisplayName)},
 		RequestBody: &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
 				Required: true,

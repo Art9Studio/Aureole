@@ -60,6 +60,7 @@ type (
 		Cred         *Credential
 		Identity     *Identity
 		Provider     string
+		ProviderId   string
 		Additional   map[string]interface{}
 		ErrorData    map[string]interface{}
 	}
@@ -125,6 +126,8 @@ type (
 	IDManager interface {
 		Plugin
 		SetSecrets(userId, pluginId string, payload map[string]interface{}) error
+		SetSecret(authRes *AuthResult) (*AuthResult, error)
+		Set(authRes *AuthResult) (*AuthResult, error)
 		Register(authRes *AuthResult) (*AuthResult, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 

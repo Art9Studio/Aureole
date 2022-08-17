@@ -8,7 +8,6 @@ import (
 	_ "aureole/plugins/auth/phone"
 	_ "aureole/plugins/auth/pwbased"
 	_ "aureole/plugins/auth/vk"
-	//
 	_ "aureole/plugins/crypto-key/jwk"
 	_ "aureole/plugins/crypto-key/pem"
 	_ "aureole/plugins/crypto-storage/file"
