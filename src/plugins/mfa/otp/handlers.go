@@ -31,7 +31,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			credValue = in.Phone
 		}
 
-		mfaData := map[string]interface{}{}
+		mfaData := core.Secrets{}
 		response := fiber.Map{}
 		userId := g.pluginAPI.GetUserID(c)
 		if userId == "" {
@@ -47,14 +47,14 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		otp := &dgoogauth.OTPConfig{Secret: strings.TrimSpace(secret)}
 		if g.conf.Alg == "hotp" {
 			otp.HotpCounter = 1
-			mfaData["counter"] = 1
+			mfaData["counter"] = fmt.Sprintf("%d", 1)
 		}
 		if g.conf.ScratchCode.Num != 0 {
 			scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 			if err != nil {
 				return core.SendError(c, http.StatusInternalServerError, err.Error())
 			}
-			mfaData["scratch_codes"] = scratchCodes
+			mfaData["scratch_codes"] = scratchCodes[0]
 			response["scratch_code"] = scratchCodes
 		}
 
@@ -71,11 +71,11 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		}
 		// todo(Talgat) when mfa already enabled, err is interpreted as 500
 		// todo(Talgat) if possible, extract mfa status check as separate func
-		err = manager.OnMFA(cred, &core.MFAData{
-			PluginID:     fmt.Sprintf("%d", meta.PluginID),
-			ProviderName: meta.ShortName,
-			Payload:      mfaData,
-		})
+		//err = manager.OnMFA(cred, &core.MFAData{
+		//	PluginID:     fmt.Sprintf("%d", meta.PluginID),
+		//	ProviderName: meta.ShortName,
+		//	Payload:      mfaData,
+		//})
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return core.SendError(c, http.StatusBadRequest, err.Error())
@@ -83,7 +83,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
-		if err = manager.SetSecrets(userId, fmt.Sprintf("%d", meta.PluginID), mfaData); err != nil {
+		if err = manager.SetSecrets(cred, fmt.Sprintf("%d", meta.PluginID), &mfaData); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 

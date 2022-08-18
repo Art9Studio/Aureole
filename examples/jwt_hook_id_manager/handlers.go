@@ -40,9 +40,9 @@ func handleRequest(m *IDManager) func(ctx *fiber.Ctx) error {
 		}
 
 		switch event {
-		case "Register":
+		case "RegisterOrUpdate":
 			return m.register(c, token)
-		case "Register":
+		case "RegisterOrUpdate":
 			return m.onUserAuthenticated(c, token)
 		case "OnMFA":
 			return m.onMFA(c, token)
@@ -80,7 +80,7 @@ func (m *IDManager) register(c *fiber.Ctx, token jwt.Token) error {
 		return sendError(c, http.StatusBadRequest, "cannot get authn_provider from token: "+err.Error())
 	}
 
-	fmt.Printf("'Register' event request with parameters: \n"+
+	fmt.Printf("'RegisterOrUpdate' event request with parameters: \n"+
 		"Credential: %v\n"+
 		"Identity: %v\n"+
 		"AuthN provider: %s\n", cred, ident, authnProvider)
@@ -114,7 +114,7 @@ func (m *IDManager) onUserAuthenticated(c *fiber.Ctx, token jwt.Token) error {
 		return sendError(c, http.StatusBadRequest, "cannot get authn_provider from token: "+err.Error())
 	}
 
-	fmt.Printf("'Register' event request with parameters: \n"+
+	fmt.Printf("'RegisterOrUpdate' event request with parameters: \n"+
 		"Credential: %v\n"+
 		"Identity: %v\n"+
 		"AuthN provider: %s\n", cred, ident, authnProvider)

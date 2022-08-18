@@ -131,12 +131,12 @@ func (repo *Repository[T]) Register(metaYaml []byte, p func(configs.PluginConfig
 
 	path := buildPath(meta.ShortName, meta.Type)
 	if _, ok := repo.plugins[path]; ok {
-		panic("multiple Register call for Plugin " + path)
+		panic("multiple RegisterOrUpdate call for Plugin " + path)
 	}
 
 	id := meta.PluginID
 	if _, ok := repo.pluginIDs[id]; ok {
-		panic(fmt.Sprintf("multiple Register call for PluginID %d", id))
+		panic(fmt.Sprintf("multiple RegisterOrUpdate call for PluginID %d", id))
 	}
 
 	repo.plugins[path] = &Claim[T]{
@@ -183,12 +183,12 @@ func (repo *AuthenticatorRepository) Register(metaYaml []byte, p func(configs.Au
 
 	path := buildPath(meta.ShortName, meta.Type)
 	if _, ok := repo.plugins[path]; ok {
-		panic("multiple Register call for Plugin " + path)
+		panic("multiple RegisterOrUpdate call for Plugin " + path)
 	}
 
 	id := meta.PluginID
 	if _, ok := repo.pluginIDs[id]; ok {
-		panic(fmt.Sprintf("multiple Register call for PluginID %d", id))
+		panic(fmt.Sprintf("multiple RegisterOrUpdate call for PluginID %d", id))
 	}
 
 	repo.plugins[path] = &AuthenticatorClaim{

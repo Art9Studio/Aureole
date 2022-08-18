@@ -144,7 +144,7 @@ func getEnabledMFA(app *app, authnResult *AuthResult) (fiber.Map, error) {
 func authenticate(app *app, authnResult *AuthResult) (*AuthResult, error) {
 	manager, ok := app.getIDManager()
 	if ok {
-		return manager.Register(authnResult)
+		return manager.RegisterOrUpdate(authnResult)
 	}
 	return authnResult, nil
 }

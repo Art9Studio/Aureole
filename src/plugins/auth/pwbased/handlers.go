@@ -38,7 +38,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
 
-		user, err := manager.Register(&core.AuthResult{
+		user, err := manager.RegisterOrUpdate(&core.AuthResult{
 			Cred: cred, User: u,
 			Secrets:    secret,
 			ProviderId: fmt.Sprintf("%d", meta.PluginID),
@@ -75,7 +75,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 
 func Reset(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var e *ResetReqBody
+		e := &ResetReqBody{}
 		if err := c.BodyParser(e); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -138,8 +138,12 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
 
-		if _, err = manager.Set(
+		emailStr, _ := email.(string)
+		if _, err = manager.RegisterOrUpdate(
 			&core.AuthResult{
+				User: &core.User{
+					Email: &emailStr,
+				},
 				Cred: &core.Credential{
 					Name:  core.Email,
 					Value: email.(string),
@@ -166,7 +170,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 
 func Verify(p *pwBased) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var e *VerifyReqBody
+		e := &VerifyReqBody{}
 		if err := c.BodyParser(e); err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
@@ -217,13 +221,16 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
 
-		_, err = manager.Set(
+		emailStr, _ := email.(string)
+		_, err = manager.RegisterOrUpdate(
 			&core.AuthResult{
 				Cred: &core.Credential{
 					Name:  core.Email,
 					Value: email.(string),
 				},
-				User: &core.User{EmailVerified: true},
+				User: &core.User{
+					Email:         &emailStr,
+					EmailVerified: true},
 			},
 		)
 		if err != nil {

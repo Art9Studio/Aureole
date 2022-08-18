@@ -31,14 +31,15 @@ type (
 	}
 
 	ImportedUser struct {
-		PluginID     string                 `json:"plugin_id,omitempty" db:"plugin_id,omitempty"`
-		ProviderName string                 `json:"provider_name,omitempty" db:"provider_name,omitempty"`
-		ProviderId   string                 `json:"provider_id,omitempty" db:"provider_id,omitempty"`
-		UserId       string                 `json:"user_id,omitempty" db:"user_id,omitempty"`
-		Additional   map[string]interface{} `json:"additional,omitempty" db:"additional,omitempty"`
+		PluginID     string                 `json:"plugin_id,omitempty" mapstructure:"plugin_id,omitempty"`
+		ProviderName string                 `json:"provider_name,omitempty" mapstructure:"provider_name,omitempty"`
+		ProviderId   string                 `json:"provider_id,omitempty" mapstructure:"provider_id,omitempty"`
+		UserId       string                 `json:"user_id,omitempty" mapstructure:"user_id,omitempty"`
+		Additional   map[string]interface{} `json:"additional,omitempty" mapstructure:"additional,omitempty"`
 	}
 
-	Secrets map[string]interface{}
+	Secrets map[string]string
+	Secret  string
 )
 
 type (
@@ -125,16 +126,16 @@ type (
 
 	IDManager interface {
 		Plugin
-		SetSecrets(userId, pluginId string, payload map[string]interface{}) error
-		SetSecret(authRes *AuthResult) (*AuthResult, error)
-		Set(authRes *AuthResult) (*AuthResult, error)
-		Register(authRes *AuthResult) (*AuthResult, error)
-		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
+		RegisterOrUpdate(authRes *AuthResult) (*AuthResult, error)
+		SetSecret(cred *Credential, pluginId string, secret Secret) error
+		GetSecret(cred *Credential, pluginId string, secret Secret) (Secret, error)
+		SetSecrets(cred *Credential, pluginId string, payload *Secrets) error
+		GetSecrets(userId, pluginId string) (*Secrets, error)
 
-		OnMFA(c *Credential, data *MFAData) error
-		GetSecrets(userId, pluginId string) (map[string]interface{}, error)
-		GetSecret(cred *Credential, pluginId, secret string) (interface{}, error)
+		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 		IsMFAEnabled(c *Credential) (bool, error)
+		//todo get rid of
+		OnMFA(c *Credential, data *MFAData) error
 	}
 
 	Credential struct {

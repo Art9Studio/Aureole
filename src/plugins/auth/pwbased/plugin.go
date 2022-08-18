@@ -201,7 +201,7 @@ func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
-		isMatch, err := p.pwHasher.ComparePw(input.Password, pw.(string))
+		isMatch, err := p.pwHasher.ComparePw(input.Password, string(pw))
 		if err != nil {
 			return nil, err
 		}
@@ -288,7 +288,7 @@ func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 				OAS3Operation: assembleOAS3Operation(emailSchema),
 			},
 			{
-				Method:  http.MethodGet,
+				Method:  http.MethodPost,
 				Path:    pathPrefix + resetConfirmUrl,
 				Handler: ResetConfirm(p),
 				OAS3Operation: Redirect(
@@ -311,7 +311,7 @@ func (p *pwBased) GetCustomAppRoutes() []*core.Route {
 				OAS3Operation: assembleOAS3Operation(emailSchema),
 			},
 			{
-				Method:  http.MethodGet,
+				Method:  http.MethodPost,
 				Path:    pathPrefix + verifyConfirmUrl,
 				Handler: VerifyConfirm(p),
 				OAS3Operation: Redirect(
@@ -376,6 +376,7 @@ func Params(op *openapi3.Operation, schema *openapi3.SchemaRef) *openapi3.Operat
 	op.Parameters = []*openapi3.ParameterRef{
 		{
 			Value: &openapi3.Parameter{
+				Name:        "token",
 				In:          "query",
 				Description: "ResetConfirmQuery",
 				Schema:      schema,

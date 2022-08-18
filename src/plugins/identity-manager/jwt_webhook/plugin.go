@@ -60,9 +60,9 @@ func (j *webhook) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 
-//func (j *webhook) Register(c *core.Credential, i *core.Identity, u *core.User, authnProvider string) (*core.User, error) {
+//func (j *webhook) RegisterOrUpdate(c *core.Credential, i *core.Identity, u *core.User, authnProvider string) (*core.User, error) {
 //	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
-//		"event":          "Register",
+//		"event":          "RegisterOrUpdate",
 //		"credential":     map[string]string{c.Name: c.Value},
 //		"identity":       i.AsMap(),
 //		"authn_provider": authnProvider,
@@ -95,7 +95,7 @@ func (j *webhook) GetCustomAppRoutes() []*core.Route {
 
 func (j *webhook) Register(authRes *core.AuthResult) (*core.AuthResult, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
-		"event":          "Register",
+		"event":          "RegisterOrUpdate",
 		"credential":     map[string]string{authRes.Cred.Name: authRes.Cred.Value},
 		"identity":       authRes.Identity.AsMap(),
 		"authn_provider": authRes.Provider,
