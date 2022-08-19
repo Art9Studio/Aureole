@@ -55,6 +55,9 @@ type (
 		Email string `json:"email"`
 		Phone string `json:"phone"`
 	}
+
+	getScratchCodeRes map[string]interface{}
+	tokenRes          *fiber.Map
 )
 
 func Create(conf configs.PluginConfig) core.MFA {
@@ -111,7 +114,7 @@ func (g *otpAuth) InitMFA() core.MFAInitFunc {
 			return nil, errors.New("cannot get credential from token")
 		}
 
-		return fiber.Map{"token": strToken.Token}, nil
+		return tokenRes{"token": strToken.Token}, nil
 	}
 }
 

@@ -138,12 +138,8 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "could not get ID manager")
 		}
 
-		emailStr, _ := email.(string)
 		if _, err = manager.RegisterOrUpdate(
 			&core.AuthResult{
-				User: &core.User{
-					Email: &emailStr,
-				},
 				Cred: &core.Credential{
 					Name:  core.Email,
 					Value: email.(string),

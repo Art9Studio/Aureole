@@ -115,7 +115,7 @@ func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&fiber.Map{"scratch_codes": scratchCodes})
+		return c.JSON(&getScratchCodeRes{"scratch_codes": scratchCodes})
 	}
 }
 

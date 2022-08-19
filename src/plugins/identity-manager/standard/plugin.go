@@ -81,8 +81,52 @@ func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult,
 	}
 	defer conn.Release()
 
-	if authRes.User == nil || authRes.Cred == nil {
-		return nil, errors.New("nil user or cred found")
+	if authRes.Cred == nil {
+		return nil, errors.New("nil cred is found")
+	}
+
+	exists, err := isUserExists(conn, authRes.Cred)
+	if err != nil {
+		return nil, fmt.Errorf("cannot check user existense: %w", err)
+	}
+
+	if !exists {
+		if authRes.User == nil {
+			return nil, errors.New("nil user found")
+		}
+		if authRes.ImportedUser == nil && authRes.Secrets == nil {
+			return nil, errors.New("nil secret & imported user found")
+		}
+		return registerOrUpdateUser(conn, authRes)
+	}
+	var (
+		user *core.User
+		cred *core.Credential
+	)
+	if authRes.User != nil {
+		user, err = getUser(conn, authRes.Cred)
+		if err != nil {
+			return nil, err
+		}
+		storedDataMap := user.AsMap()
+		inDataMap := authRes.User.AsMap()
+		if !isMapsEqual(inDataMap, storedDataMap) {
+			return registerOrUpdateUser(conn, authRes)
+		}
+	}
+	if authRes.ImportedUser != nil {
+		if user != nil {
+			cred = &core.Credential{Name: "id", Value: user.ID}
+		}
+		storedData, err := getImportedUser(conn, cred, authRes.ProviderId)
+		if err != nil {
+			return nil, err
+		}
+		storedDataMap := storedData.AsMap()
+		inDataMap := authRes.ImportedUser.AsMap()
+		if !isMapsEqual(inDataMap, storedDataMap) {
+			return registerOrUpdateUser(conn, authRes)
+		}
 	}
 
 	authRes, err = registerOrUpdateUser(conn, authRes)
@@ -191,96 +235,6 @@ func (s *standart) GetSecrets(userId, pluginId string) (*core.Secrets, error) {
 	return secrets, nil
 }
 
-func (s *standart) Set(authRes *core.AuthResult) (*core.AuthResult, error) {
-	ctx := context.Background()
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("cannot acquire connection: %v", err)
-	}
-	defer conn.Release()
-
-	exists, err := isUserExists(conn, authRes.Cred)
-	if err != nil {
-		return nil, fmt.Errorf("cannot check user existence: %v", err)
-	}
-	if !exists {
-		return nil, errors.New("user doesn't exists")
-	}
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("cannot bagin tx: %w", err)
-	}
-
-	if authRes.User == nil {
-		err = tx.Rollback(context.Background())
-		if err != nil {
-			return nil, fmt.Errorf("cannot rollback: %w", err)
-		}
-		return nil, core.ErrNoUser
-	}
-
-	var user *core.User
-	sql, values, err := getUpdateQuery(authRes.Cred, authRes.User)
-	if err != nil {
-		return nil, err
-	}
-	if err = tx.QueryRow(context.Background(), sql, values...).Scan(
-		&user.ID, &user.Username,
-		&user.Phone, &user.Email,
-		&user.EmailVerified,
-		&user.PhoneVerified,
-		&user.IsMFAEnabled,
-	); err != nil {
-		if err = tx.Rollback(context.Background()); err != nil {
-			return nil, fmt.Errorf("cannot rollback: %w", err)
-		}
-		return nil, err
-	}
-	authRes.User = user
-
-	if authRes.ImportedUser == nil {
-		err = tx.Commit(context.Background())
-		if err != nil {
-			return nil, tx.Rollback(ctx)
-		}
-		return authRes, nil
-	}
-
-	var importedUser *core.ImportedUser
-	if user, err = getUser(conn, authRes.Cred); err != nil {
-		if err = tx.Rollback(ctx); err != nil {
-			return nil, fmt.Errorf("cannot rollback: %w", err)
-		}
-		return nil, fmt.Errorf("cannot get user: %w", err)
-	}
-	sql, values, err = getImportedUserUpdateQuery(user.ID, authRes.ImportedUser)
-	if err != nil {
-		if err = tx.Rollback(ctx); err != nil {
-			return nil, fmt.Errorf("cannot rollback: %w", err)
-		}
-		return nil, err
-	}
-	if err = tx.QueryRow(ctx, sql, values...).Scan(
-		&importedUser.UserId,
-		&importedUser.PluginID,
-		&importedUser.ProviderName,
-		&importedUser.ProviderId,
-		&importedUser.Additional,
-	); err != nil {
-		if err = tx.Rollback(ctx); err != nil {
-			return nil, fmt.Errorf("cannot rollback: %w", err)
-		}
-		return nil, err
-	}
-	authRes.ImportedUser = importedUser
-
-	if err = tx.Commit(ctx); err != nil {
-		return nil, tx.Rollback(ctx)
-	}
-	return authRes, nil
-}
-
 //todo(Talgat) use setSecret
 func (s *standart) SetSecret(cred *core.Credential, pluginId string, secret core.Secret) error {
 	ctx := context.Background()
@@ -362,7 +316,7 @@ func isUserExists(conn *pgxpool.Conn, cred *core.Credential) (bool, error) {
 	var ret bool
 	sql := fmt.Sprintf("select exists(select 1 from users where %s=$1)", sanitize(cred.Name))
 	if err := conn.QueryRow(context.Background(), sql, cred.Value).Scan(&ret); err != nil {
-		return false, err
+		return false, core.WrapErrDB(err.Error())
 	}
 	return ret, nil
 }
@@ -376,34 +330,23 @@ func isImportedUserExists(conn *pgxpool.Conn, userId, pluginId string) (bool, er
 	return ret, nil
 }
 
-func getImportedUser(conn *pgxpool.Conn, userId, pluginId string) (*core.ImportedUser, error) {
+func getImportedUser(conn *pgxpool.Conn, cred *core.Credential, pluginId string) (*core.ImportedUser, error) {
 	//todo(Talgat) replace with sql constructors
-	sql := `SELECT provider_name, additional FROM imported_users WHERE user_id = $1 and plugin_id = $2;`
+	sql := fmt.Sprintf("SELECT * FROM imported_users WHERE %s = $1 and plugin_id = $2;", cred.Name)
 
-	rows, err := conn.Query(context.Background(), sql, userId, pluginId)
-	if err != nil {
-		return nil, err
-	}
+	row := conn.QueryRow(context.Background(), sql, cred.Value, pluginId)
 
 	var importedUser core.ImportedUser
-
-	for rows.Next() {
-		var (
-			payload      map[string]interface{}
-			providerName string
-		)
-		if err = rows.Scan(&providerName, &payload); err != nil {
-			return nil, err
-		}
-
-		if providerName != "" && payload != nil {
-			importedUser.ProviderName = providerName
-			importedUser.Additional = payload
-		}
-	}
-	if rows.Err() != nil {
+	if err := row.Scan(
+		&importedUser.PluginID,
+		&importedUser.ProviderName,
+		&importedUser.ProviderId,
+		&importedUser.UserId,
+		&importedUser.Additional,
+	); err != nil {
 		return nil, err
 	}
+
 	return &importedUser, nil
 }
 
@@ -452,21 +395,6 @@ func getSecrets(conn *pgxpool.Conn, userId, pluginId string) (*core.Secrets, err
 		return nil, err
 	}
 	return ret, nil
-}
-
-func registerImportedUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.ImportedUser, error) {
-	oauth2PayloadBytes, err := json.Marshal(authRes.ImportedUser.Additional)
-	saveImportedUser := "insert into imported_users(user_id, plugin_id, provider_id, provider_name, additional) values ($1, $2, $3, $4, $5);"
-	_, err = conn.Exec(context.Background(), saveImportedUser,
-		authRes.User.ID,
-		authRes.ImportedUser.PluginID,
-		authRes.ImportedUser.ProviderId,
-		authRes.Provider,
-		string(oauth2PayloadBytes))
-	if err != nil {
-		return nil, err
-	}
-	return authRes.ImportedUser, nil
 }
 
 func setSecrets(conn *pgxpool.Conn, userId, pluginId string, payload *core.Secrets) error {
@@ -567,7 +495,6 @@ func saveMFAData(conn *pgxpool.Conn, cred *core.Credential, data *core.MFAData) 
 	return nil
 }
 
-//todo(Talgat) create for ImportedUser
 func getUpsertUserQry(user *core.User) (string, []interface{}, error) {
 	userMap := user.AsMap()
 
@@ -682,4 +609,13 @@ func getImportedUserUpdateQuery(userId string, newImported *core.ImportedUser) (
 
 func sanitize(ident string) string {
 	return pgx.Identifier.Sanitize([]string{ident})
+}
+
+func isMapsEqual(main, compared map[string]interface{}) bool {
+	for k, v := range main {
+		if v != compared[k] {
+			return false
+		}
+	}
+	return true
 }
