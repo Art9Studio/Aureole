@@ -142,7 +142,7 @@ func (g *otpAuth) GetOAS3AuthParameters() openapi3.Parameters {
 }
 
 func (g *otpAuth) Verify() core.MFAVerifyFunc {
-	return func(c fiber.Ctx) (*core.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*core.Credential, core.MFAResMap, error) {
 		otp := &VerifyReqBody{}
 		if err := c.BodyParser(otp); err != nil {
 			return nil, nil, err

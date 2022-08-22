@@ -49,8 +49,6 @@ type (
 		token
 		Otp string `json:"otp"`
 	}
-
-	tokenRes fiber.Map
 )
 
 func Create(conf configs.PluginConfig) core.MFA {
@@ -173,7 +171,7 @@ func (s *sms) GetOAS3AuthParameters() openapi3.Parameters {
 }
 
 func (s *sms) Verify() core.MFAVerifyFunc {
-	return func(c fiber.Ctx) (*core.Credential, fiber.Map, error) {
+	return func(c fiber.Ctx) (*core.Credential, core.MFAResMap, error) {
 		otp := &VerifyReqBody{}
 		if err := c.BodyParser(otp); err != nil {
 			return nil, nil, err
@@ -238,7 +236,7 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 			if err != nil {
 				return nil, nil, err
 			}
-			return nil, fiber.Map{"token": token}, errors.New("wrong otp")
+			return nil, core.MFAResMap{"token": token}, errors.New("wrong otp")
 		}
 	}
 }

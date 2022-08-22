@@ -27,6 +27,7 @@ type (
 		EmailVerified bool    `json:"email_verified,omitempty" mapstructure:"email_verified,omitempty"`
 		PhoneVerified bool    `json:"phone_verified,omitempty" mapstructure:"phone_verified,omitempty"`
 		IsMFAEnabled  *bool   `json:"is_mfa_enabled,omitempty" mapstructure:"is_mfa_enabled,omitempty"`
+		EnabledMFAs   []int   `json:"enabled_mfas,omitempty" mapstructure:"enabled_mfas,omitempty"`
 	}
 
 	ImportedUser struct {
@@ -55,10 +56,10 @@ type (
 
 	AuthResult struct {
 		User         *User
+		UserFromDB   *User
 		ImportedUser *ImportedUser
 		Secrets      *Secrets
 		Cred         *Credential
-		Identity     *Identity
 		Provider     string
 		ProviderId   string
 		Additional   map[string]interface{}
@@ -136,7 +137,7 @@ type (
 		GetSecret(cred *Credential, pluginId, secret string) (Secret, error)
 		SetSecrets(cred *Credential, pluginId string, payload *Secrets) error
 		GetSecrets(userId, pluginId string) (*Secrets, error)
-
+		GetUser(cred *Credential) (*User, error)
 		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
 		IsMFAEnabled(c *Credential) (bool, error)
 		//todo get rid of
@@ -252,7 +253,7 @@ type (
 		GetOAS3VerifyParameters() openapi3.Parameters
 	}
 
-	MFAVerifyFunc func(fiber.Ctx) (cred *Credential, errorData fiber.Map, err error)
+	MFAVerifyFunc func(fiber.Ctx) (cred *Credential, errorData MFAResMap, err error)
 	MFAInitFunc   func(fiber.Ctx) (mfaData MFAResMap, err error)
 	MFAResMap     map[string]interface{}
 )

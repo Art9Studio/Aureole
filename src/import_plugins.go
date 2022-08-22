@@ -18,7 +18,7 @@ import (
 	_ "aureole/plugins/issuer/jwt"
 	_ "aureole/plugins/mfa/otp"
 	_ "aureole/plugins/mfa/sms"
-	_ "aureole/plugins/mfa/yubikey"
+	//_ "aureole/plugins/mfa/yubikey"
 	_ "aureole/plugins/root/urls"
 	_ "aureole/plugins/sender/email"
 	_ "aureole/plugins/sender/twilio"

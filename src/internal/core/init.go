@@ -23,6 +23,9 @@ import (
 type PluginInitializer interface {
 	Init(api PluginAPI) error
 }
+type HealthRes struct {
+	Status string `json:"status"`
+}
 
 var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
 
@@ -60,7 +63,7 @@ func addHealthRoute(r *router) {
 			Method: http.MethodGet,
 			Path:   "/health",
 			Handler: func(c *fiber.Ctx) error {
-				return c.JSON(fiber.Map{"status": "OK"})
+				return c.JSON(&HealthRes{"OK"})
 			},
 		},
 	})

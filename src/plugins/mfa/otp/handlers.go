@@ -32,7 +32,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		}
 
 		mfaData := core.Secrets{}
-		response := fiber.Map{}
+		response := make(map[string]interface{})
 		userId := g.pluginAPI.GetUserID(c)
 		if userId == "" {
 			return core.SendError(c, http.StatusForbidden, "auth id not found")

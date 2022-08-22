@@ -9,7 +9,8 @@ CREATE TABLE users
     email          VARCHAR UNIQUE,
     email_verified BOOLEAN DEFAULT FALSE,
     phone_verified BOOLEAN DEFAULT FALSE,
-	is_mfa_enabled BOOLEAN DEFAULT NULL
+	is_mfa_enabled BOOLEAN,
+	enabled_mfas   VARCHAR[]
 );
 
 CREATE TABLE imported_users

@@ -94,7 +94,7 @@ func initConfig(rawConf *configs.RawConfig) (*config, error) {
 }
 
 func (*yubikey) InitMFA() core.MFAInitFunc {
-	return func(c fiber.Ctx) (fiber.Map, error) {
+	return func(c fiber.Ctx) (core.MFAResMap, error) {
 		// TODO implement me
 		//panic("implement me")
 		return nil, nil

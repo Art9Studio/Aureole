@@ -14,6 +14,11 @@ type AuthUnauthorizedResult struct {
 	Data  map[string]interface{} `json:"data"`
 }
 
+type AuthWrapperRes struct {
+	Token string                 `json:"token"`
+	MFA   map[string]interface{} `json:"mfa"`
+}
+
 func ErrorBody(err error, body map[string]interface{}) AuthUnauthorizedResult {
 	return AuthUnauthorizedResult{Error: err.Error(), Data: body}
 }
@@ -26,6 +31,16 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, authnResult.ErrorData))
 			}
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
+		}
+
+		manager, ok := app.getIDManager()
+		var user *User
+		if ok && authnResult.Cred != nil {
+			user, err = manager.GetUser(authnResult.Cred)
+			if err != nil && !errors.Is(err, ErrNoUser) {
+				return c.Status(http.StatusInternalServerError).JSON(ErrorBody(err, nil))
+			}
+			authnResult.UserFromDB = user
 		}
 
 		enabled2FA, err := getEnabledMFA(app, authnResult)
@@ -44,14 +59,14 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 			}
 
 			token, err := createJWT(app, map[string]interface{}{
-				"credential": authnResult.Cred,
-				"provider":   authnResult.Provider,
+				MIMECredential: authnResult.Cred,
+				AuthNProvider:  authnResult.Provider,
 			}, app.authSessionExp)
 			if err != nil {
 				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 			}
 			// todo: document this
-			return c.Status(http.StatusAccepted).JSON(fiber.Map{"token": token, "2fa": enabled2FA})
+			return c.Status(http.StatusAccepted).JSON(AuthWrapperRes{Token: token, MFA: enabled2FA})
 		}
 
 		// todo: I don't like this name
@@ -103,7 +118,7 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 		}
 		id := c.Locals(UserID)
 		if id != "" {
-			authnResult.Identity.ID = id
+			authnResult.User.ID = id.(string)
 		}
 		authRes, err := authenticate(app, authnResult)
 		if err != nil {
@@ -114,31 +129,27 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 	}
 }
 
-func getEnabledMFA(app *app, authnResult *AuthResult) (fiber.Map, error) {
-	secondFactors, ok := app.getSecondFactors()
-	if ok {
-		var enabled2FA []MFA
-		for _, secondFactor := range secondFactors {
-			enabled, err := secondFactor.IsEnabled(authnResult.Cred)
-			if err != nil {
-				return nil, err
-			}
-			if enabled {
-				enabled2FA = append(enabled2FA, secondFactor)
-			}
-		}
+func getEnabledMFA(app *app, authnResult *AuthResult) (map[string]interface{}, error) {
+	if authnResult.UserFromDB == nil {
+		return nil, ErrNoUser
+	}
 
-		if len(enabled2FA) != 0 {
-			enabledFactorsMap := fiber.Map{}
-			for _, enabledFactor := range enabled2FA {
-				path := app.url.String() + "/2fa/" +
-					strings.ReplaceAll(enabledFactor.GetMetadata().ShortName, "_", "-")
-				enabledFactorsMap[enabledFactor.GetMetadata().ShortName] = path
-			}
-			return enabledFactorsMap, nil
+	secondFactors, ok := app.getSecondFactors()
+	if !ok {
+		return nil, errors.New("cannot get second factors")
+	}
+	if len(authnResult.UserFromDB.EnabledMFAs) == 0 {
+		return nil, nil
+	}
+
+	enabledFactorsMap := make(map[string]interface{})
+	for _, enabledFactor := range authnResult.UserFromDB.EnabledMFAs {
+		if mfa, ok := secondFactors[fmt.Sprintf("%d", enabledFactor)]; ok {
+			path := fmt.Sprintf("%s/mfa/%s", app.url.String(), strings.ReplaceAll(mfa.GetMetadata().ShortName, "_", "-"))
+			enabledFactorsMap[mfa.GetMetadata().ShortName] = path
 		}
 	}
-	return nil, nil
+	return enabledFactorsMap, nil
 }
 
 func authenticate(app *app, authnResult *AuthResult) (*AuthResult, error) {

@@ -170,6 +170,23 @@ func (s *standart) GetData(c *core.Credential, _, name string) (interface{}, err
 	}
 }
 
+func (s *standart) GetUser(cred *core.Credential) (*core.User, error) {
+	conn, err := s.pool.Acquire(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("cannot acquire connection: %v", err)
+	}
+	defer conn.Release()
+
+	user, err := getUser(conn, cred)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, core.ErrNoUser
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
 func (s *standart) SetSecrets(cred *core.Credential, pluginId string, payload *core.Secrets) error {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
