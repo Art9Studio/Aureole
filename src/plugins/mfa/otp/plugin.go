@@ -27,6 +27,13 @@ func init() {
 	meta = core.MFARepo.Register(rawMeta, Create)
 }
 
+const (
+	scrCodes = "scratch_codes"
+	scrCode  = "scratch_code"
+	counter  = "counter"
+	qrCode   = "qr"
+)
+
 type (
 	otpAuth struct {
 		pluginAPI core.PluginAPI
@@ -57,7 +64,6 @@ type (
 	}
 
 	getScratchCodeRes map[string]interface{}
-	tokenRes          *fiber.Map
 )
 
 func Create(conf configs.PluginConfig) core.MFA {
@@ -92,7 +98,7 @@ func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
 }
 
 func (g *otpAuth) InitMFA() core.MFAInitFunc {
-	return func(c fiber.Ctx) (fiber.Map, error) {
+	return func(c fiber.Ctx) (core.MFAResMap, error) {
 		strToken := &InitMFAReqBody{}
 		if err := c.BodyParser(strToken); err != nil {
 			return nil, err
@@ -105,16 +111,16 @@ func (g *otpAuth) InitMFA() core.MFAInitFunc {
 		if err != nil {
 			return nil, err
 		}
-		_, ok := token.Get("provider")
+		_, ok := token.Get(core.AuthNProvider)
 		if !ok {
 			return nil, errors.New("cannot get provider from token")
 		}
-		_, ok = token.Get("credential")
+		_, ok = token.Get(core.MIMECredential)
 		if !ok {
 			return nil, errors.New("cannot get credential from token")
 		}
 
-		return tokenRes{"token": strToken.Token}, nil
+		return core.MFAResMap{core.Token: strToken.Token}, nil
 	}
 }
 
@@ -149,11 +155,11 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		if err != nil {
 			return nil, nil, err
 		}
-		rawProvider, ok := t.Get("provider")
+		rawProvider, ok := t.Get(core.AuthNProvider)
 		if !ok {
 			return nil, nil, errors.New("cannot get provider from token")
 		}
-		rawCred, ok := t.Get("credential")
+		rawCred, ok := t.Get(core.MIMECredential)
 		if !ok {
 			return nil, nil, errors.New("cannot get credential from token")
 		}
@@ -187,7 +193,7 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		}
 
 		var counter int
-		if g.conf.Alg == "hotp" {
+		if g.conf.Alg == core.Hotp {
 			rawCounter, err := manager.GetData(cred, provider, "counter")
 			if err != nil {
 				return nil, nil, err

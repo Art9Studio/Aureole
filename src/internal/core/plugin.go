@@ -2,7 +2,6 @@ package core
 
 import (
 	"aureole/internal/configs"
-	"errors"
 	"github.com/fatih/structs"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
@@ -38,8 +37,8 @@ type (
 		Additional   map[string]interface{} `json:"additional,omitempty" mapstructure:"additional,omitempty"`
 	}
 
-	Secrets map[string]string
-	Secret  string
+	Secrets map[string]Secret
+	Secret  *string
 )
 
 type (
@@ -113,11 +112,17 @@ const (
 	Password       = "password"
 	SecondFactorID = "2fa_id"
 	AuthNProvider  = "provider"
+	Attempts       = "attempts"
 	OAuth2Data     = "oauth2"
 	AdditionalData = "additional"
+	Link           = "link"
+	Token          = "token"
+	State          = "state"
+	Sub            = "sub"
+	Hotp           = "hotp"
+	MIMEImagePNG   = "image/png"
+	MIMECredential = "credential"
 )
-
-var UserNotExistError = errors.New("user doesn't exists")
 
 type (
 	IDManagerCreator interface {
@@ -128,7 +133,7 @@ type (
 		Plugin
 		RegisterOrUpdate(authRes *AuthResult) (*AuthResult, error)
 		SetSecret(cred *Credential, pluginId string, secret Secret) error
-		GetSecret(cred *Credential, pluginId string, secret Secret) (Secret, error)
+		GetSecret(cred *Credential, pluginId, secret string) (Secret, error)
 		SetSecrets(cred *Credential, pluginId string, payload *Secrets) error
 		GetSecrets(userId, pluginId string) (*Secrets, error)
 
@@ -248,7 +253,8 @@ type (
 	}
 
 	MFAVerifyFunc func(fiber.Ctx) (cred *Credential, errorData fiber.Map, err error)
-	MFAInitFunc   func(fiber.Ctx) (mfaData fiber.Map, err error)
+	MFAInitFunc   func(fiber.Ctx) (mfaData MFAResMap, err error)
+	MFAResMap     map[string]interface{}
 )
 
 type (

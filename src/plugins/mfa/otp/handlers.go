@@ -24,10 +24,10 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			return errors.New("email or phone is required")
 		}
 		if in.Email != "" {
-			credName = "email"
+			credName = core.Email
 			credValue = in.Email
 		} else {
-			credName = "phone"
+			credName = core.Phone
 			credValue = in.Phone
 		}
 
@@ -42,20 +42,21 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		mfaData["secret"] = secret
+		mfaData["secret"] = &secret
 
 		otp := &dgoogauth.OTPConfig{Secret: strings.TrimSpace(secret)}
-		if g.conf.Alg == "hotp" {
+		if g.conf.Alg == core.Hotp {
 			otp.HotpCounter = 1
-			mfaData["counter"] = fmt.Sprintf("%d", 1)
+			cnt := fmt.Sprintf("%d", 1)
+			mfaData[counter] = &cnt
 		}
 		if g.conf.ScratchCode.Num != 0 {
 			scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 			if err != nil {
 				return core.SendError(c, http.StatusInternalServerError, err.Error())
 			}
-			mfaData["scratch_codes"] = scratchCodes[0]
-			response["scratch_code"] = scratchCodes
+			mfaData[scrCodes] = &scratchCodes[0]
+			response[scrCode] = scratchCodes
 		}
 
 		cred := &core.Credential{Name: credName, Value: credValue}
@@ -63,7 +64,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		response["qr"] = qr
+		response[qrCode] = qr
 
 		manager, ok := g.pluginAPI.GetIDManager()
 		if !ok {
@@ -86,8 +87,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		if err = manager.SetSecrets(cred, fmt.Sprintf("%d", meta.PluginID), &mfaData); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-
-		c.Set(fiber.HeaderContentType, "image/png")
+		c.Set(fiber.HeaderContentType, core.MIMEImagePNG)
 		return c.Send(qr)
 	}
 }
@@ -95,7 +95,7 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// check if user already authenticated
-		cred := &core.Credential{Name: "email", Value: "www@example.com"}
+		cred := &core.Credential{Name: core.Email, Value: "www@example.com"}
 
 		scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
 		if err != nil {
@@ -110,12 +110,12 @@ func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
 		err = manager.OnMFA(cred, &core.MFAData{
 			PluginID:     fmt.Sprintf("%d", meta.PluginID),
 			ProviderName: meta.ShortName,
-			Payload:      map[string]interface{}{"scratch_codes": scratchCodes},
+			Payload:      map[string]interface{}{scrCodes: scratchCodes},
 		})
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&getScratchCodeRes{"scratch_codes": scratchCodes})
+		return c.JSON(&getScratchCodeRes{scrCodes: scratchCodes})
 	}
 }
 
@@ -157,7 +157,7 @@ func authMiddleware(g *otpAuth, next fiber.Handler) func(ctx *fiber.Ctx) error {
 		}
 
 		var id string
-		if err = g.pluginAPI.GetFromJWT(token, "sub", &id); err != nil {
+		if err = g.pluginAPI.GetFromJWT(token, core.Sub, &id); err != nil {
 			return core.SendError(ctx, http.StatusForbidden, err.Error())
 		}
 		ctx.Locals(core.UserID, id)

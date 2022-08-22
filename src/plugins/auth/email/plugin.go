@@ -108,7 +108,7 @@ func (e *email) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, errors.New(err.Error())
 		}
 
-		if err = e.pluginAPI.GetFromJWT(token, "email", &email); err != nil {
+		if err = e.pluginAPI.GetFromJWT(token, core.Email, &email); err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
 		if err = e.pluginAPI.InvalidateJWT(token); err != nil {

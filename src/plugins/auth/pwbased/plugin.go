@@ -186,7 +186,7 @@ func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
 				Username: &input.Username,
 			}
 			cred = &core.Credential{
-				Name:  "email",
+				Name:  core.Email,
 				Value: input.Email,
 			}
 		)
@@ -201,7 +201,7 @@ func (p *pwBased) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
-		isMatch, err := p.pwHasher.ComparePw(input.Password, string(pw))
+		isMatch, err := p.pwHasher.ComparePw(input.Password, *pw)
 		if err != nil {
 			return nil, err
 		}

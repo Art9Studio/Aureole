@@ -15,13 +15,13 @@ func sendMagicLink(e *email) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
 
-		tokenRaw, err := e.pluginAPI.CreateJWT(map[string]interface{}{"email": i.Email}, e.conf.Exp)
+		tokenRaw, err := e.pluginAPI.CreateJWT(map[string]interface{}{core.Email: i.Email}, e.conf.Exp)
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 		link := attachToken(e.magicLink, tokenRaw)
 
-		err = e.sender.Send(i.Email, "", e.tmpl, e.tmplExt, map[string]interface{}{"link": link})
+		err = e.sender.Send(i.Email, "", e.tmpl, e.tmplExt, map[string]interface{}{core.Link: link})
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
@@ -32,7 +32,7 @@ func sendMagicLink(e *email) func(*fiber.Ctx) error {
 
 func attachToken(u *url.URL, token string) string {
 	q := u.Query()
-	q.Set("token", token)
+	q.Set(core.Token, token)
 	u.RawQuery = q.Encode()
 
 	return u.String()

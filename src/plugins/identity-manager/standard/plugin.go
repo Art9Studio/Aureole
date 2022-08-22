@@ -85,29 +85,20 @@ func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult,
 		return nil, errors.New("nil cred is found")
 	}
 
-	exists, err := isUserExists(conn, authRes.Cred)
+	user, err := getUser(conn, authRes.Cred)
 	if err != nil {
-		return nil, fmt.Errorf("cannot check user existense: %w", err)
-	}
-
-	if !exists {
-		if authRes.User == nil {
-			return nil, errors.New("nil user found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			if authRes.User == nil {
+				return nil, errors.New("nil user found")
+			}
+			return registerOrUpdateUser(conn, authRes)
 		}
-		if authRes.ImportedUser == nil && authRes.Secrets == nil {
-			return nil, errors.New("nil secret & imported user found")
-		}
-		return registerOrUpdateUser(conn, authRes)
+		return nil, err
 	}
 	var (
-		user *core.User
 		cred *core.Credential
 	)
 	if authRes.User != nil {
-		user, err = getUser(conn, authRes.Cred)
-		if err != nil {
-			return nil, err
-		}
 		storedDataMap := user.AsMap()
 		inDataMap := authRes.User.AsMap()
 		if !isMapsEqual(inDataMap, storedDataMap) {
@@ -115,9 +106,7 @@ func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult,
 		}
 	}
 	if authRes.ImportedUser != nil {
-		if user != nil {
-			cred = &core.Credential{Name: "id", Value: user.ID}
-		}
+		cred = &core.Credential{Name: "id", Value: user.ID}
 		storedData, err := getImportedUser(conn, cred, authRes.ProviderId)
 		if err != nil {
 			return nil, err
@@ -199,24 +188,24 @@ func (s *standart) SetSecrets(cred *core.Credential, pluginId string, payload *c
 	return setSecrets(conn, user.ID, pluginId, payload)
 }
 
-func (s *standart) GetSecret(cred *core.Credential, pluginId string, secret core.Secret) (core.Secret, error) {
+func (s *standart) GetSecret(cred *core.Credential, pluginId string, secret string) (core.Secret, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
-		return "", fmt.Errorf("cannot acquire connection: %v", err)
+		return nil, fmt.Errorf("cannot acquire connection: %v", err)
 	}
 	defer conn.Release()
 
 	user, err := getUser(conn, cred)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", core.ErrNoUser
+			return nil, core.ErrNoUser
 		}
-		return "", core.WrapErrDB(err.Error())
+		return nil, core.WrapErrDB(err.Error())
 	}
 
 	out, err := getSecret(conn, user.ID, pluginId, secret)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return out, nil
 }
@@ -377,12 +366,12 @@ func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
 	return &user, nil
 }
 
-func getSecret(conn *pgxpool.Conn, userId, pluginId string, secret core.Secret) (core.Secret, error) {
+func getSecret(conn *pgxpool.Conn, userId, pluginId string, secret string) (core.Secret, error) {
 	var ret core.Secret
 	qry := fmt.Sprintf("SELECT payload ->> '%s' FROM secrets WHERE user_id=$1 AND plugin_id=$2;", secret)
 	row := conn.QueryRow(context.Background(), qry, userId, pluginId)
 	if err := row.Scan(&ret); err != nil {
-		return "", err
+		return nil, err
 	}
 	return ret, nil
 }

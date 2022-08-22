@@ -49,6 +49,8 @@ type (
 		token
 		Otp string `json:"otp"`
 	}
+
+	tokenRes fiber.Map
 )
 
 func Create(conf configs.PluginConfig) core.MFA {
@@ -93,7 +95,7 @@ func (s *sms) IsEnabled(cred *core.Credential) (bool, error) {
 }
 
 func (s *sms) InitMFA() core.MFAInitFunc {
-	return func(c fiber.Ctx) (fiber.Map, error) {
+	return func(c fiber.Ctx) (core.MFAResMap, error) {
 		strToken := &InitMFAReqBody{}
 		if err := c.BodyParser(strToken); err != nil {
 			return nil, err
@@ -110,11 +112,11 @@ func (s *sms) InitMFA() core.MFAInitFunc {
 		if err != nil {
 			return nil, err
 		}
-		err = s.pluginAPI.GetFromJWT(t, "provider", &provider)
+		err = s.pluginAPI.GetFromJWT(t, core.AuthNProvider, &provider)
 		if err != nil {
 			return nil, errors.New("cannot get provider from token")
 		}
-		err = s.pluginAPI.GetFromJWT(t, "credential", &cred)
+		err = s.pluginAPI.GetFromJWT(t, core.MIMECredential, &cred)
 		if err != nil {
 			return nil, errors.New("cannot get credential from token")
 		}
@@ -126,9 +128,9 @@ func (s *sms) InitMFA() core.MFAInitFunc {
 
 		token, err := s.pluginAPI.CreateJWT(
 			map[string]interface{}{
-				"phone":    cred.Value,
-				"provider": provider,
-				"attempts": 0,
+				core.Email:         cred.Value,
+				core.AuthNProvider: provider,
+				core.Attempts:      0,
 			},
 			s.conf.Otp.Exp)
 		if err != nil {
@@ -149,7 +151,7 @@ func (s *sms) InitMFA() core.MFAInitFunc {
 			return nil, err
 		}
 
-		return fiber.Map{"token": token}, nil
+		return core.MFAResMap{core.Token: token}, nil
 	}
 }
 
@@ -189,11 +191,11 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 		if err != nil {
 			return nil, nil, err
 		}
-		err = s.pluginAPI.GetFromJWT(t, "phone", &phone)
+		err = s.pluginAPI.GetFromJWT(t, core.Phone, &phone)
 		if err != nil {
 			return nil, nil, errors.New("cannot get otp from token")
 		}
-		err = s.pluginAPI.GetFromJWT(t, "attempts", &attempts)
+		err = s.pluginAPI.GetFromJWT(t, core.Attempts, &attempts)
 		if err != nil {
 			return nil, nil, errors.New("cannot get attempts from token")
 		}
@@ -223,14 +225,14 @@ func (s *sms) Verify() core.MFAVerifyFunc {
 
 		if decrOtp == otp.Otp {
 			return &core.Credential{
-				Name:  "phone",
+				Name:  core.Phone,
 				Value: phone,
 			}, nil, nil
 		} else {
 			token, err := s.pluginAPI.CreateJWT(
 				map[string]interface{}{
-					"phone":    phone,
-					"attempts": int(attempts) + 1,
+					core.Phone:    phone,
+					core.Attempts: int(attempts) + 1,
 				},
 				s.conf.Otp.Exp)
 			if err != nil {

@@ -67,7 +67,7 @@ func (api PluginAPI) IsMFAEnabled(cred *Credential) (bool, error) {
 	}
 
 	ret, err := manager.IsMFAEnabled(cred)
-	if err != nil && !errors.Is(err, UserNotExistError) {
+	if err != nil && !errors.Is(err, ErrNoUser) {
 		return false, nil
 	}
 	if ret {

@@ -80,7 +80,7 @@ func (f *facebook) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
-		if input.State != "state" {
+		if input.State != core.State {
 			return nil, errors.New("invalid state")
 		}
 		if input.Code == "" {

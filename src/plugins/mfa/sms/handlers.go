@@ -25,7 +25,7 @@ func resend(s *sms) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
-		phone, ok := t.Get("phone")
+		phone, ok := t.Get(core.Phone)
 		if !ok {
 			return core.SendError(c, http.StatusBadRequest, "cannot get phone from token")
 		}
@@ -89,7 +89,7 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, "cannot get id manager")
 		}
 
-		cred := &core.Credential{Name: "phone", Value: phone.Phone}
+		cred := &core.Credential{Name: core.Phone, Value: phone.Phone}
 
 		MFAEnabled, err := manager.IsMFAEnabled(cred)
 		if MFAEnabled {
@@ -188,7 +188,7 @@ func authMiddleware(s *sms, h fiber.Handler) func(ctx *fiber.Ctx) error {
 		}
 
 		var id string
-		if err = s.pluginAPI.GetFromJWT(token, "sub", &id); err != nil {
+		if err = s.pluginAPI.GetFromJWT(token, core.Sub, &id); err != nil {
 			return ctx.SendStatus(http.StatusForbidden)
 		}
 		ctx.Locals(core.UserID, id)

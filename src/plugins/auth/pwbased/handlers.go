@@ -29,8 +29,8 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 				Phone:    &rawCred.Phone,
 				Email:    &rawCred.Email,
 			}
-			secret = &core.Secrets{password: pwHash}
-			cred   = &core.Credential{Name: "email", Value: rawCred.Email}
+			secret = &core.Secrets{password: &pwHash}
+			cred   = &core.Credential{Name: core.Email, Value: rawCred.Email}
 		)
 
 		manager, ok := p.pluginAPI.GetIDManager()
@@ -49,7 +49,7 @@ func register(p *pwBased) func(*fiber.Ctx) error {
 		_ = user
 
 		if p.conf.Register.IsVerifyAfter {
-			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{"email": rawCred.Email}, p.conf.Verify.Exp)
+			token, err := p.pluginAPI.CreateJWT(map[string]interface{}{core.Email: rawCred.Email}, p.conf.Verify.Exp)
 			if err != nil {
 				return core.SendError(c, http.StatusInternalServerError, err.Error())
 			}
@@ -144,7 +144,7 @@ func ResetConfirm(p *pwBased) func(*fiber.Ctx) error {
 					Name:  core.Email,
 					Value: email.(string),
 				},
-				Secrets: &core.Secrets{core.Password: pwHash},
+				Secrets: &core.Secrets{core.Password: &pwHash},
 			}); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}

@@ -108,7 +108,7 @@ func (a *authn) GetAuthHandler() core.AuthHandlerFunc {
 		if err != nil {
 			return nil, err
 		}
-		err = a.pluginAPI.GetFromJWT(t, "phone", &phone)
+		err = a.pluginAPI.GetFromJWT(t, core.Phone, &phone)
 		if err != nil {
 			return nil, errors.New("cannot get phone from token")
 		}

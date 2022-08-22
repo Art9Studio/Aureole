@@ -1,6 +1,7 @@
 package vk
 
 import (
+	"aureole/internal/core"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 
 func getAuthCode(v *vk) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		u := v.provider.AuthCodeURL("state")
+		u := v.provider.AuthCodeURL(core.State)
 		return c.Redirect(u)
 	}
 }

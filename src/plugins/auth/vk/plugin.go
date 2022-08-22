@@ -75,7 +75,7 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
-		if input.State != "state" {
+		if input.State != core.State {
 			return nil, errors.New("invalid state")
 		}
 		if input.Code == "" {
@@ -89,7 +89,7 @@ func (v *vk) GetAuthHandler() core.AuthHandlerFunc {
 
 		var (
 			pluginId   = fmt.Sprintf("%d", meta.PluginID)
-			email      = userData["email"].(string)
+			email      = userData[core.Email].(string)
 			providerId = fmt.Sprintf("%f", userData["id"].(float64))
 		)
 

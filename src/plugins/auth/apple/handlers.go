@@ -1,6 +1,7 @@
 package apple
 
 import (
+	"aureole/internal/core"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,7 +10,7 @@ import (
 
 func getAuthCode(a *apple) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		u := a.provider.authCodeURL("state")
+		u := a.provider.authCodeURL(core.State)
 		return c.Redirect(u)
 	}
 }

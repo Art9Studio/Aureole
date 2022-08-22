@@ -65,7 +65,7 @@ func resendOTP(p *authn) func(*fiber.Ctx) error {
 		if err != nil {
 			return core.SendError(c, http.StatusBadRequest, err.Error())
 		}
-		phone, ok := t.Get("phone")
+		phone, ok := t.Get(core.Phone)
 		if !ok {
 			return core.SendError(c, http.StatusBadRequest, "cannot get phone from token")
 		}

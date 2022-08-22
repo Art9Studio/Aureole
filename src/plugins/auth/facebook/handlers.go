@@ -1,6 +1,7 @@
 package facebook
 
 import (
+	"aureole/internal/core"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 
 func getAuthCode(f *facebook) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		u := f.provider.AuthCodeURL("state")
+		u := f.provider.AuthCodeURL(core.State)
 		return c.Redirect(u)
 	}
 }

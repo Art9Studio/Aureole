@@ -80,7 +80,7 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 		// todo: save state and compare later #2
-		if input.State != "state" {
+		if input.State != core.State {
 			return nil, errors.New("invalid state")
 		}
 		if input.Code == "" {
@@ -97,10 +97,10 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 		if err != nil {
 			return nil, errors.New("error while exchange")
 		}
-		if err = g.pluginAPI.GetFromJWT(jwtT, "email", &email); err != nil {
+		if err = g.pluginAPI.GetFromJWT(jwtT, core.Email, &email); err != nil {
 			return nil, errors.New("cannot get email from token")
 		}
-		if err = g.pluginAPI.GetFromJWT(jwtT, "sub", &providerId); err != nil {
+		if err = g.pluginAPI.GetFromJWT(jwtT, core.Sub, &providerId); err != nil {
 			return nil, errors.New("cannot get sub from token")
 		}
 

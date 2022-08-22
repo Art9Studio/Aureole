@@ -1,6 +1,7 @@
 package google
 
 import (
+	"aureole/internal/core"
 	"context"
 	"fmt"
 
@@ -11,7 +12,7 @@ import (
 func getAuthCode(g *google) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// todo: save state and compare later #1
-		u := g.provider.AuthCodeURL("state")
+		u := g.provider.AuthCodeURL(core.State)
 		return c.Redirect(u)
 	}
 }
