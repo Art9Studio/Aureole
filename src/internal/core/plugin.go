@@ -56,7 +56,6 @@ type (
 
 	AuthResult struct {
 		User         *User
-		UserFromDB   *User
 		ImportedUser *ImportedUser
 		Secrets      *Secrets
 		Cred         *Credential
@@ -111,7 +110,7 @@ const (
 	EmailVerified  = "email_verified"
 	PhoneVerified  = "phone_verified"
 	Password       = "password"
-	SecondFactorID = "2fa_id"
+	SecondFactorID = "mfa_id"
 	AuthNProvider  = "provider"
 	Attempts       = "attempts"
 	OAuth2Data     = "oauth2"
@@ -120,7 +119,6 @@ const (
 	Token          = "token"
 	State          = "state"
 	Sub            = "sub"
-	Hotp           = "hotp"
 	MIMEImagePNG   = "image/png"
 	MIMECredential = "credential"
 )

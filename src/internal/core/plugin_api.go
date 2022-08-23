@@ -4,9 +4,11 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
+	"net/http"
 	"net/url"
 	"path"
 	"regexp"
+	"strings"
 )
 
 const UserID = "userID"
@@ -206,4 +208,64 @@ func (api PluginAPI) GetUserID(ctx *fiber.Ctx) string {
 		return ""
 	}
 	return id
+}
+
+func generateScratchCodes(num int, alphabet string) ([]string, error) {
+	scratchCodes := make([]string, num)
+	var err error
+	for i := 0; i < num; i++ {
+		scratchCodes[i], err = getRandStr(8, alphabet)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return scratchCodes, err
+}
+
+type GetScratchCodesBody struct {
+	Id string `json:"id"`
+}
+
+func (api PluginAPI) GetScratchCodes(app *app) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		in := &GetScratchCodesBody{}
+		if err := c.BodyParser(in); err != nil {
+			return err
+		}
+		if in.Id == "" {
+			return SendError(c, http.StatusBadRequest, "user id is requires")
+		}
+		cred := &Credential{Name: ID, Value: in.Id}
+
+		scratchCodes, err := generateScratchCodes(app.scratchCode.Num, app.scratchCode.Alphabet)
+		if err != nil {
+			return SendError(c, http.StatusInternalServerError, err.Error())
+		}
+
+		manager, ok := app.getIDManager()
+		if !ok {
+			return errors.New("cannot get IDManager")
+		}
+
+		toString := func() *string {
+			sb := strings.Builder{}
+			for i, s := range scratchCodes {
+				sb.WriteString(s)
+				if i < len(scratchCodes)-1 {
+					sb.WriteByte(',')
+				}
+			}
+			res := sb.String()
+			return &res
+		}
+
+		if err = manager.SetSecrets(
+			cred,
+			"0",
+			&Secrets{scrCodes: toString()},
+		); err != nil {
+			return SendError(c, http.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(&getScratchCodeRes{scrCodes: scratchCodes})
+	}
 }

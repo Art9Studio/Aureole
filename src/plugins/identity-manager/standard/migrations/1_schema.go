@@ -37,13 +37,6 @@ CREATE TABLE plugins
 	plugin_name VARCHAR NOT NULL
 );
 
-CREATE TABLE passwords
-(
-    id       SERIAL PRIMARY KEY,
-    user_id  INT REFERENCES users ON DELETE CASCADE,
-    password VARCHAR NOT NULL
-);
-
 CREATE TABLE social_providers
 (
     id            SERIAL PRIMARY KEY,
@@ -55,9 +48,7 @@ CREATE TABLE social_providers
 `
 
 const downSchema1 = `
-DROP TABLE passwords;
 DROP TABLE social_providers;
-DROP TABLE mfa;
 DROP TABLE imported_users;
 DROP TABLE secrets;
 DROP TABLE users;

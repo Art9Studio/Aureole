@@ -27,6 +27,10 @@ type (
 		senders        map[string]Sender
 		cryptoKeys     map[string]CryptoKey
 		rootPlugins    map[string]RootPlugin
+		scratchCode    struct {
+			Num      int    `mapstructure:"num" json:"num"`
+			Alphabet string `mapstructure:"alphabet" json:"alphabet"`
+		} `mapstructure:"scratch_code" json:"scratch_code"`
 	}
 
 	internal struct {

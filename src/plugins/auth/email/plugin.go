@@ -120,7 +120,7 @@ func (e *email) GetAuthHandler() core.AuthHandlerFunc {
 				Name:  core.Email,
 				Value: email,
 			},
-			Identity: &core.Identity{
+			User: &core.User{
 				Email:         &email,
 				EmailVerified: true,
 			},

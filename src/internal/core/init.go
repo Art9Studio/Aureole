@@ -20,12 +20,19 @@ import (
 	"github.com/xlab/treeprint"
 )
 
+const (
+	scrCodes = "scratch_codes"
+)
+
 type PluginInitializer interface {
 	Init(api PluginAPI) error
 }
-type HealthRes struct {
-	Status string `json:"status"`
-}
+type (
+	HealthRes struct {
+		Status string `json:"status"`
+	}
+	getScratchCodeRes map[string]interface{}
+)
 
 var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
 

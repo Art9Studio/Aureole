@@ -32,6 +32,7 @@ const (
 	scrCode  = "scratch_code"
 	counter  = "counter"
 	qrCode   = "qr"
+	hotp     = "hotp"
 )
 
 type (
@@ -62,8 +63,6 @@ type (
 		Email string `json:"email"`
 		Phone string `json:"phone"`
 	}
-
-	getScratchCodeRes map[string]interface{}
 )
 
 func Create(conf configs.PluginConfig) core.MFA {
@@ -193,7 +192,7 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		}
 
 		var counter int
-		if g.conf.Alg == core.Hotp {
+		if g.conf.Alg == hotp {
 			rawCounter, err := manager.GetData(cred, provider, "counter")
 			if err != nil {
 				return nil, nil, err
@@ -221,15 +220,6 @@ func (g *otpAuth) Verify() core.MFAVerifyFunc {
 		if !ok {
 			return nil, nil, errors.New("wrong otp")
 		}
-		//todo (Talgat) purpose of OnMFA not clear, inserting same data
-		//err = manager.OnMFA(cred, &core.MFAData{
-		//	PluginID:     fmt.Sprintf("%d", meta.PluginID),
-		//	ProviderName: meta.ShortName,
-		//	Payload:      map[string]interface{}{"counter": otpConf.HotpCounter, "scratch_code": otpConf.ScratchCodes},
-		//})
-		//if err != nil {
-		//	return nil, nil, err
-		//}
 
 		if g.conf.DisallowReuse {
 			if usedOtp == nil {
@@ -282,11 +272,6 @@ func (g *otpAuth) GetCustomAppRoutes() []*core.Route {
 			Method:  http.MethodPost,
 			Path:    getQRUrl,
 			Handler: authMiddleware(g, getQR(g)),
-		},
-		{
-			Method:  http.MethodPost,
-			Path:    getScratchesUrl,
-			Handler: getScratchCodes(g),
 		},
 	}
 }

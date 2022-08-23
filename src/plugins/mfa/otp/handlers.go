@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jackc/pgx/v4"
 	"github.com/skip2/go-qrcode"
 	"net/http"
 	"strings"
@@ -45,18 +44,10 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		mfaData["secret"] = &secret
 
 		otp := &dgoogauth.OTPConfig{Secret: strings.TrimSpace(secret)}
-		if g.conf.Alg == core.Hotp {
+		if g.conf.Alg == hotp {
 			otp.HotpCounter = 1
 			cnt := fmt.Sprintf("%d", 1)
 			mfaData[counter] = &cnt
-		}
-		if g.conf.ScratchCode.Num != 0 {
-			scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
-			if err != nil {
-				return core.SendError(c, http.StatusInternalServerError, err.Error())
-			}
-			mfaData[scrCodes] = &scratchCodes[0]
-			response[scrCode] = scratchCodes
 		}
 
 		cred := &core.Credential{Name: credName, Value: credValue}
@@ -70,19 +61,6 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 		if !ok {
 			return errors.New("cannot get IDManager")
 		}
-		// todo(Talgat) when mfa already enabled, err is interpreted as 500
-		// todo(Talgat) if possible, extract mfa status check as separate func
-		//err = manager.OnMFA(cred, &core.MFAData{
-		//	PluginID:     fmt.Sprintf("%d", meta.PluginID),
-		//	ProviderName: meta.ShortName,
-		//	Payload:      mfaData,
-		//})
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return core.SendError(c, http.StatusBadRequest, err.Error())
-			}
-			return core.SendError(c, http.StatusInternalServerError, err.Error())
-		}
 
 		if err = manager.SetSecrets(cred, fmt.Sprintf("%d", meta.PluginID), &mfaData); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
@@ -92,50 +70,12 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 	}
 }
 
-func getScratchCodes(g *otpAuth) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		// check if user already authenticated
-		cred := &core.Credential{Name: core.Email, Value: "www@example.com"}
-
-		scratchCodes, err := generateScratchCodes(g.pluginAPI, g.conf.ScratchCode.Num, g.conf.ScratchCode.Alphabet)
-		if err != nil {
-			return core.SendError(c, http.StatusInternalServerError, err.Error())
-		}
-
-		manager, ok := g.pluginAPI.GetIDManager()
-		if !ok {
-			return errors.New("cannot get IDManager")
-		}
-
-		err = manager.OnMFA(cred, &core.MFAData{
-			PluginID:     fmt.Sprintf("%d", meta.PluginID),
-			ProviderName: meta.ShortName,
-			Payload:      map[string]interface{}{scrCodes: scratchCodes},
-		})
-		if err != nil {
-			return core.SendError(c, http.StatusInternalServerError, err.Error())
-		}
-		return c.JSON(&getScratchCodeRes{scrCodes: scratchCodes})
-	}
-}
-
 func generateSecret(api core.PluginAPI) (string, error) {
 	randStr, err := api.GetRandStr(8, "alphanum")
 	if err != nil {
 		return "", err
 	}
 	return base32.StdEncoding.EncodeToString([]byte(randStr)), nil
-}
-
-func generateScratchCodes(api core.PluginAPI, num int, alphabet string) (scratchCodes []string, err error) {
-	scratchCodes = make([]string, num)
-	for i := 0; i < num; i++ {
-		scratchCodes[i], err = api.GetRandStr(8, alphabet)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return scratchCodes, err
 }
 
 func authMiddleware(g *otpAuth, next fiber.Handler) func(ctx *fiber.Ctx) error {
@@ -149,8 +89,7 @@ func authMiddleware(g *otpAuth, next fiber.Handler) func(ctx *fiber.Ctx) error {
 		} else {
 			return ctx.SendStatus(http.StatusForbidden)
 		}
-		// todo(Talgat) token created after auth by google cannot be parsed
-		// todo(Talgat) Error": "jwt.Parse: cannot proceed with JWE encrypted payload without decryption parameters"
+
 		token, err := g.pluginAPI.ParseJWT(rawToken)
 		if err != nil {
 			return core.SendError(ctx, http.StatusForbidden, err.Error())

@@ -33,16 +33,6 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 		}
 
-		manager, ok := app.getIDManager()
-		var user *User
-		if ok && authnResult.Cred != nil {
-			user, err = manager.GetUser(authnResult.Cred)
-			if err != nil && !errors.Is(err, ErrNoUser) {
-				return c.Status(http.StatusInternalServerError).JSON(ErrorBody(err, nil))
-			}
-			authnResult.UserFromDB = user
-		}
-
 		enabled2FA, err := getEnabledMFA(app, authnResult)
 		if err != nil {
 			return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
@@ -130,20 +120,28 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 }
 
 func getEnabledMFA(app *app, authnResult *AuthResult) (map[string]interface{}, error) {
-	if authnResult.UserFromDB == nil {
-		return nil, ErrNoUser
+	manager, ok := app.getIDManager()
+	var (
+		user *User
+		err  error
+	)
+	if ok && authnResult.Cred != nil {
+		user, err = manager.GetUser(authnResult.Cred)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	secondFactors, ok := app.getSecondFactors()
 	if !ok {
 		return nil, errors.New("cannot get second factors")
 	}
-	if len(authnResult.UserFromDB.EnabledMFAs) == 0 {
+	if len(user.EnabledMFAs) == 0 {
 		return nil, nil
 	}
 
 	enabledFactorsMap := make(map[string]interface{})
-	for _, enabledFactor := range authnResult.UserFromDB.EnabledMFAs {
+	for _, enabledFactor := range user.EnabledMFAs {
 		if mfa, ok := secondFactors[fmt.Sprintf("%d", enabledFactor)]; ok {
 			path := fmt.Sprintf("%s/mfa/%s", app.url.String(), strings.ReplaceAll(mfa.GetMetadata().ShortName, "_", "-"))
 			enabledFactorsMap[mfa.GetMetadata().ShortName] = path

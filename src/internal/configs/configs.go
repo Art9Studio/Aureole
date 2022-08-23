@@ -42,6 +42,10 @@ type (
 		CryptoKeys     []PluginConfig     `mapstructure:"crypto_keys" json:"crypto_keys"`
 		Senders        []PluginConfig     `mapstructure:"senders" json:"senders"`
 		RootPlugins    []PluginConfig     `mapstructure:"root_plugins" json:"root_plugins"`
+		ScratchCode    struct {
+			Num      int    `mapstructure:"num" json:"num"`
+			Alphabet string `mapstructure:"alphabet" json:"alphabet"`
+		} `mapstructure:"scratch_code" json:"scratch_code"`
 	}
 
 	Internal struct {
