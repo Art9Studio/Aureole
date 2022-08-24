@@ -88,10 +88,6 @@ func (g otpAuth) GetMetadata() core.Metadata {
 	return meta
 }
 
-// func (g otpAuth) GetCustomAppRoutes() *openapi3.Paths {
-// 	return g.swagger.Paths
-// }
-
 func (g *otpAuth) IsEnabled(cred *core.Credential) (bool, error) {
 	return g.pluginAPI.IsMFAEnabled(cred)
 }

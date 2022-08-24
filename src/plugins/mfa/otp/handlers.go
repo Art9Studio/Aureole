@@ -62,6 +62,21 @@ func getQR(g *otpAuth) func(*fiber.Ctx) error {
 			return errors.New("cannot get IDManager")
 		}
 
+		if _, err = manager.RegisterOrUpdate(
+			&core.AuthResult{
+				Cred: &core.Credential{
+					Name:  core.ID,
+					Value: userId,
+				},
+				User: &core.User{
+					ID:          userId,
+					EnabledMFAs: []string{fmt.Sprintf("%d", meta.PluginID)},
+				},
+			},
+		); err != nil {
+			return core.SendError(c, http.StatusInternalServerError, err.Error())
+		}
+
 		if err = manager.SetSecrets(cred, fmt.Sprintf("%d", meta.PluginID), &mfaData); err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}

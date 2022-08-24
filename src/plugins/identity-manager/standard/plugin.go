@@ -451,7 +451,7 @@ func registerOrUpdateUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.A
 		userId    int
 		userIdStr string
 	)
-
+	fmt.Println(sql)
 	err = tx.QueryRow(ctx, sql, values...).Scan(&userId)
 	if err != nil {
 		return nil, err
@@ -460,6 +460,7 @@ func registerOrUpdateUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.A
 	authRes.User.ID = userIdStr
 
 	if authRes.ImportedUser != nil {
+		authRes.ImportedUser.UserId = userIdStr
 		sql, values, err = getUpsertImportedUserQry(authRes.ImportedUser)
 		if err != nil {
 			return nil, err

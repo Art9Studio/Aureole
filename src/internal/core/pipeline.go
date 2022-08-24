@@ -128,6 +128,9 @@ func getEnabledMFA(app *app, authnResult *AuthResult) (map[string]interface{}, e
 	if ok && authnResult.Cred != nil {
 		user, err = manager.GetUser(authnResult.Cred)
 		if err != nil {
+			if errors.Is(err, ErrNoUser) {
+				return nil, nil
+			}
 			return nil, err
 		}
 	}

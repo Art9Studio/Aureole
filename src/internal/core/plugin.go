@@ -20,14 +20,14 @@ type MetadataGetter interface {
 
 type (
 	User struct {
-		ID            string  `json:"id,omitempty" mapstructure:"id,omitempty"`
-		Email         *string `json:"email,omitempty" mapstructure:"email,omitempty"`
-		Phone         *string `json:"phone,omitempty" mapstructure:"phone,omitempty"`
-		Username      *string `json:"username,omitempty" mapstructure:"username,omitempty"`
-		EmailVerified bool    `json:"email_verified,omitempty" mapstructure:"email_verified,omitempty"`
-		PhoneVerified bool    `json:"phone_verified,omitempty" mapstructure:"phone_verified,omitempty"`
-		IsMFAEnabled  *bool   `json:"is_mfa_enabled,omitempty" mapstructure:"is_mfa_enabled,omitempty"`
-		EnabledMFAs   []int   `json:"enabled_mfas,omitempty" mapstructure:"enabled_mfas,omitempty"`
+		ID            string   `json:"id,omitempty" mapstructure:"id,omitempty"`
+		Email         *string  `json:"email,omitempty" mapstructure:"email,omitempty"`
+		Phone         *string  `json:"phone,omitempty" mapstructure:"phone,omitempty"`
+		Username      *string  `json:"username,omitempty" mapstructure:"username,omitempty"`
+		EmailVerified bool     `json:"email_verified,omitempty" mapstructure:"email_verified,omitempty"`
+		PhoneVerified bool     `json:"phone_verified,omitempty" mapstructure:"phone_verified,omitempty"`
+		IsMFAEnabled  *bool    `json:"is_mfa_enabled,omitempty" mapstructure:"is_mfa_enabled,omitempty"`
+		EnabledMFAs   []string `json:"enabled_mfas,omitempty" mapstructure:"enabled_mfas,omitempty"`
 	}
 
 	ImportedUser struct {

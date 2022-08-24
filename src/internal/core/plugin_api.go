@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/url"
 	"path"
@@ -226,46 +227,85 @@ type GetScratchCodesBody struct {
 	Id string `json:"id"`
 }
 
+func authMiddleware(pluginAPI *PluginAPI, next fiber.Handler) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		bearer := ctx.Get(fiber.HeaderAuthorization)
+		tokenSplit := strings.Split(bearer, "Bearer ")
+
+		var rawToken string
+		if len(tokenSplit) == 2 && tokenSplit[1] != "" {
+			rawToken = tokenSplit[1]
+		} else {
+			return ctx.SendStatus(http.StatusForbidden)
+		}
+
+		token, err := pluginAPI.ParseJWT(rawToken)
+		if err != nil {
+			return SendError(ctx, http.StatusForbidden, err.Error())
+		}
+
+		var id string
+		if err = pluginAPI.GetFromJWT(token, Sub, &id); err != nil {
+			return SendError(ctx, http.StatusForbidden, err.Error())
+		}
+		ctx.Locals(UserID, id)
+
+		return next(ctx)
+	}
+}
+
 func (api PluginAPI) GetScratchCodes(app *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		in := &GetScratchCodesBody{}
-		if err := c.BodyParser(in); err != nil {
-			return err
-		}
-		if in.Id == "" {
-			return SendError(c, http.StatusBadRequest, "user id is requires")
-		}
-		cred := &Credential{Name: ID, Value: in.Id}
-
-		scratchCodes, err := generateScratchCodes(app.scratchCode.Num, app.scratchCode.Alphabet)
-		if err != nil {
-			return SendError(c, http.StatusInternalServerError, err.Error())
-		}
+		id := c.Locals(UserID).(string)
+		cred := &Credential{Name: ID, Value: id}
 
 		manager, ok := app.getIDManager()
 		if !ok {
 			return errors.New("cannot get IDManager")
 		}
 
-		toString := func() *string {
-			sb := strings.Builder{}
-			for i, s := range scratchCodes {
-				sb.WriteString(s)
-				if i < len(scratchCodes)-1 {
-					sb.WriteByte(',')
-				}
-			}
-			res := sb.String()
-			return &res
+		ok, err := manager.IsMFAEnabled(cred)
+		if err != nil {
+			return SendError(c, http.StatusInternalServerError, err.Error())
+		}
+		if !ok {
+			return SendError(c, http.StatusBadRequest, "mfa not enabled")
 		}
 
+		scratchCodes, err := generateScratchCodes(app.scratchCode.Num, app.scratchCode.Alphabet)
+		if err != nil {
+			return SendError(c, http.StatusInternalServerError, err.Error())
+		}
+
+		toString := func() (*string, string, error) {
+			sb := strings.Builder{}
+			sbHashed := strings.Builder{}
+			for i, s := range scratchCodes {
+				sb.WriteString(s)
+				hashedS, err := bcrypt.GenerateFromPassword([]byte(s), bcrypt.DefaultCost)
+				if err != nil {
+					return nil, "", err
+				}
+				sbHashed.Write(hashedS)
+				if i < len(scratchCodes)-1 {
+					sb.WriteByte(',')
+					sbHashed.WriteByte(',')
+				}
+			}
+			hashedRes := sb.String()
+			return &hashedRes, sb.String(), nil
+		}
+		hashedRes, res, err := toString()
+		if err != nil {
+			return SendError(c, http.StatusInternalServerError, err.Error())
+		}
 		if err = manager.SetSecrets(
 			cred,
 			"0",
-			&Secrets{scrCodes: toString()},
+			&Secrets{scrCodes: hashedRes},
 		); err != nil {
 			return SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&getScratchCodeRes{scrCodes: scratchCodes})
+		return c.JSON(&getScratchCodeRes{scrCodes: res})
 	}
 }

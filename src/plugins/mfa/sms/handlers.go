@@ -40,8 +40,8 @@ func resend(s *sms) func(*fiber.Ctx) error {
 
 		token, err := s.pluginAPI.CreateJWT(
 			map[string]interface{}{
-				"phone":    phone,
-				"attempts": 0,
+				core.Phone:    phone,
+				core.Attempts: 0,
 			},
 			s.conf.Otp.Exp)
 		if err != nil {
@@ -115,8 +115,8 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 
 		token, err := s.pluginAPI.CreateJWT(
 			map[string]interface{}{
-				"phone":    phone.Phone,
-				"attempts": 0,
+				core.Phone:    phone.Phone,
+				core.Attempts: 0,
 			},
 			s.conf.Otp.Exp)
 		if err != nil {
@@ -134,8 +134,7 @@ func sendOTP(s *sms) func(*fiber.Ctx) error {
 
 func initMFASMS(s *sms) func(*fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
-		cred, _, err := s.Verify()(*ctx)
-
+		_, _, err := s.Verify()(*ctx)
 		if err != nil {
 			//todo(Talgat) handle 500 and 400 errors
 			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
@@ -146,23 +145,24 @@ func initMFASMS(s *sms) func(*fiber.Ctx) error {
 			return core.SendError(ctx, http.StatusInternalServerError, "cannot get IDManager")
 		}
 
-		//idRaw := ctx.Locals(core.UserID)
-		//id, ok := idRaw.(string)
-		//if !ok {
-		//	return core.SendError(ctx, http.StatusInternalServerError, "cannot get user id")
-		//}
+		idRaw := ctx.Locals(core.UserID)
+		id, ok := idRaw.(string)
+		if !ok {
+			return core.SendError(ctx, http.StatusInternalServerError, "cannot get user id")
+		}
+		newCred := &core.Credential{Name: "id", Value: id}
 
-		//newCred := &core.Credential{Name: "id", Value: id}
-		//todo(Talgat) Update updates EmailVerified as false, if not explicitly indicated in Identity
-		//_, err = manager.Update(newCred, &core.Identity{Phone: &cred.Value, PhoneVerified: true}, "dummy")
-		//if err != nil {
-		//	return core.SendError(ctx, http.StatusInternalServerError, err.Error())
-		//}
-
-		if err = manager.OnMFA(cred, &core.MFAData{
-			PluginID:     fmt.Sprintf("%d", meta.PluginID),
-			ProviderName: meta.ShortName,
-		}); err != nil {
+		b := true
+		if _, err := manager.RegisterOrUpdate(
+			&core.AuthResult{
+				Cred: newCred,
+				User: &core.User{
+					ID:           id,
+					IsMFAEnabled: &b,
+					EnabledMFAs:  []string{fmt.Sprintf("%d", meta.PluginID)},
+				},
+			},
+		); err != nil {
 			return core.SendError(ctx, http.StatusInternalServerError, err.Error())
 		}
 
@@ -179,7 +179,7 @@ func authMiddleware(s *sms, h fiber.Handler) func(ctx *fiber.Ctx) error {
 		if len(tokenSplit) == 2 && tokenSplit[1] != "" {
 			rawToken = tokenSplit[1]
 		} else {
-			return ctx.SendStatus(http.StatusForbidden)
+			return core.SendError(ctx, http.StatusForbidden, "token not found")
 		}
 
 		token, err := s.pluginAPI.ParseJWT(rawToken)
