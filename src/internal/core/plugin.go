@@ -136,7 +136,8 @@ type (
 		SetSecrets(cred *Credential, pluginId string, payload *Secrets) error
 		GetSecrets(userId, pluginId string) (*Secrets, error)
 		GetUser(cred *Credential) (*User, error)
-		GetData(c *Credential, authnProvider string, name string) (interface{}, error)
+		GetData(cred *Credential, authnProvider string, name string) (interface{}, error)
+		UseScratchCode(cred *Credential, code string) error
 		IsMFAEnabled(c *Credential) (bool, error)
 		//todo get rid of
 		OnMFA(c *Credential, data *MFAData) error

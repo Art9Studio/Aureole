@@ -433,7 +433,21 @@ func initAuthenticators(app *app, p *project, r *router) {
 					}
 					routes = append(routes, er)
 				}
-
+				routes = append(routes,
+					&ExtendedRoute{
+						Route: Route{
+							Method:  http.MethodGet,
+							Path:    fmt.Sprintf("%s/recovery_codes", app.pathPrefix),
+							Handler: authMiddleware(pluginAPI, GetScratchCodes(app)),
+						},
+					},
+					&ExtendedRoute{
+						Route: Route{
+							Method:  http.MethodPost,
+							Path:    fmt.Sprintf("%s/login_recovery_codes", app.pathPrefix),
+							Handler: GetAuthRecoveryCodes(app),
+						},
+					})
 			}
 		} else {
 			fmt.Printf("app %s: cannot init authenticator %s: %v\n", app.name, name, PluginInitErr)

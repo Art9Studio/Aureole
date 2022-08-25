@@ -2,9 +2,9 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/lestrrat-go/jwx/jwt"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/url"
 	"path"
@@ -227,7 +227,7 @@ type GetScratchCodesBody struct {
 	Id string `json:"id"`
 }
 
-func authMiddleware(pluginAPI *PluginAPI, next fiber.Handler) func(ctx *fiber.Ctx) error {
+func authMiddleware(pluginAPI PluginAPI, next fiber.Handler) func(ctx *fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
 		bearer := ctx.Get(fiber.HeaderAuthorization)
 		tokenSplit := strings.Split(bearer, "Bearer ")
@@ -254,7 +254,7 @@ func authMiddleware(pluginAPI *PluginAPI, next fiber.Handler) func(ctx *fiber.Ct
 	}
 }
 
-func (api PluginAPI) GetScratchCodes(app *app) func(*fiber.Ctx) error {
+func GetScratchCodes(app *app) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		id := c.Locals(UserID).(string)
 		cred := &Credential{Name: ID, Value: id}
@@ -271,41 +271,68 @@ func (api PluginAPI) GetScratchCodes(app *app) func(*fiber.Ctx) error {
 		if !ok {
 			return SendError(c, http.StatusBadRequest, "mfa not enabled")
 		}
-
-		scratchCodes, err := generateScratchCodes(app.scratchCode.Num, app.scratchCode.Alphabet)
+		// todo (Talgat) Populate config file
+		scratchCodes, err := generateScratchCodes(5, "alphanum")
 		if err != nil {
 			return SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
-		toString := func() (*string, string, error) {
+		toString := func() *string {
 			sb := strings.Builder{}
-			sbHashed := strings.Builder{}
 			for i, s := range scratchCodes {
 				sb.WriteString(s)
-				hashedS, err := bcrypt.GenerateFromPassword([]byte(s), bcrypt.DefaultCost)
 				if err != nil {
-					return nil, "", err
+					return nil
 				}
-				sbHashed.Write(hashedS)
 				if i < len(scratchCodes)-1 {
 					sb.WriteByte(',')
-					sbHashed.WriteByte(',')
+
 				}
 			}
-			hashedRes := sb.String()
-			return &hashedRes, sb.String(), nil
+			res := sb.String()
+			return &res
 		}
-		hashedRes, res, err := toString()
+		res := toString()
 		if err != nil {
 			return SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		if err = manager.SetSecrets(
-			cred,
-			"0",
-			&Secrets{scrCodes: hashedRes},
+		if _, err = manager.RegisterOrUpdate(
+			&AuthResult{
+				Cred:       cred,
+				ProviderId: "0",
+				Secrets:    &Secrets{scrCodes: res},
+			},
 		); err != nil {
 			return SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&getScratchCodeRes{scrCodes: res})
+		return c.JSON(&getScratchCodeRes{scrCodes: *res})
+	}
+}
+
+type AuthScratchCodesBody struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+func GetAuthRecoveryCodes(app *app) func(ctx *fiber.Ctx) error {
+	return func(ctx *fiber.Ctx) error {
+		in := &AuthScratchCodesBody{}
+		if err := ctx.BodyParser(in); err != nil {
+			return SendError(ctx, http.StatusBadRequest, err.Error())
+		}
+		if in.Email == "" || in.Code == "" {
+			return SendError(ctx, http.StatusBadRequest, "email and code are required")
+		}
+
+		cred := &Credential{Name: Email, Value: in.Email}
+		manager, ok := app.getIDManager()
+		if !ok {
+			return SendError(ctx, http.StatusInternalServerError, "cannot get id manager")
+		}
+
+		if err := manager.UseScratchCode(cred, in.Code); err != nil {
+			return SendError(ctx, http.StatusBadRequest, fmt.Sprintf("incorrect or invalid code: %s", err.Error()))
+		}
+		return authorize(ctx, app, &User{Email: &in.Email})
 	}
 }

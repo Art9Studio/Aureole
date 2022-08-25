@@ -87,14 +87,13 @@ func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult,
 
 	user, err := getUser(conn, authRes.Cred)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			if authRes.User == nil {
-				return nil, errors.New("nil user found")
-			}
+		if errors.Is(err, pgx.ErrNoRows) && authRes.User != nil {
 			return registerOrUpdateUser(conn, authRes)
+		} else {
+			return nil, err
 		}
-		return nil, err
 	}
+
 	var (
 		cred *core.Credential
 	)
@@ -104,7 +103,10 @@ func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult,
 		if !isMapsEqual(inDataMap, storedDataMap) {
 			return registerOrUpdateUser(conn, authRes)
 		}
+	} else if user != nil {
+		authRes.User = &core.User{ID: user.ID}
 	}
+
 	if authRes.ImportedUser != nil {
 		cred = &core.Credential{Name: "id", Value: user.ID}
 		storedData, err := getImportedUser(conn, cred, authRes.ProviderId)
@@ -118,9 +120,10 @@ func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult,
 		}
 	}
 
-	authRes, err = registerOrUpdateUser(conn, authRes)
-	if err != nil {
-		return nil, fmt.Errorf("cannot register social provider user: %v", err)
+	if authRes.Secrets != nil {
+		if err = setSecrets(conn, user.ID, authRes.ProviderId, authRes.Secrets); err != nil {
+			return nil, err
+		}
 	}
 
 	return authRes, nil
@@ -241,7 +244,46 @@ func (s *standart) GetSecrets(userId, pluginId string) (*core.Secrets, error) {
 	return secrets, nil
 }
 
-//todo(Talgat) use setSecret
+func (s *standart) UseScratchCode(cred *core.Credential, code string) error {
+	ctx := context.Background()
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot acquire connection: %v", err)
+	}
+	defer conn.Release()
+	fmt.Println("before")
+	user, err := getUser(conn, cred)
+	if err != nil {
+		return err
+	}
+	fmt.Println("before getSecret")
+	codes, err := getSecret(conn, user.ID, "0", "scratch_codes")
+	if err != nil {
+		return err
+	}
+
+	codesArr := strings.Split(*codes, ",")
+	var (
+		ok bool
+		sb strings.Builder
+	)
+	for _, c := range codesArr {
+		if c == code {
+			ok = true
+		} else {
+			sb.WriteString(c)
+			sb.WriteByte(',')
+		}
+	}
+	if ok {
+		fmt.Println("before setSecret")
+		res := sb.String()[:len(sb.String())-1]
+		return setSecrets(conn, user.ID, "0", &core.Secrets{"scratch_codes": &res})
+	}
+	return errors.New("code not found")
+}
+
+//todo(Talgat) delete
 func (s *standart) SetSecret(cred *core.Credential, pluginId string, secret core.Secret) error {
 	ctx := context.Background()
 	conn, err := s.pool.Acquire(ctx)
@@ -373,6 +415,8 @@ func getUser(conn *pgxpool.Conn, cred *core.Credential) (*core.User, error) {
 		&user.Phone, &user.Email,
 		&user.EmailVerified,
 		&user.PhoneVerified,
+		&user.IsMFAEnabled,
+		&user.EnabledMFAs,
 	); err != nil {
 		return nil, err
 	}
@@ -424,44 +468,43 @@ func setSecretsTx(tx pgx.Tx, userId, pluginId string, payload core.Secrets) erro
 	}
 	saveSecretsQry := `insert into secrets(user_id, plugin_id, payload) values ($1, $2, $3)
 						on conflict (user_id, plugin_id) do update set payload = $3;`
-	_, err = tx.Exec(context.Background(), saveSecretsQry, userId, pluginId, payloadBytes)
+	row := tx.QueryRow(context.Background(), saveSecretsQry, userId, pluginId, payloadBytes)
+	var idStr string
+	err = row.Scan(&idStr)
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 	return nil
 }
 
 func registerOrUpdateUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.AuthResult, error) {
-	if authRes.User == nil {
-		return nil, errors.New("nil user found")
-	}
 	ctx := context.Background()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	sql, values, err := getUpsertUserQry(authRes.User)
-	if err != nil {
-		return nil, err
-	}
-
 	var (
 		userId    int
 		userIdStr string
 	)
-	fmt.Println(sql)
-	err = tx.QueryRow(ctx, sql, values...).Scan(&userId)
-	if err != nil {
-		return nil, err
+	if authRes.User != nil {
+		sql, values, err := getUpsertUserQry(authRes.User)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.QueryRow(ctx, sql, values...).Scan(&userId)
+		if err != nil {
+			return nil, err
+		}
+		userIdStr = strconv.Itoa(userId)
+		authRes.User.ID = userIdStr
 	}
-	userIdStr = strconv.Itoa(userId)
-	authRes.User.ID = userIdStr
 
 	if authRes.ImportedUser != nil {
 		authRes.ImportedUser.UserId = userIdStr
-		sql, values, err = getUpsertImportedUserQry(authRes.ImportedUser)
+		sql, values, err := getUpsertImportedUserQry(authRes.ImportedUser)
 		if err != nil {
 			return nil, err
 		}
@@ -475,7 +518,10 @@ func registerOrUpdateUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.A
 	}
 	if authRes.Secrets != nil {
 		if err = setSecretsTx(tx, userIdStr, authRes.ProviderId, *authRes.Secrets); err != nil {
-			return nil, tx.Rollback(ctx)
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				return nil, fmt.Errorf("cannot rollback in registerOrUpdateUser: %w", err)
+			}
+			return nil, err
 		}
 	}
 
