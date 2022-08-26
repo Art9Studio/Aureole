@@ -21,17 +21,18 @@ import (
 )
 
 const (
-	scrCodes = "scratch_codes"
+	scrCodes   = "scratch_codes"
+	standalone = "Standalone"
 )
 
 type PluginInitializer interface {
 	Init(api PluginAPI) error
 }
 type (
-	HealthRes struct {
+	HealthResp struct {
 		Status string `json:"status"`
 	}
-	getScratchCodeRes map[string]interface{}
+	getScratchCodeResp map[string]interface{}
 )
 
 var PluginInitErr = errors.New("plugin doesn't implement PluginInitializer interface")
@@ -70,7 +71,7 @@ func addHealthRoute(r *router) {
 			Method: http.MethodGet,
 			Path:   "/health",
 			Handler: func(c *fiber.Ctx) error {
-				return c.JSON(&HealthRes{"OK"})
+				return c.JSON(&HealthResp{"OK"})
 			},
 		},
 	})
@@ -101,6 +102,16 @@ func createApps(conf *configs.Project, p *project) {
 			authSessionExp: appConf.AuthSessionExp,
 		}
 
+		if conf.Mode == standalone {
+			appConf.Storages = append(appConf.Storages, configs.PluginConfig{
+				Plugin: "memory",
+				Name:   "internal",
+				Config: configs.RawConfig{
+					"size": 100,
+				},
+			})
+		}
+
 		createSenders(senderRepository, app, appConf)
 		createCryptoKeys(cryptoKeyRepository, app, appConf)
 		createStorages(storagesRepository, app, appConf)
@@ -111,9 +122,23 @@ func createApps(conf *configs.Project, p *project) {
 		createMultiFactors(multiFactorsRepository, app, appConf)
 		createIDManager(idmanagerRepository, app, appConf)
 		createAureoleInternals(app, appConf)
+		createScratchCodes(app, appConf)
 
 		p.apps[appConf.Name] = app
 	}
+}
+
+func createScratchCodes(a *app, conf configs.App) {
+	scrConfig := conf.ScratchCode.Config
+	alph, ok := scrConfig["alphabet"]
+	if !ok {
+		fmt.Printf("app %s: cannot get scratch code config key\n", a.name)
+	}
+	num, ok := scrConfig["num"]
+	if !ok {
+		fmt.Printf("app %s: cannot get scratch code config key\n", a.name)
+	}
+	a.scratchCode = scratchCode{num: num.(int), alphabet: alph.(string)}
 }
 
 func createAureoleInternals(app *app, conf configs.App) {

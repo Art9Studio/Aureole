@@ -50,7 +50,7 @@ type (
 		Token string `json:"token"`
 	}
 
-	GetAuthHandlerErrRes map[string]interface{}
+	GetAuthHandlerErrResp map[string]interface{}
 )
 
 func (p *authn) GetAuthHTTPMethod() string {
@@ -163,7 +163,7 @@ func (a *authn) GetAuthHandler() core.AuthHandlerFunc {
 			if err != nil {
 				return nil, err
 			}
-			return &core.AuthResult{ErrorData: GetAuthHandlerErrRes{"token": token}}, errors.New("wrong otp")
+			return &core.AuthResult{ErrorData: GetAuthHandlerErrResp{"token": token}}, errors.New("wrong otp")
 		}
 	}
 }

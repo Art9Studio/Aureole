@@ -6,6 +6,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	mimeYaml = "yaml"
+	aureole  = "AUREOLE"
+)
+
 type PluginConfig struct {
 	Plugin string    `mapstructure:"plugin" json:"plugin"`
 	Name   string    `mapstructure:"name" json:"name"`
@@ -24,6 +29,7 @@ type (
 		APIVersion string `mapstructure:"api_version" json:"api_version"`
 		PingPath   string `mapstructure:"-" json:"-"`
 		TestRun    bool   `mapstructure:"test_run" json:"test_run"`
+		Mode       string `mapstructure:"mode" json:"mode"`
 		Apps       []App  `mapstructure:"apps" json:"apps"`
 	}
 
@@ -42,10 +48,7 @@ type (
 		CryptoKeys     []PluginConfig     `mapstructure:"crypto_keys" json:"crypto_keys"`
 		Senders        []PluginConfig     `mapstructure:"senders" json:"senders"`
 		RootPlugins    []PluginConfig     `mapstructure:"root_plugins" json:"root_plugins"`
-		ScratchCode    struct {
-			Num      int    `mapstructure:"num" json:"num"`
-			Alphabet string `mapstructure:"alphabet" json:"alphabet"`
-		} `mapstructure:"scratch_code" json:"scratch_code"`
+		ScratchCode    PluginConfig       `mapstructure:"scratch_code" json:"scratch_code"`
 	}
 
 	Internal struct {
@@ -62,13 +65,13 @@ func LoadMainConfig() (*Project, error) {
 	_ = godotenv.Load("./.env")
 
 	viper.AutomaticEnv()
-	viper.SetEnvPrefix("AUREOLE")
+	viper.SetEnvPrefix(aureole)
 
 	if confPath = viper.GetString("conf_path"); confPath == "" {
 		confPath = "../config.light.yaml"
 	}
 
-	viper.SetConfigType("yaml")
+	viper.SetConfigType(mimeYaml)
 	viper.SetConfigFile(confPath)
 	err := viper.ReadInConfig()
 	if err != nil {

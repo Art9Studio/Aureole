@@ -67,28 +67,27 @@ func (m *standart) Init(api core.PluginAPI) (err error) {
 
 func (m standart) GetMetadata() core.Metadata {
 	return meta
-
 }
 
 func (m *standart) GetCustomAppRoutes() []*core.Route {
 	return []*core.Route{}
 }
 
-func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult, error) {
+func (s *standart) RegisterOrUpdate(authResp *core.AuthResult) (*core.AuthResult, error) {
 	conn, err := s.pool.Acquire(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("cannot acquire connection: %v", err)
 	}
 	defer conn.Release()
 
-	if authRes.Cred == nil {
+	if authResp.Cred == nil {
 		return nil, errors.New("nil cred is found")
 	}
 
-	user, err := getUser(conn, authRes.Cred)
+	user, err := getUser(conn, authResp.Cred)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) && authRes.User != nil {
-			return registerOrUpdateUser(conn, authRes)
+		if errors.Is(err, pgx.ErrNoRows) && authResp.User != nil {
+			return registerOrUpdateUser(conn, authResp)
 		} else {
 			return nil, err
 		}
@@ -97,36 +96,36 @@ func (s *standart) RegisterOrUpdate(authRes *core.AuthResult) (*core.AuthResult,
 	var (
 		cred *core.Credential
 	)
-	if authRes.User != nil {
+	if authResp.User != nil {
 		storedDataMap := user.AsMap()
-		inDataMap := authRes.User.AsMap()
+		inDataMap := authResp.User.AsMap()
 		if !isMapsEqual(inDataMap, storedDataMap) {
-			return registerOrUpdateUser(conn, authRes)
+			return registerOrUpdateUser(conn, authResp)
 		}
 	} else if user != nil {
-		authRes.User = &core.User{ID: user.ID}
+		authResp.User = &core.User{ID: user.ID}
 	}
 
-	if authRes.ImportedUser != nil {
+	if authResp.ImportedUser != nil {
 		cred = &core.Credential{Name: "id", Value: user.ID}
-		storedData, err := getImportedUser(conn, cred, authRes.ProviderId)
+		storedData, err := getImportedUser(conn, cred, authResp.ProviderId)
 		if err != nil {
 			return nil, err
 		}
 		storedDataMap := storedData.AsMap()
-		inDataMap := authRes.ImportedUser.AsMap()
+		inDataMap := authResp.ImportedUser.AsMap()
 		if !isMapsEqual(inDataMap, storedDataMap) {
-			return registerOrUpdateUser(conn, authRes)
+			return registerOrUpdateUser(conn, authResp)
 		}
 	}
 
-	if authRes.Secrets != nil {
-		if err = setSecrets(conn, user.ID, authRes.ProviderId, authRes.Secrets); err != nil {
+	if authResp.Secrets != nil {
+		if err = setSecrets(conn, user.ID, authResp.ProviderId, authResp.Secrets); err != nil {
 			return nil, err
 		}
 	}
 
-	return authRes, nil
+	return authResp, nil
 }
 
 func (s *standart) OnMFA(c *core.Credential, mfaData *core.MFAData) error {
@@ -251,12 +250,12 @@ func (s *standart) UseScratchCode(cred *core.Credential, code string) error {
 		return fmt.Errorf("cannot acquire connection: %v", err)
 	}
 	defer conn.Release()
-	fmt.Println("before")
+
 	user, err := getUser(conn, cred)
 	if err != nil {
 		return err
 	}
-	fmt.Println("before getSecret")
+
 	codes, err := getSecret(conn, user.ID, "0", "scratch_codes")
 	if err != nil {
 		return err
@@ -276,7 +275,6 @@ func (s *standart) UseScratchCode(cred *core.Credential, code string) error {
 		}
 	}
 	if ok {
-		fmt.Println("before setSecret")
 		res := sb.String()[:len(sb.String())-1]
 		return setSecrets(conn, user.ID, "0", &core.Secrets{"scratch_codes": &res})
 	}
@@ -468,11 +466,8 @@ func setSecretsTx(tx pgx.Tx, userId, pluginId string, payload core.Secrets) erro
 	}
 	saveSecretsQry := `insert into secrets(user_id, plugin_id, payload) values ($1, $2, $3)
 						on conflict (user_id, plugin_id) do update set payload = $3;`
-	row := tx.QueryRow(context.Background(), saveSecretsQry, userId, pluginId, payloadBytes)
-	var idStr string
-	err = row.Scan(&idStr)
+	_, err = tx.Exec(context.Background(), saveSecretsQry, userId, pluginId, payloadBytes)
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 	return nil
@@ -480,7 +475,6 @@ func setSecretsTx(tx pgx.Tx, userId, pluginId string, payload core.Secrets) erro
 
 func registerOrUpdateUser(conn *pgxpool.Conn, authRes *core.AuthResult) (*core.AuthResult, error) {
 	ctx := context.Background()
-
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return nil, err

@@ -28,11 +28,9 @@ func init() {
 }
 
 const (
-	scrCodes = "scratch_codes"
-	scrCode  = "scratch_code"
-	counter  = "counter"
-	qrCode   = "qr"
-	hotp     = "hotp"
+	counter = "counter"
+	qrCode  = "qr"
+	hotp    = "hotp"
 )
 
 type (

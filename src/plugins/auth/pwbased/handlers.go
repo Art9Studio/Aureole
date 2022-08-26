@@ -237,7 +237,7 @@ func VerifyConfirm(p *pwBased) func(*fiber.Ctx) error {
 		if redirectUrl != "" {
 			return c.Redirect(redirectUrl)
 		}
-		return c.JSON(VerifyConfirmRes{Success: true})
+		return c.JSON(VerifyConfirmResp{Success: true})
 	}
 }
 

@@ -14,7 +14,7 @@ type AuthUnauthorizedResult struct {
 	Data  map[string]interface{} `json:"data"`
 }
 
-type AuthWrapperRes struct {
+type AuthWrapperResp struct {
 	Token string                 `json:"token"`
 	MFA   map[string]interface{} `json:"mfa"`
 }
@@ -56,7 +56,7 @@ func pipelineAuthWrapper(authFunc AuthHandlerFunc, app *app) func(*fiber.Ctx) er
 				return c.Status(http.StatusUnauthorized).JSON(ErrorBody(err, nil))
 			}
 			// todo: document this
-			return c.Status(http.StatusAccepted).JSON(AuthWrapperRes{Token: token, MFA: enabled2FA})
+			return c.Status(http.StatusAccepted).JSON(AuthWrapperResp{Token: token, MFA: enabled2FA})
 		}
 
 		// todo: I don't like this name
@@ -121,6 +121,9 @@ func mfaVerificationHandler(verify2FA MFAVerifyFunc, app *app) func(*fiber.Ctx) 
 
 func getEnabledMFA(app *app, authnResult *AuthResult) (map[string]interface{}, error) {
 	manager, ok := app.getIDManager()
+	if !ok {
+		return nil, nil
+	}
 	var (
 		user *User
 		err  error

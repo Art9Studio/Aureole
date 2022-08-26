@@ -8,6 +8,7 @@ type project struct {
 	apiVersion string
 	testRun    bool
 	pingPath   string
+	mode       string
 	apps       map[string]*app
 }
 
@@ -27,16 +28,18 @@ type (
 		senders        map[string]Sender
 		cryptoKeys     map[string]CryptoKey
 		rootPlugins    map[string]RootPlugin
-		scratchCode    struct {
-			Num      int    `mapstructure:"num" json:"num"`
-			Alphabet string `mapstructure:"alphabet" json:"alphabet"`
-		} `mapstructure:"scratch_code" json:"scratch_code"`
+		scratchCode    scratchCode
 	}
 
 	internal struct {
 		signKey CryptoKey
 		encKey  CryptoKey
 		storage Storage
+	}
+
+	scratchCode struct {
+		num      int
+		alphabet string
 	}
 )
 

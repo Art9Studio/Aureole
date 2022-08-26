@@ -5,8 +5,7 @@ import (
 )
 
 const (
-	getQRUrl        = "/send"
-	getScratchesUrl = "/scratch"
+	getQRUrl = "/send"
 )
 
 type config struct {

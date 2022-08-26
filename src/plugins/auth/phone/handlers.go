@@ -15,7 +15,7 @@ func sendOTP(p *authn) func(*fiber.Ctx) error {
 		if phone.Phone == "" {
 			return core.SendError(c, http.StatusBadRequest, "phone required")
 		}
-		i := core.Identity{Phone: &phone.Phone}
+		u := core.User{Phone: &phone.Phone}
 
 		randStr, err := p.pluginAPI.GetRandStr(p.conf.Otp.Length, p.conf.Otp.Alphabet)
 		if err != nil {
@@ -34,7 +34,7 @@ func sendOTP(p *authn) func(*fiber.Ctx) error {
 
 		token, err := p.pluginAPI.CreateJWT(
 			map[string]interface{}{
-				"phone":    i.Phone,
+				"phone":    u.Phone,
 				"attempts": 0,
 			},
 			p.conf.Otp.Exp)
@@ -42,7 +42,7 @@ func sendOTP(p *authn) func(*fiber.Ctx) error {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}
 
-		err = p.sender.Send(*i.Phone, "", p.tmpl, p.tmplExt, map[string]interface{}{"otp": otp})
+		err = p.sender.Send(*u.Phone, "", p.tmpl, p.tmplExt, map[string]interface{}{"otp": otp})
 		if err != nil {
 			return core.SendError(c, http.StatusInternalServerError, err.Error())
 		}

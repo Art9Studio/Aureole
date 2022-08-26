@@ -93,12 +93,12 @@ func (j *webhook) GetCustomAppRoutes() []*core.Route {
 //	return core.NewUser(payload)
 //}
 
-func (j *webhook) Register(authRes *core.AuthResult) (*core.AuthResult, error) {
+func (j *webhook) Register(authResp *core.AuthResult) (*core.AuthResult, error) {
 	requestToken, err := j.pluginAPI.CreateJWT(map[string]interface{}{
 		"event":          "RegisterOrUpdate",
-		"credential":     map[string]string{authRes.Cred.Name: authRes.Cred.Value},
-		"identity":       authRes.Identity.AsMap(),
-		"authn_provider": authRes.Provider,
+		"credential":     map[string]string{authResp.Cred.Name: authResp.Cred.Value},
+		"identity":       authResp.Identity.AsMap(),
+		"authn_provider": authResp.Provider,
 	},
 		j.pluginAPI.GetAuthSessionExp())
 	if err != nil {
@@ -123,9 +123,9 @@ func (j *webhook) Register(authRes *core.AuthResult) (*core.AuthResult, error) {
 		return nil, err
 	}
 	newUser, err := core.NewUser(payload)
-	authRes.User = newUser
+	authResp.User = newUser
 
-	return authRes, nil
+	return authResp, nil
 }
 
 func (j *webhook) OnMFA(c *core.Credential, mfaData *core.MFAData) error {

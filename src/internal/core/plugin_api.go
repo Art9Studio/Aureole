@@ -271,8 +271,8 @@ func GetScratchCodes(app *app) func(*fiber.Ctx) error {
 		if !ok {
 			return SendError(c, http.StatusBadRequest, "mfa not enabled")
 		}
-		// todo (Talgat) Populate config file
-		scratchCodes, err := generateScratchCodes(5, "alphanum")
+
+		scratchCodes, err := generateScratchCodes(app.scratchCode.num, app.scratchCode.alphabet)
 		if err != nil {
 			return SendError(c, http.StatusInternalServerError, err.Error())
 		}
@@ -305,7 +305,7 @@ func GetScratchCodes(app *app) func(*fiber.Ctx) error {
 		); err != nil {
 			return SendError(c, http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(&getScratchCodeRes{scrCodes: *res})
+		return c.JSON(&getScratchCodeResp{scrCodes: *res})
 	}
 }
 

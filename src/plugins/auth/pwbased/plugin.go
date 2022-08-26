@@ -90,7 +90,7 @@ type (
 )
 
 type (
-	VerifyConfirmRes struct {
+	VerifyConfirmResp struct {
 		Success bool `json:"success"`
 	}
 )

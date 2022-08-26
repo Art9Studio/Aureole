@@ -36,15 +36,6 @@ CREATE TABLE plugins
 	id VARCHAR UNIQUE NOT NULL,
 	plugin_name VARCHAR NOT NULL
 );
-
-CREATE TABLE social_providers
-(
-    id            SERIAL PRIMARY KEY,
-    user_id       INT REFERENCES users ON DELETE CASCADE,
-	plugin_id 	  VARCHAR(4) NOT NULL,
-    provider_name VARCHAR NOT NULL,
-    payload       jsonb   NOT NULL
-);
 `
 
 const downSchema1 = `
