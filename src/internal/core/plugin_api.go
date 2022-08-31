@@ -92,6 +92,10 @@ func (api PluginAPI) GetAppPathPrefix() string {
 	return api.app.pathPrefix
 }
 
+func (api PluginAPI) GetAppAuthFilter() map[string]string {
+	return api.app.authFilters
+}
+
 func (api PluginAPI) GetAuthSessionExp() int {
 	return api.app.authSessionExp
 }
@@ -309,14 +313,14 @@ func GetScratchCodes(app *app) func(*fiber.Ctx) error {
 	}
 }
 
-type AuthScratchCodesBody struct {
+type AuthRecoveryCodesBody struct {
 	Email string `json:"email"`
 	Code  string `json:"code"`
 }
 
 func GetAuthRecoveryCodes(app *app) func(ctx *fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
-		in := &AuthScratchCodesBody{}
+		in := &AuthRecoveryCodesBody{}
 		if err := ctx.BodyParser(in); err != nil {
 			return SendError(ctx, http.StatusBadRequest, err.Error())
 		}

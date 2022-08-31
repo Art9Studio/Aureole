@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"log"
 	"net/http"
 	"net/url"
@@ -102,15 +103,7 @@ func createApps(conf *configs.Project, p *project) {
 			authSessionExp: appConf.AuthSessionExp,
 		}
 
-		if conf.Mode == standalone {
-			appConf.Storages = append(appConf.Storages, configs.PluginConfig{
-				Plugin: "memory",
-				Name:   "internal",
-				Config: configs.RawConfig{
-					"size": 100,
-				},
-			})
-		}
+		populateStorageConfig(&appConf, conf.Mode)
 
 		createSenders(senderRepository, app, appConf)
 		createCryptoKeys(cryptoKeyRepository, app, appConf)
@@ -123,8 +116,30 @@ func createApps(conf *configs.Project, p *project) {
 		createIDManager(idmanagerRepository, app, appConf)
 		createAureoleInternals(app, appConf)
 		createScratchCodes(app, appConf)
+		createAuthFilters(app, appConf)
 
 		p.apps[appConf.Name] = app
+	}
+}
+
+func populateStorageConfig(appConf *configs.App, mode string) {
+	if mode == standalone {
+		appConf.Storages = append(appConf.Storages, configs.PluginConfig{
+			Plugin: "memory",
+			Name:   "internal",
+			Config: configs.RawConfig{
+				"size": 100,
+			},
+		})
+	}
+}
+
+func createAuthFilters(a *app, conf configs.App) {
+	if a.authFilters == nil {
+		a.authFilters = map[string]string{}
+	}
+	for k, v := range conf.AuthFilter {
+		a.authFilters[k] = v.(string)
 	}
 }
 
@@ -462,15 +477,25 @@ func initAuthenticators(app *app, p *project, r *router) {
 					&ExtendedRoute{
 						Route: Route{
 							Method:  http.MethodGet,
-							Path:    fmt.Sprintf("%s/recovery_codes", app.pathPrefix),
+							Path:    fmt.Sprintf("%s/recovery_codes/renew", app.pathPrefix),
 							Handler: authMiddleware(pluginAPI, GetScratchCodes(app)),
+							OAS3Operation: &openapi3.Operation{
+								Description: "Get new five recovery codes",
+							},
 						},
 					},
 					&ExtendedRoute{
 						Route: Route{
-							Method:  http.MethodPost,
-							Path:    fmt.Sprintf("%s/login_recovery_codes", app.pathPrefix),
-							Handler: GetAuthRecoveryCodes(app),
+							Method: http.MethodGet,
+							Path:   fmt.Sprintf("%s/recovery_codes", app.pathPrefix),
+						},
+					},
+					&ExtendedRoute{
+						Route: Route{
+							Method:        http.MethodPost,
+							Path:          fmt.Sprintf("%s/recovery_codes/login", app.pathPrefix),
+							Handler:       GetAuthRecoveryCodes(app),
+							OAS3Operation: assembleOAS3Operation(app, meta, nil, getAuthRecoveryCodeReqBody(), nil),
 						},
 					})
 			}
@@ -706,5 +731,17 @@ func formatStatus(name string, plugin Plugin) string {
 		return fmt.Sprintf("%s%s - %v%s", colorGreen, name, string(checkMark), resetColor)
 	} else {
 		return fmt.Sprintf("%s%s - %v%s", colorRed, name, string(crossMark), resetColor)
+	}
+}
+
+func getAuthRecoveryCodeReqBody() *openapi3.RequestBody {
+	schema, _ := openapi3gen.NewSchemaRefForValue(AuthRecoveryCodesBody{}, nil)
+	return &openapi3.RequestBody{
+		Required: true,
+		Content: map[string]*openapi3.MediaType{
+			fiber.MIMEApplicationJSON: {
+				Schema: schema,
+			},
+		},
 	}
 }

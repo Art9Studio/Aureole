@@ -109,7 +109,7 @@ func (g *google) GetAuthHandler() core.AuthHandlerFunc {
 			return nil, err
 		}
 
-		ok, err := g.pluginAPI.Filter(convertUserData(userData), g.conf.Filter)
+		ok, err := g.pluginAPI.Filter(convertUserData(userData), g.pluginAPI.GetAppAuthFilter())
 		if err != nil {
 			return nil, err
 		} else if !ok {

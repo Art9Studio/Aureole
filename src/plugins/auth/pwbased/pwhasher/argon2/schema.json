@@ -11,6 +11,9 @@
       "const": "argon2",
       "uuid": "523fab95-5db4-4275-8d7f-2e9c0f2aadbf"
     },
+    "type": {
+      "type": "string"
+    },
     "config": {
       "type": "object",
       "uuid": "70ff01ba-66a4-4f8a-8c0f-dedffc492f04",

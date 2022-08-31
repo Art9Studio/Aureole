@@ -29,6 +29,7 @@ type (
 		cryptoKeys     map[string]CryptoKey
 		rootPlugins    map[string]RootPlugin
 		scratchCode    scratchCode
+		authFilters    authFilter
 	}
 
 	internal struct {
@@ -41,6 +42,8 @@ type (
 		num      int
 		alphabet string
 	}
+
+	authFilter map[string]string
 )
 
 func (a *app) getServiceSignKey() (CryptoKey, bool) {

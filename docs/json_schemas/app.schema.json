@@ -57,6 +57,9 @@
         }
       }
     },
+    "auth_filter": {
+      "type": "array"
+    },
     "auth": {
       "type": "array",
       "uuid": "39042e0a-292c-4e9e-9f59-e132fc471938",
@@ -76,7 +79,7 @@
       }
     },
     "id_manager": {
-      "$ref": "../../src/plugins/identity/schema.json"
+      "$ref": "../../src/plugins/identity-manager/schema.json"
     },
     "storages": {
       "type": "array",

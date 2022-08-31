@@ -5,12 +5,16 @@
   "additionalProperties": false,
   "required": [
     "plugin",
-    "config"
+    "config",
+    "name"
   ],
   "properties": {
     "plugin": {
-      "const": "password_based",
+      "const": "pwbased",
       "uuid": "cf27e982-54cd-4e43-a15a-1c36d82a7440"
+    },
+    "name": {
+      "type": "string"
     },
     "config": {
       "type": "object",

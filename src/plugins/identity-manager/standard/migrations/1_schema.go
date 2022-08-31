@@ -39,10 +39,10 @@ CREATE TABLE plugins
 `
 
 const downSchema1 = `
-DROP TABLE social_providers;
 DROP TABLE imported_users;
 DROP TABLE secrets;
 DROP TABLE users;
+DROP TABLE plugins;
 `
 
 func init() {

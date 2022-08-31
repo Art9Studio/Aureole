@@ -49,6 +49,7 @@ type (
 		Senders        []PluginConfig     `mapstructure:"senders" json:"senders"`
 		RootPlugins    []PluginConfig     `mapstructure:"root_plugins" json:"root_plugins"`
 		ScratchCode    PluginConfig       `mapstructure:"scratch_code" json:"scratch_code"`
+		AuthFilter     RawConfig          `mapstructure:"auth_filter" json:"auth_filter"`
 	}
 
 	Internal struct {
