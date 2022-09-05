@@ -2,8 +2,8 @@ FROM golang:1.18.3-buster as builder
 
 WORKDIR /tmp/go
 
-COPY src/go.mod .
-COPY src/go.sum .
+COPY go.mod .
+COPY go.sum .
 
 RUN go mod download
 
