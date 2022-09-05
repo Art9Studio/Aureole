@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "argon2",
+      "uuid": "523fab95-5db4-4275-8d7f-2e9c0f2aadbf"
+    },
+    "type": {
+      "type": "string"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "70ff01ba-66a4-4f8a-8c0f-dedffc492f04",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "argon2i",
+            "argon2id"
+          ],
+          "uuid": "84b6b413-7c65-4181-b888-22d2d8006ea2",
+          "default": "argon2i"
+        },
+        "iterations": {
+          "type": "integer",
+          "uuid": "13ef4d25-f888-4e04-aa1d-16d9f0790ff7",
+          "minimum": 1,
+          "default": 3
+        },
+        "parallelism": {
+          "type": "integer",
+          "uuid": "f3cec7f0-55ea-49a1-b4fd-1862fbfdb281",
+          "minimum": 1,
+          "default": 2
+        },
+        "salt_length": {
+          "type": "integer",
+          "uuid": "8e866f64-458e-4293-a568-33899ad9e86d",
+          "minimum": 1,
+          "default": 16
+        },
+        "key_length": {
+          "type": "integer",
+          "uuid": "77702b20-54a7-4aac-b212-ea726422d356",
+          "minimum": 1,
+          "default": 32
+        },
+        "memory": {
+          "type": "integer",
+          "uuid": "2ba26701-235c-4f42-8d4c-8f742f51e1ea",
+          "minimum": 1,
+          "default": 32768
+        }
+      }
+    }
+  }
+}

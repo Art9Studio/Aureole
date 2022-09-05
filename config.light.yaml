@@ -1,0 +1,140 @@
+api_version: "0.1"
+
+apps:
+  - name: one
+    path_prefix: /one
+    host: http://localhost:3000
+
+    internal:
+      enc_key: internal_enc_key
+      sign_key: internal_sign_key
+      storage: internal
+
+    auth:
+      - plugin: "vk"
+        name: vk_one
+        config:
+          client_id: ${VK_CLIENT_ID}
+          client_secret: ${VK_SECRET}
+          scopes:
+            - email
+          fields: [ ]
+
+      - plugin: "phone"
+        config:
+          sender: twilio
+          template: phone_otp
+          max_attempts: 3
+          otp:
+            length: 6
+            alphabet: num
+            prefix: A-
+            postfix: -B
+            exp: 300
+
+      - plugin: email
+        config:
+          sender: email
+          template: magic_link
+          exp: 3600
+    #      - plugin: "vk"
+#        name: vk_two
+#        config:
+#          client_id: ${VK_CLIENT_ID}
+#          client_secret: ${VK_SECRET}
+#          scopes:
+#            - email
+#          fields: [ ]
+    senders:
+      - plugin: "twilio"
+        name: twilio
+        config:
+          account_sid:  ${TEST_TWILIO_ACCOUNT_SID}
+          auth_token: ${TEST_TWILIO_AUTH_TOKEN}
+          from: ${TEST_TWILIO_PHONE_NUMBER}
+          templates:
+            phone_otp: ../lab/templates/phone_otp.txt
+            sms_2fa_tmpl: ../lab/templates/sms_2fa.txt
+      - plugin: "email"
+        name: email
+        config:
+          host: smtp.gmail.com:587
+          username: username@example.com
+          password: ${SMTP_PASSWORD}
+          from: app@example.com
+          templates:
+            default_text: ../lab/templates/default.txt
+            default_html: ../lab/templates/default.html
+            reset: ../lab/templates/password_reset.txt
+            magic_link: ../lab/templates/magic_link.txt
+            email_verification: ../lab/templates/email_verification.txt
+
+    issuer:
+      plugin: "jwt"
+      config:
+        iss: Aureole Server
+        sub: true
+        nbf: 0
+        iat: true
+        access_bearer: body # [cookie, body, both]
+        refresh_bearer: body # [cookie, body, both]
+        sign_key: local_jwk_keys
+        verify_keys:
+          - local_jwk_keys
+        access_exp: 900000
+        refresh_exp: 7890000
+        payload: ../lab/templates/jwt_payload.json.tmpl
+
+    crypto_keys:
+      - plugin: "jwk"
+        name: local_jwk_keys
+        config:
+          refresh_interval: 5
+          retries_num: 3
+          retry_interval: 7
+          storage: local_jwk_keys
+
+      - plugin: "jwk"
+        name: internal_enc_key
+        config:
+          kty: RSA
+          alg: RSA-OAEP-256
+          size: 4096
+          use: enc
+          kid: SHA-256
+          storage: internal_enc_keys
+
+      - plugin: "jwk"
+        name: internal_sign_key
+        config:
+          kty: RSA
+          alg: RS256
+          size: 2048
+          kid: SHA-256
+          storage: internal_sign_keys
+
+    storages:
+      - plugin: "memory"
+        name: internal
+        config:
+          size: 100
+
+    crypto_storages:
+      - plugin: "file"
+        name: local_jwk_keys
+        config:
+          path: ../lab/keys/keys.json
+
+      - plugin: "file"
+        name: internal_sign_keys
+        config:
+          path: ../lab/keys/service_sign_key.json
+
+      - plugin: "file"
+        name: internal_enc_keys
+        config:
+          path: ../lab/keys/service_enc_key.json
+    
+    root_plugins:
+      - plugin: "urls"
+        name: get-urls

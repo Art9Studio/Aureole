@@ -13,7 +13,7 @@ func main() {
 	app.Use(logger.New())
 
 	app.Get("/ping", func(c *fiber.Ctx) error {
-		return c.SendStatus(fiber.StatusOK)
+		return c.SendStatus(http.StatusOK)
 	})
 
 	app.Get("/o/oauth2/auth", handlers.GoogleAuthUrlHandler)

@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "f7dfce94-0198-41a8-9c60-273642901669",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "phone",
+      "uuid": "837883cb-b252-4381-993a-1ccefc0a78fe"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "d1957b86-8589-424f-a172-1f31c6d158ed",
+      "additionalProperties": false,
+      "required": [
+        "sender",
+        "template"
+      ],
+      "properties": {
+        "sender": {
+          "type": "string",
+          "uuid": "7986fbd7-0542-4361-85f1-df0c5a4883bd",
+          "minLength": 1,
+          "metatags": "@sender_ref"
+        },
+        "template": {
+          "type": "string",
+          "uuid": "dc3d7072-7717-4ba5-a1d8-cc421bb53116",
+          "minLength": 1,
+          "metatags": "@template_ref"
+        },
+        "max_attempts": {
+          "type": "integer",
+          "uuid": "51d806f6-5a59-4fbc-a9c1-ced9255a7745",
+          "default": 3,
+          "minimum": 0
+        },
+        "otp": {
+          "type": "object",
+          "uuid": "fd8a74bd-95b9-4f97-bd42-6aa3794d647c",
+          "additionalProperties": false,
+          "properties": {
+            "length": {
+              "type": "integer",
+              "uuid": "8db1e602-3d49-4645-9e73-c45eca7a54d9",
+              "default": 6,
+              "minimum": 1
+            },
+            "alphabet": {
+              "anyOf": [
+                {
+                  "enum": ["num", "alpha", "alphanum"],
+                  "uuid": "a830e48e-2941-48ce-bc3c-47208bde4b6c"
+                },
+                {
+                  "type": "string",
+                  "uuid": "126af1c7-fd76-4bb2-a154-e643e081526a",
+                  "minLength": 1
+                }
+              ],
+              "default": "num"
+            },
+            "prefix": {
+              "type": "string",
+              "uuid": "56d5a7e8-3999-4a96-9361-fecb2d4fd36a"
+            },
+            "postfix": {
+              "type": "string",
+              "uuid": "6fdbcac1-f18d-47d5-b1db-6b340720f42f"
+            },
+            "exp": {
+              "type": "integer",
+              "uuid": "315acaed-849d-491c-80d4-b8f42ba32751",
+              "default": 300,
+              "minimum": 0,
+              "metatags": "@unit:s"
+            }
+          }
+        }
+      }
+    }
+  },
+  "example": "auth/phone"
+}

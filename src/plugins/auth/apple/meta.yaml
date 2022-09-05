@@ -1,0 +1,4 @@
+name: apple
+plugin_id: 1000
+display_name: "Apple"
+description: "Apple Authentication"

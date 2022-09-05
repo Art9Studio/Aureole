@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "b7d87dee-606e-4af2-9f15-781970d6c25a",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "vk",
+      "uuid": "eb22db5e-f5c3-452b-bb47-536c574d5bd3"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "2d5afb20-e623-440b-ae0f-2c7b52194dbd",
+      "additionalProperties": false,
+      "required": [
+        "client_id",
+        "client_secret"
+      ],
+      "properties": {
+        "client_id": {
+          "type": "string",
+          "uuid": "9b839e77-0c00-4f89-a7a4-cd187a7977a7",
+          "minLength": 1
+        },
+        "client_secret": {
+          "type": "string",
+          "uuid": "1dca04b8-5890-4966-abe7-4a5d340dcb63",
+          "minLength": 1
+        },
+        "scopes": {
+          "type": "array",
+          "uuid": "0b9d1d50-670d-41aa-acd1-36fa67b0f536",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "default": [
+            "email"
+          ],
+          "uniqueItems": true
+        },
+        "fields": {
+          "type": "array",
+          "uuid": "24885157-a0eb-4d92-af14-c17efd28becb",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "example": "auth/vk"
+}

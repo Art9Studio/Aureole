@@ -168,6 +168,6 @@ apps:
           templates:
             phone_otp: templates/phone_otp.txt
 
-    admin_plugins:
+    root_plugins:
       - type: "urls"
         name: get-urls

@@ -8,7 +8,7 @@
   {{ end }}
 
   {{ if .Phone }}
-    "phone": "{{ .Phone }}",jwt_payload.json.tmpl
+    "phone": "{{ .Phone }}",
   {{ end }}
 
   {{ if .Email }}
@@ -16,10 +16,6 @@
   {{ end }}
 
   {{ if .Additional }}
-    "additional": {
-        {{ range $key, $value := .Additional }}
-           "{{ $key }}": {{ $value }},
-        {{end}}
-    }
+    "additional": {{ json .Additional }}
   {{ end }}
 }

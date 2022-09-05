@@ -1,0 +1,4 @@
+name: file
+plugin_id: 1010
+display_name: file
+description: "File Crypto Storage"
