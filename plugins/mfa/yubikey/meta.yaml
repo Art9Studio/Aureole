@@ -1,0 +1,4 @@
+name: yubikey
+plugin_id: 1018
+display_name: Yubikey
+description: "yubikey"

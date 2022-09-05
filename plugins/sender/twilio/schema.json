@@ -4,11 +4,11 @@
   "uuid": "bbebed5f-b766-4534-9c21-0a3b4ed5df43",
   "additionalProperties": false,
   "required": [
-    "type",
+    "plugin",
     "config"
   ],
   "properties": {
-    "type": {
+    "plugin": {
       "const": "twilio",
       "uuid": "fb08d6f3-e715-4c78-8cfc-a207ac497975"
     },
@@ -20,7 +20,9 @@
         "account_sid",
         "auth_token",
         "from",
-        "templates"
+        "templates",
+        "endpoint",
+        "messageType"
       ],
       "properties": {
         "account_sid": {

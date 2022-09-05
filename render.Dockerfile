@@ -7,7 +7,7 @@ COPY go.sum .
 
 RUN go mod download
 
-COPY . .
+COPY src .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./aureole .
 

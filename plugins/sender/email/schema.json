@@ -4,11 +4,11 @@
   "uuid": "b7d33380-17f1-4959-aa74-0f55313bad5d",
   "additionalProperties": false,
   "required": [
-    "type",
+    "plugin",
     "config"
   ],
   "properties": {
-    "type": {
+    "plugin": {
       "const": "email",
       "uuid": "9d6296ae-b3d9-4241-8c3c-5c04a99d5ac9"
     },

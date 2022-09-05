@@ -4,11 +4,11 @@
   "uuid": "b6e4657d-f6de-41c6-adbc-0e91aa554730",
   "additionalProperties": false,
   "required": [
-    "type",
+    "plugin",
     "config"
   ],
   "properties": {
-    "type": {
+    "plugin": {
       "const": "jwk",
       "uuid": "1f769669-48a2-437d-81b4-4ba80f2815cb"
     },

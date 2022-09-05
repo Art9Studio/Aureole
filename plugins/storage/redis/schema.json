@@ -4,11 +4,11 @@
   "uuid": "3475ec0e-6ab5-49bc-aa93-499598d00f07",
   "additionalProperties": false,
   "required": [
-    "type",
+    "plugin",
     "config"
   ],
   "properties": {
-    "type": {
+    "plugin": {
       "const": "redis",
       "uuid": "a013b3df-225e-4e40-9d1a-a48574b6bec6"
     },

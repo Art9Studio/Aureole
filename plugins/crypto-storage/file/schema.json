@@ -4,11 +4,11 @@
   "uuid": "1a198d05-6e18-47a4-8ef5-d70ea3e80404",
   "additionalProperties": false,
   "required": [
-    "type",
+    "plugin",
     "config"
   ],
   "properties": {
-    "type": {
+    "plugin": {
       "const": "file",
       "uuid": "a0aa97dc-1472-4314-aa90-7d10cceaa683"
     },

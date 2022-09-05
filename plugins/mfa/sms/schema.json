@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "uuid": "2386ae19-f8d8-4263-9dcc-23f281e1d1ea",
+  "additionalProperties": false,
+  "required": [
+    "plugin",
+    "config"
+  ],
+  "properties": {
+    "plugin": {
+      "const": "sms",
+      "uuid": "aaaec8a6-57a5-4e78-83c0-8fc1f35439ce"
+    },
+    "config": {
+      "type": "object",
+      "uuid": "72f13a5e-9813-48cc-ae17-0b80b8f9ac12",
+      "additionalProperties": false,
+      "properties": {
+        "sender": {
+          "type": "string",
+          "uuid": "cb6a03ab-a046-46d1-8db9-46ce73ad9f61",
+          "minLength": 1,
+          "metatags": "@sender_ref"
+        },
+        "template": {
+          "type": "string",
+          "uuid": "4745cba8-4515-4338-b6dd-b85a49c9f9e3",
+          "minLength": 1,
+          "metatags": "@template_ref"
+        },
+        "max_attempts": {
+          "type": "integer",
+          "uuid": "d75cefa1-a7f5-4292-a523-d719073ca250",
+          "default": 3,
+          "minimum": 0
+        },
+        "otp": {
+          "type": "object",
+          "uuid": "212d1f50-9351-4370-a34b-a30f1065c072",
+          "additionalProperties": false,
+          "properties": {
+            "length": {
+              "type": "integer",
+              "uuid": "f38c0a45-488d-4c11-8aa9-1eafcefa4246",
+              "default": 6,
+              "minimum": 1
+            },
+            "alphabet": {
+              "anyOf": [
+                {
+                  "enum": ["num", "alpha", "alphanum"],
+                  "uuid": "81c50697-6597-4d20-a033-40b7ba4e5629"
+                },
+                {
+                  "type": "string",
+                  "uuid": "11b213e4-9504-47c4-bdc3-251744c3d835",
+                  "minLength": 1
+                }
+              ],
+              "default": "alphanum"
+            },
+            "exp": {
+              "type": "integer",
+              "uuid": "cb10af89-de79-4d74-ab96-1e2b94456daa",
+              "default": 300,
+              "minimum": 0,
+              "metatags": "@unit:s"
+            }
+          }
+        }
+      }
+    }
+  },
+  "example": "2fa/sms"
+}

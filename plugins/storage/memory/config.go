@@ -2,13 +2,12 @@ package memory
 
 import (
 	"aureole/internal/configs"
-	"aureole/internal/plugins"
 )
 
 type config struct {
-	Size int `mapstructure:"size"`
+	Size int `mapstructure:"size" json:"size"`
 }
 
-func (memoryAdapter) Create(conf *configs.Storage) plugins.Storage {
-	return &memory{rawConf: conf}
+func (c *config) setDefaults() {
+	configs.SetDefault(&c.Size, 128)
 }

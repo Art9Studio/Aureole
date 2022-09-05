@@ -4,11 +4,11 @@
   "uuid": "71539321-e240-4902-9279-599b56ad2426",
   "additionalProperties": false,
   "required": [
-    "type",
+    "plugin",
     "config"
   ],
   "properties": {
-    "type": {
+    "plugin": {
       "const": "memory",
       "uuid": "890aecf3-648b-4744-90e6-3d4d325df284"
     },

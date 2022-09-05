@@ -1,29 +1,33 @@
 package core
 
 import (
+	"os"
+	"path"
+
 	fiberSwagger "github.com/arsmn/fiber-swagger/v2"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/pprof"
-	"net"
-	_ "net/http/pprof"
-	"os"
-	"path"
-	"sync"
-	"syscall"
 )
 
-var (
-	r    *router
-	once sync.Once
-)
+const AuthPipelinePath = "/auth"
 
 type (
 	Route struct {
-		Method  string
-		Path    string
-		Handler func(c *fiber.Ctx) error
+		Method        string
+		Path          string
+		OAS3Operation *openapi3.Operation
+		Handler       func(c *fiber.Ctx) error
+	}
+
+	ExtendedRoute struct {
+		Route
+		Metadata
+	}
+
+	RoutesGetter interface {
+		GetCustomAppRoutes() []*Route
 	}
 
 	ErrorMessage struct {
@@ -31,28 +35,29 @@ type (
 	}
 
 	router struct {
-		appRoutes     map[string][]*Route
+		appRoutes     map[string][]*ExtendedRoute
 		projectRoutes []*Route
 	}
 )
 
-func RunServer(ln net.Listener) error {
-	return createServer().Listener(ln)
+func RunServer(p *project, r *router) error {
+	var port string
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = "3000"
+	}
+	return createServer(p, r).Listen(":" + port)
 }
 
 // createServer initializes router and creates routes for each application
-func createServer() *fiber.App {
+func createServer(p *project, r *router) *fiber.App {
 	fiberApp := fiber.New(fiber.Config{DisableStartupMessage: true})
 	fiberApp.Use(cors.New())
 	fiberApp.Use(logger.New())
-	fiberApp.Use(pprof.New())
 
-	for appName, routes := range r.appRoutes {
-		pathPrefix := p.apps[appName].pathPrefix
-		appGroup := fiberApp.Group(pathPrefix)
-
+	for _, routes := range r.getAppRoutes() {
 		for _, route := range routes {
-			appGroup.Add(route.Method, route.Path, route.Handler)
+			fiberApp.Add(route.Method, route.Path, route.Handler)
 		}
 	}
 
@@ -60,32 +65,18 @@ func createServer() *fiber.App {
 		fiberApp.Add(route.Method, route.Path, route.Handler)
 	}
 
-	fiberApp.Get("/swagger/*", fiberSwagger.HandlerDefault)
-	fiberApp.Get("/reload", reload)
+	fiberApp.Get("/openapi/*", fiberSwagger.HandlerDefault)
 	return fiberApp
 }
 
-func reload(c *fiber.Ctx) error {
-	// todo: make this route secure
-	err := syscall.Kill(os.Getppid(), syscall.SIGUSR2)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+func CreateRouter() *router {
+	return &router{
+		appRoutes:     make(map[string][]*ExtendedRoute),
+		projectRoutes: []*Route{},
 	}
-	return c.SendStatus(fiber.StatusOK)
 }
 
-func getRouter() *router {
-	once.Do(
-		func() {
-			r = &router{
-				appRoutes:     make(map[string][]*Route),
-				projectRoutes: []*Route{},
-			}
-		})
-	return r
-}
-
-func (r *router) addAppRoutes(appName string, routes []*Route) {
+func (r *router) addAppRoutes(appName string, routes []*ExtendedRoute) {
 	for i := range routes {
 		routes[i].Path = path.Clean(routes[i].Path)
 	}
@@ -105,7 +96,7 @@ func (r *router) addProjectRoutes(routes []*Route) {
 	r.projectRoutes = append(r.projectRoutes, routes...)
 }
 
-func (r *router) getAppRoutes() map[string][]*Route {
+func (r *router) getAppRoutes() map[string][]*ExtendedRoute {
 	return r.appRoutes
 }
 
@@ -113,6 +104,10 @@ func (r *router) getProjectRoutes() []*Route {
 	return r.projectRoutes
 }
 
-func SendError(c *fiber.Ctx, statusCode int, errorMessage string) error {
-	return c.Status(statusCode).JSON(ErrorMessage{Error: errorMessage})
+func SendToken(c *fiber.Ctx, token string) error {
+	return c.JSON(&fiber.Map{"token": token})
+}
+
+func GetOAuthPathPostfix() string {
+	return "/oauth"
 }

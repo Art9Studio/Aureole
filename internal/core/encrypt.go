@@ -40,13 +40,13 @@ func decrypt(app *app, data []byte, value interface{}) error {
 func getKey(app *app) (*rsa.PrivateKey, error) {
 	serviceKey, ok := app.getServiceEncKey()
 	if !ok {
-		return nil, errors.New("cannot get service encryption key")
+		return nil, errors.New("cannot get internal encryption key")
 	}
 	set := serviceKey.GetPrivateSet()
 
 	key, ok := set.Get(0)
 	if !ok {
-		return nil, errors.New("cannot get service key")
+		return nil, errors.New("cannot get internal key")
 	}
 
 	var rsaKey rsa.PrivateKey

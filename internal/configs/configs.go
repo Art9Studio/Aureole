@@ -2,127 +2,90 @@ package configs
 
 import (
 	"fmt"
-	"os"
-
-	"aureole/pkg/configuro"
-
 	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
+
+const (
+	mimeYaml = "yaml"
+	aureole  = "AUREOLE"
+)
+
+type PluginConfig struct {
+	Plugin string    `mapstructure:"plugin" json:"plugin"`
+	Name   string    `mapstructure:"name" json:"name"`
+	Config RawConfig `mapstructure:"config" json:"config"`
+}
+
+type AuthPluginConfig struct {
+	PluginConfig `mapstructure:",squash" json:",inline"`
+	Filter       string `mapstructure:"filter" json:"filter"`
+}
 
 type (
 	RawConfig = map[string]interface{}
 
 	Project struct {
-		APIVersion string `config:"api_version"`
-		PingPath   string `config:"-"`
-		TestRun    bool   `config:"test_run"`
-		Apps       []App  `config:"apps"`
+		APIVersion string `mapstructure:"api_version" json:"api_version"`
+		PingPath   string `mapstructure:"-" json:"-"`
+		TestRun    bool   `mapstructure:"test_run" json:"test_run"`
+		Mode       string `mapstructure:"mode" json:"mode"`
+		Apps       []App  `mapstructure:"apps" json:"apps"`
 	}
 
 	App struct {
-		Name           string          `config:"name"`
-		Host           string          `config:"host"`
-		PathPrefix     string          `config:"path_prefix"`
-		AuthSessionExp int             `config:"auth_session_exp"`
-		Service        Service         `config:"service"`
-		Authn          []Authn         `config:"authN"`
-		Authz          Authz           `config:"authZ"`
-		SecondFactors  []SecondFactor  `config:"2fa"`
-		IDManager      IDManager       `config:"id_manager"`
-		CryptoStorages []CryptoStorage `config:"crypto_storages"`
-		Storages       []Storage       `config:"storages"`
-		CryptoKeys     []CryptoKey     `config:"crypto_keys"`
-		Senders        []Sender        `config:"senders"`
-		AdminConfs     []Admin         `config:"admin_plugins"`
+		Name           string             `mapstructure:"name" json:"name"`
+		Host           string             `mapstructure:"host" json:"host"`
+		PathPrefix     string             `mapstructure:"path_prefix" json:"path_prefix"`
+		AuthSessionExp int                `mapstructure:"auth_session_exp" json:"auth_session_exp"`
+		Internal       Internal           `mapstructure:"internal" json:"internal"`
+		Auth           []AuthPluginConfig `mapstructure:"auth" json:"auth"`
+		Issuer         PluginConfig       `mapstructure:"issuer" json:"issuer"`
+		MFA            []PluginConfig     `mapstructure:"mfa" json:"mfa"`
+		IDManager      PluginConfig       `mapstructure:"id_manager" json:"id_manager"`
+		CryptoStorages []PluginConfig     `mapstructure:"crypto_storages" json:"crypto_storages"`
+		Storages       []PluginConfig     `mapstructure:"storages" json:"storages"`
+		CryptoKeys     []PluginConfig     `mapstructure:"crypto_keys" json:"crypto_keys"`
+		Senders        []PluginConfig     `mapstructure:"senders" json:"senders"`
+		RootPlugins    []PluginConfig     `mapstructure:"root_plugins" json:"root_plugins"`
+		ScratchCode    PluginConfig       `mapstructure:"scratch_code" json:"scratch_code"`
+		AuthFilter     RawConfig          `mapstructure:"auth_filter" json:"auth_filter"`
 	}
 
-	Service struct {
-		SignKey string `config:"sign_key"`
-		EncKey  string `config:"enc_key"`
-		Storage string `config:"storage"`
-	}
-
-	Authn struct {
-		Type   string            `config:"type"`
-		Filter map[string]string `config:"filter"`
-		Config RawConfig         `config:"config"`
-	}
-
-	Authz struct {
-		Type   string    `config:"type"`
-		Config RawConfig `config:"config"`
-	}
-
-	SecondFactor struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
-	}
-
-	IDManager struct {
-		Type   string    `config:"type"`
-		Config RawConfig `config:"config"`
-	}
-
-	CryptoStorage struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
-	}
-
-	Storage struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
-	}
-
-	CryptoKey struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
-	}
-
-	Sender struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
-	}
-
-	Admin struct {
-		Type   string    `config:"type"`
-		Name   string    `config:"name"`
-		Config RawConfig `config:"config"`
+	Internal struct {
+		SignKey string `mapstructure:"sign_key" json:"sign_key"`
+		EncKey  string `mapstructure:"enc_key" json:"enc_key"`
+		Storage string `mapstructure:"storage" json:"storage"`
 	}
 )
 
 func LoadMainConfig() (*Project, error) {
 	var (
 		confPath string
-		ok       bool
 	)
-
 	_ = godotenv.Load("./.env")
-	if confPath, ok = os.LookupEnv("AUREOLE_CONF_PATH"); !ok {
-		confPath = "./config.yaml"
+
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix(aureole)
+
+	if confPath = viper.GetString("conf_path"); confPath == "" {
+		confPath = "../../config.light.yaml"
 	}
 
-	confLoader, err := configuro.NewConfig(
-		configuro.WithLoadFromConfigFile(confPath, true),
-		configuro.WithoutValidateByTags(),
-		configuro.WithLoadDotEnv(".env"),
-		configuro.WithExpandEnvVars(),
-	)
+	viper.SetConfigType(mimeYaml)
+	viper.SetConfigFile(confPath)
+	err := viper.ReadInConfig()
 	if err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)
 	}
 
-	rawConf := Project{}
-	if err = confLoader.Load(&rawConf); err != nil {
+	rawConf := &Project{}
+	if err := viper.Unmarshal(&rawConf); err != nil {
 		return nil, fmt.Errorf("project config init: %v", err)
 	}
 	rawConf.setDefaults()
 
-	return &rawConf, nil
+	return rawConf, nil
 }
 
 /*

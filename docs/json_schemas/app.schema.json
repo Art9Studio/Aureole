@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "required": [
     "name",
-    "authN"
+    "auth"
   ],
   "properties": {
     "name": {
@@ -31,7 +31,7 @@
       "default": 86400,
       "metatags": "@unit:s"
     },
-    "service": {
+    "internal": {
       "type": "object",
       "uuid": "3096b94f-83f7-488c-8a49-84fdf216e24b",
       "additionalProperties": false,
@@ -57,26 +57,29 @@
         }
       }
     },
-    "authN": {
+    "auth_filter": {
+      "type": "array"
+    },
+    "auth": {
       "type": "array",
       "uuid": "39042e0a-292c-4e9e-9f59-e132fc471938",
       "items": {
-        "$ref": "../../plugins/authn/schema.json"
+        "$ref": "../../plugins/auth/schema.json"
       },
       "minItems": 1
     },
-    "authZ": {
-      "$ref": "../../plugins/authz/schema.json"
+    "issuer": {
+      "$ref": "../../plugins/issuer/schema.json"
     },
-    "2fa": {
+    "mfa": {
       "type": "array",
       "uuid": "fb0e66dd-e1c7-45f3-a635-4875fcd0b9ce",
       "items": {
-        "$ref": "../../plugins/2fa/schema.json"
+        "$ref": "../../plugins/mfa/schema.json"
       }
     },
     "id_manager": {
-      "$ref": "../../plugins/identity/schema.json"
+      "$ref": "../../plugins/identity-manager/schema.json"
     },
     "storages": {
       "type": "array",
@@ -107,7 +110,7 @@
         "$ref": "../../plugins/sender/schema.json"
       }
     },
-    "admin_plugins": {
+    "root_plugins": {
       "type": "array",
       "uuid": "f83f8913-29d3-4a0e-a0af-9897e8725c95",
       "items": {

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"aureole/internal/plugins"
 	"context"
 	"encoding/json"
 	"errors"
@@ -22,7 +21,7 @@ func createJWT(app *app, payload map[string]interface{}, exp int) (string, error
 
 	keySet, ok := app.getServiceSignKey()
 	if !ok {
-		return "", errors.New("cannot get service sign key")
+		return "", errors.New("cannot get internal sign key")
 	}
 	signedToken, err := signToken(keySet, token)
 	if err != nil {
@@ -32,15 +31,54 @@ func createJWT(app *app, payload map[string]interface{}, exp int) (string, error
 }
 
 func parseJWT(app *app, rawToken string) (jwt.Token, error) {
+	issuer, ok := app.getIssuer()
+	if !ok {
+		return nil, errors.New("cannot get issuer")
+	}
+	keys := issuer.GetVerifyKeys()
+	ctx := context.Background()
+	var keyset jwk.Set
+	for _, v := range keys {
+		if keyset == nil {
+			keyset = v.GetPublicSet()
+			continue
+		}
+		set := v.GetPublicSet()
+		iter := set.Iterate(ctx)
+		for iter.Next(ctx) {
+			pair := iter.Pair()
+			key, ok := pair.Value.(jwk.Key)
+			if !ok {
+				return nil, errors.New("cannot get verify key")
+			}
+			keyset.Add(key)
+		}
+	}
+
+	token, err := jwt.ParseString(
+		rawToken,
+		jwt.WithIssuer("Aureole Server"),
+		jwt.WithValidate(true),
+		jwt.WithKeySet(keyset),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+func parseJWTService(app *app, rawToken string) (jwt.Token, error) {
 	keySet, ok := app.getServiceSignKey()
 	if !ok {
-		return nil, errors.New("cannot get service sign key")
+		return nil, errors.New("cannot get internal sign key")
 	}
+
 	token, err := jwt.ParseString(
 		rawToken,
 		jwt.WithIssuer("Aureole"),
 		jwt.WithAudience("Aureole"),
-		jwt.WithClaimValue("type", "service"),
+		jwt.WithClaimValue("type", "internal"),
 		jwt.WithValidate(true),
 		jwt.WithKeySet(keySet.GetPublicSet()),
 	)
@@ -48,33 +86,19 @@ func parseJWT(app *app, rawToken string) (jwt.Token, error) {
 		return nil, err
 	}
 
-	storage, ok := app.getServiceStorage()
-	if !ok {
-		return nil, errors.New("cannot get service storage")
-	}
-	ok, err = storage.Exists(token.JwtID())
-	if err != nil {
-		return nil, err
-	} else if ok {
-		return nil, errors.New("jwt: invalid token")
-	} else {
-		return token, nil
-	}
+	//storage, ok := app.getServiceStorage()
+	//if !ok {
+	//	return nil, errors.New("cannot get internal storage")
+	//}
+	//ok, err = storage.Exists(token.JwtID())
+	return token, nil
 }
 
 func invalidateJWT(app *app, token jwt.Token) error {
 	if time.Now().Before(token.Expiration()) {
-		storage, ok := app.getServiceStorage()
-		if !ok {
-			return errors.New("cannot get service storage")
-		}
-
-		err := storage.Set(token.JwtID(), token, int(time.Until(token.Expiration()).Seconds()))
-		if err != nil {
-			return err
-		}
+		return nil
 	}
-	return nil
+	return errors.New("token expired")
 }
 
 func getFromJWT(token jwt.Token, name string, value interface{}) error {
@@ -135,7 +159,7 @@ func newToken(payload map[string]interface{}, exp int) (jwt.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = token.Set("type", "service")
+	err = token.Set("type", "internal")
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +173,7 @@ func newToken(payload map[string]interface{}, exp int) (jwt.Token, error) {
 	return token, err
 }
 
-func signToken(signKey plugins.CryptoKey, token jwt.Token) ([]byte, error) {
+func signToken(signKey CryptoKey, token jwt.Token) ([]byte, error) {
 	keySet := signKey.GetPrivateSet()
 
 	for it := keySet.Iterate(context.Background()); it.Next(context.Background()); {

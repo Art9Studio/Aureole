@@ -1,0 +1,4 @@
+name: jwk
+plugin_id: 1008
+display_name: jwk
+description: "JWK Crypto Key"

@@ -4,11 +4,11 @@
   "uuid": "7b992299-afb5-4051-ac8a-c8655f1e5bef",
   "additionalProperties": false,
   "required": [
-    "type",
+    "plugin",
     "config"
   ],
   "properties": {
-    "type": {
+    "plugin": {
       "const": "pem",
       "uuid": "a98e305c-4f36-42ee-a938-c0a87c375c10"
     },

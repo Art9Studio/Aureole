@@ -1,20 +1,11 @@
 package email
 
-import (
-	"aureole/internal/configs"
-	"aureole/internal/plugins"
-)
-
 type config struct {
-	Host               string   `mapstructure:"host"`
-	Username           string   `mapstructure:"username"`
-	Password           string   `mapstructure:"password"`
-	InsecureSkipVerify bool     `mapstructure:"insecure_skip_verify"`
-	From               string   `mapstructure:"from"`
-	Bcc                []string `mapstructure:"bcc"`
-	Cc                 []string `mapstructure:"cc"`
-}
-
-func (emailAdapter) Create(conf *configs.Sender) plugins.Sender {
-	return &email{rawConf: conf}
+	Host               string   `mapstructure:"host" json:"host"`
+	Username           string   `mapstructure:"username" json:"username"`
+	Password           string   `mapstructure:"password" json:"password"`
+	InsecureSkipVerify bool     `mapstructure:"insecure_skip_verify" json:"insecure_skip_verify"`
+	From               string   `mapstructure:"from" json:"from"`
+	Bcc                []string `mapstructure:"bcc" json:"bcc"`
+	Cc                 []string `mapstructure:"cc" json:"cc"`
 }
