@@ -1,7 +1,7 @@
 package core
 
 import (
-	"aureole/internal/configs"
+	"aureole/configs"
 	"crypto/rsa"
 	"crypto/tls"
 	"errors"
@@ -115,7 +115,7 @@ func createApps(conf *configs.Project, p *project) {
 		createMultiFactors(multiFactorsRepository, app, appConf)
 		createIDManager(idmanagerRepository, app, appConf)
 		createAureoleInternals(app, appConf)
-		createScratchCodes(app, appConf)
+		//createScratchCodes(app, appConf)
 		createAuthFilters(app, appConf)
 
 		p.apps[appConf.Name] = app

@@ -1,13 +1,12 @@
 package core
 
 import (
+	"aureole/configs"
 	"errors"
 	"fmt"
 	"regexp"
 	"sync"
 	"unicode"
-
-	"aureole/internal/configs"
 
 	"gopkg.in/yaml.v3"
 )

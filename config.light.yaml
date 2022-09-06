@@ -1,8 +1,8 @@
 api_version: "0.1"
 
 apps:
-  - name: one
-    path_prefix: /one
+  - name: server
+    path_prefix: /server
     host: http://localhost:3000
 
     internal:
@@ -123,17 +123,17 @@ apps:
       - plugin: "file"
         name: local_jwk_keys
         config:
-          path: ../lab/keys/keys.json
+          path: ../../lab/keys/keys.json
 
       - plugin: "file"
         name: internal_sign_keys
         config:
-          path: ../lab/keys/service_sign_key.json
+          path: ../../lab/keys/service_sign_key.json
 
       - plugin: "file"
         name: internal_enc_keys
         config:
-          path: ../lab/keys/service_enc_key.json
+          path: ../../lab/keys/service_enc_key.json
     
     root_plugins:
       - plugin: "urls"

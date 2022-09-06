@@ -1,7 +1,7 @@
 package core
 
 import (
-	"aureole/internal/configs"
+	"aureole/configs"
 	"github.com/fatih/structs"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"

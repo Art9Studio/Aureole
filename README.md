@@ -173,7 +173,7 @@ License v3](https://www.gnu.org/licenses/agpl-3.0.en.html) (AGPL-3.0).
 **Commercial licenses** are available on request, if you do not wish to use the Aureole under the AGPL license. Typically, they come bundled with support plans and SLAs. Please feel free to contact us at [hi@aureole.cloud](mailto:hi@aureole.cloud).
 
 All **other contents** (except those in [`internal`](internal) and
-[`plugins`](plugins) directories) are available under the [MIT License](LICENSE-community).
+[`plugins`](plugin) directories) are available under the [MIT License](LICENSE-community).
 This includes everything in all other directories.
 
 # 🈂️ Translations

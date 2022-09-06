@@ -1,0 +1,28 @@
+package main
+
+import (
+	_ "aureole/plugin/auth/apple"
+	_ "aureole/plugin/auth/email"
+	_ "aureole/plugin/auth/facebook"
+	_ "aureole/plugin/auth/google"
+	_ "aureole/plugin/auth/phone"
+	_ "aureole/plugin/auth/pwbased"
+	_ "aureole/plugin/auth/vk"
+	_ "aureole/plugin/crypto-key/jwk"
+	_ "aureole/plugin/crypto-key/pem"
+	_ "aureole/plugin/crypto-storage/file"
+	_ "aureole/plugin/crypto-storage/url"
+	_ "aureole/plugin/crypto-storage/vault"
+	//_ "aureole/plugins/identity-manager/jwt_webhook"
+	_ "aureole/plugin/identity-manager/standard"
+	_ "aureole/plugin/issuer/jwt"
+	_ "aureole/plugin/mfa/otp"
+	_ "aureole/plugin/mfa/sms"
+	//_ "aureole/plugins/mfa/yubikey"
+	_ "aureole/plugin/root/urls"
+	_ "aureole/plugin/sender/email"
+	_ "aureole/plugin/sender/twilio"
+	//_ "aureole/plugins/storage/etcd"
+	_ "aureole/plugin/storage/memory"
+	_ "aureole/plugin/storage/redis"
+)
