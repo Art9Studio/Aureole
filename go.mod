@@ -10,7 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.100.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-test/deep v1.0.8
-	github.com/gofiber/fiber/v2 v2.37.0
+	github.com/gofiber/fiber/v2 v2.37.1
 	github.com/hashicorp/vault/api v1.7.2
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/jackc/tern v1.13.0
@@ -114,7 +114,7 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.39.0 // indirect
+	github.com/valyala/fasthttp v1.40.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
