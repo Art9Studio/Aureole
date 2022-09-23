@@ -18,13 +18,13 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// const pluginID = "5116"
 //go:embed meta.yaml
 var rawMeta []byte
 
 var meta core.Metadata
 
 func init() {
+	fmt.Println(string(rawMeta))
 	meta = core.SenderRepo.Register(rawMeta, Create)
 }
 

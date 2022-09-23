@@ -1,5 +1,5 @@
 /*
-Package dgoogauth implements the one-time password algorithms supported by Google Authenticator
+Package dgoogauth implements the server-time password algorithms supported by Google Authenticator
 
 This package supports the HMAC-Based One-time Password (HOTP) algorithm
 specified in RFC 4226 and the Time-based One-time Password (TOTP) algorithm
@@ -48,10 +48,10 @@ func ComputeCode(secret string, value int64) int {
 	return int(code)
 }
 
-// ErrInvalidCode indicate the supplied one-time code was not valid
+// ErrInvalidCode indicate the supplied server-time code was not valid
 var ErrInvalidCode = errors.New("invalid code")
 
-// OTPConfig is a one-time-password configuration.  This object will be modified by calls to
+// OTPConfig is a server-time-password configuration.  This object will be modified by calls to
 // Authenticate and should be saved to ensure the codes are in fact only used
 // once.
 type OTPConfig struct {
@@ -118,7 +118,7 @@ func (c *OTPConfig) checkTotpCode(t0, code int) bool {
 				for c.DisallowReuse[min] < minT {
 					min++
 				}
-				// FIXME: check we don't have an off-by-one error here
+				// FIXME: check we don't have an off-by-server error here
 				c.DisallowReuse = c.DisallowReuse[min:]
 			}
 
@@ -129,7 +129,7 @@ func (c *OTPConfig) checkTotpCode(t0, code int) bool {
 	return false
 }
 
-// Authenticate a one-time-password against the given OTPConfig
+// Authenticate a server-time-password against the given OTPConfig
 // Returns true/false if the authentication was successful.
 // Returns error if the password is incorrectly formatted (not a zero-padded 6 or non-zero-padded 8 digit number).
 func (c *OTPConfig) Authenticate(password string) (bool, error) {

@@ -189,7 +189,7 @@ func TestTotpCode(t *testing.T) {
 //
 //	// let's check some time-based codes
 //	otpconf.HotpCounter = 0
-//	// I haven't mocked the clock, so we'll just compute one
+//	// I haven't mocked the clock, so we'll just compute server
 //	var t0 int64
 //	if otpconf.UTC {
 //		t0 = int64(time.Now().UTC().Unix() / 30)

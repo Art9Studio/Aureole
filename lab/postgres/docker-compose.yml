@@ -2,11 +2,11 @@ version: '3'
 
 services:
   postgres:
-    image: postgres:${POSTGRES_VERSION:-13}
+    image: postgres:13
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-root}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
-      POSTGRES_DB: ${DB_NAME:-aureole}
+      POSTGRES_USER: "root"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "aureole"
     ports:
-      - '${DB_HOST:-127.0.0.1}:${DB_PORT:-5432}:5432'
+      - ':5432'
     command: ["postgres", "-c", "log_statement=all", "-c", "log_connections=on"]
