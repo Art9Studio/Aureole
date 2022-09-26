@@ -7,7 +7,7 @@ require (
 	github.com/avast/retry-go/v4 v4.1.0
 	github.com/coocood/freecache v1.2.2
 	github.com/fatih/structs v1.1.0
-	github.com/getkin/kin-openapi v0.100.0
+	github.com/getkin/kin-openapi v0.103.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-test/deep v1.0.8
 	github.com/gofiber/fiber/v2 v2.37.1
