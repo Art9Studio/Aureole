@@ -10,7 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.100.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-test/deep v1.0.8
-	github.com/gofiber/fiber/v2 v2.37.1
+	github.com/gofiber/fiber/v2 v2.38.1
 	github.com/hashicorp/vault/api v1.7.2
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/jackc/tern v1.13.0
