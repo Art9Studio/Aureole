@@ -7,7 +7,7 @@ require (
 	github.com/avast/retry-go/v4 v4.1.0
 	github.com/coocood/freecache v1.2.2
 	github.com/fatih/structs v1.1.0
-	github.com/getkin/kin-openapi v0.100.0
+	github.com/getkin/kin-openapi v0.104.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-test/deep v1.0.8
 	github.com/gofiber/fiber/v2 v2.37.1
@@ -101,6 +101,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
