@@ -11,7 +11,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./aureole .
 
-FROM alpine:3.16.2
+FROM alpine:3.17.0
 RUN apk add ca-certificates
 
 COPY --from=builder /tmp/go/aureole /aureole
