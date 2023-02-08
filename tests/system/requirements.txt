@@ -1,6 +1,6 @@
 Jinja2 == 3.0.1
 PyJWT == 2.1.0
-cryptography == 3.4.7
+cryptography == 39.0.1
 PyYAML == 5.4.1
 pytest == 6.2.4
 requests == 2.25.1
