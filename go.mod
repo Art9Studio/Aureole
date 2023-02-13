@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/arsmn/fiber-swagger/v2 v2.31.1
-	github.com/avast/retry-go/v4 v4.1.0
+	github.com/avast/retry-go/v4 v4.3.3
 	github.com/coocood/freecache v1.2.2
 	github.com/fatih/structs v1.1.0
 	github.com/getkin/kin-openapi v0.100.0
@@ -23,7 +23,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/viper v1.13.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	github.com/swaggo/swag v1.8.5
 	github.com/xlab/treeprint v1.1.0
 	go.uber.org/zap v1.23.0
