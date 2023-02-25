@@ -29,7 +29,7 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.7.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/client-go v11.0.0+incompatible
 )
@@ -117,8 +117,8 @@ require (
 	github.com/valyala/fasthttp v1.40.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
-	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
